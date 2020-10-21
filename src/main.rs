@@ -1,4 +1,4 @@
-use hbs::{Error, Result, Template};
+use hbs::{Result, Template};
 
 fn main() -> Result<()> {
     let s = r"\{{expr}}
@@ -10,15 +10,17 @@ fn main() -> Result<()> {
 This is some raw text.
 {{{{/raw}}}}
 
-{{# block}}
+{{# test-block}}
 This is some block text with an {{inline}}
-{{/block}}
+{{/test-block}}
 
 {{> partial}}
 
 {{#> partial-block}}
 {{@partial-block}}
 {{/partial-block}}
+
+{{!-- a comment --}}
 ";
 
     match Template::compile(s) {

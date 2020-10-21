@@ -1,141 +1,20 @@
 use std::fmt;
 use logos::Logos;
 
-use crate::{Error, Result};
-
-#[derive(Logos, Debug, PartialEq)]
-#[logos(subpattern simple_name = r"[a-zA-Z0-9_-]+")]
-#[logos(subpattern path = r"[@a-zA-Z0-9._-]+")]
-enum Token {
-
-    #[regex(r"[\\]?\{\{\{?>?\s*(?&path)\s*\}?\}\}", |lex| lex.slice().to_string())]
-    Expression(String),
-
-    //.*\{\{\{\{/raw\}\}\}\}
-
-    #[regex(r"\{\{\{\{\s*raw\s*\}\}\}\}", |lex| lex.slice().to_string())]
-    StartRawBlock(String),
-
-    #[regex(r"\{\{\{\{\s*/raw\s*\}\}\}\}", |lex| lex.slice().to_string())]
-    EndRawBlock(String),
-
-    #[regex(r"\r?\n", |lex| lex.slice().to_string())]
-    Newline(String),
-
-    #[regex(r"\{\{#>?\s*(?&simple_name)\s*\}\}", |lex| lex.slice().to_string())]
-    StartBlock(String),
-
-    #[regex(r"\{\{/\s*(?&simple_name)\s*\}\}", |lex| lex.slice().to_string())]
-    EndBlock(String),
-
-    #[regex(r"[^\n{]+", |lex| lex.slice().to_string())]
-    Text(String),
-
-    #[error]
+use crate::{
     Error,
-}
-
-#[derive(Debug)]
-struct SourceInfo {
-    line: usize, 
-    span: logos::Span,
-}
-
-#[derive(Debug)]
-struct Expression {
-    info: SourceInfo,
-    value: String,
-}
-
-impl fmt::Display for Expression {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", &self.value)
+    Result,
+    lexer::{
+        self,
+        Block,
+        BlockType,
+        AstToken,
+        Token,
+        Expression,
+        Text,
+        SourceInfo,
     }
-}
-
-#[derive(Debug)]
-struct Text {
-    info: SourceInfo,
-    value: String,
-}
-
-impl fmt::Display for Text {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", &self.value)
-    }
-}
-
-#[derive(Debug)]
-enum AstToken {
-    Expression(Expression),
-    Text(Text),
-    Block(Block),
-    Newline(Text),
-}
-
-impl fmt::Display for AstToken {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match *self {
-            Self::Expression(ref t) => t.fmt(f),
-            Self::Block(ref t) => t.fmt(f),
-            Self::Text(ref t)
-                | Self::Newline(ref t) => t.fmt(f),
-        }
-    }
-}
-
-#[derive(Debug)]
-enum BlockType {
-    Root,
-    Raw,
-    Named(String),
-}
-
-impl Default for BlockType {
-    fn default() -> Self {
-        Self::Root
-    }
-}
-
-#[derive(Debug, Default)]
-struct Block {
-    block_type: BlockType, 
-    tokens: Vec<AstToken>,
-    open: Option<String>,
-    close: Option<String>,
-}
-
-impl Block {
-    pub fn new(block_type: BlockType) -> Self {
-        Self {block_type, tokens: Vec::new(), open: None, close: None}
-    }
-
-    pub fn push(&mut self, token: AstToken) {
-        self.tokens.push(token); 
-    }
-
-    pub fn is_raw(&self) -> bool {
-        match self.block_type {
-            BlockType::Raw => true,
-            _=> false
-        }
-    }
-}
-
-impl fmt::Display for Block {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(ref s) = self.open {
-            write!(f, "{}", s)?;
-        }
-        for t in self.tokens.iter() {
-            t.fmt(f)?;
-        }
-        if let Some(ref s) = self.close {
-            write!(f, "{}", s)?;
-        }
-        Ok(())
-    }
-}
+};
 
 #[derive(Debug)]
 pub struct Template {
@@ -161,7 +40,7 @@ impl Template {
         for (token, span) in lex.spanned().into_iter() {
 
             let len = stack.len();
-            let mut current = if stack.is_empty() {
+            let current = if stack.is_empty() {
                 &mut ast
             } else {
                 stack.get_mut(len - 1).unwrap()
@@ -180,6 +59,15 @@ impl Template {
                 }
                 Token::Text(value) => {
                     current.push(AstToken::Text(Text {info, value}));
+                }
+                Token::StartCommentBlock(value) => {
+                    let mut block = Block::new(BlockType::Comment);
+                    block.open = Some(value);
+                    stack.push(block);
+                }
+                Token::EndCommentBlock(value) => {
+                    last = stack.pop();
+                    // TODO: check end comment matches the start
                 }
                 Token::StartRawBlock(value) => {
                     let mut block = Block::new(BlockType::Raw);
@@ -203,19 +91,27 @@ impl Template {
                     line = line + 1; 
                 }
                 Token::StartBlock(value) => {
-                    // TODO: parse block name
-                    let mut block = Block::new(BlockType::Named("nested".to_string()));
-                    block.open = Some(value);
+                    let block = Block::new_named(value);
                     stack.push(block);
-
                 }
                 Token::EndBlock(value) => {
                     // TODO: check the end block name matches
                     last = stack.pop();
                     if let Some(ref mut block) = last {
-                        //if !block.is_raw() {
-                            //return Err(Error::BadEndRawBlock)
-                        //}
+                        if !block.is_named() {
+                            return Err(Error::BadEndNamedBlock)
+                        }
+
+                        let name = lexer::parse_block_name(&value);
+
+                        match block.block_type {
+                            BlockType::Named(ref start_name) => {
+                                if start_name != &name {
+                                    return Err(Error::BadBlockEndName(start_name.to_string(), name))
+                                }
+                            }
+                            _ => {}
+                        }
 
                         block.close = Some(value);
                     } else {

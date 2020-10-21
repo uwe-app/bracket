@@ -6,4 +6,5 @@ edition = "2018"
 
 [dependencies]
 thiserror = "1"
-logos = "*"
+logos = "0.11.4"
+regex = "1.4.1"
