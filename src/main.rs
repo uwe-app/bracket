@@ -21,6 +21,11 @@ This is some block text with an {{inline}}
 {{/partial-block}}
 
 {{!-- a comment --}}
+
+{{[1,2,3]}}
+{{true}}
+{{false}}
+{{null}}
 ";
 
     match Template::compile(s) {

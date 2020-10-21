@@ -1,4 +1,5 @@
 use std::fmt;
+use std::ops::Range;
 use logos::Logos;
 use regex::Regex;
 
@@ -12,7 +13,7 @@ pub fn parse_block_name(value: &str) -> String {
 #[logos(subpattern simple_name = r"[a-zA-Z0-9_-]+")]
 pub(crate) enum Token {
 
-    #[regex(r"[\\]?\{\{(\{|[^!])?>?\s*[^}]+\s*\}?\}\}", |lex| lex.slice().to_string())]
+    #[regex(r"[\\]?\{\{\{?[^!]>?\s*[^}]+\s*\}?\}\}", |lex| lex.slice().to_string())]
     Expression(String),
 
     #[regex(r"\{\{\{\{\s*raw\s*\}\}\}\}", |lex| lex.slice().to_string())]
@@ -30,14 +31,13 @@ pub(crate) enum Token {
     #[regex(r"\{\{/\s*(?&simple_name)\s*\}\}", |lex| lex.slice().to_string())]
     EndBlock(String),
 
-    //#[regex(r"(\{\{!(--)?|<!--)", |lex| lex.slice().to_string())]
-    #[token("{{!--", |lex| lex.slice().to_string())]
+    #[regex(r"(\{\{!(--)?|<!--)", |lex| lex.slice().to_string())]
     StartCommentBlock(String),
 
     #[regex(r"((--)?\}\}|-->)", |lex| lex.slice().to_string())]
     EndCommentBlock(String),
 
-    #[regex(r"[^\n{]+", |lex| lex.slice().to_string())]
+    #[regex(r"[^\n{]", |lex| lex.slice().to_string())]
     Text(String),
 
     #[error]
@@ -46,7 +46,7 @@ pub(crate) enum Token {
 
 #[derive(Debug)]
 pub(crate) struct SourceInfo {
-    pub(crate) line: usize, 
+    pub(crate) line: Range<usize>, 
     pub(crate) span: logos::Span,
 }
 
@@ -142,6 +142,30 @@ impl Block {
         match self.block_type {
             BlockType::Named(_) => true,
             _=> false
+        }
+    }
+
+    /// Concatenate consecutive text tokens.
+    ///
+    /// The lexer needs to read unrecognised characters with a low 
+    /// priority (1) so that matching works as expected but it makes 
+    /// sense for us to normalize consecutive text tokens as we lex.
+    pub fn add_text(&mut self, info: SourceInfo, value: String) {
+        if self.tokens.is_empty() {
+            self.tokens.push(AstToken::Text(Text{value, info}));
+        } else {
+            let len = self.tokens.len();
+            let last = self.tokens.get_mut(len - 1).unwrap(); 
+            match last {
+                AstToken::Text(ref mut txt) => {
+                    txt.value.push_str(&value); 
+                    txt.info.span.end = info.span.end;
+                    txt.info.line.end = info.line.end;
+                }
+                _ => {
+                    self.tokens.push(AstToken::Text(Text{value, info}));
+                }
+            }
         }
     }
 }

@@ -1,4 +1,5 @@
 use std::fmt;
+use std::ops::Range;
 use logos::Logos;
 
 use crate::{
@@ -52,13 +53,17 @@ impl Template {
 
             println!("{:?}", token);
 
-            let info = SourceInfo {line, span};
+            let info = SourceInfo {line: Range {start: line, end: line}, span};
             match token {
+                Token::Text(value) => {
+                    current.add_text(info, value);
+                }
+                Token::Newline(value) => {
+                    current.add_text(info, value);
+                    line = line + 1; 
+                }
                 Token::Expression(value) => {
                     current.push(AstToken::Expression(Expression {info, value}));
-                }
-                Token::Text(value) => {
-                    current.push(AstToken::Text(Text {info, value}));
                 }
                 Token::StartCommentBlock(value) => {
                     let mut block = Block::new(BlockType::Comment);
@@ -68,6 +73,9 @@ impl Template {
                 Token::EndCommentBlock(value) => {
                     last = stack.pop();
                     // TODO: check end comment matches the start
+                    if let Some(ref mut block) = last {
+                        block.close = Some(value);
+                    }
                 }
                 Token::StartRawBlock(value) => {
                     let mut block = Block::new(BlockType::Raw);
@@ -85,10 +93,6 @@ impl Template {
                     } else {
                         return Err(Error::BadEndBlock)
                     }
-                }
-                Token::Newline(value) => {
-                    current.push(AstToken::Newline(Text {info, value}));
-                    line = line + 1; 
                 }
                 Token::StartBlock(value) => {
                     let block = Block::new_named(value);
