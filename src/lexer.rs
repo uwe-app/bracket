@@ -65,7 +65,7 @@ impl Expression {
     }
 
     pub fn escapes(&self) -> bool {
-        self.value.starts_with("{{{") 
+        !self.value.starts_with("{{{") 
     }
 }
 
