@@ -1,13 +1,13 @@
 use std::ops::Range;
 
 use hbs::Template;
-use hbs::{lexer::{SourceInfo, ast::*}, Result};
+use hbs::{lexer::{SourceInfo, ast::{self, *}}, Result};
 
-fn assert_text(token: &AstToken, value: &str, line: Range<usize>, span: Range<usize>) {
+fn assert_text(token: &ast::Token, value: &str, line: Range<usize>, span: Range<usize>) {
     let info = SourceInfo { line, span };
-    let expected = AstToken::Text(Text {
+    let expected = ast::Token::Text(Text {
         info,
-        value: String::from(value),
+        value,
     });
     assert_eq!(&expected, token);
 }
@@ -21,9 +21,9 @@ fn text() -> Result<()> {
         line: 0..0,
         span: 0..9,
     };
-    let expected = AstToken::Text(Text {
+    let expected = ast::Token::Text(Text {
         info,
-        value: value.to_string(),
+        value: value,
     });
 
     assert_eq!(1, tpl.block().tokens().len());
@@ -45,10 +45,10 @@ fn mixed() -> Result<()> {
         line: 0..0,
         span: 5..12,
     };
-    let expected = AstToken::Expression(Expr {
+    let expected = ast::Token::Expression(Expr::new(
         info,
-        value: String::from("{{var}}"),
-    });
+        "{{var}}"
+    ));
     assert_eq!(&expected, tpl.block().tokens().get(1).unwrap());
 
     assert_text(tpl.block().tokens().get(2).unwrap(), " text", 0..0, 12..17);
@@ -65,16 +65,16 @@ fn escaped_expr() -> Result<()> {
         line: 0..0,
         span: 0..9,
     };
-    let expected = AstToken::Expression(Expr {
+    let expected = ast::Token::Expression(Expr::new(
         info,
-        value: value.to_string(),
-    });
+        value,
+    ));
 
     assert_eq!(1, tpl.block().tokens().len());
     assert_eq!(
         true,
         match token {
-            AstToken::Expression(_) => true,
+            ast::Token::Expression(_) => true,
             _ => false,
         }
     );
@@ -84,7 +84,7 @@ fn escaped_expr() -> Result<()> {
     assert_eq!(
         true,
         match token {
-            AstToken::Expression(ref expr) => expr.is_raw(),
+            ast::Token::Expression(ref expr) => expr.is_raw(),
             _ => false,
         }
     );
@@ -101,16 +101,16 @@ fn simple_expr() -> Result<()> {
         line: 0..0,
         span: 0..7,
     };
-    let expected = AstToken::Expression(Expr {
+    let expected = ast::Token::Expression(Expr::new(
         info,
-        value: value.to_string(),
-    });
+        value,
+    ));
 
     assert_eq!(1, tpl.block().tokens().len());
     assert_eq!(
         true,
         match token {
-            AstToken::Expression(_) => true,
+            ast::Token::Expression(_) => true,
             _ => false,
         }
     );
@@ -120,7 +120,7 @@ fn simple_expr() -> Result<()> {
     assert_eq!(
         false,
         match token {
-            AstToken::Expression(ref expr) => expr.is_raw(),
+            ast::Token::Expression(ref expr) => expr.is_raw(),
             _ => false,
         }
     );
@@ -137,16 +137,16 @@ fn unescaped_expr() -> Result<()> {
         line: 0..0,
         span: 0..9,
     };
-    let expected = AstToken::Expression(Expr {
+    let expected = ast::Token::Expression(Expr::new(
         info,
-        value: value.to_string(),
-    });
+        value,
+    ));
 
     assert_eq!(1, tpl.block().tokens().len());
     assert_eq!(
         true,
         match token {
-            AstToken::Expression(_) => true,
+            ast::Token::Expression(_) => true,
             _ => false,
         }
     );
@@ -156,7 +156,7 @@ fn unescaped_expr() -> Result<()> {
     assert_eq!(
         false,
         match token {
-            AstToken::Expression(ref expr) => expr.is_raw(),
+            ast::Token::Expression(ref expr) => expr.is_raw(),
             _ => false,
         }
     );
@@ -164,7 +164,7 @@ fn unescaped_expr() -> Result<()> {
     assert_eq!(
         false,
         match token {
-            AstToken::Expression(ref expr) => expr.escapes(),
+            ast::Token::Expression(ref expr) => expr.escapes(),
             _ => false,
         }
     );

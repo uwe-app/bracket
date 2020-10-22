@@ -3,29 +3,45 @@ use std::fmt;
 use std::ops::Range;
 
 use crate::{
-    lexer::{SourceInfo, grammar::Token, ast::*, parser},
+    lexer::{SourceInfo, grammar::{Token, Statement}, ast::{self, *}, parser},
     Error, Result,
 };
 
 #[derive(Debug)]
-pub struct Template {
-    ast: Block,
+pub struct Template<'source> {
+    ast: Block<'source>,
 }
 
-impl Template {
-    pub fn block(&self) -> &Block {
+impl<'source> Template<'source> {
+    pub fn block(&self) -> &'source Block {
         &self.ast
     }
 }
 
-impl fmt::Display for Template {
+impl fmt::Display for Template<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.ast.fmt(f)
     }
 }
 
-impl Template {
-    pub fn compile(s: &str) -> Result<Template> {
+impl<'source> Template<'source> {
+
+    /// Compile a statement.
+    fn statement(s: &'source str) -> Result<ast::Statement> {
+        let statement: ast::Statement = Default::default(); 
+
+        println!("Lex statement: {}", s);
+
+        let lex = Statement::lexer(s);
+        for (token, span) in lex.spanned().into_iter() {
+            println!("Statement token {:?} {:?}", token, span);
+        }
+
+        Ok(statement)
+    }
+
+    /// Compile a block.
+    pub fn compile(s: &'source str) -> Result<Template> {
         let lex = Token::lexer(s);
         let mut ast = Block::new(BlockType::Root);
         let mut stack: Vec<Block> = vec![];
@@ -42,7 +58,7 @@ impl Template {
             };
 
             if let Some(last) = last.take() {
-                current.push(AstToken::Block(last));
+                current.push(ast::Token::Block(last));
             }
 
             //println!("{:?} ({:?})", token, span);
@@ -55,7 +71,7 @@ impl Template {
                 span,
             };
             match token {
-                Token::Text(value) => {
+                Token::Char(value) => {
                     current.add_text(info, value);
                 }
                 Token::Newline(value) => {
@@ -63,7 +79,23 @@ impl Template {
                     line = line + 1;
                 }
                 Token::Expression(value) => {
-                    current.push(AstToken::Expression(Expr { info, value }));
+                    let expr = Expr::new(info, value);
+
+                    // Skip escaped (\) expressions and 
+                    // those inside raw blocks.
+                    let is_raw = expr.is_raw() || {
+                        match current.block_type {
+                            BlockType::Raw => true,
+                            _ => false,
+                        }
+                    };
+
+                    if !is_raw {
+                        let statement = Template::statement(expr.value())?;
+                        println!("Statement {:?}", statement);
+                    }
+
+                    current.push(ast::Token::Expression(expr));
                 }
                 Token::StartCommentBlock(value) => {
                     let mut block = Block::new(BlockType::Comment);
@@ -113,7 +145,7 @@ impl Template {
                                 if start_name != &name {
                                     return Err(Error::BadBlockEndName(
                                         start_name.to_string(),
-                                        name,
+                                        name.to_string(),
                                     ));
                                 }
                             }

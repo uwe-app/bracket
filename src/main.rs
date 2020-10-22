@@ -1,13 +1,13 @@
 use hbs::{Result, Template};
 
 fn main() -> Result<()> {
-    let s = r"\{{expr}}
+    let s = r#"\{{expr}}
 {{{unescaped}}}
 
 {{var}}
 
 {{{{  raw }}}}
-This is some raw text.
+This is some raw text {{inline-raw}}.
 {{{{/raw}}}}
 
 {{# test-block}}
@@ -26,11 +26,13 @@ This is some block text with an {{inline}}
 {{true}}
 {{false}}
 {{null}}
-";
+
+{{foo {"a": "b"}}}
+"#;
 
     match Template::compile(s) {
         Ok(tpl) => {
-            println!("{:#?}", tpl);
+            //println!("{:#?}", tpl);
             println!("{}", tpl.to_string());
         }
         Err(e) => {

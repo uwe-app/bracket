@@ -20,41 +20,64 @@ pub mod grammar {
     use logos::Logos;
 
     #[derive(Logos, Debug, PartialEq)]
-    #[logos(subpattern simple_name = r"[a-zA-Z0-9_-]+")]
+    // SEE: https://handlebarsjs.com/guide/expressions.html#literal-segments
+    #[logos(subpattern identifier = r#"[^\s"!#%&'()*+,./;<=>@\[/\]^`{|}~]"#)]
     pub(crate) enum Statement {
+
+        #[regex(r"\{\{\{?>?\s*", |lex| lex.slice().to_string())]
+        Open(String),
+
+        #[regex(r"((?&identifier)[.])*(?&identifier)+", priority = 2, callback = |lex| lex.slice().to_string())]
+        Path(String),
+
+        #[regex(r"-?[0-9]*\.?[0-9]+", |lex| lex.slice().to_string())]
+        Number(String),
+
+        #[regex(r"(true|false)", |lex| lex.slice().to_string())]
+        Bool(String),
+
+        #[token("null", |lex| lex.slice().to_string())]
+        Null(String),
+
+        #[regex(r"\s*\}?\}\}", |lex| lex.slice().to_string())]
+        Close(String),
+
+        #[regex(r"\s+", |lex| lex.slice().to_string())]
+        WhiteSpace(String),
+
         #[error]
         Error,
     }
 
     #[derive(Logos, Debug, PartialEq)]
     #[logos(subpattern simple_name = r"[a-zA-Z0-9_-]+")]
-    pub(crate) enum Token {
-        #[regex(r"[\\]?\{\{\{?[^!]>?\s*[^}]+\s*\}?\}\}", |lex| lex.slice().to_string())]
-        Expression(String),
+    pub(crate) enum Token<'source> {
+        #[regex(r"[\\]?\{\{\{?[^!]>?\s*[^}]+\s*\}?\}\}", |lex| lex.slice())]
+        Expression(&'source str),
 
-        #[regex(r"\{\{\{\{\s*raw\s*\}\}\}\}", |lex| lex.slice().to_string())]
-        StartRawBlock(String),
+        #[regex(r"\{\{\{\{\s*raw\s*\}\}\}\}", |lex| lex.slice())]
+        StartRawBlock(&'source str),
 
-        #[regex(r"\{\{\{\{\s*/raw\s*\}\}\}\}", |lex| lex.slice().to_string())]
-        EndRawBlock(String),
+        #[regex(r"\{\{\{\{\s*/raw\s*\}\}\}\}", |lex| lex.slice())]
+        EndRawBlock(&'source str),
 
-        #[regex(r"\r?\n", |lex| lex.slice().to_string())]
-        Newline(String),
+        #[regex(r"\r?\n", |lex| lex.slice())]
+        Newline(&'source str),
 
-        #[regex(r"\{\{#>?\s*(?&simple_name)\s*\}\}", |lex| lex.slice().to_string())]
-        StartBlock(String),
+        #[regex(r"\{\{#>?\s*(?&simple_name)\s*\}\}", |lex| lex.slice())]
+        StartBlock(&'source str),
 
-        #[regex(r"\{\{/\s*(?&simple_name)\s*\}\}", |lex| lex.slice().to_string())]
-        EndBlock(String),
+        #[regex(r"\{\{/\s*(?&simple_name)\s*\}\}", |lex| lex.slice())]
+        EndBlock(&'source str),
 
-        #[regex(r"(\{\{!(--)?|<!--)", |lex| lex.slice().to_string())]
-        StartCommentBlock(String),
+        #[regex(r"(\{\{!(--)?|<!--)", |lex| lex.slice())]
+        StartCommentBlock(&'source str),
 
-        #[regex(r"((--)?\}\}|-->)", |lex| lex.slice().to_string())]
-        EndCommentBlock(String),
+        #[regex(r"((--)?\}\}|-->)", |lex| lex.slice())]
+        EndCommentBlock(&'source str),
 
-        #[regex(r"[^\n{]", |lex| lex.slice().to_string())]
-        Text(String),
+        #[regex(r"[^\n{]", |lex| lex.slice())]
+        Char(&'source str),
 
         #[error]
         Error,
@@ -63,16 +86,32 @@ pub mod grammar {
 
 pub mod ast {
 
+    #[derive(Debug, Eq, PartialEq, Default)]
+    pub struct Statement<'source> {
+        tokens: Vec<Token<'source>>,
+    }
+
+    impl Statement<'_> {
+        pub fn tokens(&self) -> &Vec<Token> {
+            &self.tokens 
+        } 
+    }
+
     use std::fmt;
     use super::{SourceInfo, parser};
 
     #[derive(Debug, Eq, PartialEq)]
-    pub struct Expr {
-        pub info: SourceInfo,
-        pub value: String,
+    pub struct Expr<'source> {
+        info: SourceInfo,
+        value: &'source str,
     }
 
-    impl Expr {
+    impl<'source> Expr<'source> {
+
+        pub fn new(info: SourceInfo, value: &'source str) -> Self {
+            Self {info, value} 
+        }
+
         pub fn is_raw(&self) -> bool {
             if !self.value.is_empty() {
                 let first = self.value.chars().nth(0).unwrap();
@@ -84,35 +123,43 @@ pub mod ast {
         pub fn escapes(&self) -> bool {
             !self.value.starts_with("{{{") 
         }
+
+        pub fn value(&self) -> &str {
+            &self.value
+        }
+
+        pub fn info(&self) -> &SourceInfo {
+            &self.info
+        }
     }
 
-    impl fmt::Display for Expr {
+    impl fmt::Display for Expr<'_> {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            write!(f, "{}", &self.value)
+            write!(f, "{}", self.value)
         }
     }
 
     #[derive(Debug, Eq, PartialEq)]
-    pub struct Text {
+    pub struct Text<'source> {
         pub info: SourceInfo,
-        pub value: String,
+        pub value: &'source str,
     }
 
-    impl fmt::Display for Text {
+    impl fmt::Display for Text<'_> {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            write!(f, "{}", &self.value)
+            write!(f, "{}", self.value)
         }
     }
 
     #[derive(Debug, Eq, PartialEq)]
-    pub enum AstToken {
-        Expression(Expr),
-        Text(Text),
-        Block(Block),
+    pub enum Token<'source> {
+        Expression(Expr<'source>),
+        Text(Text<'source>),
+        Block(Block<'source>),
         //Newline(Text),
     }
 
-    impl fmt::Display for AstToken {
+    impl fmt::Display for Token<'_> {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             match *self {
                 Self::Expression(ref t) => t.fmt(f),
@@ -127,6 +174,7 @@ pub mod ast {
         Root,
         Raw,
         Comment,
+        // TODO: use &'source ref
         Named(String),
     }
 
@@ -137,14 +185,14 @@ pub mod ast {
     }
 
     #[derive(Debug, Default, Eq, PartialEq)]
-    pub struct Block {
+    pub struct Block<'source> {
         pub(crate) block_type: BlockType,
-        tokens: Vec<AstToken>,
-        pub(crate) open: Option<String>,
-        pub(crate) close: Option<String>,
+        tokens: Vec<Token<'source>>,
+        pub(crate) open: Option<&'source str>,
+        pub(crate) close: Option<&'source str>,
     }
 
-    impl Block {
+    impl<'source> Block<'source> {
         pub fn new(block_type: BlockType) -> Self {
             Self {
                 block_type,
@@ -154,18 +202,18 @@ pub mod ast {
             }
         }
 
-        pub fn new_named(value: String) -> Self {
+        pub fn new_named(value: &'source str) -> Self {
             let name = parser::block_name(&value);
             let mut block = Block::new(BlockType::Named(name));
             block.open = Some(value);
             block
         }
 
-        pub fn push(&mut self, token: AstToken) {
+        pub fn push(&mut self, token: Token<'source>) {
             self.tokens.push(token);
         }
 
-        pub fn tokens(&self) -> &Vec<AstToken> {
+        pub fn tokens(&self) -> &Vec<Token> {
             &self.tokens 
         }
 
@@ -188,27 +236,27 @@ pub mod ast {
         /// The lexer needs to read unrecognised characters with a low
         /// priority (1) so that matching works as expected but it makes
         /// sense for us to normalize consecutive text tokens as we lex.
-        pub fn add_text(&mut self, info: SourceInfo, value: String) {
-            if self.tokens.is_empty() {
-                self.tokens.push(AstToken::Text(Text { value, info }));
-            } else {
-                let len = self.tokens.len();
-                let last = self.tokens.get_mut(len - 1).unwrap();
-                match last {
-                    AstToken::Text(ref mut txt) => {
-                        txt.value.push_str(&value);
-                        txt.info.span.end = info.span.end;
-                        txt.info.line.end = info.line.end;
-                    }
-                    _ => {
-                        self.tokens.push(AstToken::Text(Text { value, info }));
-                    }
-                }
-            }
+        pub fn add_text(&mut self, info: SourceInfo, value: &'source str) {
+            //if self.tokens.is_empty() {
+                self.tokens.push(Token::Text(Text { value, info }));
+            //} else {
+                //let len = self.tokens.len();
+                //let last = self.tokens.get_mut(len - 1).unwrap();
+                //match last {
+                    //Token::Text(ref mut txt) => {
+                        //txt.value.push_str(&value);
+                        //txt.info.span.end = info.span.end;
+                        //txt.info.line.end = info.line.end;
+                    //}
+                    //_ => {
+                        //self.tokens.push(Token::Text(Text { value, info }));
+                    //}
+                //}
+            //}
         }
     }
 
-    impl fmt::Display for Block {
+    impl fmt::Display for Block<'_> {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             if let Some(ref s) = self.open {
                 write!(f, "{}", s)?;
