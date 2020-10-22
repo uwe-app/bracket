@@ -13,4 +13,3 @@ pub enum Error {
     #[error("Block {0} open but got closing block with name {1}")]
     BadBlockEndName(String, String),
 }
-

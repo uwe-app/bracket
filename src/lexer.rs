@@ -1,7 +1,7 @@
-use std::fmt;
-use std::ops::Range;
 use logos::Logos;
 use regex::Regex;
+use std::fmt;
+use std::ops::Range;
 
 pub fn parse_block_name(value: &str) -> String {
     let re = Regex::new(r"\{\{\{?#?>?/?\s*([^}]*)\s*\}?\}\}").unwrap();
@@ -12,7 +12,6 @@ pub fn parse_block_name(value: &str) -> String {
 #[derive(Logos, Debug, PartialEq)]
 #[logos(subpattern simple_name = r"[a-zA-Z0-9_-]+")]
 pub(crate) enum Token {
-
     #[regex(r"[\\]?\{\{\{?[^!]>?\s*[^}]+\s*\}?\}\}", |lex| lex.slice().to_string())]
     Expression(String),
 
@@ -44,16 +43,26 @@ pub(crate) enum Token {
     Error,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub(crate) struct SourceInfo {
-    pub(crate) line: Range<usize>, 
+    pub(crate) line: Range<usize>,
     pub(crate) span: logos::Span,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub(crate) struct Expression {
     pub(crate) info: SourceInfo,
     pub(crate) value: String,
+}
+
+impl Expression {
+    pub fn is_escaped(&self) -> bool {
+        if !self.value.is_empty() {
+            let first = self.value.chars().nth(0).unwrap();
+            return first == '\\';
+        }
+        false
+    }
 }
 
 impl fmt::Display for Expression {
@@ -62,7 +71,7 @@ impl fmt::Display for Expression {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub(crate) struct Text {
     pub(crate) info: SourceInfo,
     pub(crate) value: String,
@@ -74,12 +83,12 @@ impl fmt::Display for Text {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub(crate) enum AstToken {
     Expression(Expression),
     Text(Text),
     Block(Block),
-    Newline(Text),
+    //Newline(Text),
 }
 
 impl fmt::Display for AstToken {
@@ -87,13 +96,12 @@ impl fmt::Display for AstToken {
         match *self {
             Self::Expression(ref t) => t.fmt(f),
             Self::Block(ref t) => t.fmt(f),
-            Self::Text(ref t)
-                | Self::Newline(ref t) => t.fmt(f),
+            Self::Text(ref t) => t.fmt(f),
         }
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub(crate) enum BlockType {
     Root,
     Raw,
@@ -107,9 +115,9 @@ impl Default for BlockType {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Eq, PartialEq)]
 pub(crate) struct Block {
-    pub(crate) block_type: BlockType, 
+    pub(crate) block_type: BlockType,
     pub(crate) tokens: Vec<AstToken>,
     pub(crate) open: Option<String>,
     pub(crate) close: Option<String>,
@@ -117,7 +125,12 @@ pub(crate) struct Block {
 
 impl Block {
     pub fn new(block_type: BlockType) -> Self {
-        Self {block_type, tokens: Vec::new(), open: None, close: None}
+        Self {
+            block_type,
+            tokens: Vec::new(),
+            open: None,
+            close: None,
+        }
     }
 
     pub fn new_named(value: String) -> Self {
@@ -128,42 +141,42 @@ impl Block {
     }
 
     pub fn push(&mut self, token: AstToken) {
-        self.tokens.push(token); 
+        self.tokens.push(token);
     }
 
     pub fn is_raw(&self) -> bool {
         match self.block_type {
             BlockType::Raw => true,
-            _=> false
+            _ => false,
         }
     }
 
     pub fn is_named(&self) -> bool {
         match self.block_type {
             BlockType::Named(_) => true,
-            _=> false
+            _ => false,
         }
     }
 
     /// Concatenate consecutive text tokens.
     ///
-    /// The lexer needs to read unrecognised characters with a low 
-    /// priority (1) so that matching works as expected but it makes 
+    /// The lexer needs to read unrecognised characters with a low
+    /// priority (1) so that matching works as expected but it makes
     /// sense for us to normalize consecutive text tokens as we lex.
     pub fn add_text(&mut self, info: SourceInfo, value: String) {
         if self.tokens.is_empty() {
-            self.tokens.push(AstToken::Text(Text{value, info}));
+            self.tokens.push(AstToken::Text(Text { value, info }));
         } else {
             let len = self.tokens.len();
-            let last = self.tokens.get_mut(len - 1).unwrap(); 
+            let last = self.tokens.get_mut(len - 1).unwrap();
             match last {
                 AstToken::Text(ref mut txt) => {
-                    txt.value.push_str(&value); 
+                    txt.value.push_str(&value);
                     txt.info.span.end = info.span.end;
                     txt.info.line.end = info.line.end;
                 }
                 _ => {
-                    self.tokens.push(AstToken::Text(Text{value, info}));
+                    self.tokens.push(AstToken::Text(Text { value, info }));
                 }
             }
         }

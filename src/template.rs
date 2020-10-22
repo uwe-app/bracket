@@ -1,25 +1,15 @@
+use logos::Logos;
 use std::fmt;
 use std::ops::Range;
-use logos::Logos;
 
 use crate::{
-    Error,
-    Result,
-    lexer::{
-        self,
-        Block,
-        BlockType,
-        AstToken,
-        Token,
-        Expression,
-        Text,
-        SourceInfo,
-    }
+    lexer::{self, AstToken, Block, BlockType, Expression, SourceInfo, Token},
+    Error, Result,
 };
 
 #[derive(Debug)]
 pub struct Template {
-    ast: Block,
+    pub(crate) ast: Block,
 }
 
 impl fmt::Display for Template {
@@ -29,7 +19,6 @@ impl fmt::Display for Template {
 }
 
 impl Template {
-
     pub fn compile(s: &str) -> Result<Template> {
         let lex = Token::lexer(s);
         let mut ast = Block::new(BlockType::Root);
@@ -39,7 +28,6 @@ impl Template {
         let mut last: Option<Block> = None;
 
         for (token, span) in lex.spanned().into_iter() {
-
             let len = stack.len();
             let current = if stack.is_empty() {
                 &mut ast
@@ -53,17 +41,23 @@ impl Template {
 
             println!("{:?}", token);
 
-            let info = SourceInfo {line: Range {start: line, end: line}, span};
+            let info = SourceInfo {
+                line: Range {
+                    start: line,
+                    end: line,
+                },
+                span,
+            };
             match token {
                 Token::Text(value) => {
                     current.add_text(info, value);
                 }
                 Token::Newline(value) => {
                     current.add_text(info, value);
-                    line = line + 1; 
+                    line = line + 1;
                 }
                 Token::Expression(value) => {
-                    current.push(AstToken::Expression(Expression {info, value}));
+                    current.push(AstToken::Expression(Expression { info, value }));
                 }
                 Token::StartCommentBlock(value) => {
                     let mut block = Block::new(BlockType::Comment);
@@ -86,12 +80,12 @@ impl Template {
                     last = stack.pop();
                     if let Some(ref mut block) = last {
                         if !block.is_raw() {
-                            return Err(Error::BadEndRawBlock)
+                            return Err(Error::BadEndRawBlock);
                         }
 
                         block.close = Some(value);
                     } else {
-                        return Err(Error::BadEndBlock)
+                        return Err(Error::BadEndBlock);
                     }
                 }
                 Token::StartBlock(value) => {
@@ -103,7 +97,7 @@ impl Template {
                     last = stack.pop();
                     if let Some(ref mut block) = last {
                         if !block.is_named() {
-                            return Err(Error::BadEndNamedBlock)
+                            return Err(Error::BadEndNamedBlock);
                         }
 
                         let name = lexer::parse_block_name(&value);
@@ -111,7 +105,10 @@ impl Template {
                         match block.block_type {
                             BlockType::Named(ref start_name) => {
                                 if start_name != &name {
-                                    return Err(Error::BadBlockEndName(start_name.to_string(), name))
+                                    return Err(Error::BadBlockEndName(
+                                        start_name.to_string(),
+                                        name,
+                                    ));
                                 }
                             }
                             _ => {}
@@ -119,7 +116,7 @@ impl Template {
 
                         block.close = Some(value);
                     } else {
-                        return Err(Error::BadEndBlock)
+                        return Err(Error::BadEndBlock);
                     }
                 }
                 Token::Error => {
@@ -128,7 +125,84 @@ impl Template {
             }
         }
 
-        Ok(Template {ast})
+        Ok(Template { ast })
     }
 }
 
+mod test {
+
+    use super::Template;
+    use crate::{lexer::*, Result};
+
+    #[test]
+    fn escaped_expr() -> Result<()> {
+        let value = r"\{{expr}}";
+        let tpl = Template::compile(value)?;
+        let token = tpl.ast.tokens.get(0).unwrap();
+        let info = SourceInfo {
+            line: 0..0,
+            span: 0..9,
+        };
+        let expected = AstToken::Expression(Expression {
+            info,
+            value: value.to_string(),
+        });
+
+        assert_eq!(1, tpl.ast.tokens.len());
+        assert_eq!(
+            true,
+            match token {
+                AstToken::Expression(_) => true,
+                _ => false,
+            }
+        );
+
+        assert_eq!(&expected, token);
+
+        assert_eq!(
+            true,
+            match token {
+                AstToken::Expression(ref expr) => expr.is_escaped(),
+                _ => false,
+            }
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn simple_expr() -> Result<()> {
+        let value = r"{{var}}";
+        let tpl = Template::compile(value)?;
+        let token = tpl.ast.tokens.get(0).unwrap();
+        let info = SourceInfo {
+            line: 0..0,
+            span: 0..7,
+        };
+        let expected = AstToken::Expression(Expression {
+            info,
+            value: value.to_string(),
+        });
+
+        assert_eq!(1, tpl.ast.tokens.len());
+        assert_eq!(
+            true,
+            match token {
+                AstToken::Expression(_) => true,
+                _ => false,
+            }
+        );
+
+        assert_eq!(&expected, token);
+
+        assert_eq!(
+            false,
+            match token {
+                AstToken::Expression(ref expr) => expr.is_escaped(),
+                _ => false,
+            }
+        );
+
+        Ok(())
+    }
+}
