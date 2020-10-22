@@ -10,7 +10,7 @@ pub mod parser {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SourceInfo {
     pub line: Range<usize>,
     pub span: logos::Span,
@@ -22,28 +22,28 @@ pub mod grammar {
     #[derive(Logos, Debug, PartialEq)]
     // SEE: https://handlebarsjs.com/guide/expressions.html#literal-segments
     #[logos(subpattern identifier = r#"[^\s"!#%&'()*+,./;<=>@\[/\]^`{|}~]"#)]
-    pub(crate) enum Statement {
+    pub(crate) enum Statement<'source> {
 
-        #[regex(r"\{\{\{?>?\s*", |lex| lex.slice().to_string())]
-        Open(String),
+        #[regex(r"\{\{\{?>?\s*", |lex| lex.slice())]
+        Open(&'source str),
 
-        #[regex(r"((?&identifier)[.])*(?&identifier)+", priority = 2, callback = |lex| lex.slice().to_string())]
-        Path(String),
+        #[regex(r"((?&identifier)[.])*(?&identifier)+", priority = 2, callback = |lex| lex.slice())]
+        Path(&'source str),
 
-        #[regex(r"-?[0-9]*\.?[0-9]+", |lex| lex.slice().to_string())]
-        Number(String),
+        #[regex(r"-?[0-9]*\.?[0-9]+", |lex| lex.slice())]
+        Number(&'source str),
 
-        #[regex(r"(true|false)", |lex| lex.slice().to_string())]
-        Bool(String),
+        #[regex(r"(true|false)", |lex| lex.slice())]
+        Bool(&'source str),
 
-        #[token("null", |lex| lex.slice().to_string())]
-        Null(String),
+        #[token("null", |lex| lex.slice())]
+        Null(&'source str),
 
-        #[regex(r"\s*\}?\}\}", |lex| lex.slice().to_string())]
-        Close(String),
+        #[regex(r"\s*\}?\}\}", |lex| lex.slice())]
+        Close(&'source str),
 
-        #[regex(r"\s+", |lex| lex.slice().to_string())]
-        WhiteSpace(String),
+        #[regex(r"\s+", |lex| lex.slice())]
+        WhiteSpace(&'source str),
 
         #[error]
         Error,
@@ -213,8 +213,12 @@ pub mod ast {
             self.tokens.push(token);
         }
 
-        pub fn tokens(&self) -> &Vec<Token> {
+        pub fn tokens(&self) -> &'source Vec<Token> {
             &self.tokens 
+        }
+
+        pub fn tokens_mut(&mut self) -> &'source mut Vec<Token> {
+            &mut self.tokens 
         }
 
         pub fn is_raw(&self) -> bool {
@@ -229,30 +233,6 @@ pub mod ast {
                 BlockType::Named(_) => true,
                 _ => false,
             }
-        }
-
-        /// Concatenate consecutive text tokens.
-        ///
-        /// The lexer needs to read unrecognised characters with a low
-        /// priority (1) so that matching works as expected but it makes
-        /// sense for us to normalize consecutive text tokens as we lex.
-        pub fn add_text(&mut self, info: SourceInfo, value: &'source str) {
-            //if self.tokens.is_empty() {
-                self.tokens.push(Token::Text(Text { value, info }));
-            //} else {
-                //let len = self.tokens.len();
-                //let last = self.tokens.get_mut(len - 1).unwrap();
-                //match last {
-                    //Token::Text(ref mut txt) => {
-                        //txt.value.push_str(&value);
-                        //txt.info.span.end = info.span.end;
-                        //txt.info.line.end = info.line.end;
-                    //}
-                    //_ => {
-                        //self.tokens.push(Token::Text(Text { value, info }));
-                    //}
-                //}
-            //}
         }
     }
 

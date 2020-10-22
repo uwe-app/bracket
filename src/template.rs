@@ -40,6 +40,29 @@ impl<'source> Template<'source> {
         Ok(statement)
     }
 
+    fn normalize(
+        s: &'source str,
+        current: &mut Block<'source>,
+        token: &Token,
+        text: &mut Vec<Text<'source>>) {
+        match token {
+            Token::Char(_) | Token::Newline(_) => {},
+            _ => {
+                if !text.is_empty() {
+                    let last_info = text.last().unwrap().info.clone();
+                    let first = text.get_mut(0).unwrap();
+                    first.info.span.end = last_info.span.end;
+                    first.info.line.end = last_info.line.end;
+                    first.value = &s[first.info.span.start..first.info.span.end];
+
+                    let item = text.swap_remove(0);
+                    current.push(ast::Token::Text(item));
+                    text.clear();
+                }
+            }
+        }
+    }
+
     /// Compile a block.
     pub fn compile(s: &'source str) -> Result<Template> {
         let lex = Token::lexer(s);
@@ -48,6 +71,8 @@ impl<'source> Template<'source> {
         let mut line = 0;
 
         let mut last: Option<Block> = None;
+
+        let mut text: Vec<Text> = vec![];
 
         for (token, span) in lex.spanned().into_iter() {
             let len = stack.len();
@@ -70,12 +95,16 @@ impl<'source> Template<'source> {
                 },
                 span,
             };
+
+            // Normalize consecutive characters into a single text block.
+            Template::normalize(s, current, &token, &mut text);
+
             match token {
                 Token::Char(value) => {
-                    current.add_text(info, value);
+                    text.push(Text { value, info });
                 }
                 Token::Newline(value) => {
-                    current.add_text(info, value);
+                    text.push(Text { value, info });
                     line = line + 1;
                 }
                 Token::Expression(value) => {
@@ -161,6 +190,19 @@ impl<'source> Template<'source> {
                     return Err(Error::InvalidToken);
                 }
             }
+        }
+
+        // Force text normalization if we end with text
+        if !text.is_empty() {
+            let len = stack.len();
+            let current = if stack.is_empty() {
+                &mut ast
+            } else {
+                stack.get_mut(len - 1).unwrap()
+            };
+
+            let token = Token::Error;
+            Template::normalize(s, current, &token, &mut text);
         }
 
         Ok(Template { ast })
