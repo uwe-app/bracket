@@ -1,14 +1,22 @@
 use std::ops::Range;
 
 use hbs::Template;
-use hbs::{lexer::{SourceInfo, ast::{self, *}}, Result};
+use hbs::{
+    lexer::{
+        ast::{self, *},
+        SourceInfo,
+    },
+    Result,
+};
 
-fn assert_text(token: &ast::Token, value: &str, line: Range<usize>, span: Range<usize>) {
+fn assert_text(
+    token: &ast::Token,
+    value: &str,
+    line: Range<usize>,
+    span: Range<usize>,
+) {
     let info = SourceInfo { line, span };
-    let expected = ast::Token::Text(Text {
-        info,
-        value,
-    });
+    let expected = ast::Token::Text(Text { info, value });
     assert_eq!(&expected, token);
 }
 
@@ -21,10 +29,7 @@ fn text() -> Result<()> {
         line: 0..0,
         span: 0..9,
     };
-    let expected = ast::Token::Text(Text {
-        info,
-        value: value,
-    });
+    let expected = ast::Token::Text(Text { info, value: value });
 
     assert_eq!(1, tpl.block().tokens().len());
     assert_eq!(&expected, token);
@@ -45,10 +50,7 @@ fn mixed() -> Result<()> {
         line: 0..0,
         span: 5..12,
     };
-    let expected = ast::Token::Expression(Expr::new(
-        info,
-        "{{var}}"
-    ));
+    let expected = ast::Token::Expression(Expr::new(info, "{{var}}"));
     assert_eq!(&expected, tpl.block().tokens().get(1).unwrap());
 
     assert_text(tpl.block().tokens().get(2).unwrap(), " text", 0..0, 12..17);
@@ -65,10 +67,7 @@ fn escaped_expr() -> Result<()> {
         line: 0..0,
         span: 0..9,
     };
-    let expected = ast::Token::Expression(Expr::new(
-        info,
-        value,
-    ));
+    let expected = ast::Token::Expression(Expr::new(info, value));
 
     assert_eq!(1, tpl.block().tokens().len());
     assert_eq!(
@@ -101,10 +100,7 @@ fn simple_expr() -> Result<()> {
         line: 0..0,
         span: 0..7,
     };
-    let expected = ast::Token::Expression(Expr::new(
-        info,
-        value,
-    ));
+    let expected = ast::Token::Expression(Expr::new(info, value));
 
     assert_eq!(1, tpl.block().tokens().len());
     assert_eq!(
@@ -137,10 +133,7 @@ fn unescaped_expr() -> Result<()> {
         line: 0..0,
         span: 0..9,
     };
-    let expected = ast::Token::Expression(Expr::new(
-        info,
-        value,
-    ));
+    let expected = ast::Token::Expression(Expr::new(info, value));
 
     assert_eq!(1, tpl.block().tokens().len());
     assert_eq!(

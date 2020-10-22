@@ -3,8 +3,12 @@ use std::fmt;
 use std::ops::Range;
 
 use crate::{
-    lexer::{SourceInfo, grammar::{Token, Statement}, ast::{self, *}, parser},
-    Error, Result,
+    error::SyntaxError,
+    lexer::{
+        ast::{self, *},
+        grammar::{Statement, Token},
+        parser, SourceInfo,
+    },
 };
 
 #[derive(Debug)]
@@ -25,10 +29,9 @@ impl fmt::Display for Template<'_> {
 }
 
 impl<'source> Template<'source> {
-
     /// Compile a statement.
-    fn statement(s: &'source str) -> Result<ast::Statement> {
-        let statement: ast::Statement = Default::default(); 
+    fn statement(s: &'source str) -> Result<ast::Statement, SyntaxError> {
+        let statement: ast::Statement = Default::default();
 
         println!("Lex statement: {}", s);
 
@@ -44,16 +47,18 @@ impl<'source> Template<'source> {
         s: &'source str,
         current: &mut Block<'source>,
         token: &Token,
-        text: &mut Vec<Text<'source>>) {
+        text: &mut Vec<Text<'source>>,
+    ) {
         match token {
-            Token::Char(_) | Token::Newline(_) => {},
+            Token::Char(_) | Token::Newline(_) => {}
             _ => {
                 if !text.is_empty() {
                     let last_info = text.last().unwrap().info.clone();
                     let first = text.get_mut(0).unwrap();
                     first.info.span.end = last_info.span.end;
                     first.info.line.end = last_info.line.end;
-                    first.value = &s[first.info.span.start..first.info.span.end];
+                    first.value =
+                        &s[first.info.span.start..first.info.span.end];
 
                     let item = text.swap_remove(0);
                     current.push(ast::Token::Text(item));
@@ -64,7 +69,7 @@ impl<'source> Template<'source> {
     }
 
     /// Compile a block.
-    pub fn compile(s: &'source str) -> Result<Template> {
+    pub fn compile(s: &'source str) -> Result<Template, SyntaxError> {
         let lex = Token::lexer(s);
         let mut ast = Block::new(BlockType::Root);
         let mut stack: Vec<Block> = vec![];
@@ -110,7 +115,7 @@ impl<'source> Template<'source> {
                 Token::Expression(value) => {
                     let expr = Expr::new(info, value);
 
-                    // Skip escaped (\) expressions and 
+                    // Skip escaped (\) expressions and
                     // those inside raw blocks.
                     let is_raw = expr.is_raw() || {
                         match current.block_type {
@@ -147,12 +152,12 @@ impl<'source> Template<'source> {
                     last = stack.pop();
                     if let Some(ref mut block) = last {
                         if !block.is_raw() {
-                            return Err(Error::BadEndRawBlock);
+                            return Err(SyntaxError::BadEndRawBlock);
                         }
 
                         block.close = Some(value);
                     } else {
-                        return Err(Error::BadEndBlock);
+                        return Err(SyntaxError::BadEndBlock);
                     }
                 }
                 Token::StartBlock(value) => {
@@ -164,7 +169,7 @@ impl<'source> Template<'source> {
                     last = stack.pop();
                     if let Some(ref mut block) = last {
                         if !block.is_named() {
-                            return Err(Error::BadEndNamedBlock);
+                            return Err(SyntaxError::BadEndNamedBlock);
                         }
 
                         let name = parser::block_name(&value);
@@ -172,7 +177,7 @@ impl<'source> Template<'source> {
                         match block.block_type {
                             BlockType::Named(ref start_name) => {
                                 if start_name != &name {
-                                    return Err(Error::BadBlockEndName(
+                                    return Err(SyntaxError::BadBlockEndName(
                                         start_name.to_string(),
                                         name.to_string(),
                                     ));
@@ -183,11 +188,11 @@ impl<'source> Template<'source> {
 
                         block.close = Some(value);
                     } else {
-                        return Err(Error::BadEndBlock);
+                        return Err(SyntaxError::BadEndBlock);
                     }
                 }
                 Token::Error => {
-                    return Err(Error::InvalidToken);
+                    return Err(SyntaxError::InvalidToken);
                 }
             }
         }

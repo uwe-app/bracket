@@ -23,7 +23,6 @@ pub mod grammar {
     // SEE: https://handlebarsjs.com/guide/expressions.html#literal-segments
     #[logos(subpattern identifier = r#"[^\s"!#%&'()*+,./;<=>@\[/\]^`{|}~]"#)]
     pub(crate) enum Statement<'source> {
-
         #[regex(r"\{\{\{?>?\s*", |lex| lex.slice())]
         Open(&'source str),
 
@@ -93,12 +92,12 @@ pub mod ast {
 
     impl Statement<'_> {
         pub fn tokens(&self) -> &Vec<Token> {
-            &self.tokens 
-        } 
+            &self.tokens
+        }
     }
 
+    use super::{parser, SourceInfo};
     use std::fmt;
-    use super::{SourceInfo, parser};
 
     #[derive(Debug, Eq, PartialEq)]
     pub struct Expr<'source> {
@@ -107,9 +106,8 @@ pub mod ast {
     }
 
     impl<'source> Expr<'source> {
-
         pub fn new(info: SourceInfo, value: &'source str) -> Self {
-            Self {info, value} 
+            Self { info, value }
         }
 
         pub fn is_raw(&self) -> bool {
@@ -121,7 +119,7 @@ pub mod ast {
         }
 
         pub fn escapes(&self) -> bool {
-            !self.value.starts_with("{{{") 
+            !self.value.starts_with("{{{")
         }
 
         pub fn value(&self) -> &str {
@@ -214,11 +212,11 @@ pub mod ast {
         }
 
         pub fn tokens(&self) -> &'source Vec<Token> {
-            &self.tokens 
+            &self.tokens
         }
 
         pub fn tokens_mut(&mut self) -> &'source mut Vec<Token> {
-            &mut self.tokens 
+            &mut self.tokens
         }
 
         pub fn is_raw(&self) -> bool {
@@ -250,5 +248,4 @@ pub mod ast {
             Ok(())
         }
     }
-
 }
