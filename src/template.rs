@@ -3,7 +3,7 @@ use std::fmt;
 use std::ops::Range;
 
 use crate::{
-    lexer::{self, AstToken, Block, BlockType, Expression, SourceInfo, Token},
+    lexer::{SourceInfo, grammar::Token, ast::*, parser},
     Error, Result,
 };
 
@@ -63,7 +63,7 @@ impl Template {
                     line = line + 1;
                 }
                 Token::Expression(value) => {
-                    current.push(AstToken::Expression(Expression { info, value }));
+                    current.push(AstToken::Expression(Expr { info, value }));
                 }
                 Token::StartCommentBlock(value) => {
                     let mut block = Block::new(BlockType::Comment);
@@ -106,7 +106,7 @@ impl Template {
                             return Err(Error::BadEndNamedBlock);
                         }
 
-                        let name = lexer::parse_block_name(&value);
+                        let name = parser::block_name(&value);
 
                         match block.block_type {
                             BlockType::Named(ref start_name) => {

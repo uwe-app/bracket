@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use hbs::Template;
-use hbs::{lexer::*, Result};
+use hbs::{lexer::{SourceInfo, ast::*}, Result};
 
 fn assert_text(token: &AstToken, value: &str, line: Range<usize>, span: Range<usize>) {
     let info = SourceInfo { line, span };
@@ -45,7 +45,7 @@ fn mixed() -> Result<()> {
         line: 0..0,
         span: 5..12,
     };
-    let expected = AstToken::Expression(Expression {
+    let expected = AstToken::Expression(Expr {
         info,
         value: String::from("{{var}}"),
     });
@@ -65,7 +65,7 @@ fn escaped_expr() -> Result<()> {
         line: 0..0,
         span: 0..9,
     };
-    let expected = AstToken::Expression(Expression {
+    let expected = AstToken::Expression(Expr {
         info,
         value: value.to_string(),
     });
@@ -101,7 +101,7 @@ fn simple_expr() -> Result<()> {
         line: 0..0,
         span: 0..7,
     };
-    let expected = AstToken::Expression(Expression {
+    let expected = AstToken::Expression(Expr {
         info,
         value: value.to_string(),
     });
@@ -137,7 +137,7 @@ fn unescaped_expr() -> Result<()> {
         line: 0..0,
         span: 0..9,
     };
-    let expected = AstToken::Expression(Expression {
+    let expected = AstToken::Expression(Expr {
         info,
         value: value.to_string(),
     });
