@@ -44,24 +44,28 @@ pub(crate) enum Token {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub(crate) struct SourceInfo {
-    pub(crate) line: Range<usize>,
-    pub(crate) span: logos::Span,
+pub struct SourceInfo {
+    pub line: Range<usize>,
+    pub span: logos::Span,
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub(crate) struct Expression {
-    pub(crate) info: SourceInfo,
-    pub(crate) value: String,
+pub struct Expression {
+    pub info: SourceInfo,
+    pub value: String,
 }
 
 impl Expression {
-    pub fn is_escaped(&self) -> bool {
+    pub fn is_raw(&self) -> bool {
         if !self.value.is_empty() {
             let first = self.value.chars().nth(0).unwrap();
             return first == '\\';
         }
         false
+    }
+
+    pub fn escapes(&self) -> bool {
+        self.value.starts_with("{{{") 
     }
 }
 
@@ -72,9 +76,9 @@ impl fmt::Display for Expression {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub(crate) struct Text {
-    pub(crate) info: SourceInfo,
-    pub(crate) value: String,
+pub struct Text {
+    pub info: SourceInfo,
+    pub value: String,
 }
 
 impl fmt::Display for Text {
@@ -84,7 +88,7 @@ impl fmt::Display for Text {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub(crate) enum AstToken {
+pub enum AstToken {
     Expression(Expression),
     Text(Text),
     Block(Block),
@@ -102,7 +106,7 @@ impl fmt::Display for AstToken {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub(crate) enum BlockType {
+pub enum BlockType {
     Root,
     Raw,
     Comment,
@@ -116,9 +120,9 @@ impl Default for BlockType {
 }
 
 #[derive(Debug, Default, Eq, PartialEq)]
-pub(crate) struct Block {
+pub struct Block {
     pub(crate) block_type: BlockType,
-    pub(crate) tokens: Vec<AstToken>,
+    tokens: Vec<AstToken>,
     pub(crate) open: Option<String>,
     pub(crate) close: Option<String>,
 }
@@ -142,6 +146,10 @@ impl Block {
 
     pub fn push(&mut self, token: AstToken) {
         self.tokens.push(token);
+    }
+
+    pub fn tokens(&self) -> &Vec<AstToken> {
+        &self.tokens 
     }
 
     pub fn is_raw(&self) -> bool {
