@@ -16,6 +16,12 @@ pub struct SourceInfo {
     pub span: logos::Span,
 }
 
+impl SourceInfo {
+    pub fn set_range(&mut self, span: logos::Span) {
+        self.span = span 
+    }
+}
+
 pub mod grammar {
     use logos::Logos;
 
@@ -143,7 +149,7 @@ pub mod ast {
             if self.is_raw() {
                 rc.write_str(self.value)?;
             } else {
-                todo!();
+                todo!("Evaluate the expression and escape the content if necessary");
             }
             Ok(())
         }
@@ -221,10 +227,14 @@ pub mod ast {
 
     #[derive(Debug, Default, Eq, PartialEq)]
     pub struct Block<'source> {
-        pub(crate) block_type: BlockType,
+        block_type: BlockType,
         tokens: Vec<Token<'source>>,
         pub(crate) open: Option<&'source str>,
         pub(crate) close: Option<&'source str>,
+
+        // Used to coalesce content for raw blocks
+        info: Option<SourceInfo>,
+        value: Option<&'source str>,
     }
 
     impl<'source> Block<'source> {
@@ -234,6 +244,8 @@ pub mod ast {
                 tokens: Vec::new(),
                 open: None,
                 close: None,
+                info: None,
+                value: None,
             }
         }
 
@@ -248,8 +260,21 @@ pub mod ast {
             self.tokens.push(token);
         }
 
+        pub fn block_type(&self) -> &BlockType {
+            &self.block_type
+        }
+
         pub fn tokens(&self) -> &'source Vec<Token> {
             &self.tokens
+        }
+
+        pub fn terminated(&self) -> bool {
+            self.close.is_some() 
+        }
+
+        pub fn replace(&mut self, info: SourceInfo, value: &'source str) {
+            self.info = Some(info); 
+            self.value = Some(value);
         }
 
         pub fn tokens_mut(&mut self) -> &'source mut Vec<Token> {
@@ -276,8 +301,12 @@ pub mod ast {
             if let Some(ref s) = self.open {
                 write!(f, "{}", s)?;
             }
-            for t in self.tokens.iter() {
-                t.fmt(f)?;
+            if let Some(val) = self.value {
+                write!(f, "{}", val)?;
+            } else {
+                for t in self.tokens.iter() {
+                    t.fmt(f)?;
+                }
             }
             if let Some(ref s) = self.close {
                 write!(f, "{}", s)?;
@@ -291,9 +320,17 @@ pub mod ast {
             &self,
             rc: &mut RenderContext<'reg, 'render>,
         ) -> Result<(), RenderError> {
-            for t in self.tokens.iter() {
-                t.render(rc)?;
+
+            // Prefer coalesced content (raw blocks)
+            if let Some(val) = self.value {
+                rc.write_str(val)?;
+            // Otherwise iterate the tokens
+            } else {
+                for t in self.tokens.iter() {
+                    t.render(rc)?;
+                }
             }
+
             Ok(())
         }
     }

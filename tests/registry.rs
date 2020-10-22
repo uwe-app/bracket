@@ -24,3 +24,16 @@ fn render_text() -> Result<()> {
     assert_eq!(value, result);
     Ok(())
 }
+
+#[test]
+fn render_raw() -> Result<()> {
+    let mut registry = Registry::new();
+    let name = "mock-template";
+    let value = r"{{{{raw}}}}foo {{bar}} baz{{{{/raw}}}}";
+    let expected = r"foo {{bar}} baz";
+    let data = json!({});
+    registry.register_template_string(name, value)?;
+    let result = registry.render(name, &data)?;
+    assert_eq!(expected, result);
+    Ok(())
+}

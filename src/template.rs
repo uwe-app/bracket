@@ -53,6 +53,23 @@ impl<'source> Template<'source> {
         Ok(statement)
     }
 
+    fn coalesce(s: &'source str, tokens: &mut Vec<Range<usize>>) -> &'source str {
+        let last = tokens.last().unwrap().clone();
+        let first = tokens.get_mut(0).unwrap();
+        first.end = last.end;
+        &s[first.start..first.end]
+    }
+
+    fn range_slice(
+        s: &'source str,
+        first: &mut SourceInfo,
+        last: &SourceInfo) -> &'source str {
+
+        first.span.end = last.span.end;
+        first.line.end = last.line.end;
+        &s[first.span.start..first.span.end]
+    }
+
     fn normalize(
         s: &'source str,
         current: &mut Block<'source>,
@@ -65,11 +82,7 @@ impl<'source> Template<'source> {
                 if !text.is_empty() {
                     let last_info = text.last().unwrap().info.clone();
                     let first = text.get_mut(0).unwrap();
-                    first.info.span.end = last_info.span.end;
-                    first.info.line.end = last_info.line.end;
-                    first.value =
-                        &s[first.info.span.start..first.info.span.end];
-
+                    first.value = Template::range_slice(s, &mut first.info, &last_info);
                     let item = text.swap_remove(0);
                     current.push(ast::Token::Text(item));
                     text.clear();
@@ -88,6 +101,7 @@ impl<'source> Template<'source> {
         let mut last: Option<Block> = None;
 
         let mut text: Vec<Text> = vec![];
+        let mut raw: Vec<Range<usize>> = vec![];
 
         for (token, span) in lex.spanned().into_iter() {
             let len = stack.len();
@@ -97,19 +111,60 @@ impl<'source> Template<'source> {
                 stack.get_mut(len - 1).unwrap()
             };
 
-            if let Some(last) = last.take() {
-                current.push(ast::Token::Block(last));
-            }
-
-            //println!("{:?} ({:?})", token, span);
-
-            let info = SourceInfo {
+            let mut info = SourceInfo {
                 line: Range {
                     start: line,
                     end: line,
                 },
                 span,
             };
+
+            // Normalize raw blocks into a single string slice
+            match current.block_type() {
+                BlockType::Raw => {
+                    match token {
+                        Token::Newline(value) => {
+                            line = line + 1;
+                            raw.push(info.span); 
+                            continue;
+                        }
+                        Token::EndRawBlock(value) => {
+                            let mut val = if !raw.is_empty() {
+                                let value = Template::coalesce(s, &mut raw);
+                                let span = raw.swap_remove(0);
+                                Some((span, value))
+                            } else {
+                                None
+                            };
+
+                            if let Some((span, value)) = val.take() {
+                                info.set_range(span);
+                                current.replace(info, value);
+                            }
+                            raw.clear();
+
+                            last = stack.pop();
+
+                            if let Some(ref mut block) = last {
+                                block.close = Some(value);
+                            }
+
+                            continue;
+                        }
+                        _ => {
+                            raw.push(info.span); 
+                            continue;
+                        }
+                    } 
+                }
+                _ => {}
+            }
+
+            if let Some(last) = last.take() {
+                current.push(ast::Token::Block(last));
+            }
+
+            //println!("{:?} ({:?})", token, span);
 
             // Normalize consecutive characters into a single text block.
             Template::normalize(s, current, &token, &mut text);
@@ -128,7 +183,7 @@ impl<'source> Template<'source> {
                     // Skip escaped (\) expressions and
                     // those inside raw blocks.
                     let is_raw = expr.is_raw() || {
-                        match current.block_type {
+                        match current.block_type() {
                             BlockType::Raw => true,
                             _ => false,
                         }
@@ -159,16 +214,9 @@ impl<'source> Template<'source> {
                     stack.push(block);
                 }
                 Token::EndRawBlock(value) => {
-                    last = stack.pop();
-                    if let Some(ref mut block) = last {
-                        if !block.is_raw() {
-                            return Err(SyntaxError::BadEndRawBlock);
-                        }
-
-                        block.close = Some(value);
-                    } else {
-                        return Err(SyntaxError::BadEndBlock);
-                    }
+                    // NOTE: raw blocks coalesce their content
+                    // NOTE: into a single slice and have special
+                    // NOTE: handling above
                 }
                 Token::StartBlock(value) => {
                     let block = Block::new_named(value);
@@ -184,7 +232,7 @@ impl<'source> Template<'source> {
 
                         let name = parser::block_name(&value);
 
-                        match block.block_type {
+                        match block.block_type() {
                             BlockType::Named(ref start_name) => {
                                 if start_name != &name {
                                     return Err(SyntaxError::BadBlockEndName(
@@ -207,17 +255,25 @@ impl<'source> Template<'source> {
             }
         }
 
+        let len = stack.len();
+        let current = if stack.is_empty() {
+            &mut ast
+        } else {
+            stack.get_mut(len - 1).unwrap()
+        };
+
         // Force text normalization if we end with text
         if !text.is_empty() {
-            let len = stack.len();
-            let current = if stack.is_empty() {
-                &mut ast
-            } else {
-                stack.get_mut(len - 1).unwrap()
-            };
-
             let token = Token::Error;
             Template::normalize(s, current, &token, &mut text);
+        }
+
+        if !raw.is_empty() {
+            return Err(SyntaxError::RawBlockNotTerminated)
+        }
+
+        if let Some(last) = last.take() {
+            current.push(ast::Token::Block(last));
         }
 
         Ok(Template { ast })
