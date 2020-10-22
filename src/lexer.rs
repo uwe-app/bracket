@@ -18,7 +18,7 @@ pub struct SourceInfo {
 
 impl SourceInfo {
     pub fn set_range(&mut self, span: logos::Span) {
-        self.span = span 
+        self.span = span
     }
 }
 
@@ -91,11 +91,7 @@ pub mod grammar {
 
 pub mod ast {
 
-    use crate::{
-        error::RenderError,
-        lexer::{parser, SourceInfo},
-        render::*,
-    };
+    use crate::lexer::{parser, SourceInfo};
     use std::fmt;
 
     #[derive(Debug, Eq, PartialEq, Default)]
@@ -141,20 +137,6 @@ pub mod ast {
         }
     }
 
-    impl<'reg, 'render> Renderer<'reg, 'render> for Expr<'_> {
-        fn render(
-            &self,
-            rc: &mut RenderContext<'reg, 'render>,
-        ) -> Result<(), RenderError> {
-            if self.is_raw() {
-                rc.write_str(self.value)?;
-            } else {
-                todo!("Evaluate the expression and escape the content if necessary");
-            }
-            Ok(())
-        }
-    }
-
     impl fmt::Display for Expr<'_> {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(f, "{}", self.value)
@@ -187,26 +169,6 @@ pub mod ast {
                 Self::Block(ref t) => t.fmt(f),
                 Self::Text(ref t) => t.fmt(f),
             }
-        }
-    }
-
-    impl<'reg, 'render> Renderer<'reg, 'render> for Token<'_> {
-        fn render(
-            &self,
-            rc: &mut RenderContext<'reg, 'render>,
-        ) -> Result<(), RenderError> {
-            match *self {
-                Token::Text(ref t) => {
-                    rc.write_str(t.value)?;
-                }
-                Token::Expression(ref t) => {
-                    t.render(rc)?;
-                }
-                Token::Block(ref t) => {
-                    t.render(rc)?;
-                }
-            }
-            Ok(())
         }
     }
 
@@ -268,18 +230,26 @@ pub mod ast {
             &self.tokens
         }
 
-        pub fn terminated(&self) -> bool {
-            self.close.is_some() 
+        pub fn value(&self) -> Option<&'source str> {
+            self.value
         }
 
+        /*
+        pub fn terminated(&self) -> bool {
+            self.close.is_some()
+        }
+        */
+
         pub fn replace(&mut self, info: SourceInfo, value: &'source str) {
-            self.info = Some(info); 
+            self.info = Some(info);
             self.value = Some(value);
         }
 
+        /*
         pub fn tokens_mut(&mut self) -> &'source mut Vec<Token> {
             &mut self.tokens
         }
+        */
 
         pub fn is_raw(&self) -> bool {
             match self.block_type {
@@ -311,26 +281,6 @@ pub mod ast {
             if let Some(ref s) = self.close {
                 write!(f, "{}", s)?;
             }
-            Ok(())
-        }
-    }
-
-    impl<'reg, 'render> Renderer<'reg, 'render> for Block<'_> {
-        fn render(
-            &self,
-            rc: &mut RenderContext<'reg, 'render>,
-        ) -> Result<(), RenderError> {
-
-            // Prefer coalesced content (raw blocks)
-            if let Some(val) = self.value {
-                rc.write_str(val)?;
-            // Otherwise iterate the tokens
-            } else {
-                for t in self.tokens.iter() {
-                    t.render(rc)?;
-                }
-            }
-
             Ok(())
         }
     }

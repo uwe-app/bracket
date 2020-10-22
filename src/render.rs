@@ -1,7 +1,12 @@
 use serde::Serialize;
 use serde_json::Value;
 
-use crate::{error::RenderError, output::Output, registry::Registry};
+use crate::{
+    error::RenderError,
+    lexer::ast::{Block, Expr, Token},
+    output::Output,
+    registry::Registry,
+};
 
 pub trait Renderer<'reg, 'render> {
     fn render(
@@ -43,5 +48,74 @@ impl<'reg, 'render> RenderContext<'reg, 'render> {
 
     pub fn write_str(&mut self, s: &str) -> Result<usize, RenderError> {
         Ok(self.writer.write_str(s).map_err(RenderError::from)?)
+    }
+}
+
+pub struct Render<'source> {
+    block: &'source Block<'source>,
+}
+
+impl<'source> Render<'source> {
+    pub fn new(block: &'source Block<'source>) -> Self {
+        Self { block }
+    }
+
+    fn render_expr<'reg, 'render>(
+        &self,
+        expr: &Expr<'source>,
+        rc: &mut RenderContext<'reg, 'render>,
+    ) -> Result<(), RenderError> {
+        if expr.is_raw() {
+            rc.write_str(expr.value())?;
+        } else {
+            todo!(
+                "Evaluate the expression and escape the content if necessary"
+            );
+        }
+        Ok(())
+    }
+
+    fn render_token<'reg, 'render>(
+        &self,
+        token: &Token<'source>,
+        rc: &mut RenderContext<'reg, 'render>,
+    ) -> Result<(), RenderError> {
+        match token {
+            Token::Text(ref t) => {
+                rc.write_str(t.value)?;
+            }
+            Token::Expression(ref e) => self.render_expr(e, rc)?,
+            Token::Block(ref b) => {
+                self.render_block(b, rc)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn render_block<'reg, 'render>(
+        &self,
+        block: &Block<'source>,
+        rc: &mut RenderContext<'reg, 'render>,
+    ) -> Result<(), RenderError> {
+        // Prefer coalesced content (raw blocks)
+        if let Some(val) = block.value() {
+            rc.write_str(val)?;
+        // Otherwise iterate the tokens
+        } else {
+            for t in block.tokens().iter() {
+                self.render_token(t, rc)?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+impl<'reg, 'render> Renderer<'reg, 'render> for Render<'_> {
+    fn render(
+        &self,
+        rc: &mut RenderContext<'reg, 'render>,
+    ) -> Result<(), RenderError> {
+        self.render_block(self.block, rc)
     }
 }

@@ -9,7 +9,7 @@ use crate::{
         grammar::{Statement, Token},
         parser, SourceInfo,
     },
-    render::{RenderContext, Renderer},
+    render::{Render, RenderContext, Renderer},
 };
 
 #[derive(Debug)]
@@ -34,7 +34,9 @@ impl<'reg, 'render> Renderer<'reg, 'render> for Template<'_> {
         &self,
         rc: &mut RenderContext<'reg, 'render>,
     ) -> Result<(), RenderError> {
-        self.ast.render(rc)
+        let renderer = Render::new(self.block());
+        renderer.render(rc)
+        //self.ast.render(rc)
     }
 }
 
@@ -53,7 +55,10 @@ impl<'source> Template<'source> {
         Ok(statement)
     }
 
-    fn coalesce(s: &'source str, tokens: &mut Vec<Range<usize>>) -> &'source str {
+    fn coalesce(
+        s: &'source str,
+        tokens: &mut Vec<Range<usize>>,
+    ) -> &'source str {
         let last = tokens.last().unwrap().clone();
         let first = tokens.get_mut(0).unwrap();
         first.end = last.end;
@@ -63,8 +68,8 @@ impl<'source> Template<'source> {
     fn range_slice(
         s: &'source str,
         first: &mut SourceInfo,
-        last: &SourceInfo) -> &'source str {
-
+        last: &SourceInfo,
+    ) -> &'source str {
         first.span.end = last.span.end;
         first.line.end = last.line.end;
         &s[first.span.start..first.span.end]
@@ -82,7 +87,8 @@ impl<'source> Template<'source> {
                 if !text.is_empty() {
                     let last_info = text.last().unwrap().info.clone();
                     let first = text.get_mut(0).unwrap();
-                    first.value = Template::range_slice(s, &mut first.info, &last_info);
+                    first.value =
+                        Template::range_slice(s, &mut first.info, &last_info);
                     let item = text.swap_remove(0);
                     current.push(ast::Token::Text(item));
                     text.clear();
@@ -121,42 +127,40 @@ impl<'source> Template<'source> {
 
             // Normalize raw blocks into a single string slice
             match current.block_type() {
-                BlockType::Raw => {
-                    match token {
-                        Token::Newline(value) => {
-                            line = line + 1;
-                            raw.push(info.span); 
-                            continue;
+                BlockType::Raw => match token {
+                    Token::Newline(value) => {
+                        line = line + 1;
+                        raw.push(info.span);
+                        continue;
+                    }
+                    Token::EndRawBlock(value) => {
+                        let mut val = if !raw.is_empty() {
+                            let value = Template::coalesce(s, &mut raw);
+                            let span = raw.swap_remove(0);
+                            Some((span, value))
+                        } else {
+                            None
+                        };
+
+                        if let Some((span, value)) = val.take() {
+                            info.set_range(span);
+                            current.replace(info, value);
                         }
-                        Token::EndRawBlock(value) => {
-                            let mut val = if !raw.is_empty() {
-                                let value = Template::coalesce(s, &mut raw);
-                                let span = raw.swap_remove(0);
-                                Some((span, value))
-                            } else {
-                                None
-                            };
+                        raw.clear();
 
-                            if let Some((span, value)) = val.take() {
-                                info.set_range(span);
-                                current.replace(info, value);
-                            }
-                            raw.clear();
+                        last = stack.pop();
 
-                            last = stack.pop();
-
-                            if let Some(ref mut block) = last {
-                                block.close = Some(value);
-                            }
-
-                            continue;
+                        if let Some(ref mut block) = last {
+                            block.close = Some(value);
                         }
-                        _ => {
-                            raw.push(info.span); 
-                            continue;
-                        }
-                    } 
-                }
+
+                        continue;
+                    }
+                    _ => {
+                        raw.push(info.span);
+                        continue;
+                    }
+                },
                 _ => {}
             }
 
@@ -269,7 +273,7 @@ impl<'source> Template<'source> {
         }
 
         if !raw.is_empty() {
-            return Err(SyntaxError::RawBlockNotTerminated)
+            return Err(SyntaxError::RawBlockNotTerminated);
         }
 
         if let Some(last) = last.take() {
