@@ -45,7 +45,7 @@ impl Template {
                 current.push(AstToken::Block(last));
             }
 
-            println!("{:?}", token);
+            //println!("{:?} ({:?})", token, span);
 
             let info = SourceInfo {
                 line: Range {
