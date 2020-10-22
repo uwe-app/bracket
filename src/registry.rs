@@ -2,7 +2,12 @@ use std::collections::HashMap;
 
 use serde::Serialize;
 
-use crate::{template::Template, Error, Result, error::RenderError};
+use crate::{
+    Error, Result, 
+    template::Template,
+    error::RenderError,
+    output::{Output, StringOutput}
+};
 
 pub struct Registry<'reg> {
     templates: HashMap<&'reg str, Template<'reg>>,
@@ -56,10 +61,20 @@ impl<'reg> Registry<'reg> {
 
     pub fn render<T>(&self, name: &'reg str, data: &T) -> Result<String> 
         where T: Serialize {
+        let writer = StringOutput::new();
+        self.render_to_write(name, data, &writer)?;
+        Ok(writer.into())
+    }
+
+    pub fn render_to_write<T>(
+        &self,
+        name: &'reg str,
+        data: &T,
+        writer: &impl Output) -> Result<()>
+        where T: Serialize {
 
         let tpl = self.get_template(name)?;
         println!("Do a render {:?}", tpl);
-        
-        Ok(String::new())
+        Ok(())
     }
 }

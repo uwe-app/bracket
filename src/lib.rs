@@ -1,5 +1,6 @@
 mod error;
 pub mod lexer;
+mod output;
 mod registry;
 mod template;
 
