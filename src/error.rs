@@ -26,4 +26,9 @@ pub enum SyntaxError {
 pub enum RenderError {
     #[error("Template not found {0}")]
     TemplateNotFound(String),
+
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Json(#[from] serde_json::Error),
 }

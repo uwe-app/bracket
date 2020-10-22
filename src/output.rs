@@ -1,11 +1,11 @@
-use std::io::{Write, Result};
+use std::io::{Result, Write};
 
-pub trait Output : Write {
+pub trait Output: Write {
     fn write_str(&mut self, s: &str) -> Result<usize>;
 }
 
 pub struct Writer<W: Write> {
-    writer: W
+    writer: W,
 }
 
 impl<W: Write> Output for Writer<W> {
@@ -30,7 +30,9 @@ pub struct StringOutput {
 
 impl StringOutput {
     pub fn new() -> Self {
-        Self {value: String::new()}
+        Self {
+            value: String::new(),
+        }
     }
 
     pub fn into(self) -> String {

@@ -3,12 +3,13 @@ use std::fmt;
 use std::ops::Range;
 
 use crate::{
-    error::SyntaxError,
+    error::{RenderError, SyntaxError},
     lexer::{
         ast::{self, *},
         grammar::{Statement, Token},
         parser, SourceInfo,
     },
+    render::{RenderContext, Renderer},
 };
 
 #[derive(Debug)]
@@ -25,6 +26,15 @@ impl<'source> Template<'source> {
 impl fmt::Display for Template<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.ast.fmt(f)
+    }
+}
+
+impl<'reg, 'render> Renderer<'reg, 'render> for Template<'_> {
+    fn render(
+        &self,
+        rc: &mut RenderContext<'reg, 'render>,
+    ) -> Result<(), RenderError> {
+        self.ast.render(rc)
     }
 }
 

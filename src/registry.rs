@@ -3,10 +3,11 @@ use std::collections::HashMap;
 use serde::Serialize;
 
 use crate::{
-    Error, Result, 
-    template::Template,
     error::RenderError,
-    output::{Output, StringOutput}
+    output::{Output, StringOutput},
+    render::{RenderContext, RenderState, Renderer},
+    template::Template,
+    Error, Result,
 };
 
 pub struct Registry<'reg> {
@@ -15,7 +16,9 @@ pub struct Registry<'reg> {
 
 impl<'reg> Registry<'reg> {
     pub fn new() -> Self {
-        Self { templates: Default::default() }
+        Self {
+            templates: Default::default(),
+        }
     }
 
     pub fn compile(s: &str) -> Result<Template> {
@@ -41,10 +44,7 @@ impl<'reg> Registry<'reg> {
         self.templates.remove(name)
     }
 
-    pub fn get_template(
-        &self,
-        name: &'reg str,
-    ) -> Result<&Template<'reg>> {
+    pub fn get_template(&self, name: &'reg str) -> Result<&Template<'reg>> {
         self.templates.get(name).ok_or_else(|| {
             Error::from(RenderError::TemplateNotFound(name.to_string()))
         })
@@ -59,10 +59,12 @@ impl<'reg> Registry<'reg> {
         Ok(self.register_template(name, tpl))
     }
 
-    pub fn render<T>(&self, name: &'reg str, data: &T) -> Result<String> 
-        where T: Serialize {
-        let writer = StringOutput::new();
-        self.render_to_write(name, data, &writer)?;
+    pub fn render<T>(&self, name: &'reg str, data: &T) -> Result<String>
+    where
+        T: Serialize,
+    {
+        let mut writer = StringOutput::new();
+        self.render_to_write(name, data, &mut writer)?;
         Ok(writer.into())
     }
 
@@ -70,11 +72,17 @@ impl<'reg> Registry<'reg> {
         &self,
         name: &'reg str,
         data: &T,
-        writer: &impl Output) -> Result<()>
-        where T: Serialize {
-
+        writer: &mut impl Output,
+    ) -> Result<()>
+    where
+        T: Serialize,
+    {
         let tpl = self.get_template(name)?;
+        let state = RenderState::new();
+        let mut rc = RenderContext::new(&self, data, state, Box::new(writer))?;
         println!("Do a render {:?}", tpl);
+        tpl.render(&mut rc)?;
+
         Ok(())
     }
 }
