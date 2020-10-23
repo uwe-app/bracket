@@ -21,6 +21,80 @@ fn assert_text(
 }
 
 #[test]
+fn string_literal() -> Result<()> {
+    let value = r#""quo\"t\ned""#;
+    use hbs::lexer::grammar::string::{self, Outer::*, Tokens::*, Inner::*};
+    let tokens = string::lex(value);
+
+    let expect = vec![
+        OuterToken(Start(r#"""#)),
+        InnerToken(Text("quo")),
+        //InnerToken(EscapedCodepoint),
+        InnerToken(EscapedQuote(r#"\""#)),
+        InnerToken(Text("t")),
+        InnerToken(EscapedNewline(r"\n")),
+        InnerToken(Text("ed")),
+        InnerToken(End(r#"""#)),
+    ];
+
+    assert_eq!(expect, tokens);
+    Ok(())
+}
+
+#[test]
+fn statement_variable() -> Result<()> {
+    let value = "{{var}}";
+    use hbs::lexer::grammar::statement::{self, Outer::*, Tokens::*, Inner::*};
+    let tokens = statement::lex(value);
+
+    let expect = vec![
+        OuterToken(Start("{{")),
+        InnerToken(Identifier("var")),
+        InnerToken(End("}}")),
+    ];
+
+    assert_eq!(expect, tokens);
+    Ok(())
+}
+
+#[test]
+fn statement_path() -> Result<()> {
+    let value = "{{obj.var}}";
+    use hbs::lexer::grammar::statement::{self, Outer::*, Tokens::*, Inner::*};
+    let tokens = statement::lex(value);
+
+    let expect = vec![
+        OuterToken(Start("{{")),
+        InnerToken(Identifier("obj")),
+        InnerToken(PathDelimiter(".")),
+        InnerToken(Identifier("var")),
+        InnerToken(End("}}")),
+    ];
+
+    assert_eq!(expect, tokens);
+    Ok(())
+}
+
+#[test]
+fn statement_partial() -> Result<()> {
+    let value = "{{> foo }}";
+    use hbs::lexer::grammar::statement::{self, Outer::*, Tokens::*, Inner::*};
+    let tokens = statement::lex(value);
+
+    let expect = vec![
+        OuterToken(Start("{{")),
+        InnerToken(Partial(">")),
+        InnerToken(WhiteSpace(" ")),
+        InnerToken(Identifier("foo")),
+        InnerToken(WhiteSpace(" ")),
+        InnerToken(End("}}")),
+    ];
+
+    assert_eq!(expect, tokens);
+    Ok(())
+}
+
+#[test]
 fn text() -> Result<()> {
     let value = r"Some text";
     let tpl = Template::compile(value)?;

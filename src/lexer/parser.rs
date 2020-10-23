@@ -1,6 +1,7 @@
 use std::ops::Range;
 
 use logos::Logos;
+
 use regex::Regex;
 
 use crate::error::SyntaxError;
@@ -74,7 +75,6 @@ impl<'source> Parser {
     }
 
     pub fn parse(s: &'source str) -> Result<Block, SyntaxError> {
-    
         let lex = Token::lexer(s);
         let mut ast = Block::new(BlockType::Root);
         let mut stack: Vec<Block> = vec![];
