@@ -12,7 +12,6 @@ pub enum Outer {
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 pub enum Inner {
-
     #[regex(r#"[^\\"]+"#)]
     Text,
 
@@ -21,7 +20,6 @@ pub enum Inner {
 
     //#[regex(r"\\u\{[^}]*\}")]
     //EscapedCodepoint,
-
     #[token(r#"\""#)]
     EscapedQuote,
 
@@ -32,6 +30,7 @@ pub enum Inner {
     Error,
 }
 
+/*
 #[derive(Debug, PartialEq, Eq)]
 pub enum Tokens {
     InnerToken(Inner),
@@ -62,7 +61,7 @@ impl<'source> Iterator for ModeBridge<'source> {
             Modes::Inner(inner) => {
                 //let result = inner.next();
                 //if Some(Inner::End(r#"""#)) == result {
-                    //self.mode = Modes::Outer(inner.to_owned().morph());
+                //self.mode = Modes::Outer(inner.to_owned().morph());
                 //}
                 //result.map(InnerToken)
 
@@ -74,13 +73,14 @@ impl<'source> Iterator for ModeBridge<'source> {
                         self.mode = Modes::Outer(inner.to_owned().morph());
                     }
                     Some((InnerToken(token), span))
-                } else { None }
-
+                } else {
+                    None
+                }
             }
             Modes::Outer(outer) => {
                 //let result = outer.next();
                 //if Some(Outer::Start(r#"""#)) == result {
-                    //self.mode = Modes::Inner(outer.to_owned().morph());
+                //self.mode = Modes::Inner(outer.to_owned().morph());
                 //}
                 //result.map(OuterToken)
 
@@ -92,16 +92,20 @@ impl<'source> Iterator for ModeBridge<'source> {
                         self.mode = Modes::Inner(outer.to_owned().morph());
                     }
                     Some((OuterToken(token), span))
-                } else { None }
+                } else {
+                    None
+                }
             }
         }
     }
 }
+*/
 
-pub fn lex(s: &str) -> Vec<(Tokens, Span)> {
-    let moded = ModeBridge {
-        mode: Modes::new(s),
-    };
-    let results: Vec<(Tokens, Span)> = moded.collect();
-    results
+pub fn lex(s: &str) -> Vec<(super::modes::Tokens<Outer, Inner>, Span)> {
+    super::modes::lex::<Outer, Inner>(s, Outer::Start, Inner::End)
+    //let moded = ModeBridge {
+        //mode: Modes::new(s),
+    //};
+    //let results: Vec<(Tokens, Span)> = moded.collect();
+    //results
 }

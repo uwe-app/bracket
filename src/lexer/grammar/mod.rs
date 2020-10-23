@@ -63,6 +63,6 @@ pub(crate) enum Token<'source> {
     Error,
 }
 
+pub mod modes;
 pub mod statement;
 pub mod string;
-

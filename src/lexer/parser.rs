@@ -4,8 +4,12 @@ use logos::Logos;
 
 use regex::Regex;
 
+use super::{
+    ast::{self, Block, BlockType, Expr, Text},
+    grammar::*,
+    SourceInfo,
+};
 use crate::error::SyntaxError;
-use super::{grammar::*, ast::{self, Block, Expr, Text, BlockType}, SourceInfo};
 
 pub fn block_name(value: &str) -> String {
     let re = Regex::new(r"\{\{\{?#?>?/?\s*([^}]*)\s*\}?\}\}").unwrap();
@@ -17,7 +21,6 @@ pub fn block_name(value: &str) -> String {
 pub struct Parser;
 
 impl<'source> Parser {
-
     /// Compile a statement.
     fn statement(s: &'source str) -> Result<ast::Statement, SyntaxError> {
         let statement: ast::Statement = Default::default();

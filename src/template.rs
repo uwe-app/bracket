@@ -2,10 +2,7 @@ use std::fmt;
 
 use crate::{
     error::{RenderError, SyntaxError},
-    lexer::{
-        ast::Block,
-        parser::Parser,
-    },
+    lexer::{ast::Block, parser::Parser},
     render::{Render, RenderContext, Renderer},
 };
 
@@ -40,6 +37,6 @@ impl<'source> Template<'source> {
     /// Compile a block.
     pub fn compile(s: &'source str) -> Result<Template, SyntaxError> {
         let block = Parser::parse(s)?;
-        Ok(Template {block})
+        Ok(Template { block })
     }
 }

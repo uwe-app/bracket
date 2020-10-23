@@ -13,7 +13,6 @@ pub enum Outer {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(subpattern identifier = r#"[^\s"!#%&'()*+,./;<=>@\[/\]^`{|}~]"#)]
 pub enum Inner {
-
     #[token(r">")]
     Partial,
 
@@ -78,7 +77,9 @@ impl<'source> Iterator for ModeBridge<'source> {
                         self.mode = Modes::Outer(inner.to_owned().morph());
                     }
                     Some((InnerToken(token), span))
-                } else { None }
+                } else {
+                    None
+                }
             }
             Modes::Outer(outer) => {
                 let result = outer.next();
@@ -89,7 +90,9 @@ impl<'source> Iterator for ModeBridge<'source> {
                         self.mode = Modes::Inner(outer.to_owned().morph());
                     }
                     Some((OuterToken(token), span))
-                } else { None }
+                } else {
+                    None
+                }
             }
         }
     }
