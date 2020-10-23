@@ -1,8 +1,8 @@
 use hbs::Result;
+use hbs::lexer::grammar::*;
 
 #[test]
 fn lex_text_only() -> Result<()> {
-    use hbs::lexer::grammar::*;
 
     let value = "foo bar baz";
     let tokens = lex(value, true);
@@ -17,8 +17,6 @@ fn lex_text_only() -> Result<()> {
 
 #[test]
 fn lex_block_text() -> Result<()> {
-    use hbs::lexer::grammar::*;
-
     let value = "foo {{bar}} baz";
     let tokens = lex(value, true);
 
@@ -36,8 +34,6 @@ fn lex_block_text() -> Result<()> {
 
 #[test]
 fn lex_raw_block() -> Result<()> {
-    use hbs::lexer::grammar::*;
-
     let value = "{{{{ raw }}}}foo {{bar}} baz{{{{ / raw }}}}";
     let tokens = lex(value, true);
     let expect = vec![
@@ -53,8 +49,6 @@ fn lex_raw_block() -> Result<()> {
 
 #[test]
 fn lex_raw_block_multiline() -> Result<()> {
-    use hbs::lexer::grammar::*;
-
     let value = "{{{{raw}}}}
 foo
 {{bar}}
@@ -74,7 +68,6 @@ baz
 
 #[test]
 fn lex_raw_comment() -> Result<()> {
-    use hbs::lexer::grammar::*;
     let value = "{{!-- foo {{bar}} baz --}}";
     let tokens = lex(value, true);
     let expect = vec![
@@ -89,7 +82,6 @@ fn lex_raw_comment() -> Result<()> {
 
 #[test]
 fn lex_raw_comment_multiline() -> Result<()> {
-    use hbs::lexer::grammar::*;
     let value = "{{!--
 foo
 {{bar}}
