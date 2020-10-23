@@ -2,17 +2,25 @@
 ///
 /// O: Outer token type which *enters* into the mode.
 /// I: Inner token type which *exits* the mode.
-
-//use std::borrow::ToOwned;
-//use std::clone::Clone;
 use logos::{Lexer, Logos, Span};
 
-enum Modes<'source, O: Logos<'source, Source = str> + PartialEq, I: Logos<'source> + PartialEq> {
+#[derive(Clone, Default)]
+pub struct Extras;
+
+enum Modes<'source, O, I>
+where
+    O: Logos<'source, Source = str, Extras = Extras> + Clone + PartialEq,
+    I: Logos<'source, Source = str, Extras = Extras> + Clone + PartialEq,
+{
     Outer(Lexer<'source, O>),
     Inner(Lexer<'source, I>),
 }
 
-impl<'source, O: Logos<'source, Source = str> + PartialEq, I: Logos<'source> + PartialEq> Modes<'source, O, I> {
+impl<'source, O, I> Modes<'source, O, I>
+where
+    O: Logos<'source, Source = str, Extras = Extras> + Clone + PartialEq,
+    I: Logos<'source, Source = str, Extras = Extras> + Clone + PartialEq,
+{
     fn new(s: &'source str) -> Self {
         Self::Outer(O::lexer(s))
     }
@@ -24,15 +32,21 @@ pub enum Tokens<O, I> {
     InnerToken(I),
 }
 
-struct ModeBridge<'source, O: Logos<'source, Source = str> + PartialEq, I: Logos<'source> + PartialEq> {
+struct ModeBridge<'source, O, I>
+where
+    O: Logos<'source, Source = str, Extras = Extras> + Clone + PartialEq,
+    I: Logos<'source, Source = str, Extras = Extras> + Clone + PartialEq,
+{
     mode: Modes<'source, O, I>,
     start: O,
     end: I,
 }
 
 // Clones as we switch between modes
-impl<'source, O: Logos<'source, Source = str> + PartialEq, I: Logos<'source> + PartialEq> Iterator
-    for ModeBridge<'source, O, I>
+impl<'source, O, I> Iterator for ModeBridge<'source, O, I>
+where
+    O: Logos<'source, Source = str, Extras = Extras> + Clone + PartialEq,
+    I: Logos<'source, Source = str, Extras = Extras> + Clone + PartialEq,
 {
     type Item = (Tokens<O, I>, Span);
     fn next(&mut self) -> Option<Self::Item> {
@@ -41,10 +55,9 @@ impl<'source, O: Logos<'source, Source = str> + PartialEq, I: Logos<'source> + P
             Modes::Inner(inner) => {
                 let result = inner.next();
                 let span = inner.span();
-                //println!("Inner span {:?}", span);
                 if let Some(token) = result {
                     if self.end == token {
-                        //self.mode = Modes::Outer(inner.to_owned().morph());
+                        self.mode = Modes::Outer(inner.to_owned().morph());
                     }
                     Some((InnerToken(token), span))
                 } else {
@@ -54,10 +67,9 @@ impl<'source, O: Logos<'source, Source = str> + PartialEq, I: Logos<'source> + P
             Modes::Outer(outer) => {
                 let result = outer.next();
                 let span = outer.span();
-                //println!("Outer span {:?}", span);
                 if let Some(token) = result {
                     if self.start == token {
-                        //self.mode = Modes::Inner(outer.to_owned().morph());
+                        self.mode = Modes::Inner(outer.to_owned().morph());
                     }
                     Some((OuterToken(token), span))
                 } else {
@@ -68,11 +80,15 @@ impl<'source, O: Logos<'source, Source = str> + PartialEq, I: Logos<'source> + P
     }
 }
 
-pub fn lex<'source, O: Logos<'source, Source = str> + PartialEq, I: Logos<'source> + PartialEq>(
+pub fn lex<'source, O, I>(
     s: &'source str,
     start: O,
     end: I,
-) -> Vec<(Tokens<O, I>, Span)> {
+) -> Vec<(Tokens<O, I>, Span)>
+where
+    O: Logos<'source, Source = str, Extras = Extras> + Clone + PartialEq,
+    I: Logos<'source, Source = str, Extras = Extras> + Clone + PartialEq,
+{
     let moded = ModeBridge::<O, I> {
         mode: Modes::new(s),
         start,

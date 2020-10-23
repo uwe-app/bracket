@@ -1,4 +1,4 @@
-use logos::Logos;
+use logos_derive::Logos;
 
 #[derive(Logos, Debug, PartialEq)]
 // SEE: https://handlebarsjs.com/guide/expressions.html#literal-segments

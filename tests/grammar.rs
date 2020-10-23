@@ -22,10 +22,11 @@ fn assert_text(
 
 #[test]
 fn string_literal() -> Result<()> {
-    let value = r#""quo\"t\ned""#;
-    use hbs::lexer::grammar::string::{self, Inner::*, Outer::*, Tokens::*};
-    let tokens = string::lex(value);
+    use hbs::lexer::grammar::string::{self, Inner::*, Outer::*};
+    use hbs::lexer::grammar::modes::Tokens::*;
 
+    let value = r#""quo\"t\ned""#;
+    let tokens = string::lex(value);
     let expect = vec![
         (OuterToken(Start), 0..1),
         (InnerToken(Text), 1..4),
@@ -36,33 +37,35 @@ fn string_literal() -> Result<()> {
         (InnerToken(Text), 9..11),
         (InnerToken(End), 11..12),
     ];
-
     assert_eq!(expect, tokens);
+
     Ok(())
 }
 
 #[test]
 fn statement_variable() -> Result<()> {
-    let value = "{{var}}";
-    use hbs::lexer::grammar::statement::{self, Inner::*, Outer::*, Tokens::*};
-    let tokens = statement::lex(value);
+    use hbs::lexer::grammar::statement::{self, Inner::*, Outer::*};
+    use hbs::lexer::grammar::modes::Tokens::*;
 
+    let value = "{{var}}";
+    let tokens = statement::lex(value);
     let expect = vec![
         (OuterToken(Start), 0..2),
         (InnerToken(Identifier), 2..5),
         (InnerToken(End), 5..7),
     ];
-
     assert_eq!(expect, tokens);
+
     Ok(())
 }
 
 #[test]
 fn statement_path() -> Result<()> {
-    let value = "{{obj.var}}";
-    use hbs::lexer::grammar::statement::{self, Inner::*, Outer::*, Tokens::*};
-    let tokens = statement::lex(value);
+    use hbs::lexer::grammar::statement::{self, Inner::*, Outer::*};
+    use hbs::lexer::grammar::modes::Tokens::*;
 
+    let value = "{{obj.var}}";
+    let tokens = statement::lex(value);
     let expect = vec![
         (OuterToken(Start), 0..2),
         (InnerToken(Identifier), 2..5),
@@ -70,17 +73,18 @@ fn statement_path() -> Result<()> {
         (InnerToken(Identifier), 6..9),
         (InnerToken(End), 9..11),
     ];
-
     assert_eq!(expect, tokens);
+
     Ok(())
 }
 
 #[test]
 fn statement_partial() -> Result<()> {
-    let value = "{{> foo }}";
-    use hbs::lexer::grammar::statement::{self, Inner::*, Outer::*, Tokens::*};
-    let tokens = statement::lex(value);
+    use hbs::lexer::grammar::statement::{self, Inner::*, Outer::*};
+    use hbs::lexer::grammar::modes::Tokens::*;
 
+    let value = "{{> foo }}";
+    let tokens = statement::lex(value);
     let expect = vec![
         (OuterToken(Start), 0..2),
         (InnerToken(Partial), 2..3),
@@ -89,8 +93,8 @@ fn statement_partial() -> Result<()> {
         (InnerToken(WhiteSpace), 7..8),
         (InnerToken(End), 8..10),
     ];
-
     assert_eq!(expect, tokens);
+
     Ok(())
 }
 
