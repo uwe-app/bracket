@@ -1,4 +1,4 @@
-use logos_derive::Logos;
+use logos::Logos;
 
 #[derive(Logos, Debug, PartialEq)]
 // SEE: https://handlebarsjs.com/guide/expressions.html#literal-segments
@@ -64,5 +64,6 @@ pub(crate) enum Token<'source> {
 }
 
 pub mod modes;
+pub mod raw_block;
 pub mod statement;
 pub mod string;

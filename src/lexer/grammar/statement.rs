@@ -1,6 +1,5 @@
 /// Parses a handlebars statement into tokens.
-use logos::{Lexer, Logos as _, Span};
-use logos_derive::Logos;
+use logos::{Logos, Span};
 
 use super::modes::{self, Extras};
 

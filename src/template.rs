@@ -6,6 +6,11 @@ use crate::{
     render::{Render, RenderContext, Renderer},
 };
 
+// TODO: support rendering to original source form
+//pub trait SourceDisplay {
+    //fn write_source(&self, s: &str, w: &mut Write) -> crate::Result<usize>;
+//}
+
 #[derive(Debug)]
 pub struct Template<'source> {
     block: Block<'source>,

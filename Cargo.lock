@@ -26,7 +26,6 @@ name = "hbs"
 version = "0.1.0"
 dependencies = [
  "logos",
- "logos-derive",
  "regex",
  "serde",
  "serde_json",
@@ -50,6 +49,9 @@ name = "logos"
 version = "0.11.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b91c49573597a5d6c094f9031617bb1fed15c0db68c81e6546d313414ce107e4"
+dependencies = [
+ "logos-derive",
+]
 
 [[package]]
 name = "logos-derive"

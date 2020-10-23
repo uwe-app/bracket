@@ -1,6 +1,5 @@
 // Parses a double-quoted JSON-style string into tokens.
-use logos::{Lexer, Span};
-use logos_derive::Logos;
+use logos::{Span, Logos};
 
 use super::modes::{self, Extras};
 

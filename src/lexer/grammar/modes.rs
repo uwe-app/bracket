@@ -5,7 +5,9 @@
 use logos::{Lexer, Logos, Span};
 
 #[derive(Clone, Default)]
-pub struct Extras;
+pub struct Extras {
+    pub lines: usize,
+}
 
 enum Modes<'source, O, I>
 where
@@ -55,6 +57,9 @@ where
             Modes::Inner(inner) => {
                 let result = inner.next();
                 let span = inner.span();
+
+                //println!("Adding token with line {:?}", inner.extras.lines);
+
                 if let Some(token) = result {
                     if self.end == token {
                         self.mode = Modes::Outer(inner.to_owned().morph());
@@ -80,6 +85,7 @@ where
     }
 }
 
+/// Parse a mode block.
 pub fn lex<'source, O, I>(
     s: &'source str,
     start: O,
@@ -94,6 +100,45 @@ where
         start,
         end,
     };
-    let results: Vec<(Tokens<O, I>, Span)> = moded.collect();
-    results
+    moded.collect()
+}
+
+/// Normalize tokens into a single token by updating the span end
+/// for a single token.
+pub fn normalize<'source, O, I>(
+    tokens: Vec<(Tokens<O, I>, Span)>,
+    item: I,
+    test: &dyn Fn(&I) -> bool,
+) -> Vec<(Tokens<O, I>, Span)>
+where
+    O: Logos<'source, Source = str, Extras = Extras> + Clone + PartialEq,
+    I: Logos<'source, Source = str, Extras = Extras> + Clone + PartialEq,
+{
+    let mut normalized: Vec<(Tokens<O, I>, Span)> = Vec::new();
+    let mut span: Option<Span> = None;
+
+    for (t, s) in tokens.into_iter() {
+        match t {
+            Tokens::OuterToken(outer) => {
+                normalized.push((Tokens::OuterToken(outer), s)) 
+            }    
+            Tokens::InnerToken(inner) => {
+                if test(&inner) {
+                    if let Some(ref mut span) = span {
+                        span.end = s.end; 
+                    } else {
+                        span = Some(s);
+                    }
+                } else {
+                    if let Some(span) = span.take() {
+                        normalized.push(
+                            (Tokens::InnerToken(item.clone()), span));
+                    }
+                    normalized.push((Tokens::InnerToken(inner), s)) 
+                }
+            }    
+        } 
+    }
+
+    normalized
 }
