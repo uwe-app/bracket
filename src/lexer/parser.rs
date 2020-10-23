@@ -22,6 +22,15 @@ pub struct Parser;
 
 impl<'source> Parser {
 
+    pub fn parse(s: &'source str) -> Result<Block, SyntaxError> {
+        let tokens = lex(s, false);
+        let mut ast = Block::new(BlockType::Root);
+
+        println!("Tokens {:#?}", tokens);
+
+        Ok(ast)
+    }
+
     //pub fn lex(s: &'source str) -> Result<Block, SyntaxError> {
 
     //}

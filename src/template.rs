@@ -13,6 +13,7 @@ use crate::{
 
 #[derive(Debug)]
 pub struct Template<'source> {
+    source: &'source str,
     block: Block<'source>,
 }
 
@@ -40,9 +41,8 @@ impl<'reg, 'render> Renderer<'reg, 'render> for Template<'_> {
 
 impl<'source> Template<'source> {
     /// Compile a block.
-    pub fn compile(s: &'source str) -> Result<Template, SyntaxError> {
-        //let block = Parser::parse(s)?;
-        let block = Default::default();
-        Ok(Template { block })
+    pub fn compile(source: &'source str) -> Result<Template, SyntaxError> {
+        let block = Parser::parse(source)?;
+        Ok(Template { source, block })
     }
 }

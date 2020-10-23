@@ -253,9 +253,22 @@ fn normalize(tokens: Vec<BlockToken>) -> Vec<BlockToken> {
             }
         }
     }
+
+    if let Some(span) = span.take() {
+        normalized.push(BlockToken::Block(Block::Text, span));
+    }
+
     normalized
 }
 
+/// Lex the input source into a stream of tokens.
+///
+/// If the normalized flag is given consecutive text tokens 
+/// are coalesced into a single token.
+///
+/// The normalized flag is useful for test cases; the parser 
+/// will perform it's own normalization to reduce the number of 
+/// passes on the token strea,.
 pub fn lex(s: &str, normalized: bool) -> Vec<BlockToken> {
     let moded = ModeBridge {
         mode: Modes::new(s),
