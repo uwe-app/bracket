@@ -1,7 +1,7 @@
 /// Parses a raw comment into tokens.
 use logos::{Logos, Span};
 
-use super::modes::{self, Extras, Tokens};
+use super::{LexToken, modes::{self, Extras, Tokens}};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
@@ -11,6 +11,12 @@ pub enum Outer {
 
     #[error]
     Error,
+}
+
+impl LexToken for Outer {
+    fn is_text(&self) -> bool {
+        false
+    }
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
@@ -29,6 +35,12 @@ pub enum Inner {
 
     #[error]
     Error,
+}
+
+impl LexToken for Inner {
+    fn is_text(&self) -> bool {
+        self == &Inner::Text
+    }
 }
 
 pub fn lex(s: &str) -> Vec<(Tokens<Outer, Inner>, Span)> {

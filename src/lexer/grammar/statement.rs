@@ -1,7 +1,7 @@
 /// Parses a handlebars statement into tokens.
 use logos::{Logos, Span};
 
-use super::modes::{self, Extras};
+use super::{LexToken, modes::{self, Extras}};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
@@ -11,6 +11,12 @@ pub enum Outer {
 
     #[error]
     Error,
+}
+
+impl LexToken for Outer {
+    fn is_text(&self) -> bool {
+        false
+    }
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
@@ -45,6 +51,12 @@ pub enum Inner {
     Error,
 }
 
-pub fn lex(s: &str) -> Vec<(super::modes::Tokens<Outer, Inner>, Span)> {
+impl LexToken for Inner {
+    fn is_text(&self) -> bool {
+        false
+    }
+}
+
+pub fn lex(s: &str) -> Vec<(modes::Tokens<Outer, Inner>, Span)> {
     modes::lex::<Outer, Inner>(s, Outer::Start, Inner::End)
 }

@@ -63,6 +63,11 @@ pub(crate) enum Token<'source> {
     Error,
 }
 
+pub trait LexToken : std::fmt::Debug {
+    fn is_text(&self) -> bool;
+}
+
+pub mod block;
 pub mod modes;
 pub mod raw_block;
 pub mod raw_comment;

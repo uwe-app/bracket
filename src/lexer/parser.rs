@@ -21,6 +21,11 @@ pub fn block_name(value: &str) -> String {
 pub struct Parser;
 
 impl<'source> Parser {
+
+    //pub fn lex(s: &'source str) -> Result<Block, SyntaxError> {
+
+    //}
+
     /// Compile a statement.
     fn statement(s: &'source str) -> Result<ast::Statement, SyntaxError> {
         let statement: ast::Statement = Default::default();
