@@ -82,8 +82,9 @@ impl<'source> Render<'source> {
     ) -> Result<(), RenderError> {
         match token {
             Token::Text(ref t) => {
-                rc.write_str(t.value)?;
+                rc.write_str(t.as_str())?;
             }
+            Token::RawComment(ref t) => {}
             Token::Expression(ref e) => self.render_expr(e, rc)?,
             Token::Block(ref b) => {
                 self.render_block(b, rc)?;
@@ -97,14 +98,8 @@ impl<'source> Render<'source> {
         block: &Block<'source>,
         rc: &mut RenderContext<'reg, 'render>,
     ) -> Result<(), RenderError> {
-        // Prefer coalesced content (raw blocks)
-        if let Some(val) = block.value() {
-            rc.write_str(val)?;
-        // Otherwise iterate the tokens
-        } else {
-            for t in block.tokens().iter() {
-                self.render_token(t, rc)?;
-            }
+        for t in block.tokens().iter() {
+            self.render_token(t, rc)?;
         }
 
         Ok(())

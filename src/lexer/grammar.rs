@@ -15,6 +15,9 @@ pub enum Block{
     #[regex(r"\{\{!--")]
     StartRawComment,
 
+    #[regex(r"\\\{\{\{?")]
+    StartEscpatedStatement,
+
     #[regex(r"\{\{\{?")]
     StartStatement,
 
@@ -123,34 +126,34 @@ pub enum StringLiteral {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum BlockToken {
+pub enum Token {
     Block(Block, Span),
     RawBlock(RawBlock, Span),
     RawComment(RawComment, Span),
     Statement(Statement, Span),
 }
 
-impl BlockToken {
-    fn span(&self) -> &Span {
+impl Token {
+    pub fn span(&self) -> &Span {
         match self {
-            BlockToken::Block(_, ref span) => span,
-            BlockToken::RawBlock(_, ref span) => span,
-            BlockToken::RawComment(_, ref span) => span,
-            BlockToken::Statement(_, ref span) => span,
+            Token::Block(_, ref span) => span,
+            Token::RawBlock(_, ref span) => span,
+            Token::RawComment(_, ref span) => span,
+            Token::Statement(_, ref span) => span,
         } 
     }
 
-    fn is_text(&self) -> bool {
+    pub fn is_text(&self) -> bool {
         match self {
-            BlockToken::Block(ref t, _) => t == &Block::Text || t == &Block::Newline || t == &Block::StartStringLiteral,
-            BlockToken::RawBlock(ref t, _) => t == &RawBlock::Text || t == &RawBlock::Newline,
-            BlockToken::RawComment(ref t, _) => t == &RawComment::Text || t == &RawComment::Newline,
-            BlockToken::Statement(ref t, _) => false,
+            Token::Block(ref t, _) => t == &Block::Text || t == &Block::Newline || t == &Block::StartStringLiteral,
+            Token::RawBlock(ref t, _) => t == &RawBlock::Text || t == &RawBlock::Newline,
+            Token::RawComment(ref t, _) => t == &RawComment::Text || t == &RawComment::Newline,
+            Token::Statement(ref t, _) => false,
         } 
     }
 }
 
-//pub struct BlockToken(pub Box<dyn LexToken>, pub Span);
+//pub struct Token(pub Box<dyn LexToken>, pub Span);
 
 enum Modes<'source> {
     Block(Lexer<'source, Block>),
@@ -171,7 +174,7 @@ struct ModeBridge<'source> {
 
 // Clones as we switch between modes
 impl<'source> Iterator for ModeBridge<'source> {
-    type Item = BlockToken;
+    type Item = Token;
     fn next(&mut self) -> Option<Self::Item> {
         match &mut self.mode {
             Modes::RawBlock(inner) => {
@@ -181,7 +184,7 @@ impl<'source> Iterator for ModeBridge<'source> {
                     if RawBlock::End  == token {
                         self.mode = Modes::Block(inner.to_owned().morph());
                     }
-                    let t = BlockToken::RawBlock(token, span);
+                    let t = Token::RawBlock(token, span);
                     Some(t)
                 } else {
                     None
@@ -194,7 +197,7 @@ impl<'source> Iterator for ModeBridge<'source> {
                     if RawComment::End  == token {
                         self.mode = Modes::Block(inner.to_owned().morph());
                     }
-                    let t = BlockToken::RawComment(token, span);
+                    let t = Token::RawComment(token, span);
                     Some(t)
                 } else {
                     None
@@ -207,7 +210,7 @@ impl<'source> Iterator for ModeBridge<'source> {
                     if Statement::End  == token {
                         self.mode = Modes::Block(inner.to_owned().morph());
                     }
-                    let t = BlockToken::Statement(token, span);
+                    let t = Token::Statement(token, span);
                     Some(t)
                 } else {
                     None
@@ -224,7 +227,7 @@ impl<'source> Iterator for ModeBridge<'source> {
                     } else if Block::StartStatement == token {
                         self.mode = Modes::Statement(outer.to_owned().morph());
                     }
-                    let t = BlockToken::Block(token, span);
+                    let t = Token::Block(token, span);
                     Some(t)
                 } else {
                     None
@@ -234,8 +237,8 @@ impl<'source> Iterator for ModeBridge<'source> {
     }
 }
 
-fn normalize(tokens: Vec<BlockToken>) -> Vec<BlockToken> {
-    let mut normalized: Vec<BlockToken> = Vec::new();
+fn normalize(tokens: Vec<Token>) -> Vec<Token> {
+    let mut normalized: Vec<Token> = Vec::new();
     let mut span: Option<Span> = None;
     for t in tokens.into_iter() {
         if t.is_text() {
@@ -246,7 +249,7 @@ fn normalize(tokens: Vec<BlockToken>) -> Vec<BlockToken> {
             }
         } else {
             if let Some(span) = span.take() {
-                normalized.push(BlockToken::Block(Block::Text, span));
+                normalized.push(Token::Block(Block::Text, span));
                 normalized.push(t);
             } else {
                 normalized.push(t);
@@ -255,7 +258,7 @@ fn normalize(tokens: Vec<BlockToken>) -> Vec<BlockToken> {
     }
 
     if let Some(span) = span.take() {
-        normalized.push(BlockToken::Block(Block::Text, span));
+        normalized.push(Token::Block(Block::Text, span));
     }
 
     normalized
@@ -269,7 +272,7 @@ fn normalize(tokens: Vec<BlockToken>) -> Vec<BlockToken> {
 /// The normalized flag is useful for test cases; the parser 
 /// will perform it's own normalization to reduce the number of 
 /// passes on the token strea,.
-pub fn lex(s: &str, normalized: bool) -> Vec<BlockToken> {
+pub fn lex(s: &str, normalized: bool) -> Vec<Token> {
     let moded = ModeBridge {
         mode: Modes::new(s),
     };

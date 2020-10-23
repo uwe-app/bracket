@@ -1,39 +1,80 @@
 use std::ops::Range;
 
-use logos::Logos;
-
-use regex::Regex;
-
 use super::{
-    ast::{self, Block, BlockType, Expr, Text},
-    grammar::*,
-    SourceInfo,
+    ast::{self, Token, Block, BlockType, Expr, Text, SourceInfo},
+    grammar::{self, lex, Token as LexToken},
 };
+
 use crate::error::SyntaxError;
 
-pub fn block_name(value: &str) -> String {
-    let re = Regex::new(r"\{\{\{?#?>?/?\s*([^}]*)\s*\}?\}\}").unwrap();
-    let cap = re.captures_iter(value).next().unwrap();
-    cap[1].to_string()
+#[derive(Debug)]
+pub struct Parser<'source> {
+    stack: Vec<Block<'source>>,
 }
 
-#[derive(Debug)]
-pub struct Parser;
+impl<'source> Parser<'source> {
 
-impl<'source> Parser {
-
-    pub fn parse(s: &'source str) -> Result<Block, SyntaxError> {
-        let tokens = lex(s, false);
-        let mut ast = Block::new(BlockType::Root);
-
-        println!("Tokens {:#?}", tokens);
-
-        Ok(ast)
+    pub fn new() -> Self {
+        Self {stack: vec![Block::new("", BlockType::Root, None)]}
     }
 
-    //pub fn lex(s: &'source str) -> Result<Block, SyntaxError> {
+    pub fn parse(&mut self, s: &'source str) -> Result<Block<'source>, SyntaxError> {
+        let tokens = lex(s, false);
 
-    //}
+        // Consecutive text to normalize
+        let mut text: Option<Text> = None;
+
+        for t in tokens.into_iter() {
+            //println!("Parser {:?}", t);
+
+            match &t {
+                LexToken::Block(lex, span) => {
+                    match lex {
+                        grammar::Block::StartRawComment => {
+                            let mut block = Block::new(s, BlockType::Raw, Some(span.clone()));
+                            self.stack.push(block);
+                            continue;
+                        }
+                        _ => {}
+                    } 
+                }
+                LexToken::RawComment(lex, span) => {
+                    match lex {
+                        grammar::RawComment::End => {
+                            // Must consume the text now!
+                            if let Some(txt) = text.take() {
+                                let current = self.stack.last_mut().unwrap();
+                                current.push(Token::Text(txt));
+                            } 
+                            self.stack.pop();
+                            continue;
+                        }
+                        _ => {}
+                    } 
+                }
+                _ => {}
+            }
+
+            let current = self.stack.last_mut().unwrap();
+            //println!("Current {:?}", current.block_type());
+
+            if t.is_text() {
+                let txt = text.get_or_insert(Text(s, t.span().clone()));
+                txt.1.end = t.span().end;
+            } else {
+                if let Some(txt) = text.take() {
+                    current.push(Token::Text(txt));
+                } 
+            }
+        }
+
+        if let Some(txt) = text.take() {
+            let current = self.stack.last_mut().unwrap();
+            current.push(Token::Text(txt));
+        }
+
+        Ok(self.stack.swap_remove(0))
+    }
 
     /*
     /// Compile a statement.

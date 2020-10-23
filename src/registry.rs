@@ -80,7 +80,7 @@ impl<'reg> Registry<'reg> {
         let tpl = self.get_template(name)?;
         let state = RenderState::new();
         let mut rc = RenderContext::new(&self, data, state, Box::new(writer))?;
-        println!("Do a render {:?}", tpl);
+        //println!("Do a render {:?}", tpl);
         tpl.render(&mut rc)?;
 
         Ok(())

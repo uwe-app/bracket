@@ -1,5 +1,38 @@
-use crate::lexer::{parser, SourceInfo};
+use std::ops::Range;
 use std::fmt;
+
+use crate::lexer::parser;
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SourceInfo {
+    //pub line: Range<usize>,
+    pub span: Range<usize>,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct Text<'source>(pub &'source str, pub Range<usize>);
+
+impl<'source> Text<'source> {
+    pub fn as_str(&self) -> &'source str {
+        &self.0[self.1.start..self.1.end] 
+    }
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct RawComment<'source> {
+    // Raw source input.
+    source: &'source str,
+    /// Range of the open tag.
+    open: Range<usize>,
+    /// Range of the close tag.
+    close: Range<usize>,
+}
+
+impl<'source> RawComment<'source> {
+    pub fn as_str(&self) -> &'source str {
+        &self.source[self.open.start..self.close.end] 
+    }
+}
 
 #[derive(Debug, Eq, PartialEq, Default)]
 pub struct Statement<'source> {
@@ -51,30 +84,21 @@ impl fmt::Display for Expr<'_> {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct Text<'source> {
-    pub info: SourceInfo,
-    pub value: &'source str,
-}
-
-impl fmt::Display for Text<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.value)
-    }
-}
-
-#[derive(Debug, Eq, PartialEq)]
 pub enum Token<'source> {
-    Expression(Expr<'source>),
     Text(Text<'source>),
+    RawComment(RawComment<'source>),
+
+    Expression(Expr<'source>),
     Block(Block<'source>),
 }
 
 impl fmt::Display for Token<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
+            Self::Text(ref t) => write!(f, "{}", t.as_str()),
+            Self::RawComment(ref t) => write!(f, "{}", t.as_str()),
             Self::Expression(ref t) => t.fmt(f),
             Self::Block(ref t) => t.fmt(f),
-            Self::Text(ref t) => t.fmt(f),
         }
     }
 }
@@ -96,33 +120,42 @@ impl Default for BlockType {
 
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct Block<'source> {
+    // Raw source input.
+    source: &'source str,
     block_type: BlockType,
     tokens: Vec<Token<'source>>,
-    pub(crate) open: Option<&'source str>,
-    pub(crate) close: Option<&'source str>,
-
-    // Used to coalesce content for raw blocks
-    info: Option<SourceInfo>,
-    value: Option<&'source str>,
+    open: Option<Range<usize>>,
+    close: Option<Range<usize>>,
 }
 
 impl<'source> Block<'source> {
-    pub fn new(block_type: BlockType) -> Self {
+    pub fn new(source: &'source str, block_type: BlockType, open: Option<Range<usize>>) -> Self {
         Self {
+            source,
             block_type,
             tokens: Vec::new(),
-            open: None,
+            open,
             close: None,
-            info: None,
-            value: None,
         }
     }
 
-    pub fn new_named(value: &'source str) -> Self {
-        let name = parser::block_name(&value);
-        let mut block = Block::new(BlockType::Named(name));
-        block.open = Some(value);
-        block
+    //pub fn new_named(value: &'source str) -> Self {
+        //let name = parser::block_name(&value);
+        //let mut block = Block::new(BlockType::Named(name));
+        //block.open = Some(value);
+        //block
+    //}
+    
+    pub fn open(&self) -> &'source str {
+        if let Some(ref open) = self.open {
+            &self.source[open.start..open.end] 
+        } else {""}
+    }
+
+    pub fn close(&self) -> &'source str {
+        if let Some(ref close) = self.close {
+            &self.source[close.start..close.end] 
+        } else {""}
     }
 
     pub fn push(&mut self, token: Token<'source>) {
@@ -136,27 +169,6 @@ impl<'source> Block<'source> {
     pub fn tokens(&self) -> &'source Vec<Token> {
         &self.tokens
     }
-
-    pub fn value(&self) -> Option<&'source str> {
-        self.value
-    }
-
-    /*
-    pub fn terminated(&self) -> bool {
-        self.close.is_some()
-    }
-    */
-
-    pub fn replace(&mut self, info: SourceInfo, value: &'source str) {
-        self.info = Some(info);
-        self.value = Some(value);
-    }
-
-    /*
-    pub fn tokens_mut(&mut self) -> &'source mut Vec<Token> {
-        &mut self.tokens
-    }
-    */
 
     pub fn is_raw(&self) -> bool {
         match self.block_type {
@@ -175,19 +187,11 @@ impl<'source> Block<'source> {
 
 impl fmt::Display for Block<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(ref s) = self.open {
-            write!(f, "{}", s)?;
+        if self.open.is_some() { write!(f, "{}", self.open())? }
+        for t in self.tokens.iter() {
+            t.fmt(f)?;
         }
-        if let Some(val) = self.value {
-            write!(f, "{}", val)?;
-        } else {
-            for t in self.tokens.iter() {
-                t.fmt(f)?;
-            }
-        }
-        if let Some(ref s) = self.close {
-            write!(f, "{}", s)?;
-        }
+        if self.close.is_some() { write!(f, "{}", self.close())? }
         Ok(())
     }
 }
