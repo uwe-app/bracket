@@ -27,14 +27,14 @@ fn string_literal() -> Result<()> {
     let tokens = string::lex(value);
 
     let expect = vec![
-        OuterToken(Start(r#"""#)),
-        InnerToken(Text("quo")),
+        (OuterToken(Start), 0..1),
+        (InnerToken(Text), 1..4),
         //InnerToken(EscapedCodepoint),
-        InnerToken(EscapedQuote(r#"\""#)),
-        InnerToken(Text("t")),
-        InnerToken(EscapedNewline(r"\n")),
-        InnerToken(Text("ed")),
-        InnerToken(End(r#"""#)),
+        (InnerToken(EscapedQuote), 4..6),
+        (InnerToken(Text), 6..7),
+        (InnerToken(EscapedNewline), 7..9),
+        (InnerToken(Text), 9..11),
+        (InnerToken(End), 11..12),
     ];
 
     assert_eq!(expect, tokens);
@@ -48,9 +48,9 @@ fn statement_variable() -> Result<()> {
     let tokens = statement::lex(value);
 
     let expect = vec![
-        OuterToken(Start("{{")),
-        InnerToken(Identifier("var")),
-        InnerToken(End("}}")),
+        (OuterToken(Start), 0..2),
+        (InnerToken(Identifier), 2..5),
+        (InnerToken(End), 5..7),
     ];
 
     assert_eq!(expect, tokens);
@@ -64,11 +64,11 @@ fn statement_path() -> Result<()> {
     let tokens = statement::lex(value);
 
     let expect = vec![
-        OuterToken(Start("{{")),
-        InnerToken(Identifier("obj")),
-        InnerToken(PathDelimiter(".")),
-        InnerToken(Identifier("var")),
-        InnerToken(End("}}")),
+        (OuterToken(Start), 0..2),
+        (InnerToken(Identifier), 2..5),
+        (InnerToken(PathDelimiter), 5..6),
+        (InnerToken(Identifier), 6..9),
+        (InnerToken(End), 9..11),
     ];
 
     assert_eq!(expect, tokens);
@@ -82,12 +82,12 @@ fn statement_partial() -> Result<()> {
     let tokens = statement::lex(value);
 
     let expect = vec![
-        OuterToken(Start("{{")),
-        InnerToken(Partial(">")),
-        InnerToken(WhiteSpace(" ")),
-        InnerToken(Identifier("foo")),
-        InnerToken(WhiteSpace(" ")),
-        InnerToken(End("}}")),
+        (OuterToken(Start), 0..2),
+        (InnerToken(Partial), 2..3),
+        (InnerToken(WhiteSpace), 3..4),
+        (InnerToken(Identifier), 4..7),
+        (InnerToken(WhiteSpace), 7..8),
+        (InnerToken(End), 8..10),
     ];
 
     assert_eq!(expect, tokens);
