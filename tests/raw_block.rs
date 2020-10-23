@@ -1,8 +1,4 @@
-use std::ops::Range;
-
-use hbs::{
-    Result,
-};
+use hbs::Result;
 
 #[test]
 fn raw_block() -> Result<()> {

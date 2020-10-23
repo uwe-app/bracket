@@ -65,5 +65,6 @@ pub(crate) enum Token<'source> {
 
 pub mod modes;
 pub mod raw_block;
+pub mod raw_comment;
 pub mod statement;
 pub mod string;
