@@ -26,6 +26,7 @@ impl<'source> Parser {
 
     //}
 
+    /*
     /// Compile a statement.
     fn statement(s: &'source str) -> Result<ast::Statement, SyntaxError> {
         let statement: ast::Statement = Default::default();
@@ -266,4 +267,5 @@ impl<'source> Parser {
 
         Ok(ast)
     }
+    */
 }

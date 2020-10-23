@@ -1,12 +1,13 @@
 use logos::{Lexer, Logos, Span};
 
-use super::{LexToken, modes::{self,Extras}, statement, raw_block, raw_comment};
-
-pub type Token = Box<dyn LexToken>;
+#[derive(Clone, Default)]
+pub struct Extras {
+    pub lines: usize,
+}
 
 #[derive(Logos, Clone, Debug, Eq, PartialEq)]
 #[logos(extras = Extras)]
-pub enum Outer {
+pub enum Block{
 
     #[regex(r"\{\{\{\{\s*raw\s*\}\}\}\}")]
     StartRawBlock,
@@ -16,6 +17,9 @@ pub enum Outer {
 
     #[regex(r"\{\{\{?")]
     StartStatement,
+
+    #[token("\"")]
+    StartStringLiteral,
 
     #[regex(r".")]
     Text,
@@ -29,18 +33,101 @@ pub enum Outer {
     Error,
 }
 
-impl LexToken for Outer {
-    fn is_text(&self) -> bool {
-        self == &Outer::Text
-    }
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
+#[logos(extras = Extras)]
+pub enum RawBlock {
+    #[regex(r".")]
+    Text,
+
+    #[regex("\r?\n", |lex| {
+        lex.extras.lines += 1;
+    })]
+    Newline,
+
+    #[regex(r"\{\{\{\{\s*/\s*raw\s*\}\}\}\}")]
+    End,
+
+    #[error]
+    Error,
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
+#[logos(extras = Extras)]
+pub enum RawComment {
+    #[regex(r".")]
+    Text,
+
+    #[regex("\r?\n", |lex| {
+        lex.extras.lines += 1;
+    })]
+    Newline,
+
+    #[regex(r"--\}\}")]
+    End,
+
+    #[error]
+    Error,
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
+#[logos(extras = Extras)]
+#[logos(subpattern identifier = r#"[^\s"!#%&'()*+,./;<=>@\[/\]^`{|}~]"#)]
+pub enum Statement {
+    #[token(r">")]
+    Partial,
+
+    #[regex(r"(?&identifier)+", priority = 2)]
+    Identifier,
+
+    #[regex(r"[./]")]
+    PathDelimiter,
+
+    #[regex(r"-?[0-9]*\.?[0-9]+")]
+    Number,
+
+    #[regex(r"(true|false)")]
+    Bool,
+
+    #[token("null")]
+    Null,
+
+    #[regex(r"\s+")]
+    WhiteSpace,
+
+    #[regex(r"\}?\}\}")]
+    End,
+
+    #[error]
+    Error,
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
+#[logos(extras = Extras)]
+pub enum StringLiteral {
+    #[regex(r#"[^\\"]+"#)]
+    Text,
+
+    #[token("\\n")]
+    EscapedNewline,
+
+    //#[regex(r"\\u\{[^}]*\}")]
+    //EscapedCodepoint,
+    #[token(r#"\""#)]
+    EscapedQuote,
+
+    #[token("\"")]
+    End,
+
+    #[error]
+    Error,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum BlockToken {
-    Block(Outer, Span),
-    RawBlock(raw_block::Inner, Span),
-    RawComment(raw_comment::Inner, Span),
-    Statement(statement::Inner, Span),
+    Block(Block, Span),
+    RawBlock(RawBlock, Span),
+    RawComment(RawComment, Span),
+    Statement(Statement, Span),
 }
 
 impl BlockToken {
@@ -55,9 +142,9 @@ impl BlockToken {
 
     fn is_text(&self) -> bool {
         match self {
-            BlockToken::Block(ref t, _) => t == &Outer::Text,
-            BlockToken::RawBlock(ref t, _) => t == &raw_block::Inner::Text,
-            BlockToken::RawComment(ref t, _) => t == &raw_comment::Inner::Text,
+            BlockToken::Block(ref t, _) => t == &Block::Text || t == &Block::Newline || t == &Block::StartStringLiteral,
+            BlockToken::RawBlock(ref t, _) => t == &RawBlock::Text || t == &RawBlock::Newline,
+            BlockToken::RawComment(ref t, _) => t == &RawComment::Text || t == &RawComment::Newline,
             BlockToken::Statement(ref t, _) => false,
         } 
     }
@@ -66,15 +153,15 @@ impl BlockToken {
 //pub struct BlockToken(pub Box<dyn LexToken>, pub Span);
 
 enum Modes<'source> {
-    Outer(Lexer<'source, Outer>),
-    RawBlock(Lexer<'source, raw_block::Inner>),
-    RawComment(Lexer<'source, raw_comment::Inner>),
-    Statement(Lexer<'source, statement::Inner>),
+    Block(Lexer<'source, Block>),
+    RawBlock(Lexer<'source, RawBlock>),
+    RawComment(Lexer<'source, RawComment>),
+    Statement(Lexer<'source, Statement>),
 }
 
 impl<'source> Modes<'source> {
     fn new(s: &'source str) -> Self {
-        Self::Outer(Outer::lexer(s))
+        Self::Block(Block::lexer(s))
     }
 }
 
@@ -91,8 +178,8 @@ impl<'source> Iterator for ModeBridge<'source> {
                 let result = inner.next();
                 let span = inner.span();
                 if let Some(token) = result {
-                    if raw_block::Inner::End  == token {
-                        self.mode = Modes::Outer(inner.to_owned().morph());
+                    if RawBlock::End  == token {
+                        self.mode = Modes::Block(inner.to_owned().morph());
                     }
                     let t = BlockToken::RawBlock(token, span);
                     Some(t)
@@ -104,8 +191,8 @@ impl<'source> Iterator for ModeBridge<'source> {
                 let result = inner.next();
                 let span = inner.span();
                 if let Some(token) = result {
-                    if raw_comment::Inner::End  == token {
-                        self.mode = Modes::Outer(inner.to_owned().morph());
+                    if RawComment::End  == token {
+                        self.mode = Modes::Block(inner.to_owned().morph());
                     }
                     let t = BlockToken::RawComment(token, span);
                     Some(t)
@@ -117,8 +204,8 @@ impl<'source> Iterator for ModeBridge<'source> {
                 let result = inner.next();
                 let span = inner.span();
                 if let Some(token) = result {
-                    if statement::Inner::End  == token {
-                        self.mode = Modes::Outer(inner.to_owned().morph());
+                    if Statement::End  == token {
+                        self.mode = Modes::Block(inner.to_owned().morph());
                     }
                     let t = BlockToken::Statement(token, span);
                     Some(t)
@@ -126,15 +213,15 @@ impl<'source> Iterator for ModeBridge<'source> {
                     None
                 }
             }
-            Modes::Outer(outer) => {
+            Modes::Block(outer) => {
                 let result = outer.next();
                 let span = outer.span();
                 if let Some(token) = result {
-                    if Outer::StartRawBlock == token {
+                    if Block::StartRawBlock == token {
                         self.mode = Modes::RawBlock(outer.to_owned().morph());
-                    } else if Outer::StartRawComment == token {
+                    } else if Block::StartRawComment == token {
                         self.mode = Modes::RawComment(outer.to_owned().morph());
-                    } else if Outer::StartStatement == token {
+                    } else if Block::StartStatement == token {
                         self.mode = Modes::Statement(outer.to_owned().morph());
                     }
                     let t = BlockToken::Block(token, span);
@@ -150,9 +237,7 @@ impl<'source> Iterator for ModeBridge<'source> {
 fn normalize(tokens: Vec<BlockToken>) -> Vec<BlockToken> {
     let mut normalized: Vec<BlockToken> = Vec::new();
     let mut span: Option<Span> = None;
-
     for t in tokens.into_iter() {
-
         if t.is_text() {
             if let Some(ref mut span) = span {
                 span.end = t.span().end; 
@@ -161,21 +246,22 @@ fn normalize(tokens: Vec<BlockToken>) -> Vec<BlockToken> {
             }
         } else {
             if let Some(span) = span.take() {
-                normalized.push(BlockToken::Block(Outer::Text, span));
+                normalized.push(BlockToken::Block(Block::Text, span));
                 normalized.push(t);
             } else {
                 normalized.push(t);
             }
         }
     }
-
     normalized
 }
 
-pub fn lex(s: &str) -> Vec<BlockToken> {
+pub fn lex(s: &str, normalized: bool) -> Vec<BlockToken> {
     let moded = ModeBridge {
         mode: Modes::new(s),
     };
     let tokens = moded.collect();
-    normalize(tokens)
+    if normalized {
+        normalize(tokens)
+    } else { tokens }
 }

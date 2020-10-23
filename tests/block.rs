@@ -2,20 +2,20 @@ use hbs::Result;
 
 #[test]
 fn block_text() -> Result<()> {
-    use hbs::lexer::grammar::block::{self, Outer::*};
-    use hbs::lexer::grammar::modes::Tokens::*;
+    use hbs::lexer::grammar::*;
 
     let value = "Some text {{foo}}";
-    let tokens = block::lex(value);
+    let tokens = lex(value, true);
 
     println!("{:#?}", tokens);
 
-    //let expect = vec![
-        //(OuterToken(Start), 0..13),
-        //(InnerToken(Text), 13..28),
-        //(InnerToken(End), 28..43),
-    //];
-    //assert_eq!(expect, tokens);
+    let expect = vec![
+        BlockToken::Block(Block::Text, 0..10),
+        BlockToken::Block(Block::StartStatement, 10..12),
+        BlockToken::Statement(Statement::Identifier, 12..15),
+        BlockToken::Statement(Statement::End, 15..17),
+    ];
+    assert_eq!(expect, tokens);
 
     Ok(())
 }

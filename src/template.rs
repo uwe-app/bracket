@@ -41,7 +41,8 @@ impl<'reg, 'render> Renderer<'reg, 'render> for Template<'_> {
 impl<'source> Template<'source> {
     /// Compile a block.
     pub fn compile(s: &'source str) -> Result<Template, SyntaxError> {
-        let block = Parser::parse(s)?;
+        //let block = Parser::parse(s)?;
+        let block = Default::default();
         Ok(Template { block })
     }
 }

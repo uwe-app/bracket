@@ -2,16 +2,13 @@ use hbs::Result;
 
 #[test]
 fn raw_comment() -> Result<()> {
-    use hbs::lexer::grammar::raw_comment::{self, Inner::*, Outer::*};
-    use hbs::lexer::grammar::modes::Tokens::*;
-
+    use hbs::lexer::grammar::*;
     let value = "{{!-- foo {{bar}} baz --}}";
-    let tokens = raw_comment::lex(value);
-
+    let tokens = lex(value, true);
     let expect = vec![
-        (OuterToken(Start), 0..5),
-        (InnerToken(Text), 5..22),
-        (InnerToken(End), 22..26),
+        BlockToken::Block(Block::StartRawComment, 0..5),
+        BlockToken::Block(Block::Text, 5..22),
+        BlockToken::RawComment(RawComment::End, 22..26),
     ];
     assert_eq!(expect, tokens);
 
@@ -20,20 +17,17 @@ fn raw_comment() -> Result<()> {
 
 #[test]
 fn raw_comment_multiline() -> Result<()> {
-    use hbs::lexer::grammar::raw_comment::{self, Inner::*, Outer::*};
-    use hbs::lexer::grammar::modes::Tokens::*;
-
+    use hbs::lexer::grammar::*;
     let value = "{{!--
 foo
 {{bar}}
 baz
 --}}";
-    let tokens = raw_comment::lex(value);
-
+    let tokens = lex(value, true);
     let expect = vec![
-        (OuterToken(Start), 0..5),
-        (InnerToken(Text), 5..22),
-        (InnerToken(End), 22..26),
+        BlockToken::Block(Block::StartRawComment, 0..5),
+        BlockToken::Block(Block::Text, 5..22),
+        BlockToken::RawComment(RawComment::End, 22..26),
     ];
     assert_eq!(expect, tokens);
 
