@@ -1,7 +1,5 @@
 use thiserror::Error;
 
-use crate::lexer::parser::LineRange;
-
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum Error {
     #[error(transparent)]
@@ -12,10 +10,10 @@ pub enum Error {
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum SyntaxError {
-    #[error("Syntax error, statement is empty (lines: {lines})")]
-    EmptyStatement { lines: LineRange },
-    #[error("Syntax error, expecting identifier (lines: {lines})")]
-    ExpectedIdentifier { lines: LineRange },
+    #[error("Syntax error, statement is empty")]
+    EmptyStatement,
+    #[error("Syntax error, expecting identifier")]
+    ExpectedIdentifier,
 }
 
 #[derive(Error, Debug)]

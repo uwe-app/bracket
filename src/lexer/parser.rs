@@ -27,17 +27,9 @@ impl From<LineNumber> for LineRange {
 
 #[derive(Default, Debug)]
 struct StatementCache {
-    tokens: Vec<(Statement, Span, LineNumber)>,
-    start: (Span, LineNumber),
-    end: (Span, LineNumber),
-}
-
-impl StatementCache {
-    pub fn lines(&self) -> LineRange {
-        LineRange {
-            range: self.start.1.start..self.end.1.end,
-        }
-    }
+    tokens: Vec<(Statement, Span)>,
+    start: Span,
+    end: Span,
 }
 
 #[derive(Debug)]
@@ -91,15 +83,14 @@ impl<'source> Parser<'source> {
     ) -> Result<(), SyntaxError> {
         if !statement.tokens.is_empty() {
             let mut iter = statement.tokens.iter();
-            let (first, span, lines) = iter.next().unwrap();
-            let mut identifier: Option<(&Statement, &Span, &LineNumber)> = None;
+            let (first, span) = iter.next().unwrap();
+            let mut identifier: Option<(&Statement, &Span)> = None;
 
             // Find the next token that exists in a list of expected tokens
             // at the next position consuming preceeding whitespace.
             let mut find_until = |expects: Vec<Statement>| -> Option<&(
                 Statement,
                 Span,
-                LineNumber,
             )> {
                 while let Some(item) = iter.next() {
                     if item.0 == Statement::WhiteSpace {
@@ -114,31 +105,27 @@ impl<'source> Parser<'source> {
 
             match first {
                 Statement::Identifier => {
-                    identifier = Some((first, span, lines));
+                    identifier = Some((first, span));
                 }
                 Statement::Partial => {
-                    if let Some((lex, span, lines)) =
+                    if let Some((lex, span)) =
                         find_until(vec![Statement::Identifier])
                     {
-                        identifier = Some((lex, span, lines));
+                        identifier = Some((lex, span));
                     }
                 }
                 _ => {}
             }
 
             if identifier.is_none() {
-                return Err(SyntaxError::ExpectedIdentifier {
-                    lines: LineRange::from(statement.lines()),
-                });
+                return Err(SyntaxError::ExpectedIdentifier);
             }
 
             println!("Parse statement with identifier {:?}", identifier);
 
             Ok(())
         } else {
-            Err(SyntaxError::EmptyStatement {
-                lines: LineRange::from(statement.lines()),
-            })
+            Err(SyntaxError::EmptyStatement)
         }
     }
 
@@ -212,7 +199,7 @@ impl<'source> Parser<'source> {
                         );
 
                         statement = Default::default();
-                        statement.start = (span.clone(), lines.clone());
+                        statement.start = span.clone();
                         continue;
                     }
                     _ => {}
@@ -247,7 +234,7 @@ impl<'source> Parser<'source> {
                 }
                 Token::Statement(lex, span, lines) => match lex {
                     Statement::End => {
-                        statement.end = (span.clone(), lines.clone());
+                        statement.end = span.clone();
                         self.parse_statement(&mut statement)?;
                         self.exit_stack(span.clone(), &mut text);
                         continue;
@@ -256,7 +243,6 @@ impl<'source> Parser<'source> {
                         statement.tokens.push((
                             lex.clone(),
                             span.clone(),
-                            lines.clone(),
                         ));
                         continue;
                     }
