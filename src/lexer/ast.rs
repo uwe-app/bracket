@@ -18,6 +18,12 @@ impl<'source> Text<'source> {
     }
 }
 
+impl fmt::Display for Text<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
 #[derive(Debug, Eq, PartialEq)]
 pub enum BlockType {
     Root,
@@ -67,7 +73,7 @@ impl<'source> Block<'source> {
             BlockType::Root => self.source,
             _ => {
                 let open = self.open.clone().unwrap_or(0..0);
-                let close = self.close.clone().unwrap_or(0..0);
+                let close = self.close.clone().unwrap_or(0..self.source.len());
                 &self.source[open.start..close.end]
             }
         }
@@ -83,10 +89,7 @@ impl<'source> Block<'source> {
 
     pub fn between(&self) -> &'source str {
         let open = self.open.clone().unwrap_or(0..0);
-        let close = self.close.clone().unwrap_or(0..0);
-        println!("Rendering between!!");
-        println!("{:?}", open);
-        println!("{:?}", close);
+        let close = self.close.clone().unwrap_or(0..self.source.len());
         &self.source[open.end..close.start]
     }
 

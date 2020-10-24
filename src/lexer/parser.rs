@@ -17,7 +17,13 @@ impl<'source> Parser<'source> {
         Self { stack: vec![] }
     }
 
-    fn enter_stack(&mut self, block: Block<'source>) {
+    fn enter_stack(&mut self, block: Block<'source>, text: &mut Option<Text<'source>>) {
+        // Must consume the text now!
+        if let Some(txt) = text.take() {
+            if let Some(current) = self.stack.last_mut() {
+                current.push(Block::from(txt));
+            }
+        }
         self.stack.push(block);
     }
 
@@ -25,9 +31,7 @@ impl<'source> Parser<'source> {
         &mut self,
         close: Range<usize>,
         text: &mut Option<Text<'source>>,
-        //token: &F,
-    ) //where F: Fn(Block<'source>) -> Token<'source>
-    {
+    ) {
         let current = self.stack.last_mut().unwrap();
 
         // Must consume the text now!
@@ -38,7 +42,7 @@ impl<'source> Parser<'source> {
         current.exit(close);
         let mut last = self.stack.pop();
         if let Some(block) = last.take() {
-            //block.foo();
+            // Add the current block to the tree
             let current = self.stack.last_mut().unwrap();
             current.push(block);
         }
@@ -50,10 +54,10 @@ impl<'source> Parser<'source> {
     ) -> Result<Block<'source>, SyntaxError> {
         let tokens = lex(s, false);
 
-        self.enter_stack(Block::new(s, BlockType::Root, None));
-
         // Consecutive text to normalize
         let mut text: Option<Text> = None;
+
+        self.enter_stack(Block::new(s, BlockType::Root, None), &mut text);
 
         for t in tokens.into_iter() {
             //println!("Parser {:?}", t);
@@ -65,7 +69,7 @@ impl<'source> Parser<'source> {
                             s,
                             BlockType::RawBlock,
                             Some(span.clone()),
-                        ));
+                        ), &mut text);
                         continue;
                     }
                     grammar::Block::StartRawComment => {
@@ -73,7 +77,7 @@ impl<'source> Parser<'source> {
                             s,
                             BlockType::RawComment,
                             Some(span.clone()),
-                        ));
+                        ), &mut text);
                         continue;
                     }
                     grammar::Block::StartRawStatement => {
@@ -81,7 +85,7 @@ impl<'source> Parser<'source> {
                             s,
                             BlockType::RawStatement,
                             Some(span.clone()),
-                        ));
+                        ), &mut text);
                         continue;
                     }
                     _ => {}
@@ -111,20 +115,18 @@ impl<'source> Parser<'source> {
             }
 
             let current = self.stack.last_mut().unwrap();
-            //println!("Current {:?}", current.block_type());
 
             if t.is_text() {
                 let txt = text.get_or_insert(Text(s, t.span().clone()));
-                //println!("Starting text block with span {:?}", txt);
                 txt.1.end = t.span().end;
             } else {
                 if let Some(txt) = text.take() {
-                    println!("Adding text!");
                     current.push(Block::from(txt));
                 }
             }
         }
 
+        // Must append any remaining normalized text!
         if let Some(txt) = text.take() {
             let current = self.stack.last_mut().unwrap();
             current.push(Block::from(txt));
