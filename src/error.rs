@@ -1,6 +1,8 @@
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+use crate::lexer::parser::LineRange;
+
+#[derive(Error, Debug, Eq, PartialEq)]
 pub enum Error {
     #[error(transparent)]
     Syntax(#[from] SyntaxError),
@@ -8,18 +10,10 @@ pub enum Error {
     Render(#[from] RenderError),
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Eq, PartialEq)]
 pub enum SyntaxError {
-    #[error("Token parse error")]
-    InvalidToken,
-    #[error("Got an end block without a start block")]
-    BadEndBlock,
-    #[error("Raw block was not terminated")]
-    RawBlockNotTerminated,
-    #[error("Got an end block but no named block is open")]
-    BadEndNamedBlock,
-    #[error("Block {0} open but got closing block with name {1}")]
-    BadBlockEndName(String, String),
+    #[error("Syntax error, statement is empty (lines: {lines})")]
+    EmptyStatement {lines: LineRange},
 }
 
 #[derive(Error, Debug)]
@@ -32,3 +26,14 @@ pub enum RenderError {
     #[error(transparent)]
     Json(#[from] serde_json::Error),
 }
+
+impl PartialEq for RenderError {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            // FIXME:
+            _ => false
+        }
+    }
+}
+
+impl Eq for RenderError {}

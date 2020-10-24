@@ -1,11 +1,42 @@
+use std::fmt;
 use std::ops::Range;
 
 use super::{
     ast::{self, Block, BlockType, Text},
-    grammar::{self, lex, Token},
+    grammar::{self, lex, Token, LineNumber, Span},
 };
 
 use crate::error::SyntaxError;
+
+#[derive(Default, Debug, Eq, PartialEq)]
+pub struct LineRange {
+    range: LineNumber
+}
+
+impl fmt::Display for LineRange {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}-{}", self.range.start + 1, self.range.end + 1)
+    }
+}
+
+impl From<LineNumber> for LineRange {
+    fn from(lines: LineNumber) -> Self {
+        Self {range: lines}
+    }
+}
+
+#[derive(Default, Debug)]
+struct Statement {
+    tokens: Vec<Token>,
+    start: (Span, LineNumber),
+    end: (Span, LineNumber),
+}
+
+impl Statement {
+    pub fn lines(&self) -> LineRange {
+        LineRange {range: self.start.1.start..self.end.1.end }
+    }
+}
 
 #[derive(Debug)]
 pub struct Parser<'source> {
@@ -48,6 +79,17 @@ impl<'source> Parser<'source> {
         }
     }
 
+    fn parse_statement(&mut self, statement: &mut Statement) -> Result<(), SyntaxError> {
+        println!("Parse statement {:?}", statement);
+        if !statement.tokens.is_empty() {
+            let first = statement.tokens.swap_remove(0);
+            Ok(())
+        } else {
+            Err(SyntaxError::EmptyStatement { lines: LineRange::from(statement.lines()) })
+        }
+
+    }
+
     pub fn parse(
         &mut self,
         s: &'source str,
@@ -56,6 +98,8 @@ impl<'source> Parser<'source> {
 
         // Consecutive text to normalize
         let mut text: Option<Text> = None;
+        //let mut statement: Vec<Token> = Vec::new();
+        let mut statement: Statement = Default::default();
 
         self.enter_stack(Block::new(s, BlockType::Root, None), &mut text);
 
@@ -63,7 +107,7 @@ impl<'source> Parser<'source> {
             //println!("Parser {:?}", t);
 
             match &t {
-                Token::Block(lex, span, _line) => match lex {
+                Token::Block(lex, span, lines) => match lex {
                     grammar::Block::StartRawBlock => {
                         self.enter_stack(Block::new(
                             s,
@@ -102,6 +146,9 @@ impl<'source> Parser<'source> {
                             BlockType::Comment,
                             Some(span.clone()),
                         ), &mut text);
+
+                        statement = Default::default();
+                        statement.start = (span.clone(), lines.clone());
                         continue;
                     }
                     _ => {}
@@ -134,12 +181,17 @@ impl<'source> Parser<'source> {
                     }
                     _ => {}
                 }
-                Token::Statement(lex, span, _line) => match lex {
+                Token::Statement(lex, span, lines) => match lex {
                     grammar::Statement::End => {
+                        statement.end = (span.clone(), lines.clone());
+                        self.parse_statement(&mut statement)?;
                         self.exit_stack(span.clone(), &mut text);
                         continue;
                     }
-                    _ => {}
+                    _ => {
+                        statement.tokens.push(t);
+                        continue;
+                    }
                 }
                 _ => {}
             }

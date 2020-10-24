@@ -1,6 +1,8 @@
-use logos::{Lexer, Logos, Span};
+use std::ops::Range;
+use logos::{Lexer, Logos};
 
 /// Type to indicate a line number range: `Range<usize>`.
+pub type Span = Range<usize>;
 pub type LineNumber = Span;
 
 #[derive(Clone, Default)]

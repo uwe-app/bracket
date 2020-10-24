@@ -1,4 +1,4 @@
-use hbs::{Registry, Result};
+use hbs::{Registry, Error, Result, error::SyntaxError, lexer::parser::LineRange};
 use serde_json::json;
 
 #[test]
@@ -103,3 +103,15 @@ fn render_raw_statement() -> Result<()> {
     Ok(())
 }
 
+#[test]
+fn render_statement() -> Result<()> {
+    let mut registry = Registry::new();
+    let name = "mock-template";
+    let value = r"{{foo}}";
+    let expected = r"bar";
+    let data = json!({"foo": "bar"});
+    registry.register_template_string(name, value)?;
+    let result = registry.render(name, &data)?;
+    //assert_eq!(expected, result);
+    Ok(())
+}
