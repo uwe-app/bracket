@@ -153,3 +153,54 @@ fn lex_raw_statement_partial() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn lex_statement_identifier() -> Result<()> {
+    let value = "{{foo}}";
+    let tokens = lex(value, true);
+
+    let expect = vec![
+        Token::Block(Block::StartStatement, 0..2),
+        Token::Statement(Statement::Identifier, 2..5),
+        Token::Statement(Statement::End, 5..7),
+    ];
+    assert_eq!(expect, tokens);
+
+    Ok(())
+}
+
+#[test]
+fn lex_statement_partial() -> Result<()> {
+    let value = "{{> foo}}";
+    let tokens = lex(value, true);
+
+    let expect = vec![
+        Token::Block(Block::StartStatement, 0..2),
+        Token::Statement(Statement::Partial, 2..3),
+        Token::Statement(Statement::WhiteSpace, 3..4),
+        Token::Statement(Statement::Identifier, 4..7),
+        Token::Statement(Statement::End, 7..9),
+    ];
+    assert_eq!(expect, tokens);
+
+    Ok(())
+}
+
+#[test]
+fn lex_statement_path() -> Result<()> {
+    let value = "{{foo.bar.baz}}";
+    let tokens = lex(value, true);
+
+    let expect = vec![
+        Token::Block(Block::StartStatement, 0..2),
+        Token::Statement(Statement::Identifier, 2..5),
+        Token::Statement(Statement::PathDelimiter, 5..6),
+        Token::Statement(Statement::Identifier, 6..9),
+        Token::Statement(Statement::PathDelimiter, 9..10),
+        Token::Statement(Statement::Identifier, 10..13),
+        Token::Statement(Statement::End, 13..15),
+    ];
+    assert_eq!(expect, tokens);
+
+    Ok(())
+}

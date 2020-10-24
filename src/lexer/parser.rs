@@ -96,6 +96,14 @@ impl<'source> Parser<'source> {
                         ), &mut text);
                         continue;
                     }
+                    grammar::Block::StartStatement => {
+                        self.enter_stack(Block::new(
+                            s,
+                            BlockType::Comment,
+                            Some(span.clone()),
+                        ), &mut text);
+                        continue;
+                    }
                     _ => {}
                 }
                 LexToken::RawBlock(lex, span) => match lex {
@@ -121,6 +129,13 @@ impl<'source> Parser<'source> {
                 }
                 LexToken::Comment(lex, span) => match lex {
                     grammar::Comment::End => {
+                        self.exit_stack(span.clone(), &mut text);
+                        continue;
+                    }
+                    _ => {}
+                }
+                LexToken::Statement(lex, span) => match lex {
+                    grammar::Statement::End => {
                         self.exit_stack(span.clone(), &mut text);
                         continue;
                     }
