@@ -19,7 +19,7 @@ fn render_text() -> Result<()> {
 }
 
 #[test]
-fn render_raw() -> Result<()> {
+fn render_raw_block() -> Result<()> {
     let mut registry = Registry::new();
     let name = "mock-template";
     let value = r"{{{{raw}}}}foo {{bar}} baz{{{{/raw}}}}";

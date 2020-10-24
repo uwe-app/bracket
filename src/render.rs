@@ -3,7 +3,7 @@ use serde_json::Value;
 
 use crate::{
     error::RenderError,
-    lexer::ast::{Block, BlockType, Expr, Token},
+    lexer::ast::{Block, BlockType},
     output::Output,
     registry::Registry,
 };
@@ -60,6 +60,7 @@ impl<'source> Render<'source> {
         Self { block }
     }
 
+    /*
     fn render_expr<'reg, 'render>(
         &self,
         expr: &Expr<'source>,
@@ -74,7 +75,9 @@ impl<'source> Render<'source> {
         }
         Ok(())
     }
+    */
 
+    /*
     fn render_token<'reg, 'render>(
         &self,
         token: &Token<'source>,
@@ -84,6 +87,9 @@ impl<'source> Render<'source> {
             Token::Text(ref t) => {
                 rc.write_str(t.as_str())?;
             }
+            Token::RawBlock(ref t) => {
+                println!("RENDER A RAW BLOCK");
+            }
             Token::RawComment(ref t) => {}
             Token::Expression(ref e) => self.render_expr(e, rc)?,
             Token::Block(ref b) => {
@@ -92,6 +98,7 @@ impl<'source> Render<'source> {
         }
         Ok(())
     }
+    */
 
     fn render_block<'reg, 'render>(
         &self,
@@ -101,6 +108,12 @@ impl<'source> Render<'source> {
 
         //println!("rendering a block {:?}", block.block_type());
         match block.block_type() {
+            BlockType::Text => {
+                rc.write_str(block.open())?;
+            }
+            BlockType::RawBlock => {
+                rc.write_str(block.between())?;
+            }
             BlockType::RawComment => {
                 // NOTE: must ignore raw comments when rendering
             }
@@ -109,9 +122,9 @@ impl<'source> Render<'source> {
                 rc.write_str(raw)?;
             }
             _ => {
-                for t in block.tokens().iter() {
-                    //println!("Rendering token {:?}", t);
-                    self.render_token(t, rc)?;
+                for b in block.blocks().iter() {
+                    println!("Rendering block {:?}", b.as_str());
+                    self.render_block(b, rc)?;
                 }
             }
         }

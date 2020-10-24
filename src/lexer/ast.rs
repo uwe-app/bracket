@@ -19,93 +19,10 @@ impl<'source> Text<'source> {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct RawComment<'source> {
-    // Raw source input.
-    source: &'source str,
-    /// Range of the open tag.
-    open: Range<usize>,
-    /// Range of the close tag.
-    close: Range<usize>,
-}
-
-impl<'source> RawComment<'source> {
-    pub fn as_str(&self) -> &'source str {
-        &self.source[self.open.start..self.close.end]
-    }
-}
-
-#[derive(Debug, Eq, PartialEq, Default)]
-pub struct Statement<'source> {
-    tokens: Vec<Token<'source>>,
-}
-
-impl Statement<'_> {
-    pub fn tokens(&self) -> &Vec<Token> {
-        &self.tokens
-    }
-}
-
-#[derive(Debug, Eq, PartialEq)]
-pub struct Expr<'source> {
-    info: SourceInfo,
-    value: &'source str,
-}
-
-impl<'source> Expr<'source> {
-    pub fn new(info: SourceInfo, value: &'source str) -> Self {
-        Self { info, value }
-    }
-
-    pub fn is_raw(&self) -> bool {
-        if !self.value.is_empty() {
-            let first = self.value.chars().nth(0).unwrap();
-            return first == '\\';
-        }
-        false
-    }
-
-    pub fn escapes(&self) -> bool {
-        !self.value.starts_with("{{{")
-    }
-
-    pub fn value(&self) -> &str {
-        &self.value
-    }
-
-    pub fn info(&self) -> &SourceInfo {
-        &self.info
-    }
-}
-
-impl fmt::Display for Expr<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.value)
-    }
-}
-
-#[derive(Debug, Eq, PartialEq)]
-pub enum Token<'source> {
-    Text(Text<'source>),
-    RawComment(RawComment<'source>),
-
-    Expression(Expr<'source>),
-    Block(Block<'source>),
-}
-
-impl fmt::Display for Token<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match *self {
-            Self::Text(ref t) => write!(f, "{}", t.as_str()),
-            Self::RawComment(ref t) => write!(f, "{}", t.as_str()),
-            Self::Expression(ref t) => t.fmt(f),
-            Self::Block(ref t) => t.fmt(f),
-        }
-    }
-}
-
-#[derive(Debug, Eq, PartialEq)]
 pub enum BlockType {
     Root,
+    /// Text blocks use the `open` range for the entire slice.
+    Text,
     RawBlock,
     RawStatement,
     RawComment,
@@ -113,9 +30,7 @@ pub enum BlockType {
 }
 
 impl Default for BlockType {
-    fn default() -> Self {
-        Self::Root
-    }
+    fn default() -> Self { Self::Root }
 }
 
 #[derive(Debug, Default, Eq, PartialEq)]
@@ -123,7 +38,7 @@ pub struct Block<'source> {
     // Raw source input.
     source: &'source str,
     block_type: BlockType,
-    tokens: Vec<Token<'source>>,
+    blocks: Vec<Block<'source>>,
     open: Option<Range<usize>>,
     close: Option<Range<usize>>,
 }
@@ -137,7 +52,7 @@ impl<'source> Block<'source> {
         Self {
             source,
             block_type,
-            tokens: Vec::new(),
+            blocks: Vec::new(),
             open,
             close: None,
         }
@@ -166,6 +81,15 @@ impl<'source> Block<'source> {
         }
     }
 
+    pub fn between(&self) -> &'source str {
+        let open = self.open.clone().unwrap_or(0..0);
+        let close = self.close.clone().unwrap_or(0..0);
+        println!("Rendering between!!");
+        println!("{:?}", open);
+        println!("{:?}", close);
+        &self.source[open.end..close.start]
+    }
+
     pub fn close(&self) -> &'source str {
         if let Some(ref close) = self.close {
             &self.source[close.start..close.end]
@@ -174,24 +98,27 @@ impl<'source> Block<'source> {
         }
     }
 
-    pub fn push(&mut self, token: Token<'source>) {
-        self.tokens.push(token);
+    pub fn push(&mut self, token: Block<'source>) {
+        self.blocks.push(token);
     }
 
     pub fn block_type(&self) -> &BlockType {
         &self.block_type
     }
 
-    pub fn tokens(&self) -> &'source Vec<Token> {
-        &self.tokens
+    pub fn blocks(&self) -> &'source Vec<Block> {
+        &self.blocks
     }
+}
 
-    //pub fn is_raw(&self) -> bool {
-        //match self.block_type {
-            //BlockType::Raw => true,
-            //_ => false,
-        //}
-    //}
+impl<'source> From<Text<'source>> for Block<'source> {
+    fn from(txt: Text<'source>) -> Block<'source> {
+        Block::new(
+            txt.0,
+            BlockType::Text,
+            Some(txt.1),
+        ) 
+    }
 }
 
 impl fmt::Display for Block<'_> {
@@ -199,7 +126,7 @@ impl fmt::Display for Block<'_> {
         match self.block_type() {
             BlockType::Root => write!(f, "{}", self.source),
             _ => {
-                for t in self.tokens() {
+                for t in self.blocks() {
                     t.fmt(f)?;
                 }
                 Ok(())
