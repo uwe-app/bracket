@@ -69,7 +69,7 @@ fn render_raw_comment() -> Result<()> {
 fn render_raw_statement() -> Result<()> {
     let mut registry = Registry::new();
     let name = "mock-template";
-    let value = r"\{{}}";
+    let value = r"\{{expr}}";
     let expected = r"{{expr}}";
     let data = json!({});
     registry.register_template_string(name, value)?;

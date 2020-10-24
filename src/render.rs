@@ -98,14 +98,19 @@ impl<'source> Render<'source> {
         block: &Block<'source>,
         rc: &mut RenderContext<'reg, 'render>,
     ) -> Result<(), RenderError> {
-        println!("rendering a block {:?}", block.block_type());
+
+        //println!("rendering a block {:?}", block.block_type());
         match block.block_type() {
+            BlockType::RawComment => {
+                // NOTE: must ignore raw comments when rendering
+            }
             BlockType::RawStatement => {
-                println!("RENDER A RAW STATEMENT");
+                let raw = &block.as_str()[1..];
+                rc.write_str(raw)?;
             }
             _ => {
                 for t in block.tokens().iter() {
-                    println!("Rendering token {:?}", t);
+                    //println!("Rendering token {:?}", t);
                     self.render_token(t, rc)?;
                 }
             }

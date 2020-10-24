@@ -36,7 +36,6 @@ impl<'source> Parser<'source> {
         current.exit(close);
         let mut last = self.stack.pop();
         if let Some(block) = last.take() {
-            println!("Got last block to add to the current parent...");
             let current = self.stack.last_mut().unwrap();
             current.push(Token::Block(block));
         }
@@ -75,8 +74,6 @@ impl<'source> Parser<'source> {
                         continue;
                     }
                     grammar::Block::StartRawStatement => {
-                        println!("START RAW STATEMENT");
-
                         self.enter_stack(Block::new(
                             s,
                             BlockType::RawStatement,
@@ -102,7 +99,6 @@ impl<'source> Parser<'source> {
                 },
                 LexToken::RawStatement(lex, span) => match lex {
                     grammar::RawStatement::End => {
-                        println!("END RAW STATEMENT");
                         self.exit_stack(span.clone(), &mut text);
                         continue;
                     }
@@ -129,6 +125,8 @@ impl<'source> Parser<'source> {
             let current = self.stack.last_mut().unwrap();
             current.push(Token::Text(txt));
         }
+
+        //println!("{:#?}", self.stack.first());
 
         Ok(self.stack.swap_remove(0))
     }
