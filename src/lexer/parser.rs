@@ -1,8 +1,8 @@
 use std::ops::Range;
 
 use super::{
-    ast::{self, Block, BlockType, SourceInfo, Text},
-    grammar::{self, lex, Token as LexToken},
+    ast::{self, Block, BlockType, Text},
+    grammar::{self, lex, Token},
 };
 
 use crate::error::SyntaxError;
@@ -63,7 +63,7 @@ impl<'source> Parser<'source> {
             //println!("Parser {:?}", t);
 
             match &t {
-                LexToken::Block(lex, span) => match lex {
+                Token::Block(lex, span, _line) => match lex {
                     grammar::Block::StartRawBlock => {
                         self.enter_stack(Block::new(
                             s,
@@ -106,35 +106,35 @@ impl<'source> Parser<'source> {
                     }
                     _ => {}
                 }
-                LexToken::RawBlock(lex, span) => match lex {
+                Token::RawBlock(lex, span, _line) => match lex {
                     grammar::RawBlock::End => {
                         self.exit_stack(span.clone(), &mut text);
                         continue;
                     }
                     _ => {}
                 }
-                LexToken::RawComment(lex, span) => match lex {
+                Token::RawComment(lex, span, _line) => match lex {
                     grammar::RawComment::End => {
                         self.exit_stack(span.clone(), &mut text);
                         continue;
                     }
                     _ => {}
                 }
-                LexToken::RawStatement(lex, span) => match lex {
+                Token::RawStatement(lex, span, _line) => match lex {
                     grammar::RawStatement::End => {
                         self.exit_stack(span.clone(), &mut text);
                         continue;
                     }
                     _ => {}
                 }
-                LexToken::Comment(lex, span) => match lex {
+                Token::Comment(lex, span, _line) => match lex {
                     grammar::Comment::End => {
                         self.exit_stack(span.clone(), &mut text);
                         continue;
                     }
                     _ => {}
                 }
-                LexToken::Statement(lex, span) => match lex {
+                Token::Statement(lex, span, _line) => match lex {
                     grammar::Statement::End => {
                         self.exit_stack(span.clone(), &mut text);
                         continue;

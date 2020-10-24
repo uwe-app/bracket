@@ -5,11 +5,13 @@ use crate::lexer::parser;
 
 // NOTE: Text blocks use the `open` range for the entire slice.
 
+/*
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SourceInfo {
     //pub line: Range<usize>,
     pub span: Range<usize>,
 }
+*/
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Text<'source>(pub &'source str, pub Range<usize>);

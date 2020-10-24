@@ -1,5 +1,8 @@
 use logos::{Lexer, Logos, Span};
 
+/// Type to indicate a line number range: `Range<usize>`.
+pub type LineNumber = Span;
+
 #[derive(Clone, Default)]
 pub struct Extras {
     pub lines: usize,
@@ -161,6 +164,11 @@ pub enum StringLiteral {
     #[token(r#"\""#)]
     EscapedQuote,
 
+    #[regex("\r?\n", |lex| {
+        lex.extras.lines += 1;
+    })]
+    Newline,
+
     #[token("\"")]
     End,
 
@@ -170,42 +178,53 @@ pub enum StringLiteral {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Token {
-    Block(Block, Span),
-    RawBlock(RawBlock, Span),
-    RawComment(RawComment, Span),
-    RawStatement(RawStatement, Span),
-    Comment(Comment, Span),
-    Statement(Statement, Span),
+    Block(Block, Span, LineNumber),
+    RawBlock(RawBlock, Span, LineNumber),
+    RawComment(RawComment, Span, LineNumber),
+    RawStatement(RawStatement, Span, LineNumber),
+    Comment(Comment, Span, LineNumber),
+    Statement(Statement, Span, LineNumber),
 }
 
 impl Token {
     pub fn span(&self) -> &Span {
         match self {
-            Token::Block(_, ref span) => span,
-            Token::RawBlock(_, ref span) => span,
-            Token::RawComment(_, ref span) => span,
-            Token::RawStatement(_, ref span) => span,
-            Token::Comment(_, ref span) => span,
-            Token::Statement(_, ref span) => span,
+            Token::Block(_, ref span, _) => span,
+            Token::RawBlock(_, ref span, _) => span,
+            Token::RawComment(_, ref span, _) => span,
+            Token::RawStatement(_, ref span, _) => span,
+            Token::Comment(_, ref span, _) => span,
+            Token::Statement(_, ref span, _) => span,
+        }
+    }
+
+    pub fn lines(&self) -> &LineNumber {
+        match self {
+            Token::Block(_, _, ref lines) => lines,
+            Token::RawBlock(_, _, ref lines) => lines,
+            Token::RawComment(_, _, ref lines) => lines,
+            Token::RawStatement(_, _, ref lines) => lines,
+            Token::Comment(_, _, ref lines) => lines,
+            Token::Statement(_, _, ref lines) => lines,
         }
     }
 
     pub fn is_text(&self) -> bool {
         match self {
-            Token::Block(ref t, _) => t == &Block::Text || t == &Block::Newline,
-            Token::RawBlock(ref t, _) => {
+            Token::Block(ref t, _, _) => t == &Block::Text || t == &Block::Newline,
+            Token::RawBlock(ref t, _, _) => {
                 t == &RawBlock::Text || t == &RawBlock::Newline
             }
-            Token::RawComment(ref t, _) => {
+            Token::RawComment(ref t, _, _) => {
                 t == &RawComment::Text || t == &RawComment::Newline
             }
-            Token::RawStatement(ref t, _) => {
+            Token::RawStatement(ref t, _, _) => {
                 t == &RawStatement::Text || t == &RawStatement::Newline
             }
-            Token::Comment(ref t, _) => {
+            Token::Comment(ref t, _, _) => {
                 t == &Comment::Text || t == &Comment::Newline
             }
-            Token::Statement(ref t, _) => false,
+            Token::Statement(ref t, _, _) => false,
         }
     }
 }
@@ -231,95 +250,101 @@ struct ModeBridge<'source> {
     mode: Modes<'source>,
 }
 
-// Clones as we switch between modes
+/// Clone lexers as we switch between modes.
 impl<'source> Iterator for ModeBridge<'source> {
     type Item = Token;
     fn next(&mut self) -> Option<Self::Item> {
         match &mut self.mode {
-            Modes::RawBlock(inner) => {
-                let result = inner.next();
-                let span = inner.span();
+            Modes::RawBlock(lexer) => {
+                let result = lexer.next();
+                let span = lexer.span();
+                let lines = lexer.extras.lines..lexer.extras.lines;
+
                 if let Some(token) = result {
                     if RawBlock::End == token {
-                        self.mode = Modes::Block(inner.to_owned().morph());
+                        self.mode = Modes::Block(lexer.to_owned().morph());
                     }
-                    let t = Token::RawBlock(token, span);
-                    Some(t)
+                    Some(Token::RawBlock(token, span, lines))
                 } else {
                     None
                 }
             }
-            Modes::RawComment(inner) => {
-                let result = inner.next();
-                let span = inner.span();
+            Modes::RawComment(lexer) => {
+                let result = lexer.next();
+                let span = lexer.span();
+                let lines = lexer.extras.lines..lexer.extras.lines;
+
                 if let Some(token) = result {
                     if RawComment::End == token {
-                        self.mode = Modes::Block(inner.to_owned().morph());
+                        self.mode = Modes::Block(lexer.to_owned().morph());
                     }
-                    let t = Token::RawComment(token, span);
-                    Some(t)
+                    Some(Token::RawComment(token, span, lines))
                 } else {
                     None
                 }
             }
-            Modes::RawStatement(inner) => {
-                let result = inner.next();
-                let span = inner.span();
+            Modes::RawStatement(lexer) => {
+                let result = lexer.next();
+                let span = lexer.span();
+                let lines = lexer.extras.lines..lexer.extras.lines;
+
                 if let Some(token) = result {
                     if RawStatement::End == token {
-                        self.mode = Modes::Block(inner.to_owned().morph());
+                        self.mode = Modes::Block(lexer.to_owned().morph());
                     }
-                    let t = Token::RawStatement(token, span);
-                    Some(t)
+                    Some(Token::RawStatement(token, span, lines))
                 } else {
                     None
                 }
             }
-            Modes::Comment(inner) => {
-                let result = inner.next();
-                let span = inner.span();
+            Modes::Comment(lexer) => {
+                let result = lexer.next();
+                let span = lexer.span();
+                let lines = lexer.extras.lines..lexer.extras.lines;
+
                 if let Some(token) = result {
                     if Comment::End == token {
-                        self.mode = Modes::Block(inner.to_owned().morph());
+                        self.mode = Modes::Block(lexer.to_owned().morph());
                     }
-                    let t = Token::Comment(token, span);
-                    Some(t)
+                    Some(Token::Comment(token, span, lines))
                 } else {
                     None
                 }
             }
-            Modes::Statement(inner) => {
-                let result = inner.next();
-                let span = inner.span();
+            Modes::Statement(lexer) => {
+                let result = lexer.next();
+                let span = lexer.span();
+                let lines = lexer.extras.lines..lexer.extras.lines;
+
                 if let Some(token) = result {
                     if Statement::End == token {
-                        self.mode = Modes::Block(inner.to_owned().morph());
+                        self.mode = Modes::Block(lexer.to_owned().morph());
                     }
-                    let t = Token::Statement(token, span);
-                    Some(t)
+                    Some(Token::Statement(token, span, lines))
                 } else {
                     None
                 }
             }
-            Modes::Block(outer) => {
-                let result = outer.next();
-                let span = outer.span();
+            Modes::Block(lexer) => {
+                let result = lexer.next();
+                let span = lexer.span();
+                let lines = lexer.extras.lines..lexer.extras.lines;
+
                 if let Some(token) = result {
                     if Block::StartRawBlock == token {
-                        self.mode = Modes::RawBlock(outer.to_owned().morph());
+                        self.mode = Modes::RawBlock(lexer.to_owned().morph());
                     } else if Block::StartRawComment == token {
-                        self.mode = Modes::RawComment(outer.to_owned().morph());
+                        self.mode = Modes::RawComment(lexer.to_owned().morph());
                     } else if Block::StartRawStatement == token {
                         self.mode =
-                            Modes::RawStatement(outer.to_owned().morph());
+                            Modes::RawStatement(lexer.to_owned().morph());
                     } else if Block::StartComment == token {
                         self.mode =
-                            Modes::Comment(outer.to_owned().morph());
+                            Modes::Comment(lexer.to_owned().morph());
                     } else if Block::StartStatement == token {
-                        self.mode = Modes::Statement(outer.to_owned().morph());
+                        self.mode = Modes::Statement(lexer.to_owned().morph());
                     }
-                    let t = Token::Block(token, span);
-                    Some(t)
+                    Some(Token::Block(token, span, lines))
                 } else {
                     None
                 }
@@ -330,17 +355,19 @@ impl<'source> Iterator for ModeBridge<'source> {
 
 fn normalize(tokens: Vec<Token>) -> Vec<Token> {
     let mut normalized: Vec<Token> = Vec::new();
-    let mut span: Option<Span> = None;
+    let mut span: Option<(Span, LineNumber)> = None;
+
     for t in tokens.into_iter() {
         if t.is_text() {
-            if let Some(ref mut span) = span {
+            if let Some((ref mut span, ref mut lines)) = span {
                 span.end = t.span().end;
+                lines.end = t.lines().end;
             } else {
-                span = Some(t.span().clone());
+                span = Some((t.span().clone(), t.lines().clone()));
             }
         } else {
-            if let Some(span) = span.take() {
-                normalized.push(Token::Block(Block::Text, span));
+            if let Some((span, lines)) = span.take() {
+                normalized.push(Token::Block(Block::Text, span, lines));
                 normalized.push(t);
             } else {
                 normalized.push(t);
@@ -348,8 +375,8 @@ fn normalize(tokens: Vec<Token>) -> Vec<Token> {
         }
     }
 
-    if let Some(span) = span.take() {
-        normalized.push(Token::Block(Block::Text, span));
+    if let Some((span, lines)) = span.take() {
+        normalized.push(Token::Block(Block::Text, span, lines));
     }
 
     normalized
