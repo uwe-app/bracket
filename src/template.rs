@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::{
     error::{RenderError, SyntaxError},
-    lexer::{ast::Block, parser::Parser},
+    lexer::{ast::Node, parser::Parser},
     render::{Render, RenderContext, Renderer},
 };
 
@@ -14,18 +14,18 @@ use crate::{
 #[derive(Debug)]
 pub struct Template<'source> {
     source: &'source str,
-    block: Block<'source>,
+    node: Node<'source>,
 }
 
 impl<'source> Template<'source> {
-    pub fn block(&self) -> &'source Block {
-        &self.block
+    pub fn node(&self) -> &'source Node {
+        &self.node
     }
 }
 
 impl fmt::Display for Template<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.block.fmt(f)
+        self.node.fmt(f)
     }
 }
 
@@ -34,7 +34,7 @@ impl<'reg, 'render> Renderer<'reg, 'render> for Template<'_> {
         &self,
         rc: &mut RenderContext<'reg, 'render>,
     ) -> Result<(), RenderError> {
-        let renderer = Render::new(self.block());
+        let renderer = Render::new(self.node());
         renderer.render(rc)
     }
 }
@@ -43,7 +43,7 @@ impl<'source> Template<'source> {
     /// Compile a block.
     pub fn compile(source: &'source str) -> Result<Template, SyntaxError> {
         let mut parser = Parser::new();
-        let block = parser.parse(source)?;
-        Ok(Template { source, block })
+        let node = parser.parse(source)?;
+        Ok(Template { source, node })
     }
 }

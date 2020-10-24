@@ -14,6 +14,31 @@ pub struct SourceInfo {
 */
 
 #[derive(Debug, Eq, PartialEq)]
+pub enum Node<'source> {
+    Block(Block<'source>),
+    Text(Text<'source>),
+    //Statement,      // {{identifier|path|json_literal|hash_map}}
+}
+
+impl<'source> Node<'source> {
+    pub fn as_str(&self) -> &'source str {
+        match *self {
+            Self::Block(ref n) => n.as_str(),
+            Self::Text(ref n) => n.as_str(),
+        }
+    }
+}
+
+impl fmt::Display for Node<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            Self::Block(ref n) => n.fmt(f),
+            Self::Text(ref n) => n.fmt(f),
+        }
+    }
+}
+
+#[derive(Debug, Eq, PartialEq)]
 pub struct Text<'source>(pub &'source str, pub Range<usize>);
 
 impl<'source> Text<'source> {
@@ -28,6 +53,22 @@ impl fmt::Display for Text<'_> {
     }
 }
 
+
+#[derive(Debug, Eq, PartialEq)]
+pub enum StatementType {
+    Partial,
+    Helper,
+    Variable,
+}
+
+pub struct Statement<'source> {
+    // Raw source input.
+    source: &'source str,
+    kind: StatementType,
+    open: Option<Range<usize>>,
+    close: Option<Range<usize>>,
+}
+
 #[derive(Debug, Eq, PartialEq)]
 pub enum BlockType {
     Root,
@@ -37,7 +78,6 @@ pub enum BlockType {
     RawComment,     // {{!-- {{expr}} --}}
     Comment,        // {{! comment }} 
     Scoped,         // {{#> partial|helper}}{{/partial|helper}}
-    Statement,      // {{identifier|path|json_literal|hash_map}}
 }
 
 impl Default for BlockType {
@@ -49,7 +89,7 @@ pub struct Block<'source> {
     // Raw source input.
     source: &'source str,
     block_type: BlockType,
-    blocks: Vec<Block<'source>>,
+    blocks: Vec<Node<'source>>,
     open: Option<Range<usize>>,
     close: Option<Range<usize>>,
 }
@@ -106,7 +146,7 @@ impl<'source> Block<'source> {
         }
     }
 
-    pub fn push(&mut self, token: Block<'source>) {
+    pub fn push(&mut self, token: Node<'source>) {
         self.blocks.push(token);
     }
 
@@ -114,18 +154,8 @@ impl<'source> Block<'source> {
         &self.block_type
     }
 
-    pub fn blocks(&self) -> &'source Vec<Block> {
+    pub fn blocks(&self) -> &'source Vec<Node> {
         &self.blocks
-    }
-}
-
-impl<'source> From<Text<'source>> for Block<'source> {
-    fn from(txt: Text<'source>) -> Block<'source> {
-        Block::new(
-            txt.0,
-            BlockType::Text,
-            Some(txt.1),
-        ) 
     }
 }
 

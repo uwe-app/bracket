@@ -2,7 +2,7 @@ use std::fmt;
 use std::ops::Range;
 
 use super::{
-    ast::{self, Block, BlockType, Text},
+    ast::{self, Block, BlockType, Text, Node},
     grammar::{self, lex, Token, LineNumber, Span},
 };
 
@@ -52,7 +52,7 @@ impl<'source> Parser<'source> {
         // Must consume the text now!
         if let Some(txt) = text.take() {
             if let Some(current) = self.stack.last_mut() {
-                current.push(Block::from(txt));
+                current.push(Node::Text(txt));
             }
         }
         self.stack.push(block);
@@ -67,7 +67,7 @@ impl<'source> Parser<'source> {
 
         // Must consume the text now!
         if let Some(txt) = text.take() {
-            current.push(Block::from(txt));
+            current.push(Node::Text(txt));
         }
 
         current.exit(close);
@@ -75,14 +75,15 @@ impl<'source> Parser<'source> {
         if let Some(block) = last.take() {
             // Add the current block to the tree
             let current = self.stack.last_mut().unwrap();
-            current.push(block);
+            current.push(Node::Block(block));
         }
     }
 
     fn parse_statement(&mut self, statement: &mut Statement) -> Result<(), SyntaxError> {
-        println!("Parse statement {:?}", statement);
+        //println!("Parse statement {:?}", statement);
         if !statement.tokens.is_empty() {
             let first = statement.tokens.swap_remove(0);
+            println!("Parse statement with token {:?}", first);
             Ok(())
         } else {
             Err(SyntaxError::EmptyStatement { lines: LineRange::from(statement.lines()) })
@@ -93,7 +94,7 @@ impl<'source> Parser<'source> {
     pub fn parse(
         &mut self,
         s: &'source str,
-    ) -> Result<Block<'source>, SyntaxError> {
+    ) -> Result<Node<'source>, SyntaxError> {
         let tokens = lex(s, false);
 
         // Consecutive text to normalize
@@ -203,7 +204,7 @@ impl<'source> Parser<'source> {
                 txt.1.end = t.span().end;
             } else {
                 if let Some(txt) = text.take() {
-                    current.push(Block::from(txt));
+                    current.push(Node::Text(txt));
                 }
             }
         }
@@ -211,11 +212,11 @@ impl<'source> Parser<'source> {
         // Must append any remaining normalized text!
         if let Some(txt) = text.take() {
             let current = self.stack.last_mut().unwrap();
-            current.push(Block::from(txt));
+            current.push(Node::Text(txt));
         }
 
         //println!("{:#?}", self.stack.first());
 
-        Ok(self.stack.swap_remove(0))
+        Ok(Node::Block(self.stack.swap_remove(0)))
     }
 }
