@@ -114,7 +114,7 @@ impl<'source> Render<'source> {
             BlockType::RawBlock => {
                 rc.write_str(block.between())?;
             }
-            BlockType::RawComment => {
+            BlockType::RawComment | BlockType::Comment => {
                 // NOTE: must ignore raw comments when rendering
             }
             BlockType::RawStatement => {

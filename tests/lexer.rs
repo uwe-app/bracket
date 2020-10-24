@@ -95,6 +95,38 @@ baz
 }
 
 #[test]
+fn lex_comment() -> Result<()> {
+    let value = "{{! foo }}";
+    let tokens = lex(value, true);
+    let expect = vec![
+        Token::Block(Block::StartComment, 0..3),
+        Token::Block(Block::Text, 3..8),
+        Token::Comment(Comment::End, 8..10),
+    ];
+    assert_eq!(expect, tokens);
+
+    Ok(())
+}
+
+#[test]
+fn lex_comment_multiline() -> Result<()> {
+    let value = "{{!
+foo
+bar
+baz
+}}";
+    let tokens = lex(value, true);
+    let expect = vec![
+        Token::Block(Block::StartComment, 0..3),
+        Token::Block(Block::Text, 3..16),
+        Token::Comment(Comment::End, 16..18),
+    ];
+    assert_eq!(expect, tokens);
+
+    Ok(())
+}
+
+#[test]
 fn lex_raw_statement() -> Result<()> {
     let value = "\\{{foo}}";
     let tokens = lex(value, true);

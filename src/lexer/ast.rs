@@ -3,6 +3,8 @@ use std::ops::Range;
 
 use crate::lexer::parser;
 
+// NOTE: Text blocks use the `open` range for the entire slice.
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SourceInfo {
     //pub line: Range<usize>,
@@ -27,12 +29,13 @@ impl fmt::Display for Text<'_> {
 #[derive(Debug, Eq, PartialEq)]
 pub enum BlockType {
     Root,
-    /// Text blocks use the `open` range for the entire slice.
-    Text,
-    RawBlock,
-    RawStatement,
-    RawComment,
-    Scoped,
+    Text,           // .
+    RawBlock,       // {{{{raw}}}}{{expr}}{{{{/raw}}}}
+    RawStatement,   // \{{expr}}
+    RawComment,     // {{!-- {{expr}} --}}
+    Comment,        // {{! comment }} 
+    Scoped,         // {{#> partial|helper}}{{/partial|helper}}
+    Statement,      // {{identifier|path|json_literal|hash_map}}
 }
 
 impl Default for BlockType {

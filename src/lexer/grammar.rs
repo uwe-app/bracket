@@ -17,6 +17,9 @@ pub enum Block {
     #[regex(r"\\\{\{\{?")]
     StartRawStatement,
 
+    #[regex(r"\{\{!")]
+    StartComment,
+
     #[regex(r"\{\{\{?")]
     StartStatement,
 
@@ -80,6 +83,24 @@ pub enum RawStatement {
     Newline,
 
     #[regex(r"\}?\}\}")]
+    End,
+
+    #[error]
+    Error,
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
+#[logos(extras = Extras)]
+pub enum Comment {
+    #[regex(r".")]
+    Text,
+
+    #[regex("\r?\n", |lex| {
+        lex.extras.lines += 1;
+    })]
+    Newline,
+
+    #[regex(r"\}\}")]
     End,
 
     #[error]
@@ -153,6 +174,7 @@ pub enum Token {
     RawBlock(RawBlock, Span),
     RawComment(RawComment, Span),
     RawStatement(RawStatement, Span),
+    Comment(Comment, Span),
     Statement(Statement, Span),
 }
 
@@ -163,6 +185,7 @@ impl Token {
             Token::RawBlock(_, ref span) => span,
             Token::RawComment(_, ref span) => span,
             Token::RawStatement(_, ref span) => span,
+            Token::Comment(_, ref span) => span,
             Token::Statement(_, ref span) => span,
         }
     }
@@ -179,6 +202,9 @@ impl Token {
             Token::RawStatement(ref t, _) => {
                 t == &RawStatement::Text || t == &RawStatement::Newline
             }
+            Token::Comment(ref t, _) => {
+                t == &Comment::Text || t == &Comment::Newline
+            }
             Token::Statement(ref t, _) => false,
         }
     }
@@ -191,6 +217,7 @@ enum Modes<'source> {
     RawBlock(Lexer<'source, RawBlock>),
     RawComment(Lexer<'source, RawComment>),
     RawStatement(Lexer<'source, RawStatement>),
+    Comment(Lexer<'source, Comment>),
     Statement(Lexer<'source, Statement>),
 }
 
@@ -248,6 +275,19 @@ impl<'source> Iterator for ModeBridge<'source> {
                     None
                 }
             }
+            Modes::Comment(inner) => {
+                let result = inner.next();
+                let span = inner.span();
+                if let Some(token) = result {
+                    if Comment::End == token {
+                        self.mode = Modes::Block(inner.to_owned().morph());
+                    }
+                    let t = Token::Comment(token, span);
+                    Some(t)
+                } else {
+                    None
+                }
+            }
             Modes::Statement(inner) => {
                 let result = inner.next();
                 let span = inner.span();
@@ -272,6 +312,9 @@ impl<'source> Iterator for ModeBridge<'source> {
                     } else if Block::StartRawStatement == token {
                         self.mode =
                             Modes::RawStatement(outer.to_owned().morph());
+                    } else if Block::StartComment == token {
+                        self.mode =
+                            Modes::Comment(outer.to_owned().morph());
                     } else if Block::StartStatement == token {
                         self.mode = Modes::Statement(outer.to_owned().morph());
                     }

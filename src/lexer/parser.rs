@@ -88,29 +88,44 @@ impl<'source> Parser<'source> {
                         ), &mut text);
                         continue;
                     }
+                    grammar::Block::StartComment => {
+                        self.enter_stack(Block::new(
+                            s,
+                            BlockType::Comment,
+                            Some(span.clone()),
+                        ), &mut text);
+                        continue;
+                    }
                     _ => {}
-                },
+                }
                 LexToken::RawBlock(lex, span) => match lex {
                     grammar::RawBlock::End => {
                         self.exit_stack(span.clone(), &mut text);
                         continue;
                     }
                     _ => {}
-                },
+                }
                 LexToken::RawComment(lex, span) => match lex {
                     grammar::RawComment::End => {
                         self.exit_stack(span.clone(), &mut text);
                         continue;
                     }
                     _ => {}
-                },
+                }
                 LexToken::RawStatement(lex, span) => match lex {
                     grammar::RawStatement::End => {
                         self.exit_stack(span.clone(), &mut text);
                         continue;
                     }
                     _ => {}
-                },
+                }
+                LexToken::Comment(lex, span) => match lex {
+                    grammar::Comment::End => {
+                        self.exit_stack(span.clone(), &mut text);
+                        continue;
+                    }
+                    _ => {}
+                }
                 _ => {}
             }
 
