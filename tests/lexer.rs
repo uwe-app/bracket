@@ -1,4 +1,13 @@
-use hbs::lexer::grammar::*;
+use hbs::lexer::grammar::{
+    collect as lex,
+    Token,
+    Block,
+    Statement,
+    RawBlock,
+    RawComment,
+    RawStatement,
+    Comment,
+};
 use hbs::Result;
 
 #[test]

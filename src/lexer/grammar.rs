@@ -249,7 +249,7 @@ impl<'source> Modes<'source> {
     }
 }
 
-struct ModeBridge<'source> {
+pub struct ModeBridge<'source> {
     mode: Modes<'source>,
 }
 
@@ -385,19 +385,21 @@ fn normalize(tokens: Vec<Token>) -> Vec<Token> {
     normalized
 }
 
-/// Lex the input source into a stream of tokens.
+/// Iterator for the grammar tokens.
+pub fn lex(s: &str) -> ModeBridge {
+    ModeBridge { mode: Modes::new(s) }
+}
+
+/// Collect the input source into a vector of tokens.
 ///
 /// If the normalized flag is given consecutive text tokens
 /// are coalesced into a single token.
 ///
 /// The normalized flag is useful for test cases; the parser
 /// will perform it's own normalization to reduce the number of
-/// passes on the token strea,.
-pub fn lex(s: &str, normalized: bool) -> Vec<Token> {
-    let moded = ModeBridge {
-        mode: Modes::new(s),
-    };
-    let tokens = moded.collect();
+/// passes on the token stream.
+pub fn collect(s: &str, normalized: bool) -> Vec<Token> {
+    let tokens = lex(s).collect();
     if normalized {
         normalize(tokens)
     } else {

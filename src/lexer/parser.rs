@@ -95,8 +95,6 @@ impl<'source> Parser<'source> {
         &mut self,
         s: &'source str,
     ) -> Result<Node<'source>, SyntaxError> {
-        let tokens = lex(s, false);
-
         // Consecutive text to normalize
         let mut text: Option<Text> = None;
         //let mut statement: Vec<Token> = Vec::new();
@@ -104,7 +102,7 @@ impl<'source> Parser<'source> {
 
         self.enter_stack(Block::new(s, BlockType::Root, None), &mut text);
 
-        for t in tokens.into_iter() {
+        for t in lex(s) {
             //println!("Parser {:?}", t);
 
             match &t {
