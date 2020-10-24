@@ -111,8 +111,8 @@ impl<'source> Render<'source> {
                 rc.write_str(n.as_str())?;
             }
             Node::Block(ref block) => {
-                //println!("rendering a block {:?}", block.block_type());
-                match block.block_type() {
+                //println!("rendering a block {:?}", block.kind());
+                match block.kind() {
                     BlockType::Text => {
                         rc.write_str(block.open())?;
                     }
