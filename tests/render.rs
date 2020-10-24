@@ -19,6 +19,18 @@ fn render_text() -> Result<()> {
 }
 
 #[test]
+fn render_html_comment() -> Result<()> {
+    let mut registry = Registry::new();
+    let name = "mock-template";
+    let value = r"<!-- foo -->";
+    let data = json!({});
+    registry.register_template_string(name, value)?;
+    let result = registry.render(name, &data)?;
+    assert_eq!(value, result);
+    Ok(())
+}
+
+#[test]
 fn render_raw_block() -> Result<()> {
     let mut registry = Registry::new();
     let name = "mock-template";
