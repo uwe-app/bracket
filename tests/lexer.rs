@@ -1,15 +1,12 @@
-use hbs::Result;
 use hbs::lexer::grammar::*;
+use hbs::Result;
 
 #[test]
 fn lex_text_only() -> Result<()> {
-
     let value = "foo bar baz";
     let tokens = lex(value, true);
 
-    let expect = vec![
-        Token::Block(Block::Text, 0..11),
-    ];
+    let expect = vec![Token::Block(Block::Text, 0..11)];
     assert_eq!(expect, tokens);
 
     Ok(())
@@ -45,7 +42,6 @@ fn lex_raw_block() -> Result<()> {
 
     Ok(())
 }
-
 
 #[test]
 fn lex_raw_block_multiline() -> Result<()> {
@@ -92,6 +88,34 @@ baz
         Token::Block(Block::StartRawComment, 0..5),
         Token::Block(Block::Text, 5..22),
         Token::RawComment(RawComment::End, 22..26),
+    ];
+    assert_eq!(expect, tokens);
+
+    Ok(())
+}
+
+#[test]
+fn lex_raw_statement() -> Result<()> {
+    let value = "\\{{foo}}";
+    let tokens = lex(value, true);
+    let expect = vec![
+        Token::Block(Block::StartRawStatement, 0..3),
+        Token::Block(Block::Text, 3..6),
+        Token::RawStatement(RawStatement::End, 6..8),
+    ];
+    assert_eq!(expect, tokens);
+
+    Ok(())
+}
+
+#[test]
+fn lex_raw_statement_partial() -> Result<()> {
+    let value = "\\{{> foo}}";
+    let tokens = lex(value, true);
+    let expect = vec![
+        Token::Block(Block::StartRawStatement, 0..3),
+        Token::Block(Block::Text, 3..8),
+        Token::RawStatement(RawStatement::End, 8..10),
     ];
     assert_eq!(expect, tokens);
 

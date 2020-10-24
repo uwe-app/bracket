@@ -1,5 +1,5 @@
-use std::ops::Range;
 use std::fmt;
+use std::ops::Range;
 
 use crate::lexer::parser;
 
@@ -14,7 +14,7 @@ pub struct Text<'source>(pub &'source str, pub Range<usize>);
 
 impl<'source> Text<'source> {
     pub fn as_str(&self) -> &'source str {
-        &self.0[self.1.start..self.1.end] 
+        &self.0[self.1.start..self.1.end]
     }
 }
 
@@ -30,7 +30,7 @@ pub struct RawComment<'source> {
 
 impl<'source> RawComment<'source> {
     pub fn as_str(&self) -> &'source str {
-        &self.source[self.open.start..self.close.end] 
+        &self.source[self.open.start..self.close.end]
     }
 }
 
@@ -107,9 +107,9 @@ impl fmt::Display for Token<'_> {
 pub enum BlockType {
     Root,
     Raw,
-    Comment,
-    // TODO: use &'source ref
-    Named(String),
+    RawStatement,
+    RawComment,
+    Scoped,
 }
 
 impl Default for BlockType {
@@ -129,7 +129,11 @@ pub struct Block<'source> {
 }
 
 impl<'source> Block<'source> {
-    pub fn new(source: &'source str, block_type: BlockType, open: Option<Range<usize>>) -> Self {
+    pub fn new(
+        source: &'source str,
+        block_type: BlockType,
+        open: Option<Range<usize>>,
+    ) -> Self {
         Self {
             source,
             block_type,
@@ -139,23 +143,35 @@ impl<'source> Block<'source> {
         }
     }
 
-    //pub fn new_named(value: &'source str) -> Self {
-        //let name = parser::block_name(&value);
-        //let mut block = Block::new(BlockType::Named(name));
-        //block.open = Some(value);
-        //block
-    //}
-    
+    pub(crate) fn exit(&mut self, span: Range<usize>) {
+        self.close = Some(span);
+    }
+
+    pub fn as_str(&self) -> &'source str {
+        match self.block_type() {
+            BlockType::Root => self.source,
+            _ => {
+                let open = self.open.clone().unwrap_or(0..0);
+                let close = self.close.clone().unwrap_or(0..0);
+                &self.source[open.start..close.end]
+            }
+        }
+    }
+
     pub fn open(&self) -> &'source str {
         if let Some(ref open) = self.open {
-            &self.source[open.start..open.end] 
-        } else {""}
+            &self.source[open.start..open.end]
+        } else {
+            ""
+        }
     }
 
     pub fn close(&self) -> &'source str {
         if let Some(ref close) = self.close {
-            &self.source[close.start..close.end] 
-        } else {""}
+            &self.source[close.start..close.end]
+        } else {
+            ""
+        }
     }
 
     pub fn push(&mut self, token: Token<'source>) {
@@ -176,22 +192,18 @@ impl<'source> Block<'source> {
             _ => false,
         }
     }
-
-    pub fn is_named(&self) -> bool {
-        match self.block_type {
-            BlockType::Named(_) => true,
-            _ => false,
-        }
-    }
 }
 
 impl fmt::Display for Block<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.open.is_some() { write!(f, "{}", self.open())? }
-        for t in self.tokens.iter() {
-            t.fmt(f)?;
+        match self.block_type() {
+            BlockType::Root => write!(f, "{}", self.source),
+            _ => {
+                for t in self.tokens() {
+                    t.fmt(f)?;
+                }
+                Ok(())
+            }
         }
-        if self.close.is_some() { write!(f, "{}", self.close())? }
-        Ok(())
     }
 }

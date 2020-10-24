@@ -8,7 +8,7 @@ use crate::{
 
 // TODO: support rendering to original source form
 //pub trait SourceDisplay {
-    //fn write_source(&self, s: &str, w: &mut Write) -> crate::Result<usize>;
+//fn write_source(&self, s: &str, w: &mut Write) -> crate::Result<usize>;
 //}
 
 #[derive(Debug)]

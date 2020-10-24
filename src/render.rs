@@ -3,7 +3,7 @@ use serde_json::Value;
 
 use crate::{
     error::RenderError,
-    lexer::ast::{Block, Expr, Token},
+    lexer::ast::{Block, BlockType, Expr, Token},
     output::Output,
     registry::Registry,
 };
@@ -98,8 +98,16 @@ impl<'source> Render<'source> {
         block: &Block<'source>,
         rc: &mut RenderContext<'reg, 'render>,
     ) -> Result<(), RenderError> {
-        for t in block.tokens().iter() {
-            self.render_token(t, rc)?;
+        match block.block_type() {
+            BlockType::RawStatement => {
+                //println!("RENDER A RAW STATEMENT");
+            }
+            _ => {
+                for t in block.tokens().iter() {
+                    println!("Rendering token {:?}", t);
+                    self.render_token(t, rc)?;
+                }
+            }
         }
 
         Ok(())

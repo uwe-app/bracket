@@ -7,8 +7,7 @@ pub struct Extras {
 
 #[derive(Logos, Clone, Debug, Eq, PartialEq)]
 #[logos(extras = Extras)]
-pub enum Block{
-
+pub enum Block {
     #[regex(r"\{\{\{\{\s*raw\s*\}\}\}\}")]
     StartRawBlock,
 
@@ -160,17 +159,27 @@ impl Token {
             Token::RawComment(_, ref span) => span,
             Token::RawStatement(_, ref span) => span,
             Token::Statement(_, ref span) => span,
-        } 
+        }
     }
 
     pub fn is_text(&self) -> bool {
         match self {
-            Token::Block(ref t, _) => t == &Block::Text || t == &Block::Newline || t == &Block::StartStringLiteral,
-            Token::RawBlock(ref t, _) => t == &RawBlock::Text || t == &RawBlock::Newline,
-            Token::RawComment(ref t, _) => t == &RawComment::Text || t == &RawComment::Newline,
-            Token::RawStatement(ref t, _) => t == &RawStatement::Text || t == &RawStatement::Newline,
+            Token::Block(ref t, _) => {
+                t == &Block::Text
+                    || t == &Block::Newline
+                    || t == &Block::StartStringLiteral
+            }
+            Token::RawBlock(ref t, _) => {
+                t == &RawBlock::Text || t == &RawBlock::Newline
+            }
+            Token::RawComment(ref t, _) => {
+                t == &RawComment::Text || t == &RawComment::Newline
+            }
+            Token::RawStatement(ref t, _) => {
+                t == &RawStatement::Text || t == &RawStatement::Newline
+            }
             Token::Statement(ref t, _) => false,
-        } 
+        }
     }
 }
 
@@ -203,7 +212,7 @@ impl<'source> Iterator for ModeBridge<'source> {
                 let result = inner.next();
                 let span = inner.span();
                 if let Some(token) = result {
-                    if RawBlock::End  == token {
+                    if RawBlock::End == token {
                         self.mode = Modes::Block(inner.to_owned().morph());
                     }
                     let t = Token::RawBlock(token, span);
@@ -216,7 +225,7 @@ impl<'source> Iterator for ModeBridge<'source> {
                 let result = inner.next();
                 let span = inner.span();
                 if let Some(token) = result {
-                    if RawComment::End  == token {
+                    if RawComment::End == token {
                         self.mode = Modes::Block(inner.to_owned().morph());
                     }
                     let t = Token::RawComment(token, span);
@@ -229,7 +238,7 @@ impl<'source> Iterator for ModeBridge<'source> {
                 let result = inner.next();
                 let span = inner.span();
                 if let Some(token) = result {
-                    if RawStatement::End  == token {
+                    if RawStatement::End == token {
                         self.mode = Modes::Block(inner.to_owned().morph());
                     }
                     let t = Token::RawStatement(token, span);
@@ -242,7 +251,7 @@ impl<'source> Iterator for ModeBridge<'source> {
                 let result = inner.next();
                 let span = inner.span();
                 if let Some(token) = result {
-                    if Statement::End  == token {
+                    if Statement::End == token {
                         self.mode = Modes::Block(inner.to_owned().morph());
                     }
                     let t = Token::Statement(token, span);
@@ -260,7 +269,8 @@ impl<'source> Iterator for ModeBridge<'source> {
                     } else if Block::StartRawComment == token {
                         self.mode = Modes::RawComment(outer.to_owned().morph());
                     } else if Block::StartRawStatement == token {
-                        self.mode = Modes::RawStatement(outer.to_owned().morph());
+                        self.mode =
+                            Modes::RawStatement(outer.to_owned().morph());
                     } else if Block::StartStatement == token {
                         self.mode = Modes::Statement(outer.to_owned().morph());
                     }
@@ -280,7 +290,7 @@ fn normalize(tokens: Vec<Token>) -> Vec<Token> {
     for t in tokens.into_iter() {
         if t.is_text() {
             if let Some(ref mut span) = span {
-                span.end = t.span().end; 
+                span.end = t.span().end;
             } else {
                 span = Some(t.span().clone());
             }
@@ -303,11 +313,11 @@ fn normalize(tokens: Vec<Token>) -> Vec<Token> {
 
 /// Lex the input source into a stream of tokens.
 ///
-/// If the normalized flag is given consecutive text tokens 
+/// If the normalized flag is given consecutive text tokens
 /// are coalesced into a single token.
 ///
-/// The normalized flag is useful for test cases; the parser 
-/// will perform it's own normalization to reduce the number of 
+/// The normalized flag is useful for test cases; the parser
+/// will perform it's own normalization to reduce the number of
 /// passes on the token strea,.
 pub fn lex(s: &str, normalized: bool) -> Vec<Token> {
     let moded = ModeBridge {
@@ -316,5 +326,7 @@ pub fn lex(s: &str, normalized: bool) -> Vec<Token> {
     let tokens = moded.collect();
     if normalized {
         normalize(tokens)
-    } else { tokens }
+    } else {
+        tokens
+    }
 }

@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use super::{
-    ast::{self, Token, Block, BlockType, Expr, Text, SourceInfo},
+    ast::{self, Block, BlockType, Expr, SourceInfo, Text, Token},
     grammar::{self, lex, Token as LexToken},
 };
 
@@ -13,13 +13,38 @@ pub struct Parser<'source> {
 }
 
 impl<'source> Parser<'source> {
-
     pub fn new() -> Self {
-        Self {stack: vec![Block::new("", BlockType::Root, None)]}
+        Self { stack: vec![] }
     }
 
-    pub fn parse(&mut self, s: &'source str) -> Result<Block<'source>, SyntaxError> {
+    fn enter_stack(&mut self, block: Block<'source>) {
+        //let mut block = Block::new(s, BlockType::Raw, Some(span.clone()));
+        self.stack.push(block);
+    }
+
+    fn exit_stack(
+        &mut self,
+        close: Range<usize>,
+        text: &mut Option<Text<'source>>,
+    ) {
+        let current = self.stack.last_mut().unwrap();
+        // Must consume the text now!
+        if let Some(txt) = text.take() {
+            current.push(Token::Text(txt));
+        }
+
+        current.exit(close);
+
+        self.stack.pop();
+    }
+
+    pub fn parse(
+        &mut self,
+        s: &'source str,
+    ) -> Result<Block<'source>, SyntaxError> {
         let tokens = lex(s, false);
+
+        self.enter_stack(Block::new(s, BlockType::Root, None));
 
         // Consecutive text to normalize
         let mut text: Option<Text> = None;
@@ -28,30 +53,39 @@ impl<'source> Parser<'source> {
             //println!("Parser {:?}", t);
 
             match &t {
-                LexToken::Block(lex, span) => {
-                    match lex {
-                        grammar::Block::StartRawComment => {
-                            let mut block = Block::new(s, BlockType::Raw, Some(span.clone()));
-                            self.stack.push(block);
-                            continue;
-                        }
-                        _ => {}
-                    } 
-                }
-                LexToken::RawComment(lex, span) => {
-                    match lex {
-                        grammar::RawComment::End => {
-                            // Must consume the text now!
-                            if let Some(txt) = text.take() {
-                                let current = self.stack.last_mut().unwrap();
-                                current.push(Token::Text(txt));
-                            } 
-                            self.stack.pop();
-                            continue;
-                        }
-                        _ => {}
-                    } 
-                }
+                LexToken::Block(lex, span) => match lex {
+                    grammar::Block::StartRawComment => {
+                        self.enter_stack(Block::new(
+                            s,
+                            BlockType::RawComment,
+                            Some(span.clone()),
+                        ));
+                        continue;
+                    }
+                    grammar::Block::StartRawStatement => {
+                        self.enter_stack(Block::new(
+                            s,
+                            BlockType::RawStatement,
+                            Some(span.clone()),
+                        ));
+                        continue;
+                    }
+                    _ => {}
+                },
+                LexToken::RawComment(lex, span) => match lex {
+                    grammar::RawComment::End => {
+                        self.exit_stack(span.clone(), &mut text);
+                        continue;
+                    }
+                    _ => {}
+                },
+                LexToken::RawStatement(lex, span) => match lex {
+                    grammar::RawStatement::End => {
+                        self.exit_stack(span.clone(), &mut text);
+                        continue;
+                    }
+                    _ => {}
+                },
                 _ => {}
             }
 
@@ -64,7 +98,7 @@ impl<'source> Parser<'source> {
             } else {
                 if let Some(txt) = text.take() {
                     current.push(Token::Text(txt));
-                } 
+                }
             }
         }
 
