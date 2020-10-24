@@ -106,7 +106,7 @@ impl fmt::Display for Token<'_> {
 #[derive(Debug, Eq, PartialEq)]
 pub enum BlockType {
     Root,
-    Raw,
+    RawBlock,
     RawStatement,
     RawComment,
     Scoped,
@@ -186,12 +186,12 @@ impl<'source> Block<'source> {
         &self.tokens
     }
 
-    pub fn is_raw(&self) -> bool {
-        match self.block_type {
-            BlockType::Raw => true,
-            _ => false,
-        }
-    }
+    //pub fn is_raw(&self) -> bool {
+        //match self.block_type {
+            //BlockType::Raw => true,
+            //_ => false,
+        //}
+    //}
 }
 
 impl fmt::Display for Block<'_> {

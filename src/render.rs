@@ -98,9 +98,10 @@ impl<'source> Render<'source> {
         block: &Block<'source>,
         rc: &mut RenderContext<'reg, 'render>,
     ) -> Result<(), RenderError> {
+        println!("rendering a block {:?}", block.block_type());
         match block.block_type() {
             BlockType::RawStatement => {
-                //println!("RENDER A RAW STATEMENT");
+                println!("RENDER A RAW STATEMENT");
             }
             _ => {
                 for t in block.tokens().iter() {

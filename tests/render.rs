@@ -64,3 +64,17 @@ fn render_raw_comment() -> Result<()> {
     assert_eq!(expected, result);
     Ok(())
 }
+
+#[test]
+fn render_raw_statement() -> Result<()> {
+    let mut registry = Registry::new();
+    let name = "mock-template";
+    let value = r"\{{}}";
+    let expected = r"{{expr}}";
+    let data = json!({});
+    registry.register_template_string(name, value)?;
+    let result = registry.render(name, &data)?;
+    assert_eq!(expected, result);
+    Ok(())
+}
+

@@ -20,9 +20,6 @@ pub enum Block {
     #[regex(r"\{\{\{?")]
     StartStatement,
 
-    #[token("\"")]
-    StartStringLiteral,
-
     #[regex(r".")]
     Text,
 
@@ -102,6 +99,9 @@ pub enum Statement {
     #[regex(r"[./]")]
     PathDelimiter,
 
+    #[token("\"")]
+    StartStringLiteral,
+
     #[regex(r"-?[0-9]*\.?[0-9]+")]
     Number,
 
@@ -111,7 +111,12 @@ pub enum Statement {
     #[token("null")]
     Null,
 
-    #[regex(r"\s+")]
+    #[regex("\r?\n", |lex| {
+        lex.extras.lines += 1;
+    })]
+    Newline,
+
+    #[regex(r" +")]
     WhiteSpace,
 
     #[regex(r"\}?\}\}")]
@@ -164,11 +169,7 @@ impl Token {
 
     pub fn is_text(&self) -> bool {
         match self {
-            Token::Block(ref t, _) => {
-                t == &Block::Text
-                    || t == &Block::Newline
-                    || t == &Block::StartStringLiteral
-            }
+            Token::Block(ref t, _) => t == &Block::Text || t == &Block::Newline,
             Token::RawBlock(ref t, _) => {
                 t == &RawBlock::Text || t == &RawBlock::Newline
             }
