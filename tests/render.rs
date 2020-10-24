@@ -112,6 +112,7 @@ fn render_statement() -> Result<()> {
     let data = json!({"foo": "bar"});
     registry.register_template_string(name, value)?;
     let result = registry.render(name, &data)?;
+    println!("Render statement result: {}", result);
     //assert_eq!(expected, result);
     Ok(())
 }

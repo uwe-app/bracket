@@ -4,6 +4,7 @@ use logos::{Lexer, Logos};
 /// Type to indicate a line number range: `Range<usize>`.
 pub type Span = Range<usize>;
 pub type LineNumber = Span;
+//pub type SourceMap = (pub Span, pub LineNumber);
 
 #[derive(Clone, Default)]
 pub struct Extras {

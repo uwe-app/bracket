@@ -61,12 +61,13 @@ pub enum StatementType {
     Variable,
 }
 
+#[derive(Debug, Eq, PartialEq)]
 pub struct Statement<'source> {
     // Raw source input.
     source: &'source str,
     kind: StatementType,
-    open: Option<Range<usize>>,
-    close: Option<Range<usize>>,
+    open: Range<usize>,
+    close: Range<usize>,
 }
 
 #[derive(Debug, Eq, PartialEq)]
