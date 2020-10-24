@@ -3,7 +3,7 @@ use serde_json::Value;
 
 use crate::{
     error::RenderError,
-    lexer::ast::{Node, BlockType},
+    lexer::ast::{BlockType, Node},
     output::Output,
     registry::Registry,
 };
@@ -105,7 +105,6 @@ impl<'source> Render<'source> {
         node: &Node<'source>,
         rc: &mut RenderContext<'reg, 'render>,
     ) -> Result<(), RenderError> {
-
         match node {
             Node::Text(ref n) => {
                 rc.write_str(n.as_str())?;
@@ -135,7 +134,6 @@ impl<'source> Render<'source> {
                 }
             }
         }
-
 
         Ok(())
     }

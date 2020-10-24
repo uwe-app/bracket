@@ -13,7 +13,9 @@ pub enum Error {
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum SyntaxError {
     #[error("Syntax error, statement is empty (lines: {lines})")]
-    EmptyStatement {lines: LineRange},
+    EmptyStatement { lines: LineRange },
+    #[error("Syntax error, expecting identifier (lines: {lines})")]
+    ExpectedIdentifier { lines: LineRange },
 }
 
 #[derive(Error, Debug)]
@@ -31,7 +33,7 @@ impl PartialEq for RenderError {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             // FIXME:
-            _ => false
+            _ => false,
         }
     }
 }

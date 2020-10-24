@@ -1,5 +1,5 @@
-use std::ops::Range;
 use logos::{Lexer, Logos};
+use std::ops::Range;
 
 /// Type to indicate a line number range: `Range<usize>`.
 pub type Span = Range<usize>;
@@ -214,7 +214,9 @@ impl Token {
 
     pub fn is_text(&self) -> bool {
         match self {
-            Token::Block(ref t, _, _) => t == &Block::Text || t == &Block::Newline,
+            Token::Block(ref t, _, _) => {
+                t == &Block::Text || t == &Block::Newline
+            }
             Token::RawBlock(ref t, _, _) => {
                 t == &RawBlock::Text || t == &RawBlock::Newline
             }
@@ -227,7 +229,7 @@ impl Token {
             Token::Comment(ref t, _, _) => {
                 t == &Comment::Text || t == &Comment::Newline
             }
-            Token::Statement(ref t, _, _) => false,
+            Token::Statement(_, _, _) => false,
         }
     }
 }
@@ -342,8 +344,7 @@ impl<'source> Iterator for ModeBridge<'source> {
                         self.mode =
                             Modes::RawStatement(lexer.to_owned().morph());
                     } else if Block::StartComment == token {
-                        self.mode =
-                            Modes::Comment(lexer.to_owned().morph());
+                        self.mode = Modes::Comment(lexer.to_owned().morph());
                     } else if Block::StartStatement == token {
                         self.mode = Modes::Statement(lexer.to_owned().morph());
                     }
@@ -387,7 +388,9 @@ fn normalize(tokens: Vec<Token>) -> Vec<Token> {
 
 /// Iterator for the grammar tokens.
 pub fn lex(s: &str) -> ModeBridge {
-    ModeBridge { mode: Modes::new(s) }
+    ModeBridge {
+        mode: Modes::new(s),
+    }
 }
 
 /// Collect the input source into a vector of tokens.

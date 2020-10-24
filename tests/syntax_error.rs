@@ -1,4 +1,6 @@
-use hbs::{Registry, Error, Result, error::SyntaxError, lexer::parser::LineRange};
+use hbs::{
+    error::SyntaxError, lexer::parser::LineRange, Error, Registry, Result,
+};
 use serde_json::json;
 
 #[test]
@@ -12,9 +14,9 @@ fn err_empty_statement() -> Result<()> {
         Err(e) => {
             println!("{}", e.to_string());
             assert_eq!(
-                Error::Syntax(
-                    SyntaxError::EmptyStatement {lines: LineRange::from(0..0)}
-                ),
+                Error::Syntax(SyntaxError::EmptyStatement {
+                    lines: LineRange::from(0..0)
+                }),
                 e
             );
         }

@@ -2,15 +2,15 @@ use std::fmt;
 use std::ops::Range;
 
 use super::{
-    ast::{self, Block, BlockType, Text, Node},
-    grammar::{self, lex, Token, LineNumber, Span},
+    ast::{Block, BlockType, Node, Text},
+    grammar::{self, lex, LineNumber, Span, Token, Statement},
 };
 
 use crate::error::SyntaxError;
 
 #[derive(Default, Debug, Eq, PartialEq)]
 pub struct LineRange {
-    range: LineNumber
+    range: LineNumber,
 }
 
 impl fmt::Display for LineRange {
@@ -21,20 +21,22 @@ impl fmt::Display for LineRange {
 
 impl From<LineNumber> for LineRange {
     fn from(lines: LineNumber) -> Self {
-        Self {range: lines}
+        Self { range: lines }
     }
 }
 
 #[derive(Default, Debug)]
-struct Statement {
-    tokens: Vec<Token>,
+struct StatementCache {
+    tokens: Vec<(Statement, Span, LineNumber)>,
     start: (Span, LineNumber),
     end: (Span, LineNumber),
 }
 
-impl Statement {
+impl StatementCache {
     pub fn lines(&self) -> LineRange {
-        LineRange {range: self.start.1.start..self.end.1.end }
+        LineRange {
+            range: self.start.1.start..self.end.1.end,
+        }
     }
 }
 
@@ -48,7 +50,11 @@ impl<'source> Parser<'source> {
         Self { stack: vec![] }
     }
 
-    fn enter_stack(&mut self, block: Block<'source>, text: &mut Option<Text<'source>>) {
+    fn enter_stack(
+        &mut self,
+        block: Block<'source>,
+        text: &mut Option<Text<'source>>,
+    ) {
         // Must consume the text now!
         if let Some(txt) = text.take() {
             if let Some(current) = self.stack.last_mut() {
@@ -79,16 +85,61 @@ impl<'source> Parser<'source> {
         }
     }
 
-    fn parse_statement(&mut self, statement: &mut Statement) -> Result<(), SyntaxError> {
-        //println!("Parse statement {:?}", statement);
+    fn parse_statement(
+        &mut self,
+        statement: &mut StatementCache,
+    ) -> Result<(), SyntaxError> {
         if !statement.tokens.is_empty() {
-            let first = statement.tokens.swap_remove(0);
-            println!("Parse statement with token {:?}", first);
+            let mut iter = statement.tokens.iter();
+            let (first, span, lines) = iter.next().unwrap();
+            let mut identifier: Option<(&Statement, &Span, &LineNumber)> = None;
+
+            // Find the next token that exists in a list of expected tokens
+            // at the next position consuming preceeding whitespace.
+            let mut find_until = |expects: Vec<Statement>| -> Option<&(
+                Statement,
+                Span,
+                LineNumber,
+            )> {
+                while let Some(item) = iter.next() {
+                    if item.0 == Statement::WhiteSpace {
+                        continue;
+                    } else if expects.contains(&item.0) {
+                        return Some(item);
+                    }
+                    break;
+                }
+                None
+            };
+
+            match first {
+                Statement::Identifier => {
+                    identifier = Some((first, span, lines));
+                }
+                Statement::Partial => {
+                    if let Some((lex, span, lines)) =
+                        find_until(vec![Statement::Identifier])
+                    {
+                        identifier = Some((lex, span, lines));
+                    }
+                }
+                _ => {}
+            }
+
+            if identifier.is_none() {
+                return Err(SyntaxError::ExpectedIdentifier {
+                    lines: LineRange::from(statement.lines()),
+                });
+            }
+
+            println!("Parse statement with identifier {:?}", identifier);
+
             Ok(())
         } else {
-            Err(SyntaxError::EmptyStatement { lines: LineRange::from(statement.lines()) })
+            Err(SyntaxError::EmptyStatement {
+                lines: LineRange::from(statement.lines()),
+            })
         }
-
     }
 
     pub fn parse(
@@ -98,53 +149,67 @@ impl<'source> Parser<'source> {
         // Consecutive text to normalize
         let mut text: Option<Text> = None;
         //let mut statement: Vec<Token> = Vec::new();
-        let mut statement: Statement = Default::default();
+        let mut statement: StatementCache = Default::default();
 
         self.enter_stack(Block::new(s, BlockType::Root, None), &mut text);
 
         for t in lex(s) {
             //println!("Parser {:?}", t);
-
             match &t {
                 Token::Block(lex, span, lines) => match lex {
                     grammar::Block::StartRawBlock => {
-                        self.enter_stack(Block::new(
-                            s,
-                            BlockType::RawBlock,
-                            Some(span.clone()),
-                        ), &mut text);
+                        self.enter_stack(
+                            Block::new(
+                                s,
+                                BlockType::RawBlock,
+                                Some(span.clone()),
+                            ),
+                            &mut text,
+                        );
                         continue;
                     }
                     grammar::Block::StartRawComment => {
-                        self.enter_stack(Block::new(
-                            s,
-                            BlockType::RawComment,
-                            Some(span.clone()),
-                        ), &mut text);
+                        self.enter_stack(
+                            Block::new(
+                                s,
+                                BlockType::RawComment,
+                                Some(span.clone()),
+                            ),
+                            &mut text,
+                        );
                         continue;
                     }
                     grammar::Block::StartRawStatement => {
-                        self.enter_stack(Block::new(
-                            s,
-                            BlockType::RawStatement,
-                            Some(span.clone()),
-                        ), &mut text);
+                        self.enter_stack(
+                            Block::new(
+                                s,
+                                BlockType::RawStatement,
+                                Some(span.clone()),
+                            ),
+                            &mut text,
+                        );
                         continue;
                     }
                     grammar::Block::StartComment => {
-                        self.enter_stack(Block::new(
-                            s,
-                            BlockType::Comment,
-                            Some(span.clone()),
-                        ), &mut text);
+                        self.enter_stack(
+                            Block::new(
+                                s,
+                                BlockType::Comment,
+                                Some(span.clone()),
+                            ),
+                            &mut text,
+                        );
                         continue;
                     }
                     grammar::Block::StartStatement => {
-                        self.enter_stack(Block::new(
-                            s,
-                            BlockType::Comment,
-                            Some(span.clone()),
-                        ), &mut text);
+                        self.enter_stack(
+                            Block::new(
+                                s,
+                                BlockType::Comment,
+                                Some(span.clone()),
+                            ),
+                            &mut text,
+                        );
 
                         statement = Default::default();
                         statement.start = (span.clone(), lines.clone());
@@ -181,18 +246,21 @@ impl<'source> Parser<'source> {
                     _ => {}
                 }
                 Token::Statement(lex, span, lines) => match lex {
-                    grammar::Statement::End => {
+                    Statement::End => {
                         statement.end = (span.clone(), lines.clone());
                         self.parse_statement(&mut statement)?;
                         self.exit_stack(span.clone(), &mut text);
                         continue;
                     }
                     _ => {
-                        statement.tokens.push(t);
+                        statement.tokens.push((
+                            lex.clone(),
+                            span.clone(),
+                            lines.clone(),
+                        ));
                         continue;
                     }
                 }
-                _ => {}
             }
 
             let current = self.stack.last_mut().unwrap();
