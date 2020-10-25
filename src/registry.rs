@@ -22,8 +22,8 @@ impl<'reg> Registry<'reg> {
         }
     }
 
-    pub fn compile<'source>(s: &'source str, options: ParserOptions) -> std::result::Result<Template, SyntaxError> {
-        Template::compile(s, options)
+    pub fn compile<'source>(s: &'source str, options: ParserOptions) -> Result<Template> {
+        Ok(Template::compile(s, options).map_err(Error::from)?)
     }
 
     pub fn templates(&self) -> &HashMap<&str, Template<'reg>> {

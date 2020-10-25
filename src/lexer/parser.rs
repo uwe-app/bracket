@@ -4,7 +4,7 @@ use std::ops::Range;
 use logos::Span;
 
 use crate::{
-    error::SyntaxError,
+    error::{SyntaxError, ErrorInfo, SourcePos},
     lexer::{
         ast::{Block, BlockType, Node, Text},
         grammar::{self, lex, Statement, Token},
@@ -26,20 +26,6 @@ impl Default for ParserOptions {
     fn default() -> Self {
         Self {file_name: UNKNOWN.to_string(), line_offset: 0} 
     } 
-}
-
-/// Map a position for syntax errors. 
-#[derive(Debug, Eq, PartialEq)]
-pub struct SourcePos(pub usize, pub usize);
-
-impl SourcePos {
-    pub fn line(&self) -> &usize {
-        &self.0    
-    }
-
-    pub fn byte_offset(&self) -> &usize {
-        &self.1
-    }
 }
 
 #[derive(Default, Debug)]
@@ -100,7 +86,7 @@ impl<'source> Parser<'source> {
         s: &'source str,
         line: &usize,
         statement: &mut StatementCache,
-    ) -> Result<(), SyntaxError> {
+    ) -> Result<(), SyntaxError<'source>> {
         // Position as byte offset for syntax errors
         let mut byte_offset = statement.start.end;
 
@@ -140,14 +126,18 @@ impl<'source> Parser<'source> {
             }
 
             if identifier.is_none() {
-                return Err(SyntaxError::ExpectedIdentifier(SourcePos(line.clone(), byte_offset)));
+                let pos = SourcePos(line.clone(), byte_offset);
+                let info = ErrorInfo::from((s, &self.options, pos));
+                return Err(SyntaxError::ExpectedIdentifier(info));
             }
 
             println!("Parse statement with identifier {:?}", identifier);
 
             Ok(())
         } else {
-            Err(SyntaxError::EmptyStatement(SourcePos(line.clone(), byte_offset)))
+            let pos = SourcePos(line.clone(), byte_offset);
+            let info = ErrorInfo::from((s, &self.options, pos));
+            Err(SyntaxError::EmptyStatement(info))
         }
     }
 
@@ -167,7 +157,7 @@ impl<'source> Parser<'source> {
     pub fn parse(
         &mut self,
         s: &'source str,
-    ) -> Result<Node<'source>, SyntaxError> {
+    ) -> Result<Node<'source>, SyntaxError<'source>> {
         // Consecutive text to normalize
         let mut text: Option<Text> = None;
 

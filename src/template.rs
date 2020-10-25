@@ -36,7 +36,7 @@ impl<'reg, 'render> Renderer<'reg, 'render> for Template<'_> {
 
 impl<'source> Template<'source> {
     /// Compile a block.
-    pub fn compile(source: &'source str, options: ParserOptions) -> Result<Template, SyntaxError> {
+    pub fn compile(source: &'source str, options: ParserOptions) -> Result<Template, SyntaxError<'source>> {
         let mut parser = Parser::new(options);
         let node = parser.parse(source)?;
         Ok(Template { source, node })

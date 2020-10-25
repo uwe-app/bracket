@@ -1,6 +1,6 @@
 use hbs::{Result, Template, lexer::parser::ParserOptions};
 
-fn main() -> Result<()> {
+fn main() -> Result<'static, ()> {
     let s = r#"\{{expr}}
 {{{unescaped}}}
 
@@ -41,7 +41,7 @@ This is some block text with an {{inline}}
             println!("{}", tpl.to_string());
         }
         Err(e) => {
-            eprintln!("{}", e);
+            eprintln!("{:?}", e);
             //e.print(s).unwrap();
             std::process::exit(1);
         }

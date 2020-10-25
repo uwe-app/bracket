@@ -1,37 +1,138 @@
-use std::{io, fmt};
-use thiserror::Error;
+use std::fmt;
 use unicode_width::UnicodeWidthStr;
-use crate::lexer::SourcePos;
+
+use crate::lexer::parser::ParserOptions;
 
 static SYNTAX_PREFIX: &str = "Syntax error";
 
-#[derive(Error, Debug, Eq, PartialEq)]
-pub enum Error {
-    #[error(transparent)]
-    Syntax(#[from] SyntaxError),
-    #[error(transparent)]
-    Render(#[from] RenderError),
+/// Map a position for syntax errors. 
+#[derive(Debug, Eq, PartialEq)]
+pub struct SourcePos(pub usize, pub usize);
+
+impl SourcePos {
+    pub fn line(&self) -> &usize {
+        &self.0    
+    }
+
+    pub fn byte_offset(&self) -> &usize {
+        &self.1
+    }
 }
 
-#[derive(Error, Eq, PartialEq)]
-pub enum SyntaxError {
-    EmptyStatement(SourcePos),
-    ExpectedIdentifier(SourcePos),
+#[derive(Debug, Eq, PartialEq)]
+pub struct ErrorInfo<'source> {
+    source: &'source str,
+    file_name: String,
+    source_pos: SourcePos,
 }
 
-impl fmt::Display for SyntaxError {
+impl<'source> ErrorInfo<'source> {
+    pub fn source(&self) -> &'source str {
+        self.source 
+    }
+    pub fn position(&self) -> &SourcePos {
+        &self.source_pos 
+    }
+}
+
+impl<'source> From<(&'source str, &ParserOptions, SourcePos)> for ErrorInfo<'source> {
+    fn from(opts: (&'source str, &ParserOptions, SourcePos)) -> Self {
+        Self {
+            source: opts.0,
+            file_name: opts.1.file_name.clone(),
+            source_pos: opts.2,
+        } 
+    }
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub enum Error<'source> {
+    Syntax(SyntaxError<'source>),
+    Render(RenderError),
+}
+
+impl fmt::Display for Error<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            Self::Syntax(ref e) => {
+                e.fmt(f) 
+            }
+            Self::Render(ref e) => {
+                e.fmt(f) 
+            }
+        }
+    }
+}
+
+impl From<RenderError> for Error<'_> {
+    fn from(err: RenderError) -> Self {
+        Self::Render(err)
+    }
+}
+
+impl<'source> From<SyntaxError<'source>> for Error<'source> {
+    fn from(err: SyntaxError<'source>) -> Self {
+        Self::Syntax(err)
+    }
+}
+
+#[derive(Eq, PartialEq)]
+pub enum SyntaxError<'source> {
+    EmptyStatement(ErrorInfo<'source>),
+    ExpectedIdentifier(ErrorInfo<'source>),
+}
+
+impl fmt::Display for SyntaxError<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}, {}", SYNTAX_PREFIX, self.message())
     }
 }
 
-impl fmt::Debug for SyntaxError {
+impl fmt::Debug for SyntaxError<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Ok(())
+        let info = self.info();
+        let s = info.source();
+        let pos = info.position();
+        let prev_line = self.find_prev_line_offset(s, pos);
+        let prev_line_offset = if let Some(offset) = prev_line {
+            offset + 1
+        } else { 0 };
+
+        let next_line = self.find_next_line_offset(s, pos);
+        let next_line_offset = if let Some(offset) = next_line {
+            offset
+        } else { s.len() };
+
+        let line_slice = &s[prev_line_offset..next_line_offset];
+        let line_number = pos.line();
+
+        let line_prefix = format!(" {} | ", line_number + 1);
+        let line_padding = " ".repeat(line_prefix.len() - 3);
+
+        let diff = (pos.byte_offset() - prev_line_offset) + 1;
+        let diff_start = prev_line_offset;
+        let diff_end = prev_line_offset + diff;
+        let diff_str = &s[diff_start..diff_end];
+
+        let cols = UnicodeWidthStr::width(diff_str);
+
+        let file_info = format!("unknown:{}:{}", line_number + 1, cols);
+
+        let err_pointer: String = if cols > 0 {
+            format!("{}^", "-".repeat(cols - 1))
+        } else { "^".to_string() };
+
+        let mut msg = String::new();
+        let err = self.to_string();
+        write!(f, "error: {}, {}\n", SYNTAX_PREFIX, err)?;
+        write!(f, "{}--> {}\n", line_padding, file_info)?;
+        write!(f, "{} |\n", line_padding)?;
+        write!(f, "{}{}\n", line_prefix, line_slice)?;
+        write!(f, "{} | {}\n", line_padding, err_pointer)
     }
 }
 
-impl SyntaxError {
+impl SyntaxError<'_> {
 
     fn message(&self) -> &'static str {
         match *self {
@@ -40,10 +141,10 @@ impl SyntaxError {
         } 
     }
 
-    pub fn position(&self) -> &SourcePos {
+    pub fn info(&self) -> &ErrorInfo {
         match *self {
-            Self::EmptyStatement(ref pos) => pos,
-            Self::ExpectedIdentifier(ref pos) => pos,
+            Self::EmptyStatement(ref info) => info,
+            Self::ExpectedIdentifier(ref info) => info,
         } 
     }
 
@@ -73,53 +174,9 @@ impl SyntaxError {
         None
     }
 
-    fn error_context(&self, s: &str, mut w: impl io::Write) -> io::Result<()> {
-        let pos = self.position();
-        let prev_line = self.find_prev_line_offset(s, pos);
-        let prev_line_offset = if let Some(offset) = prev_line {
-            offset + 1
-        } else { 0 };
-
-        let next_line = self.find_next_line_offset(s, pos);
-        let next_line_offset = if let Some(offset) = next_line {
-            offset - 1
-        } else { s.len() - 1 };
-
-        let line_slice = &s[prev_line_offset..next_line_offset];
-        let line_number = pos.line();
-
-        let line_prefix = format!(" {} | ", line_number + 1);
-        let line_padding = " ".repeat(line_prefix.len() - 3);
-
-        let diff = (pos.byte_offset() - prev_line_offset) + 1;
-        let diff_start = prev_line_offset;
-        let diff_end = prev_line_offset + diff;
-        let diff_str = &s[diff_start..diff_end];
-
-        let cols = UnicodeWidthStr::width(diff_str);
-
-        let file_info = format!("unknown:{}:{}", line_number + 1, cols);
-
-        let err_pointer: String = if cols > 0 {
-            format!("{}^", "-".repeat(cols - 1))
-        } else { "^".to_string() };
-
-        let mut msg = String::new();
-        let err = self.to_string();
-        write!(w, "error: {}, {}\n", SYNTAX_PREFIX, err)?;
-        write!(w, "{}--> {}\n", line_padding, file_info)?;
-        write!(w, "{} |\n", line_padding)?;
-        write!(w, "{}{}\n", line_prefix, line_slice)?;
-        write!(w, "{} | {}\n", line_padding, err_pointer)?;
-        Ok(())
-    }
-
-    pub fn print(&self, s: &str) -> io::Result<()> {
-        self.error_context(s, io::stderr())
-    }
 }
 
-#[derive(Error, Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum RenderError {
     #[error("Template not found {0}")]
     TemplateNotFound(String),

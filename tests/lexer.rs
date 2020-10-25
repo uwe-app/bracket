@@ -5,7 +5,7 @@ use hbs::lexer::grammar::{
 use hbs::Result;
 
 #[test]
-fn lex_text_only() -> Result<()> {
+fn lex_text_only() -> Result<'static, ()> {
     let value = "foo bar baz";
     let tokens = lex(value, true);
 
@@ -16,7 +16,7 @@ fn lex_text_only() -> Result<()> {
 }
 
 #[test]
-fn lex_block_text() -> Result<()> {
+fn lex_block_text() -> Result<'static, ()> {
     let value = "foo {{bar}} baz";
     let tokens = lex(value, true);
 
@@ -33,7 +33,7 @@ fn lex_block_text() -> Result<()> {
 }
 
 #[test]
-fn lex_raw_block() -> Result<()> {
+fn lex_raw_block() -> Result<'static, ()> {
     let value = "{{{{ raw }}}}foo {{bar}} baz{{{{ / raw }}}}";
     let tokens = lex(value, true);
     let expect = vec![
@@ -47,7 +47,7 @@ fn lex_raw_block() -> Result<()> {
 }
 
 #[test]
-fn lex_raw_block_multiline() -> Result<()> {
+fn lex_raw_block_multiline() -> Result<'static, ()> {
     let value = "{{{{raw}}}}
 foo
 {{bar}}
@@ -68,7 +68,7 @@ baz
 }
 
 #[test]
-fn lex_raw_comment() -> Result<()> {
+fn lex_raw_comment() -> Result<'static, ()> {
     let value = "{{!-- foo {{bar}} baz --}}";
     let tokens = lex(value, true);
     let expect = vec![
@@ -82,7 +82,7 @@ fn lex_raw_comment() -> Result<()> {
 }
 
 #[test]
-fn lex_raw_comment_multiline() -> Result<()> {
+fn lex_raw_comment_multiline() -> Result<'static, ()> {
     let value = "{{!--
 foo
 {{bar}}
@@ -100,7 +100,7 @@ baz
 }
 
 #[test]
-fn lex_comment() -> Result<()> {
+fn lex_comment() -> Result<'static, ()> {
     let value = "{{! foo }}";
     let tokens = lex(value, true);
     let expect = vec![
@@ -114,7 +114,7 @@ fn lex_comment() -> Result<()> {
 }
 
 #[test]
-fn lex_comment_multiline() -> Result<()> {
+fn lex_comment_multiline() -> Result<'static, ()> {
     let value = "{{!
 foo
 bar
@@ -132,7 +132,7 @@ baz
 }
 
 #[test]
-fn lex_raw_statement() -> Result<()> {
+fn lex_raw_statement() -> Result<'static, ()> {
     let value = "\\{{foo}}";
     let tokens = lex(value, true);
     let expect = vec![
@@ -146,7 +146,7 @@ fn lex_raw_statement() -> Result<()> {
 }
 
 #[test]
-fn lex_raw_statement_partial() -> Result<()> {
+fn lex_raw_statement_partial() -> Result<'static, ()> {
     let value = "\\{{> foo}}";
     let tokens = lex(value, true);
     let expect = vec![
@@ -160,7 +160,7 @@ fn lex_raw_statement_partial() -> Result<()> {
 }
 
 #[test]
-fn lex_statement_identifier() -> Result<()> {
+fn lex_statement_identifier() -> Result<'static, ()> {
     let value = "{{foo}}";
     let tokens = lex(value, true);
 
@@ -175,7 +175,7 @@ fn lex_statement_identifier() -> Result<()> {
 }
 
 #[test]
-fn lex_statement_partial() -> Result<()> {
+fn lex_statement_partial() -> Result<'static, ()> {
     let value = "{{> foo}}";
     let tokens = lex(value, true);
 
@@ -192,7 +192,7 @@ fn lex_statement_partial() -> Result<()> {
 }
 
 #[test]
-fn lex_statement_path() -> Result<()> {
+fn lex_statement_path() -> Result<'static, ()> {
     let value = "{{foo.bar.baz}}";
     let tokens = lex(value, true);
 

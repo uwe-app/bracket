@@ -1,17 +1,20 @@
-use hbs::{error::SyntaxError, lexer::SourcePos, Error, Registry, Result};
+use hbs::{error::{SyntaxError, SourcePos, ErrorInfo}, lexer::parser::ParserOptions, Error, Registry, Result};
 use serde_json::json;
 
 #[test]
-fn err_empty_statement() -> Result<()> {
+fn err_empty_statement() -> Result<'static, ()> {
     let mut registry = Registry::new();
     let name = "mock-template";
     let value = r"{{}}";
     let data = json!({});
+    let options: ParserOptions = Default::default();
     match registry.register_template_string(name, value, Default::default()) {
         Ok(_) => panic!("Empty statement error expected"),
         Err(e) => {
-            println!("{}", e.to_string());
-            assert_eq!(Error::Syntax(SyntaxError::EmptyStatement(SourcePos(0, 2))), e);
+            println!("{:?}", e);
+            let pos = SourcePos(0, 2);
+            let info = ErrorInfo::from((value, &options, pos));
+            assert_eq!(Error::Syntax(SyntaxError::EmptyStatement(info)), e);
         }
     }
     Ok(())
