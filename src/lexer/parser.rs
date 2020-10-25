@@ -1,5 +1,6 @@
 use std::fmt;
 use std::ops::Range;
+use std::slice::Iter;
 
 use logos::Span;
 
@@ -34,7 +35,7 @@ enum ParameterContext {
     Statement,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct ParameterCache {
     context: ParameterContext,
     tokens: Vec<(Parameters, Span)>,
@@ -50,6 +51,10 @@ impl ParameterCache {
             tokens: Default::default(),
             end: Default::default(),
         } 
+    }
+
+    pub fn into_iter(mut self) -> std::vec::IntoIter<(Parameters, Span)> {
+        self.tokens.into_iter()
     }
 }
 
@@ -99,65 +104,128 @@ impl<'source> Parser<'source> {
         }
     }
 
+    fn consume_whitespace(
+        &self,
+        iter: &mut std::vec::IntoIter<(Parameters, Span)>,
+        byte_offset: &mut usize,
+        line: &mut usize,
+        ) -> Option<(Parameters, Span)> {
+
+        while let Some(item) = iter.next() {
+            if item.0 == Parameters::WhiteSpace || item.0 == Parameters::Newline {
+                *byte_offset = item.1.end;
+                if item.0 == Parameters::Newline {
+                    *line += 1;
+                }
+            } else {
+                return Some(item);
+            }
+        }
+        None
+    }
+
+    // Find the next token that exists in a list of expected tokens
+    // at the next position consuming preceeding whitespace.
+    fn find_one_of(
+        &self,
+        iter: &mut std::vec::IntoIter<(Parameters, Span)>,
+        byte_offset: &mut usize,
+        line: &mut usize,
+        expects: Vec<Parameters>,
+        ) -> Option<(Parameters, Span)> {
+        while let Some(item) = iter.next() {
+            if expects.contains(&item.0) {
+                return Some(item);
+            }
+            break;
+        }
+        None
+    }
+
     fn parse_parameters(
         &mut self,
         s: &'source str,
-        line: &usize,
-        statement: &mut ParameterCache,
+        line: &mut usize,
+        mut statement: ParameterCache,
     ) -> Result<Call<'source>, SyntaxError<'source>> {
+
+        let context = statement.context.clone();
+        let stmt_start = statement.start.clone();
+        let stmt_end = statement.end.clone();
+        let mut iter = statement.into_iter();
+
         // Position as byte offset for syntax errors
-        let mut byte_offset = statement.start.end;
+        let mut byte_offset = stmt_start.end.clone();
 
-        if !statement.tokens.is_empty() {
-            let mut iter = statement.tokens.iter();
-            let (first, span) = iter.next().unwrap();
-            let mut identifier: Option<(&Parameters, &Span)> = None;
+        let next = self.consume_whitespace(&mut iter, &mut byte_offset, line);
 
-            // Find the next token that exists in a list of expected tokens
-            // at the next position consuming preceeding whitespace.
-            let mut find_until =
-                |expects: Vec<Parameters>| -> Option<&(Parameters, Span)> {
-                    while let Some(item) = iter.next() {
-                        if item.0 == Parameters::WhiteSpace {
-                            continue;
-                        } else if expects.contains(&item.0) {
-                            return Some(item);
-                        }
-                        break;
+        let err_info = |line: &mut usize, byte_offset: usize| -> ErrorInfo<'source> {
+            let pos = SourcePos(line.clone(), byte_offset.clone());
+            ErrorInfo::from((s, &self.options, pos))
+        };
+
+        if let Some((mut first, mut span)) = next {
+            let mut identifier: Option<(Parameters, Span)> = None;
+
+            let partial = match first {
+                Parameters::Partial => true,
+                _ => false,
+            };
+
+            if partial {
+                let next = self.consume_whitespace(&mut iter, &mut byte_offset, line);
+                if let Some((next_token, next_span)) = next {
+                    first = next_token;
+                    span = next_span;
+                }
+            }
+
+            let range = stmt_start.end..stmt_end.start;
+            let mut call = Call::new(s, partial, range, Path(vec![]), None, None);
+
+            match context {
+                ParameterContext::Block => {
+                    if Parameters::Identifier != first {
+                        return Err(
+                            SyntaxError::BlockIdentifier(
+                                err_info(line, byte_offset)));
                     }
-                    None
-                };
-
-            match first {
-                Parameters::Identifier | Parameters::LocalIdentifier => {
                     identifier = Some((first, span));
                 }
-                Parameters::Partial => {
-                    byte_offset = span.end;
-                    if let Some((lex, span)) =
-                        find_until(vec![Parameters::Identifier, Parameters::LocalIdentifier])
-                    {
-                        identifier = Some((lex, span));
+                ParameterContext::Statement => {
+
+                    println!("Parsing parameters for stamtent {:?}", first);
+                
+                    match first {
+                        Parameters::Identifier | Parameters::LocalIdentifier => {
+                            identifier = Some((first, span));
+                        }
+                        Parameters::Partial => {
+                            //byte_offset = span.end;
+                            if let Some((lex, span)) =
+                                self.find_one_of(
+                                    &mut iter,
+                                    &mut byte_offset,
+                                    line,
+                                    vec![Parameters::Identifier, Parameters::LocalIdentifier])
+                            {
+                                identifier = Some((lex, span));
+                            }
+                        }
+                        _ => {}
                     }
                 }
-                _ => {}
             }
 
             println!("Parse statement with identifier {:?}", identifier);
 
             if identifier.is_none() {
-                let pos = SourcePos(line.clone(), byte_offset);
-                let info = ErrorInfo::from((s, &self.options, pos));
-                return Err(SyntaxError::ExpectedIdentifier(info));
+                return Err(SyntaxError::ExpectedIdentifier(err_info(line, byte_offset)));
             }
 
-            let range = statement.start.end..statement.end.start;
-            let call = Call::new(s, range, Path(vec![]), None, None);
             Ok(call)
         } else {
-            let pos = SourcePos(line.clone(), byte_offset);
-            let info = ErrorInfo::from((s, &self.options, pos));
-            Err(SyntaxError::EmptyStatement(info))
+            Err(SyntaxError::EmptyStatement(err_info(line, byte_offset)))
         }
     }
 
@@ -249,6 +317,10 @@ impl<'source> Parser<'source> {
                         );
                     }
                     grammar::Block::StartBlockScope => {
+                        parameters = Some(
+                            ParameterCache::new(
+                                ParameterContext::Block, span.clone()));
+
                         self.enter_stack(
                             Block::new(
                                 s,
@@ -257,6 +329,7 @@ impl<'source> Parser<'source> {
                             ),
                             &mut text,
                         );
+
                     }
                     grammar::Block::EndBlockScope => {
 
@@ -302,7 +375,7 @@ impl<'source> Parser<'source> {
                             let ctx = params.context.clone(); 
                             params.end = span;
 
-                            let call = self.parse_parameters(s, &line, &mut params)?;
+                            let call = self.parse_parameters(s, &mut line, params.clone())?;
                             match ctx {
                                 ParameterContext::Statement => {
                                     let current = self.stack.last_mut().unwrap();

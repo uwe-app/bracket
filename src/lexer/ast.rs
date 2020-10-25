@@ -57,6 +57,7 @@ pub enum ParameterValue {
 pub struct Call<'source> {
     // Raw source input.
     source: &'source str,
+    partial: bool,
     span: Range<usize>,
     name: Path,
     arguments: Vec<ParameterValue>,
@@ -66,12 +67,14 @@ pub struct Call<'source> {
 impl<'source> Call<'source> {
     pub fn new(
         source: &'source str,
+        partial: bool,
         span: Range<usize>,
         name: Path,
         arguments: Option<Vec<ParameterValue>>,
         hash: Option<HashMap<String, ParameterValue>>) -> Self {
         Self {
             source,
+            partial,
             span,
             name,
             arguments: arguments.unwrap_or(Default::default()),
