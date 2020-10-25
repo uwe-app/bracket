@@ -36,7 +36,8 @@ This is some block text with an {{inline}}
             println!("{}", tpl.to_string());
         }
         Err(e) => {
-            eprintln!("{}", e);
+            e.print(s);
+            //eprintln!("{}", e);
             std::process::exit(1);
         }
     }

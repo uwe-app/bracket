@@ -11,9 +11,27 @@ pub enum Error {
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum SyntaxError {
     #[error("Syntax error, statement is empty")]
-    EmptyStatement,
+    EmptyStatement(usize),
     #[error("Syntax error, expecting identifier")]
-    ExpectedIdentifier,
+    ExpectedIdentifier(usize),
+}
+
+impl SyntaxError {
+    pub fn byte_offset(&self) -> &usize {
+        match self {
+            Self::EmptyStatement(pos) => pos,
+            Self::ExpectedIdentifier(pos) => pos,
+        }
+    }
+
+    pub fn to_source_context(&self, s: &str) -> String {
+        let mut msg = String::new();
+        msg
+    }
+
+    pub fn print(&self, s: &str) {
+        eprintln!("{}", self.to_source_context(s));
+    }
 }
 
 #[derive(Error, Debug)]

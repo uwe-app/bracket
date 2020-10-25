@@ -1,6 +1,4 @@
-use hbs::{
-    error::SyntaxError, lexer::parser::LineRange, Error, Registry, Result,
-};
+use hbs::{error::SyntaxError, Error, Registry, Result};
 use serde_json::json;
 
 #[test]
