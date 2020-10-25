@@ -6,7 +6,7 @@ use logos::Span;
 use crate::{
     error::{SyntaxError, ErrorInfo, SourcePos},
     lexer::{
-        ast::{Block, BlockType, Node, Text},
+        ast::{Block, BlockType, Node, Text, Call, Path},
         grammar::{self, lex, Parameters, Token},
     },
 };
@@ -28,11 +28,29 @@ impl Default for ParserOptions {
     } 
 }
 
-#[derive(Default, Debug)]
+#[derive(Clone, Debug)]
+enum ParameterContext {
+    Block,
+    Statement,
+}
+
+#[derive(Debug)]
 struct ParameterCache {
+    context: ParameterContext,
     tokens: Vec<(Parameters, Span)>,
     start: Span,
     end: Span,
+}
+
+impl ParameterCache {
+    pub fn new(context: ParameterContext, start: Span) -> Self {
+        Self {
+            context,
+            start,
+            tokens: Default::default(),
+            end: Default::default(),
+        } 
+    }
 }
 
 #[derive(Debug)]
@@ -86,7 +104,7 @@ impl<'source> Parser<'source> {
         s: &'source str,
         line: &usize,
         statement: &mut ParameterCache,
-    ) -> Result<(), SyntaxError<'source>> {
+    ) -> Result<Call<'source>, SyntaxError<'source>> {
         // Position as byte offset for syntax errors
         let mut byte_offset = statement.start.end;
 
@@ -133,8 +151,9 @@ impl<'source> Parser<'source> {
                 return Err(SyntaxError::ExpectedIdentifier(info));
             }
 
-
-            Ok(())
+            let range = statement.start.end..statement.end.start;
+            let call = Call::new(s, range, Path(vec![]), None, None);
+            Ok(call)
         } else {
             let pos = SourcePos(line.clone(), byte_offset);
             let info = ErrorInfo::from((s, &self.options, pos));
@@ -160,10 +179,11 @@ impl<'source> Parser<'source> {
         &mut self,
         s: &'source str,
     ) -> Result<Node<'source>, SyntaxError<'source>> {
+
         // Consecutive text to normalize
         let mut text: Option<Text> = None;
 
-        let mut statement: ParameterCache = Default::default();
+        let mut parameters: Option<ParameterCache> = None;
         let mut line: usize = self.options.line_offset.clone();
 
         self.enter_stack(Block::new(s, BlockType::Root, None), &mut text);
@@ -184,16 +204,16 @@ impl<'source> Parser<'source> {
                 continue;
             }
 
-            println!("Parser {:?}", t);
+            //println!("Parser {:?}", t);
             
-            match &t {
+            match t {
                 Token::Block(lex, span) => match lex {
                     grammar::Block::StartRawBlock => {
                         self.enter_stack(
                             Block::new(
                                 s,
                                 BlockType::RawBlock,
-                                Some(span.clone()),
+                                Some(span),
                             ),
                             &mut text,
                         );
@@ -203,7 +223,7 @@ impl<'source> Parser<'source> {
                             Block::new(
                                 s,
                                 BlockType::RawComment,
-                                Some(span.clone()),
+                                Some(span),
                             ),
                             &mut text,
                         );
@@ -213,7 +233,7 @@ impl<'source> Parser<'source> {
                             Block::new(
                                 s,
                                 BlockType::RawStatement,
-                                Some(span.clone()),
+                                Some(span),
                             ),
                             &mut text,
                         );
@@ -223,62 +243,76 @@ impl<'source> Parser<'source> {
                             Block::new(
                                 s,
                                 BlockType::Comment,
-                                Some(span.clone()),
+                                Some(span),
                             ),
                             &mut text,
                         );
                     }
                     grammar::Block::StartStatement => {
-                        //self.enter_stack(
-                            //Block::new(
-                                //s,
-                                //BlockType::Statement,
-                                //Some(span.clone()),
-                            //),
-                            //&mut text,
-                        //);
-
-                        println!("Starting a statement {:?}", lex);
-
-                        statement = Default::default();
-                        statement.start = span.clone();
+                        parameters = Some(
+                            ParameterCache::new(
+                                ParameterContext::Statement, span));
                     }
                     _ => {}
                 },
                 Token::RawBlock(lex, span) => match lex {
                     grammar::RawBlock::End => {
-                        self.exit_stack(span.clone(), &mut text);
+                        self.exit_stack(span, &mut text);
                     }
                     _ => {}
                 },
                 Token::RawComment(lex, span) => match lex {
                     grammar::RawComment::End => {
-                        self.exit_stack(span.clone(), &mut text);
+                        self.exit_stack(span, &mut text);
                     }
                     _ => {}
                 },
                 Token::RawStatement(lex, span) => match lex {
                     grammar::RawStatement::End => {
-                        self.exit_stack(span.clone(), &mut text);
+                        self.exit_stack(span, &mut text);
                     }
                     _ => {}
                 },
                 Token::Comment(lex, span) => match lex {
                     grammar::Comment::End => {
-                        self.exit_stack(span.clone(), &mut text);
+                        self.exit_stack(span, &mut text);
                     }
                     _ => {}
                 },
                 Token::Parameters(lex, span) => match lex {
                     Parameters::End => {
-                        println!("Finishing the parameters {:?}", lex);
-                        statement.end = span.clone();
-                        self.parse_parameters(s, &line, &mut statement)?;
+                        if let Some(mut params) = parameters.take() {
+                            let ctx = params.context.clone(); 
+                            println!("Finishing the parameters {:?}", lex);
+                            params.end = span;
+
+                            let call = self.parse_parameters(s, &line, &mut params)?;
+
+                            match ctx {
+                                ParameterContext::Statement => {
+                                    let current = self.stack.last_mut().unwrap();
+                                    current.push(Node::Statement(call));
+                                }
+                                ParameterContext::Block => {
+                                    todo!()
+                                }
+                            }
+                        }
+                        // TODO: add the parameters as a statement Node!
+
+                        //Block::new(
+                            //s,
+                            //BlockType::Statement,
+                            //Some(span.clone()),
+                        //),
+
                         //self.exit_stack(span.clone(), &mut text);
                     }
                     _ => {
                         println!("Adding token to parameters {:?}", lex);
-                        statement.tokens.push((lex.clone(), span.clone()));
+                        if let Some(params) = parameters.as_mut() {
+                            params.tokens.push((lex, span));
+                        }
                     }
                 },
                 Token::BlockScope(lex, span) => match lex {

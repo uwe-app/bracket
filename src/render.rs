@@ -60,46 +60,6 @@ impl<'source> Render<'source> {
         Self { node }
     }
 
-    /*
-    fn render_expr<'reg, 'render>(
-        &self,
-        expr: &Expr<'source>,
-        rc: &mut RenderContext<'reg, 'render>,
-    ) -> Result<(), RenderError> {
-        if expr.is_raw() {
-            rc.write_str(expr.value())?;
-        } else {
-            todo!(
-                "Evaluate the expression and escape the content if necessary"
-            );
-        }
-        Ok(())
-    }
-    */
-
-    /*
-    fn render_token<'reg, 'render>(
-        &self,
-        token: &Token<'source>,
-        rc: &mut RenderContext<'reg, 'render>,
-    ) -> Result<(), RenderError> {
-        match token {
-            Token::Text(ref t) => {
-                rc.write_str(t.as_str())?;
-            }
-            Token::RawBlock(ref t) => {
-                println!("RENDER A RAW BLOCK");
-            }
-            Token::RawComment(ref t) => {}
-            Token::Expression(ref e) => self.render_expr(e, rc)?,
-            Token::Block(ref b) => {
-                self.render_block(b, rc)?;
-            }
-        }
-        Ok(())
-    }
-    */
-
     fn render_node<'reg, 'render>(
         &self,
         node: &Node<'source>,
@@ -109,12 +69,12 @@ impl<'source> Render<'source> {
             Node::Text(ref n) => {
                 rc.write_str(n.as_str())?;
             }
+            Node::Statement(ref n) => {
+                todo!("Evaluate statement in render!");
+            }
             Node::Block(ref block) => {
                 //println!("rendering a block {:?}", block.kind());
                 match block.kind() {
-                    BlockType::Text => {
-                        rc.write_str(block.open())?;
-                    }
                     BlockType::RawBlock => {
                         rc.write_str(block.between())?;
                     }

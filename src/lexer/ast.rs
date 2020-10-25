@@ -1,17 +1,20 @@
 use std::fmt;
+use std::collections::HashMap;
 use std::ops::Range;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Node<'source> {
-    Block(Block<'source>),
     Text(Text<'source>),
+    Statement(Call<'source>),
+    Block(Block<'source>),
 }
 
 impl<'source> Node<'source> {
     pub fn as_str(&self) -> &'source str {
         match *self {
-            Self::Block(ref n) => n.as_str(),
             Self::Text(ref n) => n.as_str(),
+            Self::Statement(ref n) => n.as_str(),
+            Self::Block(ref n) => n.as_str(),
         }
     }
 }
@@ -19,8 +22,9 @@ impl<'source> Node<'source> {
 impl fmt::Display for Node<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            Self::Block(ref n) => n.fmt(f),
             Self::Text(ref n) => n.fmt(f),
+            Self::Statement(ref n) => n.fmt(f),
+            Self::Block(ref n) => n.fmt(f),
         }
     }
 }
@@ -41,31 +45,59 @@ impl fmt::Display for Text<'_> {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub enum StatementType {
-    Partial,
-    Helper,
-    Variable,
+pub struct Path(pub Vec<Range<usize>>);
+
+#[derive(Debug, Eq, PartialEq)]
+pub enum ParameterValue {
+    Path(Path),
+    Literal,
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct Statement<'source> {
+pub struct Call<'source> {
     // Raw source input.
     source: &'source str,
-    kind: StatementType,
-    open: Range<usize>,
-    close: Range<usize>,
+    span: Range<usize>,
+    name: Path,
+    arguments: Vec<ParameterValue>,
+    hash: HashMap<String, ParameterValue>,
+}
+
+impl<'source> Call<'source> {
+    pub fn new(
+        source: &'source str,
+        span: Range<usize>,
+        name: Path,
+        arguments: Option<Vec<ParameterValue>>,
+        hash: Option<HashMap<String, ParameterValue>>) -> Self {
+        Self {
+            source,
+            span,
+            name,
+            arguments: arguments.unwrap_or(Default::default()),
+            hash: hash.unwrap_or(Default::default()),
+        } 
+    }
+
+    pub fn as_str(&self) -> &'source str {
+        &self.source[self.span.start..self.span.end]
+    }
+}
+
+impl fmt::Display for Call<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
 }
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum BlockType {
     Root,
-    Text,           // .
     RawBlock,       // {{{{raw}}}}{{expr}}{{{{/raw}}}}
     RawStatement,   // \{{expr}}
     RawComment,     // {{!-- {{expr}} --}}
     Comment,        // {{! comment }}
     Scoped,         // {{#> partial|helper}}{{/partial|helper}}
-    Statement,      // {{identifier|path|json_literal|hash_map}}
 }
 
 impl Default for BlockType {
