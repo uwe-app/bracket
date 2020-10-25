@@ -20,13 +20,13 @@ pub enum Block {
     #[regex(r"\{\{!")]
     StartComment,
 
-    #[regex(r"\{\{\{?")]
+    #[regex(r"\{\{\{?~?")]
     StartStatement,
 
-    #[regex(r"\{\{\#")]
+    #[regex(r"\{\{\~?#")]
     StartBlockScope,
 
-    #[regex(r"\{\{\s*/(?&identifier)+\s*\}\}")]
+    #[regex(r"\{\{\~?s*/(?&identifier)+\s*~?\}\}")]
     EndBlockScope,
 
     #[regex(r".")]
@@ -157,7 +157,7 @@ pub enum Parameters {
     #[regex(r" +")]
     WhiteSpace,
 
-    #[regex(r"\}?\}\}")]
+    #[regex(r"~?\}?\}\}")]
     End,
 
     #[token("\n")]
