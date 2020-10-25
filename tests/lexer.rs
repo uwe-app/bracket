@@ -209,3 +209,78 @@ fn lex_statement_path() -> Result<'static, ()> {
 
     Ok(())
 }
+
+#[test]
+fn lex_statement_parent_path() -> Result<'static, ()> {
+    let value = "{{../../foo}}";
+    let tokens = lex(value, true);
+
+    let expect = vec![
+        Token::Block(Block::StartStatement, 0..2),
+        Token::Parameters(Parameters::ParentRef, 2..5),
+        Token::Parameters(Parameters::ParentRef, 5..8),
+        Token::Parameters(Parameters::Identifier, 8..11),
+        Token::Parameters(Parameters::End, 11..13),
+    ];
+    assert_eq!(expect, tokens);
+
+    Ok(())
+}
+
+#[test]
+fn lex_statement_root_path() -> Result<'static, ()> {
+    let value = "{{@root/foo}}";
+    let tokens = lex(value, true);
+
+    let expect = vec![
+        Token::Block(Block::StartStatement, 0..2),
+        Token::Parameters(Parameters::LocalIdentifier, 2..7),
+        Token::Parameters(Parameters::PathDelimiter, 7..8),
+        Token::Parameters(Parameters::Identifier, 8..11),
+        Token::Parameters(Parameters::End, 11..13),
+    ];
+    assert_eq!(expect, tokens);
+
+    Ok(())
+}
+
+#[test]
+fn lex_block_scope() -> Result<'static, ()> {
+    let value = "{{#foo}}bar {{baz}} qux{{/foo}}";
+    let tokens = lex(value, true);
+
+    let expect = vec![
+        Token::Block(Block::StartBlockScope, 0..3),
+        Token::Parameters(Parameters::Identifier, 3..6),
+        Token::Parameters(Parameters::End, 6..8),
+        Token::Block(Block::Text, 8..12),
+        Token::Block(Block::StartStatement, 12..14),
+        Token::Parameters(Parameters::Identifier, 14..17),
+        Token::Parameters(Parameters::End, 17..19),
+        Token::Block(Block::Text, 19..23),
+        Token::Block(Block::EndBlockScope, 23..31),
+    ];
+    assert_eq!(expect, tokens);
+
+    Ok(())
+}
+
+#[test]
+fn lex_block_scope_partial() -> Result<'static, ()> {
+    let value = "{{#>foo}}{{@partial-block}}{{/foo}}";
+    let tokens = lex(value, true);
+
+    let expect = vec![
+        Token::Block(Block::StartBlockScope, 0..3),
+        Token::Parameters(Parameters::Partial, 3..4),
+        Token::Parameters(Parameters::Identifier, 4..7),
+        Token::Parameters(Parameters::End, 7..9),
+        Token::Block(Block::StartStatement, 9..11),
+        Token::Parameters(Parameters::LocalIdentifier, 11..25),
+        Token::Parameters(Parameters::End, 25..27),
+        Token::Block(Block::EndBlockScope, 27..35),
+    ];
+    assert_eq!(expect, tokens);
+
+    Ok(())
+}
