@@ -114,6 +114,7 @@ pub struct Block<'source> {
     blocks: Vec<Node<'source>>,
     open: Option<Range<usize>>,
     close: Option<Range<usize>>,
+    call: Option<Call<'source>>,
 }
 
 impl<'source> Block<'source> {
@@ -128,7 +129,12 @@ impl<'source> Block<'source> {
             blocks: Vec::new(),
             open,
             close: None,
+            call: None,
         }
+    }
+
+    pub fn set_call(&mut self, call: Call<'source>) {
+        self.call = Some(call);
     }
 
     pub(crate) fn exit(&mut self, span: Range<usize>) {

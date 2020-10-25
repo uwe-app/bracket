@@ -110,9 +110,6 @@ pub enum BlockScope {
     #[regex(r".")]
     Text,
 
-    #[regex(r"\{\{\s*/(?&identifier)+\s*\}\}")]
-    End,
-
     #[token("\n")]
     Newline,
 
@@ -126,6 +123,9 @@ pub enum BlockScope {
 pub enum Parameters {
     #[token(r">")]
     Partial,
+
+    #[token("../")]
+    ParentRef,
 
     #[regex(r"(?&identifier)+", priority = 2)]
     Identifier,
@@ -351,11 +351,7 @@ impl<'source> Iterator for ModeBridge<'source> {
             Modes::BlockScope(lexer) => {
                 let result = lexer.next();
                 let span = lexer.span();
-
                 if let Some(token) = result {
-                    if BlockScope::End == token {
-                        self.mode = Modes::Block(lexer.to_owned().morph());
-                    }
                     Some(Token::BlockScope(token, span))
                 } else {
                     None

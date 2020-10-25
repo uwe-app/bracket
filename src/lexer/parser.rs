@@ -248,6 +248,23 @@ impl<'source> Parser<'source> {
                             &mut text,
                         );
                     }
+                    grammar::Block::StartBlockScope => {
+                        self.enter_stack(
+                            Block::new(
+                                s,
+                                BlockType::Scoped,
+                                Some(span),
+                            ),
+                            &mut text,
+                        );
+                    }
+                    grammar::Block::EndBlockScope => {
+
+                        // TODO: check the closing element matches the
+                        // TODO: name of the open scope block
+
+                        self.exit_stack(span, &mut text);
+                    }
                     grammar::Block::StartStatement => {
                         parameters = Some(
                             ParameterCache::new(
@@ -283,45 +300,29 @@ impl<'source> Parser<'source> {
                     Parameters::End => {
                         if let Some(mut params) = parameters.take() {
                             let ctx = params.context.clone(); 
-                            println!("Finishing the parameters {:?}", lex);
                             params.end = span;
 
                             let call = self.parse_parameters(s, &line, &mut params)?;
-
                             match ctx {
                                 ParameterContext::Statement => {
                                     let current = self.stack.last_mut().unwrap();
                                     current.push(Node::Statement(call));
                                 }
                                 ParameterContext::Block => {
-                                    todo!()
+                                    let current = self.stack.last_mut().unwrap();
+                                    current.set_call(call);
                                 }
                             }
                         }
-                        // TODO: add the parameters as a statement Node!
-
-                        //Block::new(
-                            //s,
-                            //BlockType::Statement,
-                            //Some(span.clone()),
-                        //),
-
-                        //self.exit_stack(span.clone(), &mut text);
                     }
                     _ => {
-                        println!("Adding token to parameters {:?}", lex);
                         if let Some(params) = parameters.as_mut() {
                             params.tokens.push((lex, span));
                         }
                     }
                 },
                 Token::BlockScope(lex, span) => match lex {
-                    grammar::BlockScope::End => {
-                        println!("Got block scope to terminate");
-                    }
-                    _ => {
-                        println!("Got block scope item to add {:?}", lex);
-                    }
+                    _ => {}
                 },
             }
         }
@@ -331,8 +332,6 @@ impl<'source> Parser<'source> {
             let current = self.stack.last_mut().unwrap();
             current.push(Node::Text(txt));
         }
-
-        //println!("{:#?}", self.stack.first());
 
         Ok(Node::Block(self.stack.swap_remove(0)))
     }

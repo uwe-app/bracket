@@ -70,7 +70,8 @@ impl<'source> Render<'source> {
                 rc.write_str(n.as_str())?;
             }
             Node::Statement(ref n) => {
-                todo!("Evaluate statement in render!");
+                println!("TODO: Evaluate statement in render!");
+                rc.write_str(n.as_str())?;
             }
             Node::Block(ref block) => {
                 //println!("rendering a block {:?}", block.kind());
@@ -87,7 +88,7 @@ impl<'source> Render<'source> {
                     }
                     _ => {
                         for b in block.blocks().iter() {
-                            println!("Rendering block {:?}", b.as_str());
+                            //println!("Rendering block {:?}", b.as_str());
                             self.render_node(b, rc)?;
                         }
                     }
