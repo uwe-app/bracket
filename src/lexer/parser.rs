@@ -11,6 +11,20 @@ use crate::{
     },
 };
 
+/// Map a position for syntax errors. 
+#[derive(Debug, Eq, PartialEq)]
+pub struct SourcePos(pub usize, pub usize);
+
+impl SourcePos {
+    pub fn line(&self) -> &usize {
+        &self.0    
+    }
+
+    pub fn byte_offset(&self) -> &usize {
+        &self.1
+    }
+}
+
 #[derive(Default, Debug)]
 struct StatementCache {
     tokens: Vec<(Statement, Span)>,
@@ -66,10 +80,11 @@ impl<'source> Parser<'source> {
     fn parse_statement(
         &mut self,
         s: &'source str,
+        line: &usize,
         statement: &mut StatementCache,
     ) -> Result<(), SyntaxError> {
         // Position as byte offset for syntax errors
-        let mut pos = statement.start.end;
+        let mut byte_offset = statement.start.end;
 
         if !statement.tokens.is_empty() {
             let mut iter = statement.tokens.iter();
@@ -96,7 +111,7 @@ impl<'source> Parser<'source> {
                     identifier = Some((first, span));
                 }
                 Statement::Partial => {
-                    pos = span.end;
+                    byte_offset = span.end;
                     if let Some((lex, span)) =
                         find_until(vec![Statement::Identifier])
                     {
@@ -107,14 +122,14 @@ impl<'source> Parser<'source> {
             }
 
             if identifier.is_none() {
-                return Err(SyntaxError::ExpectedIdentifier(pos));
+                return Err(SyntaxError::ExpectedIdentifier(SourcePos(line.clone(), byte_offset)));
             }
 
             println!("Parse statement with identifier {:?}", identifier);
 
             Ok(())
         } else {
-            Err(SyntaxError::EmptyStatement(pos))
+            Err(SyntaxError::EmptyStatement(SourcePos(line.clone(), byte_offset)))
         }
     }
 
@@ -244,7 +259,7 @@ impl<'source> Parser<'source> {
                 Token::Statement(lex, span) => match lex {
                     Statement::End => {
                         statement.end = span.clone();
-                        self.parse_statement(s, &mut statement)?;
+                        self.parse_statement(s, &line, &mut statement)?;
                         self.exit_stack(span.clone(), &mut text);
                     }
                     _ => {
