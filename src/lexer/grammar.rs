@@ -127,10 +127,16 @@ pub enum Parameters {
     #[token("../")]
     ParentRef,
 
+    #[token("(", priority = 3)]
+    StartSubExpression,
+
+    #[token(")")]
+    EndSubExpression,
+
     #[regex(r"(?&identifier)+", priority = 2)]
     Identifier,
 
-    #[regex(r"@(?&identifier)+", priority = 2)]
+    #[regex(r"@(?&identifier)+")]
     LocalIdentifier,
 
     #[regex(r"[./]")]

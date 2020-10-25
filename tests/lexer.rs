@@ -245,6 +245,29 @@ fn lex_statement_root_path() -> Result<'static, ()> {
 }
 
 #[test]
+fn lex_statement_sub_expr() -> Result<'static, ()> {
+    let value = "{{foo (lookup a b)}}";
+    let tokens = lex(value, true);
+
+    let expect = vec![
+        Token::Block(Block::StartStatement, 0..2),
+        Token::Parameters(Parameters::Identifier, 2..5),
+        Token::Parameters(Parameters::WhiteSpace, 5..6),
+        Token::Parameters(Parameters::StartSubExpression, 6..7),
+        Token::Parameters(Parameters::Identifier, 7..13),
+        Token::Parameters(Parameters::WhiteSpace, 13..14),
+        Token::Parameters(Parameters::Identifier, 14..15),
+        Token::Parameters(Parameters::WhiteSpace, 15..16),
+        Token::Parameters(Parameters::Identifier, 16..17),
+        Token::Parameters(Parameters::EndSubExpression, 17..18),
+        Token::Parameters(Parameters::End, 18..20),
+    ];
+    assert_eq!(expect, tokens);
+
+    Ok(())
+}
+
+#[test]
 fn lex_block_scope() -> Result<'static, ()> {
     let value = "{{#foo}}bar {{baz}} qux{{/foo}}";
     let tokens = lex(value, true);
