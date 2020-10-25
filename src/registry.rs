@@ -3,9 +3,10 @@ use std::collections::HashMap;
 use serde::Serialize;
 
 use crate::{
-    error::RenderError,
+    error::{RenderError, SyntaxError},
     output::{Output, StringOutput},
     render::{RenderContext, RenderState, Renderer},
+    lexer::parser::ParserOptions,
     template::Template,
     Error, Result,
 };
@@ -21,8 +22,8 @@ impl<'reg> Registry<'reg> {
         }
     }
 
-    pub fn compile(s: &str) -> Result<Template> {
-        Ok(Template::compile(s).map_err(Error::from)?)
+    pub fn compile<'source>(s: &'source str, options: ParserOptions) -> std::result::Result<Template, SyntaxError> {
+        Template::compile(s, options)
     }
 
     pub fn templates(&self) -> &HashMap<&str, Template<'reg>> {
@@ -54,8 +55,9 @@ impl<'reg> Registry<'reg> {
         &mut self,
         name: &'reg str,
         s: &'reg str,
+        options: ParserOptions,
     ) -> Result<()> {
-        let tpl = Registry::compile(s)?;
+        let tpl = Registry::compile(s, options)?;
         Ok(self.register_template(name, tpl))
     }
 

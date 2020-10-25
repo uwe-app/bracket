@@ -11,6 +11,23 @@ use crate::{
     },
 };
 
+static UNKNOWN: &str = "unknown";
+
+#[derive(Debug)]
+pub struct ParserOptions {
+    /// The name of a file for the template source being parsed.
+    pub file_name: String,
+    /// A line offset into the file for error reporting, 
+    /// the first line has index zero.
+    pub line_offset: usize,
+}
+
+impl Default for ParserOptions {
+    fn default() -> Self {
+        Self {file_name: UNKNOWN.to_string(), line_offset: 0} 
+    } 
+}
+
 /// Map a position for syntax errors. 
 #[derive(Debug, Eq, PartialEq)]
 pub struct SourcePos(pub usize, pub usize);
@@ -34,12 +51,13 @@ struct StatementCache {
 
 #[derive(Debug)]
 pub struct Parser<'source> {
+    options: ParserOptions,
     stack: Vec<Block<'source>>,
 }
 
 impl<'source> Parser<'source> {
-    pub fn new() -> Self {
-        Self { stack: vec![] }
+    pub fn new(options: ParserOptions) -> Self {
+        Self { options, stack: vec![] }
     }
 
     fn enter_stack(
@@ -154,7 +172,7 @@ impl<'source> Parser<'source> {
         let mut text: Option<Text> = None;
 
         let mut statement: StatementCache = Default::default();
-        let mut line: usize = 0;
+        let mut line: usize = self.options.line_offset.clone();
 
         self.enter_stack(Block::new(s, BlockType::Root, None), &mut text);
 

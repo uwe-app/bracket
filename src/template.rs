@@ -2,14 +2,9 @@ use std::fmt;
 
 use crate::{
     error::{RenderError, SyntaxError},
-    lexer::{ast::Node, parser::Parser},
+    lexer::{ast::Node, parser::{Parser, ParserOptions}},
     render::{Render, RenderContext, Renderer},
 };
-
-// TODO: support rendering to original source form
-//pub trait SourceDisplay {
-//fn write_source(&self, s: &str, w: &mut Write) -> crate::Result<usize>;
-//}
 
 #[derive(Debug)]
 pub struct Template<'source> {
@@ -41,8 +36,8 @@ impl<'reg, 'render> Renderer<'reg, 'render> for Template<'_> {
 
 impl<'source> Template<'source> {
     /// Compile a block.
-    pub fn compile(source: &'source str) -> Result<Template, SyntaxError> {
-        let mut parser = Parser::new();
+    pub fn compile(source: &'source str, options: ParserOptions) -> Result<Template, SyntaxError> {
+        let mut parser = Parser::new(options);
         let node = parser.parse(source)?;
         Ok(Template { source, node })
     }

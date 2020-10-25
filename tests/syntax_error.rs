@@ -7,7 +7,7 @@ fn err_empty_statement() -> Result<()> {
     let name = "mock-template";
     let value = r"{{}}";
     let data = json!({});
-    match registry.register_template_string(name, value) {
+    match registry.register_template_string(name, value, Default::default()) {
         Ok(_) => panic!("Empty statement error expected"),
         Err(e) => {
             println!("{}", e.to_string());

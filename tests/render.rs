@@ -7,7 +7,7 @@ fn render_text() -> Result<()> {
     let name = "mock-template";
     let value = r"Some text";
     let data = json!({});
-    registry.register_template_string(name, value)?;
+    registry.register_template_string(name, value, Default::default())?;
     let result = registry.render(name, &data)?;
     assert_eq!(value, result);
 
@@ -24,7 +24,7 @@ fn render_html_comment() -> Result<()> {
     let name = "mock-template";
     let value = r"<!-- foo -->";
     let data = json!({});
-    registry.register_template_string(name, value)?;
+    registry.register_template_string(name, value, Default::default())?;
     let result = registry.render(name, &data)?;
     assert_eq!(value, result);
     Ok(())
@@ -37,7 +37,7 @@ fn render_raw_block() -> Result<()> {
     let value = r"{{{{raw}}}}foo {{bar}} baz{{{{/raw}}}}";
     let expected = r"foo {{bar}} baz";
     let data = json!({});
-    registry.register_template_string(name, value)?;
+    registry.register_template_string(name, value, Default::default())?;
     let result = registry.render(name, &data)?;
     assert_eq!(expected, result);
     Ok(())
@@ -58,7 +58,7 @@ foo
 baz
 text";
     let data = json!({});
-    registry.register_template_string(name, value)?;
+    registry.register_template_string(name, value, Default::default())?;
     let result = registry.render(name, &data)?;
     assert_eq!(expected, result);
     Ok(())
@@ -71,7 +71,7 @@ fn render_comment() -> Result<()> {
     let value = r"{{! simple comment }}";
     let expected = r"";
     let data = json!({});
-    registry.register_template_string(name, value)?;
+    registry.register_template_string(name, value, Default::default())?;
     let result = registry.render(name, &data)?;
     assert_eq!(expected, result);
     Ok(())
@@ -84,7 +84,7 @@ fn render_raw_comment() -> Result<()> {
     let value = r"{{!-- foo {{bar}} baz --}}";
     let expected = r"";
     let data = json!({});
-    registry.register_template_string(name, value)?;
+    registry.register_template_string(name, value, Default::default())?;
     let result = registry.render(name, &data)?;
     assert_eq!(expected, result);
     Ok(())
@@ -97,7 +97,7 @@ fn render_raw_statement() -> Result<()> {
     let value = r"\{{expr}}";
     let expected = r"{{expr}}";
     let data = json!({});
-    registry.register_template_string(name, value)?;
+    registry.register_template_string(name, value, Default::default())?;
     let result = registry.render(name, &data)?;
     assert_eq!(expected, result);
     Ok(())
@@ -110,7 +110,7 @@ fn render_statement() -> Result<()> {
     let value = r"{{foo}}";
     let expected = r"bar";
     let data = json!({"foo": "bar"});
-    registry.register_template_string(name, value)?;
+    registry.register_template_string(name, value, Default::default())?;
     let result = registry.render(name, &data)?;
     println!("Render statement result: {}", result);
     //assert_eq!(expected, result);

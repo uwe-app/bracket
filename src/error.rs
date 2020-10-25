@@ -1,7 +1,9 @@
-use std::io;
+use std::{io, fmt};
 use thiserror::Error;
 use unicode_width::UnicodeWidthStr;
 use crate::lexer::SourcePos;
+
+static SYNTAX_PREFIX: &str = "Syntax error";
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum Error {
@@ -11,15 +13,32 @@ pub enum Error {
     Render(#[from] RenderError),
 }
 
-#[derive(Error, Debug, Eq, PartialEq)]
+#[derive(Error, Eq, PartialEq)]
 pub enum SyntaxError {
-    #[error("statement is empty")]
     EmptyStatement(SourcePos),
-    #[error("expecting identifier")]
     ExpectedIdentifier(SourcePos),
 }
 
+impl fmt::Display for SyntaxError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}, {}", SYNTAX_PREFIX, self.message())
+    }
+}
+
+impl fmt::Debug for SyntaxError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Ok(())
+    }
+}
+
 impl SyntaxError {
+
+    fn message(&self) -> &'static str {
+        match *self {
+            Self::EmptyStatement(_) => "statement is empty",
+            Self::ExpectedIdentifier(_) => "expecting identifier",
+        } 
+    }
 
     pub fn position(&self) -> &SourcePos {
         match *self {
@@ -87,7 +106,7 @@ impl SyntaxError {
 
         let mut msg = String::new();
         let err = self.to_string();
-        write!(w, "error: Syntax error, {}\n", err)?;
+        write!(w, "error: {}, {}\n", SYNTAX_PREFIX, err)?;
         write!(w, "{}--> {}\n", line_padding, file_info)?;
         write!(w, "{} |\n", line_padding)?;
         write!(w, "{}{}\n", line_prefix, line_slice)?;

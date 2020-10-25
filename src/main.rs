@@ -1,4 +1,4 @@
-use hbs::{Result, Template};
+use hbs::{Result, Template, lexer::parser::ParserOptions};
 
 fn main() -> Result<()> {
     let s = r#"\{{expr}}
@@ -30,14 +30,19 @@ This is some block text with an {{inline}}
 {{foo {"a": "b"}}}
 "#;
 
-    match Template::compile(s) {
+    let options = ParserOptions {
+        file_name: String::from("src/main.rs"),
+        line_offset: 3
+    };
+
+    match Template::compile(s, options) {
         Ok(tpl) => {
             //println!("{:#?}", tpl);
             println!("{}", tpl.to_string());
         }
         Err(e) => {
-            e.print(s);
-            //eprintln!("{}", e);
+            eprintln!("{}", e);
+            //e.print(s).unwrap();
             std::process::exit(1);
         }
     }
