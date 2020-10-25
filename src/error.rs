@@ -45,7 +45,7 @@ impl<'source> From<(&'source str, &ParserOptions, SourcePos)> for ErrorInfo<'sou
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Eq, PartialEq)]
 pub enum Error<'source> {
     Syntax(SyntaxError<'source>),
     Render(RenderError),
@@ -54,12 +54,17 @@ pub enum Error<'source> {
 impl fmt::Display for Error<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            Self::Syntax(ref e) => {
-                e.fmt(f) 
-            }
-            Self::Render(ref e) => {
-                e.fmt(f) 
-            }
+            Self::Syntax(ref e) => fmt::Display::fmt(e, f),
+            Self::Render(ref e) => fmt::Display::fmt(e, f),
+        }
+    }
+}
+
+impl fmt::Debug for Error<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            Self::Syntax(ref e) => fmt::Debug::fmt(e, f),
+            Self::Render(ref e) => fmt::Debug::fmt(e, f),
         }
     }
 }
@@ -80,56 +85,6 @@ impl<'source> From<SyntaxError<'source>> for Error<'source> {
 pub enum SyntaxError<'source> {
     EmptyStatement(ErrorInfo<'source>),
     ExpectedIdentifier(ErrorInfo<'source>),
-}
-
-impl fmt::Display for SyntaxError<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}, {}", SYNTAX_PREFIX, self.message())
-    }
-}
-
-impl fmt::Debug for SyntaxError<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let info = self.info();
-        let s = info.source();
-        let pos = info.position();
-        let prev_line = self.find_prev_line_offset(s, pos);
-        let prev_line_offset = if let Some(offset) = prev_line {
-            offset + 1
-        } else { 0 };
-
-        let next_line = self.find_next_line_offset(s, pos);
-        let next_line_offset = if let Some(offset) = next_line {
-            offset
-        } else { s.len() };
-
-        let line_slice = &s[prev_line_offset..next_line_offset];
-        let line_number = pos.line();
-
-        let line_prefix = format!(" {} | ", line_number + 1);
-        let line_padding = " ".repeat(line_prefix.len() - 3);
-
-        let diff = (pos.byte_offset() - prev_line_offset) + 1;
-        let diff_start = prev_line_offset;
-        let diff_end = prev_line_offset + diff;
-        let diff_str = &s[diff_start..diff_end];
-
-        let cols = UnicodeWidthStr::width(diff_str);
-
-        let file_info = format!("unknown:{}:{}", line_number + 1, cols);
-
-        let err_pointer: String = if cols > 0 {
-            format!("{}^", "-".repeat(cols - 1))
-        } else { "^".to_string() };
-
-        let mut msg = String::new();
-        let err = self.to_string();
-        write!(f, "error: {}, {}\n", SYNTAX_PREFIX, err)?;
-        write!(f, "{}--> {}\n", line_padding, file_info)?;
-        write!(f, "{} |\n", line_padding)?;
-        write!(f, "{}{}\n", line_prefix, line_slice)?;
-        write!(f, "{} | {}\n", line_padding, err_pointer)
-    }
 }
 
 impl SyntaxError<'_> {
@@ -174,6 +129,56 @@ impl SyntaxError<'_> {
         None
     }
 
+}
+
+impl fmt::Display for SyntaxError<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}, {}", SYNTAX_PREFIX, self.message())
+    }
+}
+
+impl fmt::Debug for SyntaxError<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let info = self.info();
+        let s = info.source();
+        let pos = info.position();
+        let prev_line = self.find_prev_line_offset(s, pos);
+        let prev_line_offset = if let Some(offset) = prev_line {
+            offset + 1
+        } else { 0 };
+
+        let next_line = self.find_next_line_offset(s, pos);
+        let next_line_offset = if let Some(offset) = next_line {
+            offset
+        } else { s.len() };
+
+        let line_slice = &s[prev_line_offset..next_line_offset];
+        let line_number = pos.line();
+
+        let line_prefix = format!(" {} | ", line_number + 1);
+        let line_padding = " ".repeat(line_prefix.len() - 3);
+
+        let diff = (pos.byte_offset() - prev_line_offset) + 1;
+        let diff_start = prev_line_offset;
+        let diff_end = prev_line_offset + diff;
+        let diff_str = &s[diff_start..diff_end];
+
+        let cols = UnicodeWidthStr::width(diff_str);
+
+        let file_info = format!("{}:{}:{}", info.file_name, line_number + 1, cols);
+
+        let err_pointer: String = if cols > 0 {
+            format!("{}^", "-".repeat(cols - 1))
+        } else { "^".to_string() };
+
+        let mut msg = String::new();
+        let err = self.to_string();
+        write!(f, "error: {}\n", err)?;
+        write!(f, "{}--> {}\n", line_padding, file_info)?;
+        write!(f, "{} |\n", line_padding)?;
+        write!(f, "{}{}\n", line_prefix, line_slice)?;
+        write!(f, "{} | {}", line_padding, err_pointer)
+    }
 }
 
 #[derive(thiserror::Error, Debug)]

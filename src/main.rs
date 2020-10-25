@@ -1,4 +1,4 @@
-use hbs::{Result, Template, lexer::parser::ParserOptions};
+use hbs::{Result, Registry, Template, lexer::parser::ParserOptions};
 
 fn main() -> Result<'static, ()> {
     let s = r#"\{{expr}}
@@ -35,14 +35,13 @@ This is some block text with an {{inline}}
         line_offset: 3
     };
 
-    match Template::compile(s, options) {
+    match Registry::compile(s, options) {
         Ok(tpl) => {
             //println!("{:#?}", tpl);
-            println!("{}", tpl.to_string());
+            println!("{}", tpl);
         }
         Err(e) => {
             eprintln!("{:?}", e);
-            //e.print(s).unwrap();
             std::process::exit(1);
         }
     }

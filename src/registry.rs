@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use serde::Serialize;
 
 use crate::{
-    error::{RenderError, SyntaxError},
+    error::RenderError,
     output::{Output, StringOutput},
     render::{RenderContext, RenderState, Renderer},
     lexer::parser::ParserOptions,
@@ -15,14 +15,14 @@ pub struct Registry<'reg> {
     templates: HashMap<&'reg str, Template<'reg>>,
 }
 
-impl<'reg> Registry<'reg> {
+impl<'reg, 'source> Registry<'reg> {
     pub fn new() -> Self {
         Self {
             templates: Default::default(),
         }
     }
 
-    pub fn compile<'source>(s: &'source str, options: ParserOptions) -> Result<Template> {
+    pub fn compile(s: &'source str, options: ParserOptions) -> Result<Template> {
         Ok(Template::compile(s, options).map_err(Error::from)?)
     }
 
@@ -54,10 +54,10 @@ impl<'reg> Registry<'reg> {
     pub fn register_template_string(
         &mut self,
         name: &'reg str,
-        s: &'reg str,
+        source: &'reg str,
         options: ParserOptions,
     ) -> Result<()> {
-        let tpl = Registry::compile(s, options)?;
+        let tpl = Registry::compile(source, options)?;
         Ok(self.register_template(name, tpl))
     }
 
