@@ -5,7 +5,6 @@ use std::ops::Range;
 pub enum Node<'source> {
     Block(Block<'source>),
     Text(Text<'source>),
-    //Statement,      // {{identifier|path|json_literal|hash_map}}
 }
 
 impl<'source> Node<'source> {
@@ -60,12 +59,13 @@ pub struct Statement<'source> {
 #[derive(Debug, Eq, PartialEq)]
 pub enum BlockType {
     Root,
-    Text,         // .
-    RawBlock,     // {{{{raw}}}}{{expr}}{{{{/raw}}}}
-    RawStatement, // \{{expr}}
-    RawComment,   // {{!-- {{expr}} --}}
-    Comment,      // {{! comment }}
-    Scoped,       // {{#> partial|helper}}{{/partial|helper}}
+    Text,           // .
+    RawBlock,       // {{{{raw}}}}{{expr}}{{{{/raw}}}}
+    RawStatement,   // \{{expr}}
+    RawComment,     // {{!-- {{expr}} --}}
+    Comment,        // {{! comment }}
+    Scoped,         // {{#> partial|helper}}{{/partial|helper}}
+    Statement,      // {{identifier|path|json_literal|hash_map}}
 }
 
 impl Default for BlockType {

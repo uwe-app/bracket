@@ -171,9 +171,7 @@ impl fmt::Debug for SyntaxError<'_> {
             format!("{}^", "-".repeat(cols - 1))
         } else { "^".to_string() };
 
-        let mut msg = String::new();
-        let err = self.to_string();
-        write!(f, "error: {}\n", err)?;
+        write!(f, "error: {}\n", self.to_string())?;
         write!(f, "{}--> {}\n", line_padding, file_info)?;
         write!(f, "{} |\n", line_padding)?;
         write!(f, "{}{}\n", line_prefix, line_slice)?;

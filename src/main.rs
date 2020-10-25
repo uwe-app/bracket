@@ -1,4 +1,4 @@
-use hbs::{Result, Registry, Template, lexer::parser::ParserOptions};
+use hbs::{Result, Registry, lexer::parser::ParserOptions};
 
 fn main() -> Result<'static, ()> {
     let s = r#"\{{expr}}
@@ -22,12 +22,12 @@ This is some block text with an {{inline}}
 
 {{!-- a comment --}}
 
-{{[1,2,3]}}
-{{true}}
-{{false}}
-{{null}}
+\{{[1,2,3]}}
+\{{true}}
+\{{false}}
+\{{null}}
 
-{{foo {"a": "b"}}}
+\{{foo {"a": "b"}}}
 "#;
 
     let options = ParserOptions {

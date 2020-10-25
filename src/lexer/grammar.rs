@@ -6,6 +6,7 @@ pub struct Extras;
 
 #[derive(Logos, Clone, Debug, Eq, PartialEq)]
 #[logos(extras = Extras)]
+#[logos(subpattern identifier = r#"[^\s"!#%&'()*+,./;<=>@\[/\]^`{|}~]"#)]
 pub enum Block {
     #[regex(r"\{\{\{\{\s*raw\s*\}\}\}\}")]
     StartRawBlock,
@@ -21,6 +22,12 @@ pub enum Block {
 
     #[regex(r"\{\{\{?")]
     StartStatement,
+
+    #[regex(r"\{\{\#")]
+    StartBlockScope,
+
+    #[regex(r"\{\{\s*/(?&identifier)+\s*\}\}")]
+    EndBlockScope,
 
     #[regex(r".")]
     Text,
@@ -99,12 +106,32 @@ pub enum Comment {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 #[logos(subpattern identifier = r#"[^\s"!#%&'()*+,./;<=>@\[/\]^`{|}~]"#)]
-pub enum Statement {
+pub enum BlockScope {
+    #[regex(r".")]
+    Text,
+
+    #[regex(r"\{\{\s*/(?&identifier)+\s*\}\}")]
+    End,
+
+    #[token("\n")]
+    Newline,
+
+    #[error]
+    Error,
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
+#[logos(extras = Extras)]
+#[logos(subpattern identifier = r#"[^\s"!#%&'()*+,./;<=>@\[/\]^`{|}~]"#)]
+pub enum Parameters {
     #[token(r">")]
     Partial,
 
     #[regex(r"(?&identifier)+", priority = 2)]
     Identifier,
+
+    #[regex(r"@(?&identifier)+", priority = 2)]
+    LocalIdentifier,
 
     #[regex(r"[./]")]
     PathDelimiter,
@@ -124,6 +151,19 @@ pub enum Statement {
     #[regex(r" +")]
     WhiteSpace,
 
+    #[regex(r"\}?\}\}")]
+    End,
+
+    #[token("\n")]
+    Newline,
+
+    #[error]
+    Error,
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
+#[logos(extras = Extras)]
+pub enum Statement {
     #[regex(r"\}?\}\}")]
     End,
 
@@ -165,7 +205,8 @@ pub enum Token {
     RawComment(RawComment, Span),
     RawStatement(RawStatement, Span),
     Comment(Comment, Span),
-    Statement(Statement, Span),
+    BlockScope(BlockScope, Span),
+    Parameters(Parameters, Span),
 }
 
 impl Token {
@@ -176,7 +217,8 @@ impl Token {
             Token::RawComment(_, ref span) => span,
             Token::RawStatement(_, ref span) => span,
             Token::Comment(_, ref span) => span,
-            Token::Statement(_, ref span) => span,
+            Token::BlockScope(_, ref span) => span,
+            Token::Parameters(_, ref span) => span,
         }
     }
 
@@ -195,7 +237,10 @@ impl Token {
             Token::Comment(ref t, _) => {
                 t == &Comment::Text || t == &Comment::Newline
             }
-            Token::Statement(_, _) => false,
+            Token::BlockScope(ref t, _) => {
+                t == &BlockScope::Text || t == &BlockScope::Newline
+            }
+            Token::Parameters(_, _) => false,
         }
     }
 }
@@ -208,7 +253,8 @@ enum Modes<'source> {
     RawComment(Lexer<'source, RawComment>),
     RawStatement(Lexer<'source, RawStatement>),
     Comment(Lexer<'source, Comment>),
-    Statement(Lexer<'source, Statement>),
+    BlockScope(Lexer<'source, BlockScope>),
+    Parameters(Lexer<'source, Parameters>),
 }
 
 impl<'source> Modes<'source> {
@@ -226,6 +272,30 @@ impl<'source> Iterator for ModeBridge<'source> {
     type Item = Token;
     fn next(&mut self) -> Option<Self::Item> {
         match &mut self.mode {
+            Modes::Block(lexer) => {
+                let result = lexer.next();
+                let span = lexer.span();
+
+                if let Some(token) = result {
+                    if Block::StartRawBlock == token {
+                        self.mode = Modes::RawBlock(lexer.to_owned().morph());
+                    } else if Block::StartRawComment == token {
+                        self.mode = Modes::RawComment(lexer.to_owned().morph());
+                    } else if Block::StartRawStatement == token {
+                        self.mode =
+                            Modes::RawStatement(lexer.to_owned().morph());
+                    } else if Block::StartComment == token {
+                        self.mode = Modes::Comment(lexer.to_owned().morph());
+                    } else if Block::StartStatement == token {
+                        self.mode = Modes::Parameters(lexer.to_owned().morph());
+                    } else if Block::StartBlockScope == token {
+                        self.mode = Modes::Parameters(lexer.to_owned().morph());
+                    }
+                    Some(Token::Block(token, span))
+                } else {
+                    None
+                }
+            }
             Modes::RawBlock(lexer) => {
                 let result = lexer.next();
                 let span = lexer.span();
@@ -278,37 +348,28 @@ impl<'source> Iterator for ModeBridge<'source> {
                     None
                 }
             }
-            Modes::Statement(lexer) => {
+            Modes::BlockScope(lexer) => {
                 let result = lexer.next();
                 let span = lexer.span();
 
                 if let Some(token) = result {
-                    if Statement::End == token {
+                    if BlockScope::End == token {
                         self.mode = Modes::Block(lexer.to_owned().morph());
                     }
-                    Some(Token::Statement(token, span))
+                    Some(Token::BlockScope(token, span))
                 } else {
                     None
                 }
             }
-            Modes::Block(lexer) => {
+            Modes::Parameters(lexer) => {
                 let result = lexer.next();
                 let span = lexer.span();
 
                 if let Some(token) = result {
-                    if Block::StartRawBlock == token {
-                        self.mode = Modes::RawBlock(lexer.to_owned().morph());
-                    } else if Block::StartRawComment == token {
-                        self.mode = Modes::RawComment(lexer.to_owned().morph());
-                    } else if Block::StartRawStatement == token {
-                        self.mode =
-                            Modes::RawStatement(lexer.to_owned().morph());
-                    } else if Block::StartComment == token {
-                        self.mode = Modes::Comment(lexer.to_owned().morph());
-                    } else if Block::StartStatement == token {
-                        self.mode = Modes::Statement(lexer.to_owned().morph());
+                    if Parameters::End == token {
+                        self.mode = Modes::Block(lexer.to_owned().morph());
                     }
-                    Some(Token::Block(token, span))
+                    Some(Token::Parameters(token, span))
                 } else {
                     None
                 }

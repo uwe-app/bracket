@@ -1,6 +1,6 @@
 use hbs::lexer::grammar::{
     collect as lex, Block, Comment, RawBlock, RawComment, RawStatement,
-    Statement, Token,
+    Parameters, Token,
 };
 use hbs::Result;
 
@@ -23,8 +23,8 @@ fn lex_block_text() -> Result<'static, ()> {
     let expect = vec![
         Token::Block(Block::Text, 0..4),
         Token::Block(Block::StartStatement, 4..6),
-        Token::Statement(Statement::Identifier, 6..9),
-        Token::Statement(Statement::End, 9..11),
+        Token::Parameters(Parameters::Identifier, 6..9),
+        Token::Parameters(Parameters::End, 9..11),
         Token::Block(Block::Text, 11..15),
     ];
     assert_eq!(expect, tokens);
@@ -166,8 +166,8 @@ fn lex_statement_identifier() -> Result<'static, ()> {
 
     let expect = vec![
         Token::Block(Block::StartStatement, 0..2),
-        Token::Statement(Statement::Identifier, 2..5),
-        Token::Statement(Statement::End, 5..7),
+        Token::Parameters(Parameters::Identifier, 2..5),
+        Token::Parameters(Parameters::End, 5..7),
     ];
     assert_eq!(expect, tokens);
 
@@ -181,10 +181,10 @@ fn lex_statement_partial() -> Result<'static, ()> {
 
     let expect = vec![
         Token::Block(Block::StartStatement, 0..2),
-        Token::Statement(Statement::Partial, 2..3),
-        Token::Statement(Statement::WhiteSpace, 3..4),
-        Token::Statement(Statement::Identifier, 4..7),
-        Token::Statement(Statement::End, 7..9),
+        Token::Parameters(Parameters::Partial, 2..3),
+        Token::Parameters(Parameters::WhiteSpace, 3..4),
+        Token::Parameters(Parameters::Identifier, 4..7),
+        Token::Parameters(Parameters::End, 7..9),
     ];
     assert_eq!(expect, tokens);
 
@@ -198,12 +198,12 @@ fn lex_statement_path() -> Result<'static, ()> {
 
     let expect = vec![
         Token::Block(Block::StartStatement, 0..2),
-        Token::Statement(Statement::Identifier, 2..5),
-        Token::Statement(Statement::PathDelimiter, 5..6),
-        Token::Statement(Statement::Identifier, 6..9),
-        Token::Statement(Statement::PathDelimiter, 9..10),
-        Token::Statement(Statement::Identifier, 10..13),
-        Token::Statement(Statement::End, 13..15),
+        Token::Parameters(Parameters::Identifier, 2..5),
+        Token::Parameters(Parameters::PathDelimiter, 5..6),
+        Token::Parameters(Parameters::Identifier, 6..9),
+        Token::Parameters(Parameters::PathDelimiter, 9..10),
+        Token::Parameters(Parameters::Identifier, 10..13),
+        Token::Parameters(Parameters::End, 13..15),
     ];
     assert_eq!(expect, tokens);
 
