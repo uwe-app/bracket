@@ -1,7 +1,7 @@
 use std::ops::Range;
 use std::vec::IntoIter;
 
-use serde_json::Value;
+use serde_json::{Value, Number};
 
 use logos::Span;
 
@@ -13,6 +13,7 @@ use crate::{
     },
 };
 
+/// Default file name.
 static UNKNOWN: &str = "unknown";
 
 #[derive(Debug)]
@@ -70,6 +71,16 @@ impl<'source> Parser<'source> {
             options,
             stack: vec![],
         }
+    }
+
+    /// Helper to generate error information with source position.
+    fn err_info(
+        &self,
+        source: &'source str,
+        line: &mut usize,
+        byte_offset: usize) -> ErrorInfo<'source> {
+        let pos = SourcePos(line.clone(), byte_offset.clone());
+        ErrorInfo::from((source, &self.options, pos))
     }
 
     fn enter_stack(
@@ -140,6 +151,8 @@ impl<'source> Parser<'source> {
             self.consume_whitespace(iter, byte_offset, line);
         if let Some((lex, span)) = next {
 
+            println!("Parameter lex {:?}", lex);
+
             match lex {
                 grammar::Parameters::Null => {
                     call.add_argument(ParameterValue::Json(Value::Null));
@@ -150,22 +163,16 @@ impl<'source> Parser<'source> {
                 grammar::Parameters::False => {
                     call.add_argument(ParameterValue::Json(Value::Bool(false)));
                 }
+                grammar::Parameters::Number => {
+                    let num: Number = source[span].parse().unwrap();
+                    call.add_argument(ParameterValue::Json(Value::Number(num)));
+                }
                 _ => return None
             }
             return self.parse_arguments(source, iter, byte_offset, line, call)
         }
 
         iter.next()
-    }
-
-    /// Helper to generate error information with source position.
-    fn err_info(
-        &self,
-        source: &'source str,
-        line: &mut usize,
-        byte_offset: usize) -> ErrorInfo<'source> {
-        let pos = SourcePos(line.clone(), byte_offset.clone());
-        ErrorInfo::from((source, &self.options, pos))
     }
 
     fn parse_parameters(
@@ -259,6 +266,8 @@ impl<'source> Parser<'source> {
             }
 
             self.parse_arguments(source, &mut iter, &mut byte_offset, line, &mut call);
+
+            println!("Arguments {:?}", call.arguments());
 
             Ok(call)
         } else {

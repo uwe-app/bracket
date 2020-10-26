@@ -155,7 +155,9 @@ pub enum Parameters {
     #[token("\"")]
     StartStringLiteral,
 
-    #[regex(r"-?[0-9]*\.?[0-9]+")]
+    // NOTE: must have higher priority than identifier
+    // NOTE: otherwise numbers become identifiers
+    #[regex(r"-?[0-9]*\.?[0-9]+((e|E)[+-]?[0-9]+)?", priority = 3)]
     Number,
 
     #[token("true")]
