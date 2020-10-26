@@ -87,7 +87,7 @@ impl<'source> Render<'source> {
                         rc.write_str(raw)?;
                     }
                     _ => {
-                        for b in block.blocks().iter() {
+                        for b in block.nodes().iter() {
                             //println!("Rendering block {:?}", b.as_str());
                             self.render_node(b, rc)?;
                         }

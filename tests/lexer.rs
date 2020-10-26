@@ -5,21 +5,17 @@ use hbs::lexer::grammar::{
 use hbs::Result;
 
 #[test]
-fn lex_text_only() -> Result<'static, ()> {
+fn lex_text_only() {
     let value = "foo bar baz";
     let tokens = lex(value, true);
-
     let expect = vec![Token::Block(Block::Text, 0..11)];
     assert_eq!(expect, tokens);
-
-    Ok(())
 }
 
 #[test]
-fn lex_block_text() -> Result<'static, ()> {
+fn lex_block_text() {
     let value = "foo {{bar}} baz";
     let tokens = lex(value, true);
-
     let expect = vec![
         Token::Block(Block::Text, 0..4),
         Token::Block(Block::StartStatement, 4..6),
@@ -28,12 +24,10 @@ fn lex_block_text() -> Result<'static, ()> {
         Token::Block(Block::Text, 11..15),
     ];
     assert_eq!(expect, tokens);
-
-    Ok(())
 }
 
 #[test]
-fn lex_raw_block() -> Result<'static, ()> {
+fn lex_raw_block() {
     let value = "{{{{ raw }}}}foo {{bar}} baz{{{{ / raw }}}}";
     let tokens = lex(value, true);
     let expect = vec![
@@ -42,12 +36,10 @@ fn lex_raw_block() -> Result<'static, ()> {
         Token::RawBlock(RawBlock::End, 28..43),
     ];
     assert_eq!(expect, tokens);
-
-    Ok(())
 }
 
 #[test]
-fn lex_raw_block_multiline() -> Result<'static, ()> {
+fn lex_raw_block_multiline() {
     let value = "{{{{raw}}}}
 foo
 {{bar}}
@@ -55,7 +47,6 @@ baz
 {{{{/raw}}}}
 ";
     let tokens = lex(value, true);
-
     let expect = vec![
         Token::Block(Block::StartRawBlock, 0..11),
         Token::Block(Block::Text, 11..28),
@@ -63,12 +54,10 @@ baz
         Token::Block(Block::Text, 40..41),
     ];
     assert_eq!(expect, tokens);
-
-    Ok(())
 }
 
 #[test]
-fn lex_raw_comment() -> Result<'static, ()> {
+fn lex_raw_comment() {
     let value = "{{!-- foo {{bar}} baz --}}";
     let tokens = lex(value, true);
     let expect = vec![
@@ -77,12 +66,10 @@ fn lex_raw_comment() -> Result<'static, ()> {
         Token::RawComment(RawComment::End, 22..26),
     ];
     assert_eq!(expect, tokens);
-
-    Ok(())
 }
 
 #[test]
-fn lex_raw_comment_multiline() -> Result<'static, ()> {
+fn lex_raw_comment_multiline() {
     let value = "{{!--
 foo
 {{bar}}
@@ -95,12 +82,10 @@ baz
         Token::RawComment(RawComment::End, 22..26),
     ];
     assert_eq!(expect, tokens);
-
-    Ok(())
 }
 
 #[test]
-fn lex_comment() -> Result<'static, ()> {
+fn lex_comment() {
     let value = "{{! foo }}";
     let tokens = lex(value, true);
     let expect = vec![
@@ -109,12 +94,10 @@ fn lex_comment() -> Result<'static, ()> {
         Token::Comment(Comment::End, 8..10),
     ];
     assert_eq!(expect, tokens);
-
-    Ok(())
 }
 
 #[test]
-fn lex_comment_multiline() -> Result<'static, ()> {
+fn lex_comment_multiline() {
     let value = "{{!
 foo
 bar
@@ -127,12 +110,10 @@ baz
         Token::Comment(Comment::End, 16..18),
     ];
     assert_eq!(expect, tokens);
-
-    Ok(())
 }
 
 #[test]
-fn lex_raw_statement() -> Result<'static, ()> {
+fn lex_raw_statement() {
     let value = "\\{{foo}}";
     let tokens = lex(value, true);
     let expect = vec![
@@ -141,12 +122,10 @@ fn lex_raw_statement() -> Result<'static, ()> {
         Token::RawStatement(RawStatement::End, 6..8),
     ];
     assert_eq!(expect, tokens);
-
-    Ok(())
 }
 
 #[test]
-fn lex_raw_statement_partial() -> Result<'static, ()> {
+fn lex_raw_statement_partial() {
     let value = "\\{{> foo}}";
     let tokens = lex(value, true);
     let expect = vec![
@@ -155,12 +134,10 @@ fn lex_raw_statement_partial() -> Result<'static, ()> {
         Token::RawStatement(RawStatement::End, 8..10),
     ];
     assert_eq!(expect, tokens);
-
-    Ok(())
 }
 
 #[test]
-fn lex_statement_identifier() -> Result<'static, ()> {
+fn lex_statement_identifier() {
     let value = "{{foo}}";
     let tokens = lex(value, true);
 
@@ -170,12 +147,10 @@ fn lex_statement_identifier() -> Result<'static, ()> {
         Token::Parameters(Parameters::End, 5..7),
     ];
     assert_eq!(expect, tokens);
-
-    Ok(())
 }
 
 #[test]
-fn lex_statement_partial() -> Result<'static, ()> {
+fn lex_statement_partial() {
     let value = "{{> foo}}";
     let tokens = lex(value, true);
 
@@ -187,12 +162,10 @@ fn lex_statement_partial() -> Result<'static, ()> {
         Token::Parameters(Parameters::End, 7..9),
     ];
     assert_eq!(expect, tokens);
-
-    Ok(())
 }
 
 #[test]
-fn lex_statement_path() -> Result<'static, ()> {
+fn lex_statement_path() {
     let value = "{{foo.bar.baz}}";
     let tokens = lex(value, true);
 
@@ -206,12 +179,10 @@ fn lex_statement_path() -> Result<'static, ()> {
         Token::Parameters(Parameters::End, 13..15),
     ];
     assert_eq!(expect, tokens);
-
-    Ok(())
 }
 
 #[test]
-fn lex_statement_parent_path() -> Result<'static, ()> {
+fn lex_statement_parent_path() {
     let value = "{{../../foo}}";
     let tokens = lex(value, true);
 
@@ -223,12 +194,10 @@ fn lex_statement_parent_path() -> Result<'static, ()> {
         Token::Parameters(Parameters::End, 11..13),
     ];
     assert_eq!(expect, tokens);
-
-    Ok(())
 }
 
 #[test]
-fn lex_statement_root_path() -> Result<'static, ()> {
+fn lex_statement_root_path() {
     let value = "{{@root/foo}}";
     let tokens = lex(value, true);
 
@@ -240,12 +209,10 @@ fn lex_statement_root_path() -> Result<'static, ()> {
         Token::Parameters(Parameters::End, 11..13),
     ];
     assert_eq!(expect, tokens);
-
-    Ok(())
 }
 
 #[test]
-fn lex_statement_sub_expr() -> Result<'static, ()> {
+fn lex_statement_sub_expr() {
     let value = "{{foo (lookup a b)}}";
     let tokens = lex(value, true);
 
@@ -263,12 +230,10 @@ fn lex_statement_sub_expr() -> Result<'static, ()> {
         Token::Parameters(Parameters::End, 18..20),
     ];
     assert_eq!(expect, tokens);
-
-    Ok(())
 }
 
 #[test]
-fn lex_block_scope() -> Result<'static, ()> {
+fn lex_block_scope() {
     let value = "{{#foo}}bar {{baz}} qux{{/foo}}";
     let tokens = lex(value, true);
 
@@ -284,12 +249,10 @@ fn lex_block_scope() -> Result<'static, ()> {
         Token::Block(Block::EndBlockScope, 23..31),
     ];
     assert_eq!(expect, tokens);
-
-    Ok(())
 }
 
 #[test]
-fn lex_block_scope_partial() -> Result<'static, ()> {
+fn lex_block_scope_partial() {
     let value = "{{#>foo}}{{@partial-block}}{{/foo}}";
     let tokens = lex(value, true);
 
@@ -304,6 +267,4 @@ fn lex_block_scope_partial() -> Result<'static, ()> {
         Token::Block(Block::EndBlockScope, 27..35),
     ];
     assert_eq!(expect, tokens);
-
-    Ok(())
 }

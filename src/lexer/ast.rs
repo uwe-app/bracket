@@ -151,7 +151,7 @@ pub struct Block<'source> {
     // Raw source input.
     source: &'source str,
     kind: BlockType,
-    blocks: Vec<Node<'source>>,
+    nodes: Vec<Node<'source>>,
     open: Option<Range<usize>>,
     close: Option<Range<usize>>,
     call: Option<Call<'source>>,
@@ -166,7 +166,7 @@ impl<'source> Block<'source> {
         Self {
             source,
             kind,
-            blocks: Vec::new(),
+            nodes: Vec::new(),
             open,
             close: None,
             call: None,
@@ -214,16 +214,16 @@ impl<'source> Block<'source> {
         }
     }
 
-    pub fn push(&mut self, token: Node<'source>) {
-        self.blocks.push(token);
+    pub fn push(&mut self, node: Node<'source>) {
+        self.nodes.push(node);
     }
 
     pub fn kind(&self) -> &BlockType {
         &self.kind
     }
 
-    pub fn blocks(&self) -> &'source Vec<Node> {
-        &self.blocks
+    pub fn nodes(&self) -> &'source Vec<Node> {
+        &self.nodes
     }
 }
 
@@ -232,7 +232,7 @@ impl fmt::Display for Block<'_> {
         match self.kind() {
             BlockType::Root => write!(f, "{}", self.source),
             _ => {
-                for t in self.blocks() {
+                for t in self.nodes() {
                     t.fmt(f)?;
                 }
                 Ok(())
