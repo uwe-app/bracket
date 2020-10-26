@@ -103,6 +103,7 @@ pub enum Comment {
     Error,
 }
 
+/*
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 #[logos(subpattern identifier = r#"[^\s"!#%&'()*+,./;<=>@\[/\]^`{|}~]"#)]
@@ -116,6 +117,7 @@ pub enum BlockScope {
     #[error]
     Error,
 }
+*/
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
@@ -123,6 +125,9 @@ pub enum BlockScope {
 pub enum Parameters {
     #[token(r">")]
     Partial,
+
+    #[regex(r"(this|\./)")]
+    ExplicitThisRef,
 
     #[token("../")]
     ParentRef,
@@ -211,7 +216,7 @@ pub enum Token {
     RawComment(RawComment, Span),
     RawStatement(RawStatement, Span),
     Comment(Comment, Span),
-    BlockScope(BlockScope, Span),
+    //BlockScope(BlockScope, Span),
     Parameters(Parameters, Span),
 }
 
@@ -223,7 +228,7 @@ impl Token {
             Token::RawComment(_, ref span) => span,
             Token::RawStatement(_, ref span) => span,
             Token::Comment(_, ref span) => span,
-            Token::BlockScope(_, ref span) => span,
+            //Token::BlockScope(_, ref span) => span,
             Token::Parameters(_, ref span) => span,
         }
     }
@@ -243,9 +248,9 @@ impl Token {
             Token::Comment(ref t, _) => {
                 t == &Comment::Text || t == &Comment::Newline
             }
-            Token::BlockScope(ref t, _) => {
-                t == &BlockScope::Text || t == &BlockScope::Newline
-            }
+            //Token::BlockScope(ref t, _) => {
+                //t == &BlockScope::Text || t == &BlockScope::Newline
+            //}
             Token::Parameters(_, _) => false,
         }
     }
@@ -259,7 +264,7 @@ enum Modes<'source> {
     RawComment(Lexer<'source, RawComment>),
     RawStatement(Lexer<'source, RawStatement>),
     Comment(Lexer<'source, Comment>),
-    BlockScope(Lexer<'source, BlockScope>),
+    //BlockScope(Lexer<'source, BlockScope>),
     Parameters(Lexer<'source, Parameters>),
 }
 
@@ -354,15 +359,15 @@ impl<'source> Iterator for ModeBridge<'source> {
                     None
                 }
             }
-            Modes::BlockScope(lexer) => {
-                let result = lexer.next();
-                let span = lexer.span();
-                if let Some(token) = result {
-                    Some(Token::BlockScope(token, span))
-                } else {
-                    None
-                }
-            }
+            //Modes::BlockScope(lexer) => {
+                //let result = lexer.next();
+                //let span = lexer.span();
+                //if let Some(token) = result {
+                    //Some(Token::BlockScope(token, span))
+                //} else {
+                    //None
+                //}
+            //}
             Modes::Parameters(lexer) => {
                 let result = lexer.next();
                 let span = lexer.span();

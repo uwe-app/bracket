@@ -1,6 +1,6 @@
 use std::fmt;
 use std::ops::Range;
-use std::slice::Iter;
+use std::vec::IntoIter;
 
 use logos::Span;
 
@@ -106,7 +106,7 @@ impl<'source> Parser<'source> {
 
     fn consume_whitespace(
         &self,
-        iter: &mut std::vec::IntoIter<(Parameters, Span)>,
+        iter: &mut IntoIter<(Parameters, Span)>,
         byte_offset: &mut usize,
         line: &mut usize,
         ) -> Option<(Parameters, Span)> {
@@ -128,7 +128,7 @@ impl<'source> Parser<'source> {
     // at the next position consuming preceeding whitespace.
     fn find_one_of(
         &self,
-        iter: &mut std::vec::IntoIter<(Parameters, Span)>,
+        iter: &mut IntoIter<(Parameters, Span)>,
         byte_offset: &mut usize,
         line: &mut usize,
         expects: Vec<Parameters>,
@@ -237,7 +237,7 @@ impl<'source> Parser<'source> {
             }
             Token::Comment(lex, _) => lex == &grammar::Comment::Newline,
             Token::Block(lex, _) => lex == &grammar::Block::Newline,
-            Token::BlockScope(lex, _) => lex == &grammar::BlockScope::Newline,
+            //Token::BlockScope(lex, _) => lex == &grammar::BlockScope::Newline,
             Token::Parameters(lex, _) => lex == &grammar::Parameters::Newline,
         }
     }
@@ -393,9 +393,9 @@ impl<'source> Parser<'source> {
                         }
                     }
                 },
-                Token::BlockScope(lex, span) => match lex {
-                    _ => {}
-                },
+                //Token::BlockScope(lex, span) => match lex {
+                    //_ => {}
+                //},
             }
         }
 
