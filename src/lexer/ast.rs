@@ -27,8 +27,9 @@ impl<'source> Node<'source> {
                 n.open().ends_with(WHITESPACE)
             },
             Self::Block(ref n) => {
-                n.open().ends_with(WHITESPACE)
-            },
+                let open = n.open();
+                open.len() > 2 && WHITESPACE == &open[2..3]
+            }
         }
     }
 
@@ -39,7 +40,8 @@ impl<'source> Node<'source> {
                 n.close().starts_with(WHITESPACE)
             },
             Self::Block(ref n) => {
-                n.close().starts_with(WHITESPACE)
+                let open = n.open();
+                open.len() > 2 && WHITESPACE == &open[2..3]
             },
         }
     }
@@ -224,6 +226,27 @@ impl<'source> Block<'source> {
 
     pub fn nodes(&self) -> &'source Vec<Node> {
         &self.nodes
+    }
+
+    pub fn trim_before_close(&self) -> bool {
+        match self.kind {
+            BlockType::Scoped => {
+                let close= self.close();
+                close.len() > 2 && WHITESPACE == &close[2..3]
+            }
+            _ => false
+        }
+    }
+
+    pub fn trim_after_close(&self) -> bool {
+        match self.kind {
+            BlockType::Scoped => {
+                let close = self.close();
+                let pos = close.len() - 3;
+                close.len() > 2 && WHITESPACE == &close[pos..pos + 1]
+            }
+            _ => false
+        }
     }
 }
 
