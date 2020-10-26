@@ -87,6 +87,8 @@ impl<'source> From<SyntaxError<'source>> for Error<'source> {
 pub enum SyntaxError<'source> {
     EmptyStatement(ErrorInfo<'source>),
     ExpectedIdentifier(ErrorInfo<'source>),
+    PartialIdentifier(ErrorInfo<'source>),
+    PartialSimpleIdentifier(ErrorInfo<'source>),
     BlockIdentifier(ErrorInfo<'source>),
 }
 
@@ -95,6 +97,8 @@ impl SyntaxError<'_> {
         match *self {
             Self::EmptyStatement(_) => "statement is empty",
             Self::ExpectedIdentifier(_) => "expecting identifier",
+            Self::PartialIdentifier(_) => "partial requires an identifier",
+            Self::PartialSimpleIdentifier(_) => "partial requires a simple identifier (not a path)",
             Self::BlockIdentifier(_) => "block scope requires an identifier",
         }
     }
@@ -103,6 +107,8 @@ impl SyntaxError<'_> {
         match *self {
             Self::EmptyStatement(ref info) => info,
             Self::ExpectedIdentifier(ref info) => info,
+            Self::PartialIdentifier(ref info) => info,
+            Self::PartialSimpleIdentifier(ref info) => info,
             Self::BlockIdentifier(ref info) => info,
         }
     }

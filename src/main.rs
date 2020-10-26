@@ -6,6 +6,9 @@ fn main() -> Result<'static, ()> {
 
 {{var}}
 
+\{{ > }}
+\{{ > a.b}}
+
 {{{{  raw }}}}
 This is some raw text {{inline-raw}}.
 {{{{/raw}}}}
@@ -30,6 +33,8 @@ This is some block text with an {{inline}}
 
 \{{foo {"a": "b"}}}
 "#;
+
+//let s = "{{ > }}";
 
     let options = ParserOptions {
         file_name: String::from("src/main.rs"),

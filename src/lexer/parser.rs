@@ -244,21 +244,47 @@ impl<'source> Parser<'source> {
         iter: &mut IntoIter<(Parameters, Span)>,
         byte_offset: &mut usize,
         line: &mut usize,
-        current: (&Parameters, &Span),
+        current: Option<(Parameters, Span)>,
         path: &mut Path,
     ) -> Option<(Parameters, Span)> {
-        if self.starts_path(current.0) {
-            *byte_offset = current.1.end;
-            path.add_component(self.component(current.0.clone(), current.1.clone()));
-            while let Some((lex, span)) = iter.next() {
-                if self.is_path_component(&lex) {
-                    path.add_component(self.component(lex, span));
-                } else {
-                    return Some((lex, span));
+
+        if let Some((lex, span)) = current {
+            if self.starts_path(&lex) {
+                *byte_offset = span.end;
+                path.add_component(self.component(lex, span));
+                while let Some((lex, span)) = iter.next() {
+                    if self.is_path_component(&lex) {
+                        path.add_component(self.component(lex, span));
+                    } else {
+                        return Some((lex, span));
+                    }
                 }
             }
         }
         None
+    }
+
+    fn parse_partial(
+        &self,
+        source: &'source str,
+        iter: &mut IntoIter<(Parameters, Span)>,
+        byte_offset: &mut usize,
+        line: &mut usize,
+        current: Option<(Parameters, Span)>
+    ) -> (bool, Option<(Parameters, Span)>) {
+        if let Some((lex, span)) = current {
+            match lex {
+                Parameters::Partial => {
+                    let next =
+                        self.consume_whitespace(iter, byte_offset, line);
+                    return (true, next);
+                }
+                _ => {
+                    return (false, Some((lex, span)));
+                }
+            }
+        }
+        (false, None)
     }
 
     fn parse_parameters(
@@ -277,100 +303,60 @@ impl<'source> Parser<'source> {
 
         let next = self.consume_whitespace(&mut iter, &mut byte_offset, line);
 
-        if let Some((mut first, mut span)) = next {
-            let mut identifier: Option<(Parameters, Span)> = None;
+        //println!("Next {:?}", next);
 
-            let partial = match first {
-                Parameters::Partial => true,
-                _ => false,
-            };
-
-            if partial {
-                let next =
-                    self.consume_whitespace(&mut iter, &mut byte_offset, line);
-                if let Some((lex, next_span)) = next {
-                    first = lex;
-                    span = next_span;
-                }
-            }
-
-            let mut call = Call::new(
-                source,
-                partial,
-                stmt_start,
-                stmt_end,
-            );
-
-            let next = self.parse_path(
-                source, &mut iter, &mut byte_offset, line, (&first, &span), call.path_mut());
-
-            println!("Got path {:?}", call.path());
-            println!("Got path {:?}", call.path().is_simple());
-
-            if partial && !call.path().is_simple() {
-                // TODO: proper error handling
-                panic!("Partials requires a simple identifier");
-            }
-
-            /*
-            match context {
-                ParameterContext::Block => {
-                    if Parameters::Identifier != first {
-                        return Err(SyntaxError::BlockIdentifier(self.err_info(
-                            source,
-                            line,
-                            byte_offset,
-                        )));
-                    }
-                    identifier = Some((first, span));
-                }
-                ParameterContext::Statement => {
-                    match first {
-                        Parameters::Identifier
-                        | Parameters::LocalIdentifier => {
-                            identifier = Some((first, span));
-                        }
-                        Parameters::Partial => {
-                            let next = self.consume_whitespace(
-                                &mut iter,
-                                &mut byte_offset,
-                                line,
-                            );
-
-                            if let Some((lex, span)) = next {
-                                let expects = vec![
-                                    Parameters::Identifier,
-                                    Parameters::LocalIdentifier,
-                                ];
-                                if expects.contains(&lex) {
-                                    identifier = Some((lex, span));
-                                }
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-            }
-            */
-
-            println!("Parse statement with identifier {:?}", identifier);
-
-            if call.path().is_empty() {
-                return Err(SyntaxError::ExpectedIdentifier(self.err_info(
-                    source,
-                    line,
-                    byte_offset,
-                )));
-            }
-
-            self.parse_arguments(source, &mut iter, &mut byte_offset, line, &mut call);
-
-            println!("Arguments {:?}", call.arguments());
-
-            Ok(call)
-        } else {
-            Err(SyntaxError::EmptyStatement(self.err_info(source, line, byte_offset)))
+        if next.is_none() {
+            return Err(SyntaxError::EmptyStatement(self.err_info(source, line, byte_offset)));
         }
+
+        //println!("After leading whitespce {:?}", next);
+        let (partial, next) = self.parse_partial(source, &mut iter, &mut byte_offset, line, next);
+        //println!("After partial parse {:?} {:?}", partial, &next);
+        if partial && next.is_none() {
+            return Err(SyntaxError::PartialIdentifier(self.err_info(source, line, byte_offset)));
+        }
+
+        let mut call = Call::new(
+            source,
+            partial,
+            stmt_start,
+            stmt_end,
+        );
+
+        let next = self.parse_path(
+            source, &mut iter, &mut byte_offset, line, next, call.path_mut());
+
+        //println!("Got path {:?}", call.path());
+        //println!("Got path {:?}", call.path().is_simple());
+
+        if partial && !call.path().is_simple() {
+            return Err(SyntaxError::PartialSimpleIdentifier(self.err_info(source, line, byte_offset)));
+        }
+
+        match context {
+            ParameterContext::Block => {
+                if !call.path().is_simple() {
+                    panic!("Blocks require a simple identifier, not a path!");
+                }
+            }
+            ParameterContext::Statement => {
+                // TODO: validate statement paths?
+            }
+        }
+
+        if call.path().is_empty() {
+            return Err(SyntaxError::ExpectedIdentifier(self.err_info(
+                source,
+                line,
+                byte_offset,
+            )));
+        }
+
+        self.parse_arguments(source, &mut iter, &mut byte_offset, line, &mut call);
+
+        println!("Arguments {:?}", call.arguments());
+
+        Ok(call)
     }
 
     fn newline(&self, t: &Token) -> bool {
@@ -415,7 +401,7 @@ impl<'source> Parser<'source> {
                 continue;
             }
 
-            //println!("Parser {:?}", t);
+            println!("Parser {:?}", t);
 
             match t {
                 Token::Block(lex, span) => match lex {
@@ -494,6 +480,7 @@ impl<'source> Parser<'source> {
                 },
                 Token::Parameters(lex, span) => match lex {
                     Parameters::End => {
+                        println!("Got parameters end!!");
                         if let Some(mut params) = parameters.take() {
                             let ctx = params.context.clone();
                             params.end = span;
@@ -525,7 +512,6 @@ impl<'source> Parser<'source> {
                 },
                 Token::StringLiteral(lex, span) => match lex {
                     _ => {
-                        println!("GOT STRING LITERAL TOKEN {:?}", lex);
                         if let Some(params) = parameters.as_mut() {
                             params.tokens.push((Parameters::StringToken(lex), span));
                         }

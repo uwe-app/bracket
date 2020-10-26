@@ -19,13 +19,13 @@ pub enum Block {
     #[regex(r"\{\{!")]
     StartComment,
 
-    #[regex(r"\{\{\{?~?")]
+    #[regex(r"\{\{\{?~?\s*")]
     StartStatement,
 
-    #[regex(r"\{\{\~?#")]
+    #[regex(r"\{\{\~?#\s*")]
     StartBlockScope,
 
-    #[regex(r"\{\{\~?\s*else")]
+    #[regex(r"\{\{\~?\s*else\s*")]
     StartElseScope,
 
     #[regex(r"\{\{\~?s*/(?&identifier)+\s*~?\}\}")]
