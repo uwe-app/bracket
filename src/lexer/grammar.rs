@@ -26,6 +26,9 @@ pub enum Block {
     #[regex(r"\{\{\~?#")]
     StartBlockScope,
 
+    #[regex(r"\{\{\~?\s*else")]
+    StartElseScope,
+
     #[regex(r"\{\{\~?s*/(?&identifier)+\s*~?\}\}")]
     EndBlockScope,
 
@@ -415,9 +418,7 @@ fn normalize(tokens: Vec<Token>) -> Vec<Token> {
 
 /// Iterator for the grammar tokens.
 pub fn lex(s: &str) -> ModeBridge {
-    ModeBridge {
-        mode: Modes::new(s),
-    }
+    ModeBridge { mode: Modes::new(s) }
 }
 
 /// Collect the input source into a vector of tokens.
