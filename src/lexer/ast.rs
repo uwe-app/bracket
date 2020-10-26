@@ -2,6 +2,8 @@ use std::fmt;
 use std::collections::HashMap;
 use std::ops::Range;
 
+static WHITESPACE: &str = "~";
+
 #[derive(Debug, Eq, PartialEq)]
 pub enum Node<'source> {
     Text(Text<'source>),
@@ -15,6 +17,30 @@ impl<'source> Node<'source> {
             Self::Text(ref n) => n.as_str(),
             Self::Statement(ref n) => n.as_str(),
             Self::Block(ref n) => n.as_str(),
+        }
+    }
+
+    pub fn trim_before(&self) -> bool {
+        match *self {
+            Self::Text(ref n) => false,
+            Self::Statement(ref n) => {
+                n.open().ends_with(WHITESPACE)
+            },
+            Self::Block(ref n) => {
+                n.open().ends_with(WHITESPACE)
+            },
+        }
+    }
+
+    pub fn trim_after(&self) -> bool {
+        match *self {
+            Self::Text(ref n) => false,
+            Self::Statement(ref n) => {
+                n.close().starts_with(WHITESPACE)
+            },
+            Self::Block(ref n) => {
+                n.close().starts_with(WHITESPACE)
+            },
         }
     }
 }
@@ -58,7 +84,8 @@ pub struct Call<'source> {
     // Raw source input.
     source: &'source str,
     partial: bool,
-    span: Range<usize>,
+    open: Range<usize>,
+    close: Range<usize>,
     name: Path,
     arguments: Vec<ParameterValue>,
     hash: HashMap<String, ParameterValue>,
@@ -68,14 +95,16 @@ impl<'source> Call<'source> {
     pub fn new(
         source: &'source str,
         partial: bool,
-        span: Range<usize>,
+        open: Range<usize>,
+        close: Range<usize>,
         name: Path,
         arguments: Option<Vec<ParameterValue>>,
         hash: Option<HashMap<String, ParameterValue>>) -> Self {
         Self {
             source,
             partial,
-            span,
+            open,
+            close,
             name,
             arguments: arguments.unwrap_or(Default::default()),
             hash: hash.unwrap_or(Default::default()),
@@ -83,7 +112,15 @@ impl<'source> Call<'source> {
     }
 
     pub fn as_str(&self) -> &'source str {
-        &self.source[self.span.start..self.span.end]
+        &self.source[self.open.start..self.close.end]
+    }
+
+    pub fn open(&self) -> &'source str {
+        &self.source[self.open.start..self.open.end]
+    }
+
+    pub fn close(&self) -> &'source str {
+        &self.source[self.close.start..self.close.end]
     }
 }
 

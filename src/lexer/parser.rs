@@ -180,8 +180,7 @@ impl<'source> Parser<'source> {
                 }
             }
 
-            let range = stmt_start.end..stmt_end.start;
-            let mut call = Call::new(s, partial, range, Path(vec![]), None, None);
+            let mut call = Call::new(s, partial, stmt_start, stmt_end, Path(vec![]), None, None);
 
             match context {
                 ParameterContext::Block => {
