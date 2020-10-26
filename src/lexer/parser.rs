@@ -40,6 +40,7 @@ enum ParameterContext {
     Statement,
 }
 
+
 #[derive(Debug, Clone)]
 struct ParameterCache {
     context: ParameterContext,
@@ -167,6 +168,37 @@ impl<'source> Parser<'source> {
                     let num: Number = source[span].parse().unwrap();
                     call.add_argument(ParameterValue::Json(Value::Number(num)));
                 }
+                grammar::Parameters::StringLiteral => {
+                    println!("Got string literal start...");
+                    let str_start = span.end;
+                    let mut str_end = span.end;
+                    let mut terminated = false;
+                    while let Some((lex, span)) = iter.next() {
+                        match lex {
+                            grammar::Parameters::StringToken(s) => {
+                                println!("Got string literal token...");
+                                match s {
+                                    grammar::StringLiteral::End => {
+                                        terminated = true;
+                                        break;
+                                    }
+                                    _ => {
+                                        *byte_offset = span.end;
+                                        str_end = span.end; 
+                                    }
+                                }
+                            }
+                            _ => {
+                                panic!("Expected string token!");
+                            }
+                        }
+                    }
+
+                    // FIXME: error on non-terminated string literal
+
+                    let str_value = &source[str_start..str_end];
+                    call.add_argument(ParameterValue::Json(Value::String(str_value.to_string())));
+                }
                 _ => return None
             }
             return self.parse_arguments(source, iter, byte_offset, line, call)
@@ -284,8 +316,8 @@ impl<'source> Parser<'source> {
             }
             Token::Comment(lex, _) => lex == &grammar::Comment::Newline,
             Token::Block(lex, _) => lex == &grammar::Block::Newline,
-            //Token::BlockScope(lex, _) => lex == &grammar::BlockScope::Newline,
             Token::Parameters(lex, _) => lex == &grammar::Parameters::Newline,
+            Token::StringLiteral(lex, _) => lex == &grammar::StringLiteral::Newline,
         }
     }
 
@@ -425,9 +457,14 @@ impl<'source> Parser<'source> {
                         }
                     }
                 },
-                //Token::BlockScope(lex, span) => match lex {
-                //_ => {}
-                //},
+                Token::StringLiteral(lex, span) => match lex {
+                    _ => {
+                        println!("GOT STRING LITERAL TOKEN {:?}", lex);
+                        if let Some(params) = parameters.as_mut() {
+                            params.tokens.push((Parameters::StringToken(lex), span));
+                        }
+                    }
+                },
             }
         }
 

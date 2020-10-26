@@ -153,9 +153,13 @@ pub enum Parameters {
     PathDelimiter,
 
     #[token("\"")]
-    StartStringLiteral,
+    StringLiteral,
 
-    // NOTE: must have higher priority than identifier
+    // The parser creates these types when StringLiteral tokens 
+    // are encountered so they can be included in the parameters cache
+    StringToken(StringLiteral),
+
+    // NOTE: Must have higher priority than identifier
     // NOTE: otherwise numbers become identifiers
     #[regex(r"-?[0-9]*\.?[0-9]+((e|E)[+-]?[0-9]+)?", priority = 3)]
     Number,
@@ -206,6 +210,7 @@ pub enum StringLiteral {
 
     //#[regex(r"\\u\{[^}]*\}")]
     //EscapedCodepoint,
+
     #[token(r#"\""#)]
     EscapedQuote,
 
@@ -226,8 +231,8 @@ pub enum Token {
     RawComment(RawComment, Span),
     RawStatement(RawStatement, Span),
     Comment(Comment, Span),
-    //BlockScope(BlockScope, Span),
     Parameters(Parameters, Span),
+    StringLiteral(StringLiteral, Span),
 }
 
 impl Token {
@@ -238,8 +243,8 @@ impl Token {
             Token::RawComment(_, ref span) => span,
             Token::RawStatement(_, ref span) => span,
             Token::Comment(_, ref span) => span,
-            //Token::BlockScope(_, ref span) => span,
             Token::Parameters(_, ref span) => span,
+            Token::StringLiteral(_, ref span) => span,
         }
     }
 
@@ -258,10 +263,8 @@ impl Token {
             Token::Comment(ref t, _) => {
                 t == &Comment::Text || t == &Comment::Newline
             }
-            //Token::BlockScope(ref t, _) => {
-            //t == &BlockScope::Text || t == &BlockScope::Newline
-            //}
             Token::Parameters(_, _) => false,
+            Token::StringLiteral(_, _) => false,
         }
     }
 }
@@ -276,6 +279,7 @@ enum Modes<'source> {
     Comment(Lexer<'source, Comment>),
     //BlockScope(Lexer<'source, BlockScope>),
     Parameters(Lexer<'source, Parameters>),
+    StringLiteral(Lexer<'source, StringLiteral>),
 }
 
 impl<'source> Modes<'source> {
@@ -369,24 +373,30 @@ impl<'source> Iterator for ModeBridge<'source> {
                     None
                 }
             }
-            //Modes::BlockScope(lexer) => {
-            //let result = lexer.next();
-            //let span = lexer.span();
-            //if let Some(token) = result {
-            //Some(Token::BlockScope(token, span))
-            //} else {
-            //None
-            //}
-            //}
             Modes::Parameters(lexer) => {
                 let result = lexer.next();
                 let span = lexer.span();
 
                 if let Some(token) = result {
-                    if Parameters::End == token {
+                    if Parameters::StringLiteral == token {
+                        self.mode = Modes::StringLiteral(lexer.to_owned().morph());
+                    } else if Parameters::End == token {
                         self.mode = Modes::Block(lexer.to_owned().morph());
                     }
                     Some(Token::Parameters(token, span))
+                } else {
+                    None
+                }
+            }
+            Modes::StringLiteral(lexer) => {
+                let result = lexer.next();
+                let span = lexer.span();
+
+                if let Some(token) = result {
+                    if StringLiteral::End == token {
+                        self.mode = Modes::Parameters(lexer.to_owned().morph());
+                    }
+                    Some(Token::StringLiteral(token, span))
                 } else {
                     None
                 }
