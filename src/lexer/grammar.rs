@@ -134,23 +134,23 @@ pub enum Parameters {
     #[token("../")]
     ParentRef,
 
-    #[token("(", priority = 3)]
-    StartSubExpression,
-
-    #[token(")")]
-    EndSubExpression,
-
     #[regex(r"(?&identifier)+", priority = 2)]
     Identifier,
 
     #[regex(r"@(?&identifier)+")]
     LocalIdentifier,
 
-    #[regex(r"(?&identifier)+=")]
-    HashKey,
-
     #[regex(r"[./]")]
     PathDelimiter,
+
+    #[token("(", priority = 3)]
+    StartSubExpression,
+
+    #[token(")")]
+    EndSubExpression,
+
+    #[regex(r"(?&identifier)+=")]
+    HashKey,
 
     #[token("\"")]
     StringLiteral,

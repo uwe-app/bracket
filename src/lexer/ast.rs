@@ -71,7 +71,40 @@ impl fmt::Display for Text<'_> {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct Path(pub Vec<Range<usize>>);
+pub enum ComponentType {
+    Parent,
+    This,
+    Identifier,
+    LocalIdentifier,
+    Delimiter,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct Component(pub ComponentType, pub Range<usize>);
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct Path {
+    components: Vec<Component>,
+}
+
+impl Path {
+    pub fn new() -> Self {
+        Self {components: Vec::new()} 
+    }
+
+    pub fn add_component(&mut self, part: Component) {
+        self.components.push(part); 
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.components.is_empty() 
+    }
+
+    pub fn is_simple(&self) -> bool {
+        return self.components.len() == 1
+            && self.components.first().unwrap().0 == ComponentType::Identifier;
+    }
+}
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum ParameterValue<'source> {
@@ -87,7 +120,7 @@ pub struct Call<'source> {
     partial: bool,
     open: Range<usize>,
     close: Range<usize>,
-    name: Path,
+    path: Path,
     arguments: Vec<ParameterValue<'source>>,
     hash: HashMap<String, ParameterValue<'source>>,
 }
@@ -98,17 +131,24 @@ impl<'source> Call<'source> {
         partial: bool,
         open: Range<usize>,
         close: Range<usize>,
-        name: Path,
     ) -> Self {
         Self {
             source,
             partial,
             open,
             close,
-            name,
+            path: Path::new(),
             arguments: Vec::new(),
             hash: HashMap::new(),
         }
+    }
+
+    pub fn path(&self) -> &Path {
+        &self.path 
+    }
+
+    pub fn path_mut(&mut self) -> &mut Path {
+        &mut self.path 
     }
 
     pub fn add_argument(&mut self, arg: ParameterValue<'source>) {

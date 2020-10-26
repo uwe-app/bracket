@@ -8,7 +8,7 @@ use logos::Span;
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{
-        ast::{Block, BlockType, Call, Node, Path, Text, ParameterValue},
+        ast::{Block, BlockType, Call, Node, Path, Text, ParameterValue, Component, ComponentType},
         grammar::{self, lex, Parameters, Token},
     },
 };
@@ -207,6 +207,60 @@ impl<'source> Parser<'source> {
         iter.next()
     }
 
+    fn starts_path(&self, lex: &Parameters) -> bool {
+        match lex {
+            Parameters::ExplicitThisRef
+                | Parameters::ParentRef
+                | Parameters::Identifier
+                | Parameters::LocalIdentifier => true,
+            _ => false
+        }
+    }
+
+    fn is_path_component(&self, lex: &Parameters) -> bool {
+        match lex {
+            _ => self.starts_path(lex) || lex == &Parameters::PathDelimiter
+        }
+    }
+
+    fn component_type(&self, lex: &Parameters) -> ComponentType {
+        match lex {
+            Parameters::ExplicitThisRef => ComponentType::This,
+            Parameters::ParentRef => ComponentType::Parent,
+            Parameters::Identifier => ComponentType::Identifier,
+            Parameters::LocalIdentifier => ComponentType::LocalIdentifier,
+            Parameters::PathDelimiter => ComponentType::Delimiter,
+            _ => panic!("Expecting component parameter in parser")
+        }
+    }
+
+    fn component(&self, lex: Parameters, span: Span) -> Component {
+        Component(self.component_type(&lex), span)
+    }
+
+    fn parse_path(
+        &self,
+        source: &'source str,
+        iter: &mut IntoIter<(Parameters, Span)>,
+        byte_offset: &mut usize,
+        line: &mut usize,
+        current: (&Parameters, &Span),
+        path: &mut Path,
+    ) -> Option<(Parameters, Span)> {
+        if self.starts_path(current.0) {
+            *byte_offset = current.1.end;
+            path.add_component(self.component(current.0.clone(), current.1.clone()));
+            while let Some((lex, span)) = iter.next() {
+                if self.is_path_component(&lex) {
+                    path.add_component(self.component(lex, span));
+                } else {
+                    return Some((lex, span));
+                }
+            }
+        }
+        None
+    }
+
     fn parse_parameters(
         &mut self,
         source: &'source str,
@@ -245,9 +299,20 @@ impl<'source> Parser<'source> {
                 partial,
                 stmt_start,
                 stmt_end,
-                Path(vec![]),
             );
 
+            let next = self.parse_path(
+                source, &mut iter, &mut byte_offset, line, (&first, &span), call.path_mut());
+
+            println!("Got path {:?}", call.path());
+            println!("Got path {:?}", call.path().is_simple());
+
+            if partial && !call.path().is_simple() {
+                // TODO: proper error handling
+                panic!("Partials requires a simple identifier");
+            }
+
+            /*
             match context {
                 ParameterContext::Block => {
                     if Parameters::Identifier != first {
@@ -286,10 +351,11 @@ impl<'source> Parser<'source> {
                     }
                 }
             }
+            */
 
             println!("Parse statement with identifier {:?}", identifier);
 
-            if identifier.is_none() {
+            if call.path().is_empty() {
                 return Err(SyntaxError::ExpectedIdentifier(self.err_info(
                     source,
                     line,
