@@ -1,5 +1,4 @@
 use logos::{Lexer, Logos, Span};
-use std::ops::Range;
 
 #[derive(Clone, Default)]
 pub struct Extras;
@@ -147,6 +146,9 @@ pub enum Parameters {
     #[regex(r"@(?&identifier)+")]
     LocalIdentifier,
 
+    #[regex(r"(?&identifier)+=")]
+    HashKey,
+
     #[regex(r"[./]")]
     PathDelimiter,
 
@@ -156,8 +158,11 @@ pub enum Parameters {
     #[regex(r"-?[0-9]*\.?[0-9]+")]
     Number,
 
-    #[regex(r"(true|false)")]
-    Bool,
+    #[token("true")]
+    True,
+
+    #[token("false")]
+    False,
 
     #[token("null")]
     Null,

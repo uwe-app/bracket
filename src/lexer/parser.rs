@@ -1,13 +1,14 @@
-use std::fmt;
 use std::ops::Range;
 use std::vec::IntoIter;
+
+use serde_json::Value;
 
 use logos::Span;
 
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{
-        ast::{Block, BlockType, Call, Node, Path, Text},
+        ast::{Block, BlockType, Call, Node, Path, Text, ParameterValue},
         grammar::{self, lex, Parameters, Token},
     },
 };
@@ -54,10 +55,6 @@ impl ParameterCache {
             tokens: Default::default(),
             end: Default::default(),
         }
-    }
-
-    pub fn into_iter(mut self) -> std::vec::IntoIter<(Parameters, Span)> {
-        self.tokens.into_iter()
     }
 }
 
@@ -131,45 +128,61 @@ impl<'source> Parser<'source> {
         None
     }
 
-    // Find the next token that exists in a list of expected tokens
-    // at the next position consuming preceeding whitespace.
-    fn find_one_of(
+    fn parse_arguments(
         &self,
+        source: &'source str,
         iter: &mut IntoIter<(Parameters, Span)>,
         byte_offset: &mut usize,
         line: &mut usize,
-        expects: Vec<Parameters>,
+        call: &mut Call<'source>,
     ) -> Option<(Parameters, Span)> {
-        while let Some(item) = iter.next() {
-            if expects.contains(&item.0) {
-                return Some(item);
+        let next =
+            self.consume_whitespace(iter, byte_offset, line);
+        if let Some((lex, span)) = next {
+
+            match lex {
+                grammar::Parameters::Null => {
+                    call.add_argument(ParameterValue::Json(Value::Null));
+                }
+                grammar::Parameters::True => {
+                    call.add_argument(ParameterValue::Json(Value::Bool(true)));
+                }
+                grammar::Parameters::False => {
+                    call.add_argument(ParameterValue::Json(Value::Bool(false)));
+                }
+                _ => return None
             }
-            break;
+            return self.parse_arguments(source, iter, byte_offset, line, call)
         }
-        None
+
+        iter.next()
+    }
+
+    /// Helper to generate error information with source position.
+    fn err_info(
+        &self,
+        source: &'source str,
+        line: &mut usize,
+        byte_offset: usize) -> ErrorInfo<'source> {
+        let pos = SourcePos(line.clone(), byte_offset.clone());
+        ErrorInfo::from((source, &self.options, pos))
     }
 
     fn parse_parameters(
         &mut self,
-        s: &'source str,
+        source: &'source str,
         line: &mut usize,
-        mut statement: ParameterCache,
+        statement: ParameterCache,
     ) -> Result<Call<'source>, SyntaxError<'source>> {
         let context = statement.context.clone();
         let stmt_start = statement.start.clone();
         let stmt_end = statement.end.clone();
-        let mut iter = statement.into_iter();
+        let mut iter = statement.tokens.into_iter();
 
         // Position as byte offset for syntax errors
         let mut byte_offset = stmt_start.end.clone();
 
         let next = self.consume_whitespace(&mut iter, &mut byte_offset, line);
-
-        let err_info =
-            |line: &mut usize, byte_offset: usize| -> ErrorInfo<'source> {
-                let pos = SourcePos(line.clone(), byte_offset.clone());
-                ErrorInfo::from((s, &self.options, pos))
-            };
 
         if let Some((mut first, mut span)) = next {
             let mut identifier: Option<(Parameters, Span)> = None;
@@ -182,26 +195,25 @@ impl<'source> Parser<'source> {
             if partial {
                 let next =
                     self.consume_whitespace(&mut iter, &mut byte_offset, line);
-                if let Some((next_token, next_span)) = next {
-                    first = next_token;
+                if let Some((lex, next_span)) = next {
+                    first = lex;
                     span = next_span;
                 }
             }
 
             let mut call = Call::new(
-                s,
+                source,
                 partial,
                 stmt_start,
                 stmt_end,
                 Path(vec![]),
-                None,
-                None,
             );
 
             match context {
                 ParameterContext::Block => {
                     if Parameters::Identifier != first {
-                        return Err(SyntaxError::BlockIdentifier(err_info(
+                        return Err(SyntaxError::BlockIdentifier(self.err_info(
+                            source,
                             line,
                             byte_offset,
                         )));
@@ -209,24 +221,26 @@ impl<'source> Parser<'source> {
                     identifier = Some((first, span));
                 }
                 ParameterContext::Statement => {
-                    println!("Parsing parameters for stamtent {:?}", first);
-
                     match first {
                         Parameters::Identifier
                         | Parameters::LocalIdentifier => {
                             identifier = Some((first, span));
                         }
                         Parameters::Partial => {
-                            if let Some((lex, span)) = self.find_one_of(
+                            let next = self.consume_whitespace(
                                 &mut iter,
                                 &mut byte_offset,
                                 line,
-                                vec![
+                            );
+
+                            if let Some((lex, span)) = next {
+                                let expects = vec![
                                     Parameters::Identifier,
                                     Parameters::LocalIdentifier,
-                                ],
-                            ) {
-                                identifier = Some((lex, span));
+                                ];
+                                if expects.contains(&lex) {
+                                    identifier = Some((lex, span));
+                                }
                             }
                         }
                         _ => {}
@@ -237,15 +251,18 @@ impl<'source> Parser<'source> {
             println!("Parse statement with identifier {:?}", identifier);
 
             if identifier.is_none() {
-                return Err(SyntaxError::ExpectedIdentifier(err_info(
+                return Err(SyntaxError::ExpectedIdentifier(self.err_info(
+                    source,
                     line,
                     byte_offset,
                 )));
             }
 
+            self.parse_arguments(source, &mut iter, &mut byte_offset, line, &mut call);
+
             Ok(call)
         } else {
-            Err(SyntaxError::EmptyStatement(err_info(line, byte_offset)))
+            Err(SyntaxError::EmptyStatement(self.err_info(source, line, byte_offset)))
         }
     }
 

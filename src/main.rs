@@ -22,8 +22,9 @@ This is some block text with an {{inline}}
 
 {{!-- a comment --}}
 
+{{foo null true false}}
+
 \{{[1,2,3]}}
-\{{true}}
 \{{false}}
 \{{null}}
 

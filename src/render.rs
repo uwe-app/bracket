@@ -15,18 +15,9 @@ pub trait Renderer<'reg, 'render> {
     ) -> Result<(), RenderError>;
 }
 
-pub struct RenderState {}
-
-impl RenderState {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
 pub struct RenderContext<'reg, 'render> {
     registry: &'reg Registry<'reg>,
     root: Value,
-    state: RenderState,
     writer: Box<&'render mut dyn Output>,
 }
 
@@ -34,14 +25,12 @@ impl<'reg, 'render> RenderContext<'reg, 'render> {
     pub fn new<T: Serialize>(
         registry: &'reg Registry<'reg>,
         data: &T,
-        state: RenderState,
         writer: Box<&'render mut dyn Output>,
     ) -> Result<Self, RenderError> {
         let root = serde_json::to_value(data).map_err(RenderError::from)?;
         Ok(Self {
             registry,
             root,
-            state,
             writer,
         })
     }
@@ -52,18 +41,19 @@ impl<'reg, 'render> RenderContext<'reg, 'render> {
 }
 
 pub struct Render<'source> {
+    source: &'source str,
     node: &'source Node<'source>,
 }
 
 impl<'source> Render<'source> {
-    pub fn new(node: &'source Node<'source>) -> Self {
-        Self { node }
+    pub fn new(source: &'source str, node: &'source Node<'source>) -> Self {
+        Self { source, node }
     }
 
     fn render_node<'reg, 'render>(
         &self,
-        node: &Node<'source>,
         rc: &mut RenderContext<'reg, 'render>,
+        node: &Node<'source>,
     ) -> Result<(), RenderError> {
         match node {
             Node::Text(ref n) => {
@@ -89,7 +79,7 @@ impl<'source> Render<'source> {
                     _ => {
                         for b in block.nodes().iter() {
                             //println!("Rendering block {:?}", b.as_str());
-                            self.render_node(b, rc)?;
+                            self.render_node(rc, b)?;
                         }
                     }
                 }
@@ -105,6 +95,6 @@ impl<'reg, 'render> Renderer<'reg, 'render> for Render<'_> {
         &self,
         rc: &mut RenderContext<'reg, 'render>,
     ) -> Result<(), RenderError> {
-        self.render_node(self.node, rc)
+        self.render_node(rc, self.node)
     }
 }

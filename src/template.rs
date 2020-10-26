@@ -1,3 +1,4 @@
+use serde::Serialize;
 use std::fmt;
 
 use crate::{
@@ -6,7 +7,9 @@ use crate::{
         ast::Node,
         parser::{Parser, ParserOptions},
     },
+    output::Output,
     render::{Render, RenderContext, Renderer},
+    Registry,
 };
 
 #[derive(Debug)]
@@ -27,16 +30,6 @@ impl fmt::Display for Template<'_> {
     }
 }
 
-impl<'reg, 'render> Renderer<'reg, 'render> for Template<'_> {
-    fn render(
-        &self,
-        rc: &mut RenderContext<'reg, 'render>,
-    ) -> Result<(), RenderError> {
-        let renderer = Render::new(self.node());
-        renderer.render(rc)
-    }
-}
-
 impl<'source> Template<'source> {
     /// Compile a block.
     pub fn compile(
@@ -46,5 +39,20 @@ impl<'source> Template<'source> {
         let mut parser = Parser::new(options);
         let node = parser.parse(source)?;
         Ok(Template { source, node })
+    }
+
+    pub fn render<'reg, T>(
+        &self,
+        registry: &Registry<'reg>,
+        name: &'reg str,
+        data: &T,
+        writer: &mut impl Output,
+    ) -> Result<(), RenderError>
+    where
+        T: Serialize,
+    {
+        let mut rc = RenderContext::new(registry, data, Box::new(writer))?;
+        let renderer = Render::new(self.source, self.node());
+        renderer.render(&mut rc)
     }
 }

@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::fmt;
 use std::ops::Range;
 
+use serde_json::Value;
+
 static WHITESPACE: &str = "~";
 
 #[derive(Debug, Eq, PartialEq)]
@@ -22,7 +24,7 @@ impl<'source> Node<'source> {
 
     pub fn trim_before(&self) -> bool {
         match *self {
-            Self::Text(ref n) => false,
+            Self::Text(_) => false,
             Self::Statement(ref n) => n.open().ends_with(WHITESPACE),
             Self::Block(ref n) => {
                 let open = n.open();
@@ -33,7 +35,7 @@ impl<'source> Node<'source> {
 
     pub fn trim_after(&self) -> bool {
         match *self {
-            Self::Text(ref n) => false,
+            Self::Text(_) => false,
             Self::Statement(ref n) => n.close().starts_with(WHITESPACE),
             Self::Block(ref n) => {
                 let open = n.open();
@@ -72,9 +74,10 @@ impl fmt::Display for Text<'_> {
 pub struct Path(pub Vec<Range<usize>>);
 
 #[derive(Debug, Eq, PartialEq)]
-pub enum ParameterValue {
+pub enum ParameterValue<'source> {
     Path(Path),
-    Literal,
+    Json(Value),
+    SubExpr(Call<'source>),
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -85,8 +88,8 @@ pub struct Call<'source> {
     open: Range<usize>,
     close: Range<usize>,
     name: Path,
-    arguments: Vec<ParameterValue>,
-    hash: HashMap<String, ParameterValue>,
+    arguments: Vec<ParameterValue<'source>>,
+    hash: HashMap<String, ParameterValue<'source>>,
 }
 
 impl<'source> Call<'source> {
@@ -96,8 +99,6 @@ impl<'source> Call<'source> {
         open: Range<usize>,
         close: Range<usize>,
         name: Path,
-        arguments: Option<Vec<ParameterValue>>,
-        hash: Option<HashMap<String, ParameterValue>>,
     ) -> Self {
         Self {
             source,
@@ -105,9 +106,17 @@ impl<'source> Call<'source> {
             open,
             close,
             name,
-            arguments: arguments.unwrap_or(Default::default()),
-            hash: hash.unwrap_or(Default::default()),
+            arguments: Vec::new(),
+            hash: HashMap::new(),
         }
+    }
+
+    pub fn add_argument(&mut self, arg: ParameterValue<'source>) {
+        self.arguments.push(arg); 
+    }
+
+    pub fn arguments(&self) -> &Vec<ParameterValue<'source>> {
+        &self.arguments
     }
 
     pub fn as_str(&self) -> &'source str {

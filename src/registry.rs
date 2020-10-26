@@ -5,18 +5,11 @@ use serde::Serialize;
 use crate::{
     error::RenderError,
     helper::{
-        Helper,
-        BlockHelper,
-        LogHelper,
-        LookupHelper,
-        WithHelper,
-        EachHelper,
-        IfHelper,
-        UnlessHelper,
+        BlockHelper, EachHelper, Helper, IfHelper, LogHelper, LookupHelper,
+        UnlessHelper, WithHelper,
     },
     lexer::parser::ParserOptions,
     output::{Output, StringOutput},
-    render::{RenderContext, RenderState, Renderer},
     template::Template,
     Error, Result,
 };
@@ -68,7 +61,9 @@ impl<'reg, 'source> Registry<'reg> {
         &self.helpers
     }
 
-    pub fn block_helpers(&self) -> &HashMap<&'reg str, Box<dyn BlockHelper + 'reg>> {
+    pub fn block_helpers(
+        &self,
+    ) -> &HashMap<&'reg str, Box<dyn BlockHelper + 'reg>> {
         &self.block_helpers
     }
 
@@ -133,11 +128,7 @@ impl<'reg, 'source> Registry<'reg> {
         T: Serialize,
     {
         let tpl = self.get_template(name)?;
-        let state = RenderState::new();
-        let mut rc = RenderContext::new(&self, data, state, Box::new(writer))?;
-        //println!("Do a render {:?}", tpl);
-        tpl.render(&mut rc)?;
-
+        tpl.render(self, name, data, writer)?;
         Ok(())
     }
 }

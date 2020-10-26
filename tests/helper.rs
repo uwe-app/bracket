@@ -1,4 +1,8 @@
-use hbs::{Registry, Result, helper::{self, Helper, BlockHelper}, render::*};
+use hbs::{
+    helper::{self, BlockHelper, Helper},
+    render::*,
+    Registry, Result,
+};
 use serde_json::Value;
 
 pub(crate) struct MockHelper;
