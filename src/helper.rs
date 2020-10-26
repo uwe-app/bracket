@@ -2,21 +2,21 @@ use crate::{error::RenderError, render::RenderContext};
 
 use serde_json::Value;
 
-pub type HelperValueResult = std::result::Result<Value, RenderError>;
-pub type HelperResult = std::result::Result<(), RenderError>;
+pub type Result = std::result::Result<Value, RenderError>;
+pub type BlockResult = std::result::Result<(), RenderError>;
 
 pub trait Helper: Send + Sync {
     fn call<'reg, 'render>(
         &self,
         rc: &mut RenderContext<'reg, 'render>,
-    ) -> HelperValueResult;
+    ) -> Result;
 }
 
 pub trait BlockHelper: Send + Sync {
     fn call<'reg, 'render>(
         &self,
         rc: &mut RenderContext<'reg, 'render>,
-    ) -> HelperResult;
+    ) -> BlockResult;
 }
 
 pub(crate) struct LogHelper;
@@ -25,7 +25,7 @@ impl Helper for LogHelper {
     fn call<'reg, 'render>(
         &self,
         rc: &mut RenderContext<'reg, 'render>,
-    ) -> HelperValueResult {
+    ) -> Result {
         Ok(Value::Null)
     }
 }
@@ -36,7 +36,7 @@ impl Helper for LookupHelper {
     fn call<'reg, 'render>(
         &self,
         rc: &mut RenderContext<'reg, 'render>,
-    ) -> HelperValueResult {
+    ) -> Result {
         Ok(Value::Null)
     }
 }
@@ -47,7 +47,7 @@ impl BlockHelper for WithHelper {
     fn call<'reg, 'render>(
         &self,
         rc: &mut RenderContext<'reg, 'render>,
-    ) -> HelperResult {
+    ) -> BlockResult {
         Ok(())
     }
 }
@@ -58,7 +58,7 @@ impl BlockHelper for EachHelper {
     fn call<'reg, 'render>(
         &self,
         rc: &mut RenderContext<'reg, 'render>,
-    ) -> HelperResult {
+    ) -> BlockResult {
         Ok(())
     }
 }
@@ -69,7 +69,7 @@ impl BlockHelper for IfHelper {
     fn call<'reg, 'render>(
         &self,
         rc: &mut RenderContext<'reg, 'render>,
-    ) -> HelperResult {
+    ) -> BlockResult {
         Ok(())
     }
 }
@@ -80,7 +80,7 @@ impl BlockHelper for UnlessHelper {
     fn call<'reg, 'render>(
         &self,
         rc: &mut RenderContext<'reg, 'render>,
-    ) -> HelperResult {
+    ) -> BlockResult {
         Ok(())
     }
 }
