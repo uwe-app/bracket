@@ -252,7 +252,7 @@ impl Token {
                 t == &Comment::Text || t == &Comment::Newline
             }
             //Token::BlockScope(ref t, _) => {
-                //t == &BlockScope::Text || t == &BlockScope::Newline
+            //t == &BlockScope::Text || t == &BlockScope::Newline
             //}
             Token::Parameters(_, _) => false,
         }
@@ -363,13 +363,13 @@ impl<'source> Iterator for ModeBridge<'source> {
                 }
             }
             //Modes::BlockScope(lexer) => {
-                //let result = lexer.next();
-                //let span = lexer.span();
-                //if let Some(token) = result {
-                    //Some(Token::BlockScope(token, span))
-                //} else {
-                    //None
-                //}
+            //let result = lexer.next();
+            //let span = lexer.span();
+            //if let Some(token) = result {
+            //Some(Token::BlockScope(token, span))
+            //} else {
+            //None
+            //}
             //}
             Modes::Parameters(lexer) => {
                 let result = lexer.next();
@@ -418,7 +418,9 @@ fn normalize(tokens: Vec<Token>) -> Vec<Token> {
 
 /// Iterator for the grammar tokens.
 pub fn lex(s: &str) -> ModeBridge {
-    ModeBridge { mode: Modes::new(s) }
+    ModeBridge {
+        mode: Modes::new(s),
+    }
 }
 
 /// Collect the input source into a vector of tokens.

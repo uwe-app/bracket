@@ -1,4 +1,4 @@
-use hbs::{Result, Registry, lexer::parser::ParserOptions};
+use hbs::{lexer::parser::ParserOptions, Registry, Result};
 
 fn main() -> Result<'static, ()> {
     let s = r#"\{{expr}}
@@ -32,7 +32,7 @@ This is some block text with an {{inline}}
 
     let options = ParserOptions {
         file_name: String::from("src/main.rs"),
-        line_offset: 3
+        line_offset: 3,
     };
 
     match Registry::compile(s, options) {

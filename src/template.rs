@@ -2,7 +2,10 @@ use std::fmt;
 
 use crate::{
     error::{RenderError, SyntaxError},
-    lexer::{ast::Node, parser::{Parser, ParserOptions}},
+    lexer::{
+        ast::Node,
+        parser::{Parser, ParserOptions},
+    },
     render::{Render, RenderContext, Renderer},
 };
 
@@ -36,7 +39,10 @@ impl<'reg, 'render> Renderer<'reg, 'render> for Template<'_> {
 
 impl<'source> Template<'source> {
     /// Compile a block.
-    pub fn compile(source: &'source str, options: ParserOptions) -> Result<Template, SyntaxError<'source>> {
+    pub fn compile(
+        source: &'source str,
+        options: ParserOptions,
+    ) -> Result<Template, SyntaxError<'source>> {
         let mut parser = Parser::new(options);
         let node = parser.parse(source)?;
         Ok(Template { source, node })

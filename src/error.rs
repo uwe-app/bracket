@@ -5,13 +5,13 @@ use crate::lexer::parser::ParserOptions;
 
 static SYNTAX_PREFIX: &str = "Syntax error";
 
-/// Map a position for syntax errors. 
+/// Map a position for syntax errors.
 #[derive(Debug, Eq, PartialEq)]
 pub struct SourcePos(pub usize, pub usize);
 
 impl SourcePos {
     pub fn line(&self) -> &usize {
-        &self.0    
+        &self.0
     }
 
     pub fn byte_offset(&self) -> &usize {
@@ -28,20 +28,22 @@ pub struct ErrorInfo<'source> {
 
 impl<'source> ErrorInfo<'source> {
     pub fn source(&self) -> &'source str {
-        self.source 
+        self.source
     }
     pub fn position(&self) -> &SourcePos {
-        &self.source_pos 
+        &self.source_pos
     }
 }
 
-impl<'source> From<(&'source str, &ParserOptions, SourcePos)> for ErrorInfo<'source> {
+impl<'source> From<(&'source str, &ParserOptions, SourcePos)>
+    for ErrorInfo<'source>
+{
     fn from(opts: (&'source str, &ParserOptions, SourcePos)) -> Self {
         Self {
             source: opts.0,
             file_name: opts.1.file_name.clone(),
             source_pos: opts.2,
-        } 
+        }
     }
 }
 
@@ -89,13 +91,12 @@ pub enum SyntaxError<'source> {
 }
 
 impl SyntaxError<'_> {
-
     fn message(&self) -> &'static str {
         match *self {
             Self::EmptyStatement(_) => "statement is empty",
             Self::ExpectedIdentifier(_) => "expecting identifier",
             Self::BlockIdentifier(_) => "block scope requires an identifier",
-        } 
+        }
     }
 
     pub fn info(&self) -> &ErrorInfo {
@@ -103,7 +104,7 @@ impl SyntaxError<'_> {
             Self::EmptyStatement(ref info) => info,
             Self::ExpectedIdentifier(ref info) => info,
             Self::BlockIdentifier(ref info) => info,
-        } 
+        }
     }
 
     fn find_prev_line_offset(&self, s: &str, pos: &SourcePos) -> Option<usize> {
@@ -112,7 +113,7 @@ impl SyntaxError<'_> {
             // TODO: clamp end range to string length!
             let slice = &s[counter..counter + 1];
             if slice == "\n" {
-                return Some(counter); 
+                return Some(counter);
             }
             counter -= 1;
         }
@@ -125,13 +126,12 @@ impl SyntaxError<'_> {
             // TODO: clamp end range to string length!
             let slice = &s[counter..counter + 1];
             if slice == "\n" {
-                return Some(counter); 
+                return Some(counter);
             }
             counter += 1;
         }
         None
     }
-
 }
 
 impl fmt::Display for SyntaxError<'_> {
@@ -148,12 +148,16 @@ impl fmt::Debug for SyntaxError<'_> {
         let prev_line = self.find_prev_line_offset(s, pos);
         let prev_line_offset = if let Some(offset) = prev_line {
             offset + 1
-        } else { 0 };
+        } else {
+            0
+        };
 
         let next_line = self.find_next_line_offset(s, pos);
         let next_line_offset = if let Some(offset) = next_line {
             offset
-        } else { s.len() };
+        } else {
+            s.len()
+        };
 
         let line_slice = &s[prev_line_offset..next_line_offset];
         let line_number = pos.line();
@@ -168,11 +172,14 @@ impl fmt::Debug for SyntaxError<'_> {
 
         let cols = UnicodeWidthStr::width(diff_str);
 
-        let file_info = format!("{}:{}:{}", info.file_name, line_number + 1, cols);
+        let file_info =
+            format!("{}:{}:{}", info.file_name, line_number + 1, cols);
 
         let err_pointer: String = if cols > 0 {
             format!("{}^", "-".repeat(cols - 1))
-        } else { "^".to_string() };
+        } else {
+            "^".to_string()
+        };
 
         write!(f, "error: {}\n", self.to_string())?;
         write!(f, "{}--> {}\n", line_padding, file_info)?;
@@ -196,7 +203,9 @@ pub enum RenderError {
 impl PartialEq for RenderError {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            // FIXME:
+            (Self::TemplateNotFound(ref s), Self::TemplateNotFound(ref o)) => {
+                s == o
+            }
             _ => false,
         }
     }

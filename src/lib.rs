@@ -1,9 +1,10 @@
 pub mod error;
+pub mod helper;
 pub mod lexer;
-mod output;
-mod registry;
-mod render;
-mod template;
+pub mod output;
+pub mod registry;
+pub mod render;
+pub mod template;
 
 pub type Result<'a, T> = std::result::Result<T, error::Error<'a>>;
 

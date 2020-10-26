@@ -1,5 +1,5 @@
-use std::fmt;
 use std::collections::HashMap;
+use std::fmt;
 use std::ops::Range;
 
 static WHITESPACE: &str = "~";
@@ -23,9 +23,7 @@ impl<'source> Node<'source> {
     pub fn trim_before(&self) -> bool {
         match *self {
             Self::Text(ref n) => false,
-            Self::Statement(ref n) => {
-                n.open().ends_with(WHITESPACE)
-            },
+            Self::Statement(ref n) => n.open().ends_with(WHITESPACE),
             Self::Block(ref n) => {
                 let open = n.open();
                 open.len() > 2 && WHITESPACE == &open[2..3]
@@ -36,13 +34,11 @@ impl<'source> Node<'source> {
     pub fn trim_after(&self) -> bool {
         match *self {
             Self::Text(ref n) => false,
-            Self::Statement(ref n) => {
-                n.close().starts_with(WHITESPACE)
-            },
+            Self::Statement(ref n) => n.close().starts_with(WHITESPACE),
             Self::Block(ref n) => {
                 let open = n.open();
                 open.len() > 2 && WHITESPACE == &open[2..3]
-            },
+            }
         }
     }
 }
@@ -101,7 +97,8 @@ impl<'source> Call<'source> {
         close: Range<usize>,
         name: Path,
         arguments: Option<Vec<ParameterValue>>,
-        hash: Option<HashMap<String, ParameterValue>>) -> Self {
+        hash: Option<HashMap<String, ParameterValue>>,
+    ) -> Self {
         Self {
             source,
             partial,
@@ -110,7 +107,7 @@ impl<'source> Call<'source> {
             name,
             arguments: arguments.unwrap_or(Default::default()),
             hash: hash.unwrap_or(Default::default()),
-        } 
+        }
     }
 
     pub fn as_str(&self) -> &'source str {
@@ -135,11 +132,11 @@ impl fmt::Display for Call<'_> {
 #[derive(Debug, Eq, PartialEq)]
 pub enum BlockType {
     Root,
-    RawBlock,       // {{{{raw}}}}{{expr}}{{{{/raw}}}}
-    RawStatement,   // \{{expr}}
-    RawComment,     // {{!-- {{expr}} --}}
-    Comment,        // {{! comment }}
-    Scoped,         // {{#> partial|helper}}{{/partial|helper}}
+    RawBlock,     // {{{{raw}}}}{{expr}}{{{{/raw}}}}
+    RawStatement, // \{{expr}}
+    RawComment,   // {{!-- {{expr}} --}}
+    Comment,      // {{! comment }}
+    Scoped,       // {{#> partial|helper}}{{/partial|helper}}
 }
 
 impl Default for BlockType {
@@ -231,10 +228,10 @@ impl<'source> Block<'source> {
     pub fn trim_before_close(&self) -> bool {
         match self.kind {
             BlockType::Scoped => {
-                let close= self.close();
+                let close = self.close();
                 close.len() > 2 && WHITESPACE == &close[2..3]
             }
-            _ => false
+            _ => false,
         }
     }
 
@@ -245,7 +242,7 @@ impl<'source> Block<'source> {
                 let pos = close.len() - 3;
                 close.len() > 2 && WHITESPACE == &close[pos..pos + 1]
             }
-            _ => false
+            _ => false,
         }
     }
 }

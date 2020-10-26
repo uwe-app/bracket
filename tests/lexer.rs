@@ -1,6 +1,6 @@
 use hbs::lexer::grammar::{
-    collect as lex, Block, Comment, RawBlock, RawComment, RawStatement,
-    Parameters, Token,
+    collect as lex, Block, Comment, Parameters, RawBlock, RawComment,
+    RawStatement, Token,
 };
 use hbs::Result;
 

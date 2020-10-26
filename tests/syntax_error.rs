@@ -1,4 +1,8 @@
-use hbs::{error::{SyntaxError, SourcePos, ErrorInfo}, lexer::parser::ParserOptions, Error, Registry, Result};
+use hbs::{
+    error::{ErrorInfo, SourcePos, SyntaxError},
+    lexer::parser::ParserOptions,
+    Error, Registry, Result,
+};
 use serde_json::json;
 
 #[test]

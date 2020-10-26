@@ -5,9 +5,9 @@ use std::vec::IntoIter;
 use logos::Span;
 
 use crate::{
-    error::{SyntaxError, ErrorInfo, SourcePos},
+    error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{
-        ast::{Block, BlockType, Node, Text, Call, Path},
+        ast::{Block, BlockType, Call, Node, Path, Text},
         grammar::{self, lex, Parameters, Token},
     },
 };
@@ -18,15 +18,18 @@ static UNKNOWN: &str = "unknown";
 pub struct ParserOptions {
     /// The name of a file for the template source being parsed.
     pub file_name: String,
-    /// A line offset into the file for error reporting, 
+    /// A line offset into the file for error reporting,
     /// the first line has index zero.
     pub line_offset: usize,
 }
 
 impl Default for ParserOptions {
     fn default() -> Self {
-        Self {file_name: UNKNOWN.to_string(), line_offset: 0} 
-    } 
+        Self {
+            file_name: UNKNOWN.to_string(),
+            line_offset: 0,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -50,7 +53,7 @@ impl ParameterCache {
             start,
             tokens: Default::default(),
             end: Default::default(),
-        } 
+        }
     }
 
     pub fn into_iter(mut self) -> std::vec::IntoIter<(Parameters, Span)> {
@@ -66,7 +69,10 @@ pub struct Parser<'source> {
 
 impl<'source> Parser<'source> {
     pub fn new(options: ParserOptions) -> Self {
-        Self { options, stack: vec![] }
+        Self {
+            options,
+            stack: vec![],
+        }
     }
 
     fn enter_stack(
@@ -104,15 +110,16 @@ impl<'source> Parser<'source> {
         }
     }
 
+    /// Consume whitespace tokens.
     fn consume_whitespace(
         &self,
         iter: &mut IntoIter<(Parameters, Span)>,
         byte_offset: &mut usize,
         line: &mut usize,
-        ) -> Option<(Parameters, Span)> {
-
+    ) -> Option<(Parameters, Span)> {
         while let Some(item) = iter.next() {
-            if item.0 == Parameters::WhiteSpace || item.0 == Parameters::Newline {
+            if item.0 == Parameters::WhiteSpace || item.0 == Parameters::Newline
+            {
                 *byte_offset = item.1.end;
                 if item.0 == Parameters::Newline {
                     *line += 1;
@@ -132,7 +139,7 @@ impl<'source> Parser<'source> {
         byte_offset: &mut usize,
         line: &mut usize,
         expects: Vec<Parameters>,
-        ) -> Option<(Parameters, Span)> {
+    ) -> Option<(Parameters, Span)> {
         while let Some(item) = iter.next() {
             if expects.contains(&item.0) {
                 return Some(item);
@@ -148,7 +155,6 @@ impl<'source> Parser<'source> {
         line: &mut usize,
         mut statement: ParameterCache,
     ) -> Result<Call<'source>, SyntaxError<'source>> {
-
         let context = statement.context.clone();
         let stmt_start = statement.start.clone();
         let stmt_end = statement.end.clone();
@@ -159,10 +165,11 @@ impl<'source> Parser<'source> {
 
         let next = self.consume_whitespace(&mut iter, &mut byte_offset, line);
 
-        let err_info = |line: &mut usize, byte_offset: usize| -> ErrorInfo<'source> {
-            let pos = SourcePos(line.clone(), byte_offset.clone());
-            ErrorInfo::from((s, &self.options, pos))
-        };
+        let err_info =
+            |line: &mut usize, byte_offset: usize| -> ErrorInfo<'source> {
+                let pos = SourcePos(line.clone(), byte_offset.clone());
+                ErrorInfo::from((s, &self.options, pos))
+            };
 
         if let Some((mut first, mut span)) = next {
             let mut identifier: Option<(Parameters, Span)> = None;
@@ -173,41 +180,52 @@ impl<'source> Parser<'source> {
             };
 
             if partial {
-                let next = self.consume_whitespace(&mut iter, &mut byte_offset, line);
+                let next =
+                    self.consume_whitespace(&mut iter, &mut byte_offset, line);
                 if let Some((next_token, next_span)) = next {
                     first = next_token;
                     span = next_span;
                 }
             }
 
-            let mut call = Call::new(s, partial, stmt_start, stmt_end, Path(vec![]), None, None);
+            let mut call = Call::new(
+                s,
+                partial,
+                stmt_start,
+                stmt_end,
+                Path(vec![]),
+                None,
+                None,
+            );
 
             match context {
                 ParameterContext::Block => {
                     if Parameters::Identifier != first {
-                        return Err(
-                            SyntaxError::BlockIdentifier(
-                                err_info(line, byte_offset)));
+                        return Err(SyntaxError::BlockIdentifier(err_info(
+                            line,
+                            byte_offset,
+                        )));
                     }
                     identifier = Some((first, span));
                 }
                 ParameterContext::Statement => {
-
                     println!("Parsing parameters for stamtent {:?}", first);
-                
+
                     match first {
-                        Parameters::Identifier | Parameters::LocalIdentifier => {
+                        Parameters::Identifier
+                        | Parameters::LocalIdentifier => {
                             identifier = Some((first, span));
                         }
                         Parameters::Partial => {
-                            //byte_offset = span.end;
-                            if let Some((lex, span)) =
-                                self.find_one_of(
-                                    &mut iter,
-                                    &mut byte_offset,
-                                    line,
-                                    vec![Parameters::Identifier, Parameters::LocalIdentifier])
-                            {
+                            if let Some((lex, span)) = self.find_one_of(
+                                &mut iter,
+                                &mut byte_offset,
+                                line,
+                                vec![
+                                    Parameters::Identifier,
+                                    Parameters::LocalIdentifier,
+                                ],
+                            ) {
                                 identifier = Some((lex, span));
                             }
                         }
@@ -219,7 +237,10 @@ impl<'source> Parser<'source> {
             println!("Parse statement with identifier {:?}", identifier);
 
             if identifier.is_none() {
-                return Err(SyntaxError::ExpectedIdentifier(err_info(line, byte_offset)));
+                return Err(SyntaxError::ExpectedIdentifier(err_info(
+                    line,
+                    byte_offset,
+                )));
             }
 
             Ok(call)
@@ -246,7 +267,6 @@ impl<'source> Parser<'source> {
         &mut self,
         s: &'source str,
     ) -> Result<Node<'source>, SyntaxError<'source>> {
-
         // Consecutive text to normalize
         let mut text: Option<Text> = None;
 
@@ -272,75 +292,55 @@ impl<'source> Parser<'source> {
             }
 
             //println!("Parser {:?}", t);
-            
+
             match t {
                 Token::Block(lex, span) => match lex {
                     grammar::Block::StartRawBlock => {
                         self.enter_stack(
-                            Block::new(
-                                s,
-                                BlockType::RawBlock,
-                                Some(span),
-                            ),
+                            Block::new(s, BlockType::RawBlock, Some(span)),
                             &mut text,
                         );
                     }
                     grammar::Block::StartRawComment => {
                         self.enter_stack(
-                            Block::new(
-                                s,
-                                BlockType::RawComment,
-                                Some(span),
-                            ),
+                            Block::new(s, BlockType::RawComment, Some(span)),
                             &mut text,
                         );
                     }
                     grammar::Block::StartRawStatement => {
                         self.enter_stack(
-                            Block::new(
-                                s,
-                                BlockType::RawStatement,
-                                Some(span),
-                            ),
+                            Block::new(s, BlockType::RawStatement, Some(span)),
                             &mut text,
                         );
                     }
                     grammar::Block::StartComment => {
                         self.enter_stack(
-                            Block::new(
-                                s,
-                                BlockType::Comment,
-                                Some(span),
-                            ),
+                            Block::new(s, BlockType::Comment, Some(span)),
                             &mut text,
                         );
                     }
                     grammar::Block::StartBlockScope => {
-                        parameters = Some(
-                            ParameterCache::new(
-                                ParameterContext::Block, span.clone()));
+                        parameters = Some(ParameterCache::new(
+                            ParameterContext::Block,
+                            span.clone(),
+                        ));
 
                         self.enter_stack(
-                            Block::new(
-                                s,
-                                BlockType::Scoped,
-                                Some(span),
-                            ),
+                            Block::new(s, BlockType::Scoped, Some(span)),
                             &mut text,
                         );
-
                     }
                     grammar::Block::EndBlockScope => {
-
                         // TODO: check the closing element matches the
                         // TODO: name of the open scope block
 
                         self.exit_stack(span, &mut text);
                     }
                     grammar::Block::StartStatement => {
-                        parameters = Some(
-                            ParameterCache::new(
-                                ParameterContext::Statement, span));
+                        parameters = Some(ParameterCache::new(
+                            ParameterContext::Statement,
+                            span,
+                        ));
                     }
                     _ => {}
                 },
@@ -371,17 +371,23 @@ impl<'source> Parser<'source> {
                 Token::Parameters(lex, span) => match lex {
                     Parameters::End => {
                         if let Some(mut params) = parameters.take() {
-                            let ctx = params.context.clone(); 
+                            let ctx = params.context.clone();
                             params.end = span;
 
-                            let call = self.parse_parameters(s, &mut line, params.clone())?;
+                            let call = self.parse_parameters(
+                                s,
+                                &mut line,
+                                params.clone(),
+                            )?;
                             match ctx {
                                 ParameterContext::Statement => {
-                                    let current = self.stack.last_mut().unwrap();
+                                    let current =
+                                        self.stack.last_mut().unwrap();
                                     current.push(Node::Statement(call));
                                 }
                                 ParameterContext::Block => {
-                                    let current = self.stack.last_mut().unwrap();
+                                    let current =
+                                        self.stack.last_mut().unwrap();
                                     current.set_call(call);
                                 }
                             }
@@ -394,7 +400,7 @@ impl<'source> Parser<'source> {
                     }
                 },
                 //Token::BlockScope(lex, span) => match lex {
-                    //_ => {}
+                //_ => {}
                 //},
             }
         }
