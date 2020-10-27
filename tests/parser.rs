@@ -1,5 +1,7 @@
 use hbs::{lexer::ast::*, lexer::parser::*, Result};
 
+use serde_json::{Value, Number};
+
 #[test]
 fn parse_statement() -> Result<'static, ()> {
     let value = "{{foo}}";
@@ -149,7 +151,7 @@ fn parse_statement_partial() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_statement_string_literal() -> Result<'static, ()> {
+fn parse_arg_string() -> Result<'static, ()> {
     let value = r#"{{foo "bar\nbaz"}}"#;
     let mut parser = Parser::new(Default::default());
     let node = parser.parse(value)?;
@@ -159,11 +161,277 @@ fn parse_statement_string_literal() -> Result<'static, ()> {
             assert_eq!(&BlockType::Root, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
-            println!("Node {:?}", node);
+            match node {
+                Node::Statement(ref call) => {
+                    let args = call.arguments();
+                    assert_eq!(1, args.len());
+                    assert_eq!(
+                        &ParameterValue::Json(
+                            Value::String(String::from(r"bar\nbaz"))),
+                        args.first().unwrap());
+                }
+                _ => panic!("Expecting statement node."),
+            }
         }
         _ => panic!("Bad root node type for parser()."),
     }
 
+    Ok(())
+}
+
+#[test]
+fn parse_arg_bool_true() -> Result<'static, ()> {
+    let value = r#"{{foo true}}"#;
+    let mut parser = Parser::new(Default::default());
+    let node = parser.parse(value)?;
+
+    match node {
+        Node::Block(b) => {
+            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(1, b.nodes().len());
+            let node = b.nodes().first().unwrap();
+            match node {
+                Node::Statement(ref call) => {
+                    let args = call.arguments();
+                    assert_eq!(1, args.len());
+                    assert_eq!(
+                        &ParameterValue::Json(Value::Bool(true)),
+                        args.first().unwrap());
+                }
+                _ => panic!("Expecting statement node."),
+            }
+        }
+        _ => panic!("Bad root node type for parser()."),
+    }
+
+    Ok(())
+}
+
+#[test]
+fn parse_arg_bool_false() -> Result<'static, ()> {
+    let value = r#"{{foo false}}"#;
+    let mut parser = Parser::new(Default::default());
+    let node = parser.parse(value)?;
+
+    match node {
+        Node::Block(b) => {
+            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(1, b.nodes().len());
+            let node = b.nodes().first().unwrap();
+            match node {
+                Node::Statement(ref call) => {
+                    let args = call.arguments();
+                    assert_eq!(1, args.len());
+                    assert_eq!(
+                        &ParameterValue::Json(Value::Bool(false)),
+                        args.first().unwrap());
+                }
+                _ => panic!("Expecting statement node."),
+            }
+        }
+        _ => panic!("Bad root node type for parser()."),
+    }
+
+    Ok(())
+}
+
+#[test]
+fn parse_arg_null() -> Result<'static, ()> {
+    let value = r#"{{foo null}}"#;
+    let mut parser = Parser::new(Default::default());
+    let node = parser.parse(value)?;
+
+    match node {
+        Node::Block(b) => {
+            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(1, b.nodes().len());
+            let node = b.nodes().first().unwrap();
+            match node {
+                Node::Statement(ref call) => {
+                    let args = call.arguments();
+                    assert_eq!(1, args.len());
+                    assert_eq!(
+                        &ParameterValue::Json(Value::Null),
+                        args.first().unwrap());
+                }
+                _ => panic!("Expecting statement node."),
+            }
+        }
+        _ => panic!("Bad root node type for parser()."),
+    }
+
+    Ok(())
+}
+
+#[test]
+fn parse_arg_num_int() -> Result<'static, ()> {
+    let value = r#"{{foo 10}}"#;
+    let mut parser = Parser::new(Default::default());
+    let node = parser.parse(value)?;
+
+    match node {
+        Node::Block(b) => {
+            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(1, b.nodes().len());
+            let node = b.nodes().first().unwrap();
+            match node {
+                Node::Statement(ref call) => {
+                    let args = call.arguments();
+                    let expected = Number::from(10);
+                    assert_eq!(1, args.len());
+                    assert_eq!(
+                        &ParameterValue::Json(Value::Number(expected)),
+                        args.first().unwrap());
+                }
+                _ => panic!("Expecting statement node."),
+            }
+        }
+        _ => panic!("Bad root node type for parser()."),
+    }
+
+    Ok(())
+}
+
+#[test]
+fn parse_arg_num_int_signed() -> Result<'static, ()> {
+    let value = r#"{{foo -10}}"#;
+    let mut parser = Parser::new(Default::default());
+    let node = parser.parse(value)?;
+
+    match node {
+        Node::Block(b) => {
+            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(1, b.nodes().len());
+            let node = b.nodes().first().unwrap();
+            match node {
+                Node::Statement(ref call) => {
+                    let args = call.arguments();
+                    let expected = Number::from(-10);
+                    assert_eq!(1, args.len());
+                    assert_eq!(
+                        &ParameterValue::Json(Value::Number(expected)),
+                        args.first().unwrap());
+                }
+                _ => panic!("Expecting statement node."),
+            }
+        }
+        _ => panic!("Bad root node type for parser()."),
+    }
+
+    Ok(())
+}
+
+#[test]
+fn parse_arg_num_int_signed_exponent() -> Result<'static, ()> {
+    let value = r#"{{foo -2e+2}}"#;
+    let mut parser = Parser::new(Default::default());
+    let node = parser.parse(value)?;
+
+    match node {
+        Node::Block(b) => {
+            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(1, b.nodes().len());
+            let node = b.nodes().first().unwrap();
+            match node {
+                Node::Statement(ref call) => {
+                    let args = call.arguments();
+                    let expected: Number = "-2e+2".parse().unwrap();
+                    assert_eq!(1, args.len());
+                    assert_eq!(
+                        &ParameterValue::Json(Value::Number(expected)),
+                        args.first().unwrap());
+                }
+                _ => panic!("Expecting statement node."),
+            }
+        }
+        _ => panic!("Bad root node type for parser()."),
+    }
+
+    Ok(())
+}
+
+#[test]
+fn parse_arg_num_float() -> Result<'static, ()> {
+    let value = r#"{{foo 3.14}}"#;
+    let mut parser = Parser::new(Default::default());
+    let node = parser.parse(value)?;
+
+    match node {
+        Node::Block(b) => {
+            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(1, b.nodes().len());
+            let node = b.nodes().first().unwrap();
+            match node {
+                Node::Statement(ref call) => {
+                    let args = call.arguments();
+                    let expected: Number = "3.14".parse().unwrap();
+                    assert_eq!(1, args.len());
+                    assert_eq!(
+                        &ParameterValue::Json(Value::Number(expected)),
+                        args.first().unwrap());
+                }
+                _ => panic!("Expecting statement node."),
+            }
+        }
+        _ => panic!("Bad root node type for parser()."),
+    }
+
+    Ok(())
+}
+
+#[test]
+fn parse_arg_num_float_signed() -> Result<'static, ()> {
+    let value = r#"{{foo -0.5}}"#;
+    let mut parser = Parser::new(Default::default());
+    let node = parser.parse(value)?;
+
+    match node {
+        Node::Block(b) => {
+            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(1, b.nodes().len());
+            let node = b.nodes().first().unwrap();
+            match node {
+                Node::Statement(ref call) => {
+                    let args = call.arguments();
+                    let expected: Number = "-0.5".parse().unwrap();
+                    assert_eq!(1, args.len());
+                    assert_eq!(
+                        &ParameterValue::Json(Value::Number(expected)),
+                        args.first().unwrap());
+                }
+                _ => panic!("Expecting statement node."),
+            }
+        }
+        _ => panic!("Bad root node type for parser()."),
+    }
+    Ok(())
+}
+
+#[test]
+fn parse_arg_num_float_signed_exponent() -> Result<'static, ()> {
+    let value = r#"{{foo -0.5E-2}}"#;
+    let mut parser = Parser::new(Default::default());
+    let node = parser.parse(value)?;
+
+    match node {
+        Node::Block(b) => {
+            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(1, b.nodes().len());
+            let node = b.nodes().first().unwrap();
+            match node {
+                Node::Statement(ref call) => {
+                    let args = call.arguments();
+                    let expected: Number = "-0.5E-2".parse().unwrap();
+                    assert_eq!(1, args.len());
+                    assert_eq!(
+                        &ParameterValue::Json(Value::Number(expected)),
+                        args.first().unwrap());
+                }
+                _ => panic!("Expecting statement node."),
+            }
+        }
+        _ => panic!("Bad root node type for parser()."),
+    }
     Ok(())
 }
 
