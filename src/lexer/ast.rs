@@ -6,6 +6,13 @@ use serde_json::Value;
 
 static WHITESPACE: &str = "~";
 
+pub static ROOT: &str = "@root";
+pub static FIRST: &str = "@first";
+pub static LAST: &str = "@last";
+pub static KEY: &str = "@key";
+pub static INDEX: &str = "@index";
+pub static LEVEL: &str = "@level";
+
 #[derive(Debug, Eq, PartialEq)]
 pub enum Node<'source> {
     Text(Text<'source>),
