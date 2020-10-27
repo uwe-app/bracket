@@ -128,8 +128,11 @@ pub enum Parameters {
     #[token(r">")]
     Partial,
 
-    #[regex(r"(this|\./)")]
-    ExplicitThisRef,
+    #[token(r"this")]
+    ExplicitThisKeyword,
+
+    #[token("./")]
+    ExplicitThisDotSlash,
 
     #[token("../")]
     ParentRef,

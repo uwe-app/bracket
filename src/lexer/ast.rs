@@ -80,7 +80,8 @@ impl fmt::Display for Text<'_> {
 #[derive(Debug, Eq, PartialEq)]
 pub enum ComponentType {
     Parent,
-    This,
+    ThisKeyword,
+    ThisDotSlash,
     Identifier,
     LocalIdentifier,
     Delimiter,
@@ -102,8 +103,16 @@ impl<'source> Component<'source> {
         &ComponentType::LocalIdentifier == self.kind()
     }
 
+    pub fn is_identifier(&self) -> bool {
+        &ComponentType::Identifier == self.kind()
+    }
+
     pub fn is_explicit(&self) -> bool {
-        &ComponentType::This == self.kind()
+        &ComponentType::ThisKeyword == self.kind() || self.is_explicit_dot_slash()
+    }
+
+    pub fn is_explicit_dot_slash(&self) -> bool {
+        &ComponentType::ThisDotSlash == self.kind()
     }
 
     pub fn as_str(&self) -> &'source str {

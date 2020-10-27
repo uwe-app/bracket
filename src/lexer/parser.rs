@@ -208,7 +208,8 @@ impl<'source> Parser<'source> {
 
     fn is_path_component(&self, lex: &Parameters) -> bool {
         match lex {
-            Parameters::ExplicitThisRef
+            Parameters::ExplicitThisKeyword
+            | Parameters::ExplicitThisDotSlash
             | Parameters::ParentRef
             | Parameters::Identifier
             | Parameters::LocalIdentifier
@@ -219,7 +220,8 @@ impl<'source> Parser<'source> {
 
     fn component_type(&self, lex: &Parameters) -> ComponentType {
         match lex {
-            Parameters::ExplicitThisRef => ComponentType::This,
+            Parameters::ExplicitThisKeyword => ComponentType::ThisKeyword,
+            Parameters::ExplicitThisDotSlash => ComponentType::ThisDotSlash,
             Parameters::ParentRef => ComponentType::Parent,
             Parameters::Identifier => ComponentType::Identifier,
             Parameters::LocalIdentifier => ComponentType::LocalIdentifier,
@@ -306,15 +308,16 @@ impl<'source> Parser<'source> {
                     )));
                 }
 
-                path.add_component(component);
+                let mut wants_delimiter = !component.is_explicit_dot_slash();
 
-                let mut wants_delimiter = true;
+                path.add_component(component);
 
                 while let Some((lex, span)) = iter.next() {
                     if self.is_path_component(&lex) {
 
                         match &lex {
-                            Parameters::ExplicitThisRef => {
+                            Parameters::ExplicitThisKeyword
+                            | Parameters::ExplicitThisDotSlash => {
                                 *byte_offset = span.start;
                                 return Err(SyntaxError::UnexpectedPathExplicitThis(self.err_info(
                                     source,
