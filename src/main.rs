@@ -6,6 +6,8 @@ fn main() -> Result<'static, ()> {
 
 {{var}}
 
+{{> (var)}}
+
 \{{ > }}
 \{{ > a.b}}
 

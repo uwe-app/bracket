@@ -9,7 +9,7 @@ use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{
         ast::{
-            Block, BlockType, Call, Component, ComponentType, Node,
+            Block, BlockType, Call, CallTarget, Component, ComponentType, Node,
             ParameterValue, Path, Text,
         },
         grammar::{self, lex, Parameters, Token},
@@ -268,19 +268,17 @@ impl<'source> Parser<'source> {
                 match &lex {
                     Parameters::PathDelimiter => {
                         *byte_offset = span.start;
-                        return Err(SyntaxError::UnexpectedPathDelimiter(self.err_info(
-                            source,
-                            line,
-                            byte_offset,
-                            None,
-                        )));
+                        return Err(SyntaxError::UnexpectedPathDelimiter(
+                            self.err_info(source, line, byte_offset, None),
+                        ));
                     }
                     _ => {}
                 }
 
                 *byte_offset = span.start;
 
-                let component = Component(source, self.component_type(&lex), span);
+                let component =
+                    Component(source, self.component_type(&lex), span);
                 // Flag as a path that should be resolved from the root object
                 if path.is_empty() && component.is_root() {
                     path.set_root(true);
@@ -291,21 +289,15 @@ impl<'source> Parser<'source> {
                 }
 
                 if component.is_local() && path.parents() > 0 {
-                    return Err(SyntaxError::UnexpectedPathParentWithLocal(self.err_info(
-                        source,
-                        line,
-                        byte_offset,
-                        None,
-                    )));
+                    return Err(SyntaxError::UnexpectedPathParentWithLocal(
+                        self.err_info(source, line, byte_offset, None),
+                    ));
                 }
 
                 if component.is_explicit() && path.parents() > 0 {
-                    return Err(SyntaxError::UnexpectedPathParentWithExplicit(self.err_info(
-                        source,
-                        line,
-                        byte_offset,
-                        None,
-                    )));
+                    return Err(SyntaxError::UnexpectedPathParentWithExplicit(
+                        self.err_info(source, line, byte_offset, None),
+                    ));
                 }
 
                 let mut wants_delimiter = !component.is_explicit_dot_slash();
@@ -314,35 +306,42 @@ impl<'source> Parser<'source> {
 
                 while let Some((lex, span)) = iter.next() {
                     if self.is_path_component(&lex) {
-
                         match &lex {
                             Parameters::ExplicitThisKeyword
                             | Parameters::ExplicitThisDotSlash => {
                                 *byte_offset = span.start;
-                                return Err(SyntaxError::UnexpectedPathExplicitThis(self.err_info(
-                                    source,
-                                    line,
-                                    byte_offset,
-                                    None,
-                                )));
+                                return Err(
+                                    SyntaxError::UnexpectedPathExplicitThis(
+                                        self.err_info(
+                                            source,
+                                            line,
+                                            byte_offset,
+                                            None,
+                                        ),
+                                    ),
+                                );
                             }
                             Parameters::ParentRef => {
                                 *byte_offset = span.start;
-                                return Err(SyntaxError::UnexpectedPathParent(self.err_info(
-                                    source,
-                                    line,
-                                    byte_offset,
-                                    None,
-                                )));
+                                return Err(SyntaxError::UnexpectedPathParent(
+                                    self.err_info(
+                                        source,
+                                        line,
+                                        byte_offset,
+                                        None,
+                                    ),
+                                ));
                             }
                             Parameters::LocalIdentifier => {
                                 *byte_offset = span.start;
-                                return Err(SyntaxError::UnexpectedPathLocal(self.err_info(
-                                    source,
-                                    line,
-                                    byte_offset,
-                                    None,
-                                )));
+                                return Err(SyntaxError::UnexpectedPathLocal(
+                                    self.err_info(
+                                        source,
+                                        line,
+                                        byte_offset,
+                                        None,
+                                    ),
+                                ));
                             }
                             _ => {}
                         }
@@ -356,30 +355,42 @@ impl<'source> Parser<'source> {
                                 _ => {
                                     *byte_offset = span.start;
                                     println!("Lex {:?}", &lex);
-                                    return Err(SyntaxError::ExpectedPathDelimiter(self.err_info(
-                                        source,
-                                        line,
-                                        byte_offset,
-                                        None,
-                                    )));
+                                    return Err(
+                                        SyntaxError::ExpectedPathDelimiter(
+                                            self.err_info(
+                                                source,
+                                                line,
+                                                byte_offset,
+                                                None,
+                                            ),
+                                        ),
+                                    );
                                 }
                             }
                         } else {
                             match &lex {
                                 Parameters::PathDelimiter => {
                                     *byte_offset = span.start;
-                                    return Err(SyntaxError::UnexpectedPathDelimiter(self.err_info(
-                                        source,
-                                        line,
-                                        byte_offset,
-                                        None,
-                                    )));
+                                    return Err(
+                                        SyntaxError::UnexpectedPathDelimiter(
+                                            self.err_info(
+                                                source,
+                                                line,
+                                                byte_offset,
+                                                None,
+                                            ),
+                                        ),
+                                    );
                                 }
                                 _ => {}
                             }
                         }
                         println!("Adding component for {:?}", &lex);
-                        path.add_component(Component(source, self.component_type(&lex), span));
+                        path.add_component(Component(
+                            source,
+                            self.component_type(&lex),
+                            span,
+                        ));
                     } else {
                         return Ok(Some((lex, span)));
                     }
@@ -387,6 +398,121 @@ impl<'source> Parser<'source> {
             }
         }
         Ok(None)
+    }
+
+    /// Collect sub expression tokens.
+    fn sub_expr(
+        &self,
+        iter: &mut IntoIter<(Parameters, Span)>,
+        ) -> (Vec<(Parameters, Span)>, Option<Range<usize>>) {
+        let mut stmt_end: Option<Range<usize>> = None;
+        let mut sub_expr: Vec<(Parameters, Span)> = Vec::new();
+        while let Some((lex, span)) = iter.next() {
+            match &lex {
+                Parameters::EndSubExpression => {
+                    return (sub_expr, Some(span));
+                }
+                _ => {
+                    sub_expr.push((lex, span));
+                }
+            }
+        }
+        (sub_expr, None)
+    }
+
+    fn parse_call_target(
+        &self,
+        source: &'source str,
+        iter: &mut IntoIter<(Parameters, Span)>,
+        byte_offset: &mut usize,
+        line: &mut usize,
+        current: Option<(Parameters, Span)>,
+        call: &mut Call<'source>,
+    ) -> Result<Option<(Parameters, Span)>, SyntaxError<'source>> {
+        if let Some((lex, span)) = current {
+            let next = match &lex {
+                Parameters::StartSubExpression => {
+                    let stmt_start = span.clone();
+
+                    let (mut sub_expr, stmt_end) = self.sub_expr(iter);
+
+                    if stmt_end.is_none() {
+                        *byte_offset = stmt_start.end;
+                        if !sub_expr.is_empty() {
+                            let (_, last_span) = sub_expr.pop().unwrap();
+                            *byte_offset = last_span.end;
+                        }
+                        //panic!("Sub expression was not terminated");
+
+                        return Err(SyntaxError::OpenSubExpression(self.err_info(
+                            source,
+                            line,
+                            byte_offset,
+                            Some(vec!["requires closing parenthesis ')'"]),
+                        )));
+                    }
+
+                    // NOTE: must advance past the start sub expresion token!
+                    let next = iter.next();
+
+                    let (sub_call, next) = self.parse_call(
+                        source,
+                        &mut sub_expr.into_iter(),
+                        byte_offset,
+                        line,
+                        next,
+                        false,
+                        stmt_start,
+                        stmt_end.unwrap(),
+                    )?;
+
+                    call.set_target(CallTarget::SubExpr(Box::new(sub_call)));
+                    next
+                }
+                _ => {
+                    let mut path = Path::new(source);
+                    let next = self.parse_path(
+                        source,
+                        iter,
+                        byte_offset,
+                        line,
+                        Some((lex, span)),
+                        &mut path,
+                    )?;
+                    call.set_target(CallTarget::Path(path));
+                    next
+                }
+            };
+
+            return Ok(next);
+        }
+
+        Ok(None)
+    }
+
+    fn parse_call(
+        &self,
+        source: &'source str,
+        iter: &mut IntoIter<(Parameters, Span)>,
+        byte_offset: &mut usize,
+        line: &mut usize,
+        current: Option<(Parameters, Span)>,
+        partial: bool,
+        stmt_start: Range<usize>,
+        stmt_end: Range<usize>,
+    ) -> Result<(Call<'source>, Option<(Parameters, Span)>), SyntaxError<'source>>
+    {
+        let mut call = Call::new(source, partial, stmt_start, stmt_end);
+        let next = self.parse_call_target(
+            source,
+            iter,
+            byte_offset,
+            line,
+            current,
+            &mut call,
+        )?;
+
+        Ok((call, next))
     }
 
     fn parse_partial(
@@ -411,7 +537,7 @@ impl<'source> Parser<'source> {
         (false, None)
     }
 
-    fn parse_parameters(
+    fn parse_statement(
         &mut self,
         source: &'source str,
         line: &mut usize,
@@ -452,19 +578,18 @@ impl<'source> Parser<'source> {
             )));
         }
 
-        let mut call = Call::new(source, partial, stmt_start, stmt_end);
-
-        let next = self.parse_path(
+        let (call, next) = self.parse_call(
             source,
             &mut iter,
             byte_offset,
             line,
             next,
-            call.path_mut(),
+            partial,
+            stmt_start,
+            stmt_end,
         )?;
 
-        //println!("Got path {:?}", call.path());
-        //println!("Got path {:?}", call.path().is_simple());
+        /*
 
         if partial && !call.path().is_simple() {
             return Err(SyntaxError::PartialSimpleIdentifier(self.err_info(
@@ -496,6 +621,7 @@ impl<'source> Parser<'source> {
         }
 
         self.parse_arguments(source, &mut iter, byte_offset, line, &mut call);
+        */
 
         println!("Arguments {:?}", call.arguments());
 
@@ -630,21 +756,19 @@ impl<'source> Parser<'source> {
                             let ctx = params.context.clone();
                             params.end = span;
 
-                            let call = self.parse_parameters(
+                            let call = self.parse_statement(
                                 s,
                                 line,
                                 byte_offset,
                                 params.clone(),
                             )?;
+
+                            let current = self.stack.last_mut().unwrap();
                             match ctx {
                                 ParameterContext::Statement => {
-                                    let current =
-                                        self.stack.last_mut().unwrap();
                                     current.push(Node::Statement(call));
                                 }
                                 ParameterContext::Block => {
-                                    let current =
-                                        self.stack.last_mut().unwrap();
                                     current.set_call(call);
                                 }
                             }

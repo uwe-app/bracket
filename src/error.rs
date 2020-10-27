@@ -103,6 +103,7 @@ pub enum SyntaxError<'source> {
     UnexpectedPathParentWithLocal(ErrorInfo<'source>),
     UnexpectedPathParentWithExplicit(ErrorInfo<'source>),
     ExpectedPathDelimiter(ErrorInfo<'source>),
+    OpenSubExpression(ErrorInfo<'source>),
 }
 
 impl SyntaxError<'_> {
@@ -119,13 +120,26 @@ impl SyntaxError<'_> {
             Self::StringLiteralNewline(_) => {
                 "new lines in string literals must be escaped (\\n)"
             }
-            Self::UnexpectedPathExplicitThis(_) => "explicit this reference must be at the start of a path",
-            Self::UnexpectedPathParent(_) => "parent scopes must be at the start of a path",
-            Self::UnexpectedPathLocal(_) => "local scope identifiers must be at the start of a path",
-            Self::UnexpectedPathDelimiter(_) => "expected identifier but got path delimiter",
-            Self::UnexpectedPathParentWithLocal(_) => "parent scopes and local identifiers are mutually exclusive",
-            Self::UnexpectedPathParentWithExplicit(_) => "parent scopes and explicit this are mutually exclusive",
+            Self::UnexpectedPathExplicitThis(_) => {
+                "explicit this reference must be at the start of a path"
+            }
+            Self::UnexpectedPathParent(_) => {
+                "parent scopes must be at the start of a path"
+            }
+            Self::UnexpectedPathLocal(_) => {
+                "local scope identifiers must be at the start of a path"
+            }
+            Self::UnexpectedPathDelimiter(_) => {
+                "expected identifier but got path delimiter"
+            }
+            Self::UnexpectedPathParentWithLocal(_) => {
+                "parent scopes and local identifiers are mutually exclusive"
+            }
+            Self::UnexpectedPathParentWithExplicit(_) => {
+                "parent scopes and explicit this are mutually exclusive"
+            }
             Self::ExpectedPathDelimiter(_) => "expected path delimiter (.)",
+            Self::OpenSubExpression(_) => "sub-expression not terminated",
         }
     }
 
@@ -145,6 +159,7 @@ impl SyntaxError<'_> {
             Self::UnexpectedPathParentWithLocal(ref info) => info,
             Self::UnexpectedPathParentWithExplicit(ref info) => info,
             Self::ExpectedPathDelimiter(ref info) => info,
+            Self::OpenSubExpression(ref info) => info,
         }
     }
 

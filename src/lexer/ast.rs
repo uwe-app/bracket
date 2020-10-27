@@ -88,11 +88,15 @@ pub enum ComponentType {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct Component<'source>(pub &'source str, pub ComponentType, pub Range<usize>);
+pub struct Component<'source>(
+    pub &'source str,
+    pub ComponentType,
+    pub Range<usize>,
+);
 
 impl<'source> Component<'source> {
     pub fn is_root(&self) -> bool {
-        self.as_str() == ROOT 
+        self.as_str() == ROOT
     }
 
     pub fn kind(&self) -> &ComponentType {
@@ -108,7 +112,8 @@ impl<'source> Component<'source> {
     }
 
     pub fn is_explicit(&self) -> bool {
-        &ComponentType::ThisKeyword == self.kind() || self.is_explicit_dot_slash()
+        &ComponentType::ThisKeyword == self.kind()
+            || self.is_explicit_dot_slash()
     }
 
     pub fn is_explicit_dot_slash(&self) -> bool {
@@ -116,7 +121,7 @@ impl<'source> Component<'source> {
     }
 
     pub fn as_str(&self) -> &'source str {
-        &self.0[self.2.start..self.2.end] 
+        &self.0[self.2.start..self.2.end]
     }
 }
 
@@ -157,7 +162,7 @@ impl<'source> Path<'source> {
     }
 
     pub fn is_root(&self) -> bool {
-        self.root 
+        self.root
     }
 
     pub fn set_explicit(&mut self, explicit: bool) {
@@ -165,7 +170,7 @@ impl<'source> Path<'source> {
     }
 
     pub fn is_explicit(&self) -> bool {
-        self.explicit 
+        self.explicit
     }
 
     pub fn is_empty(&self) -> bool {
@@ -186,13 +191,19 @@ pub enum ParameterValue<'source> {
 }
 
 #[derive(Debug, Eq, PartialEq)]
+pub enum CallTarget<'source> {
+    Path(Path<'source>),
+    SubExpr(Box<Call<'source>>),
+}
+
+#[derive(Debug, Eq, PartialEq)]
 pub struct Call<'source> {
     // Raw source input.
     source: &'source str,
     partial: bool,
     open: Range<usize>,
     close: Range<usize>,
-    path: Path<'source>,
+    target: CallTarget<'source>,
     arguments: Vec<ParameterValue<'source>>,
     hash: HashMap<String, ParameterValue<'source>>,
 }
@@ -209,19 +220,23 @@ impl<'source> Call<'source> {
             partial,
             open,
             close,
-            path: Path::new(source),
+            target: CallTarget::Path(Path::new(source)),
             arguments: Vec::new(),
             hash: HashMap::new(),
         }
     }
 
-    pub fn path(&self) -> &Path<'source> {
-        &self.path
+    pub fn target(&self) -> &CallTarget<'source> {
+        &self.target
     }
 
-    pub fn path_mut(&mut self) -> &mut Path<'source> {
-        &mut self.path
+    pub fn set_target(&mut self, target: CallTarget<'source>) {
+        self.target = target;
     }
+
+    //pub fn path_mut(&mut self) -> &mut Path<'source> {
+    //&mut self.path
+    //}
 
     pub fn add_argument(&mut self, arg: ParameterValue<'source>) {
         self.arguments.push(arg);

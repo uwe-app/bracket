@@ -32,9 +32,12 @@ fn parse_statement_path_root() -> Result<'static, ()> {
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
-                Node::Statement(ref call) => {
-                    assert_eq!(true, call.path().is_root());
-                }
+                Node::Statement(ref call) => match call.target() {
+                    CallTarget::Path(ref path) => {
+                        assert_eq!(true, path.is_root());
+                    }
+                    _ => panic!("Expecting path call target"),
+                },
                 _ => panic!("Expecting statement node."),
             }
         }
@@ -55,9 +58,12 @@ fn parse_statement_path_parents() -> Result<'static, ()> {
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
-                Node::Statement(ref call) => {
-                    assert_eq!(3, call.path().parents());
-                }
+                Node::Statement(ref call) => match call.target() {
+                    CallTarget::Path(ref path) => {
+                        assert_eq!(3, path.parents());
+                    }
+                    _ => panic!("Expecting path call target"),
+                },
                 _ => panic!("Expecting statement node."),
             }
         }
@@ -78,9 +84,12 @@ fn parse_statement_path_explicit_this() -> Result<'static, ()> {
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
-                Node::Statement(ref call) => {
-                    assert_eq!(true, call.path().is_explicit());
-                }
+                Node::Statement(ref call) => match call.target() {
+                    CallTarget::Path(ref path) => {
+                        assert_eq!(true, path.is_explicit());
+                    }
+                    _ => panic!("Expecting path call target"),
+                },
                 _ => panic!("Expecting statement node."),
             }
         }
@@ -101,9 +110,12 @@ fn parse_statement_path_explicit_dot() -> Result<'static, ()> {
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
-                Node::Statement(ref call) => {
-                    assert_eq!(true, call.path().is_explicit());
-                }
+                Node::Statement(ref call) => match call.target() {
+                    CallTarget::Path(ref path) => {
+                        assert_eq!(true, path.is_explicit());
+                    }
+                    _ => panic!("Expecting path call target"),
+                },
                 _ => panic!("Expecting statement node."),
             }
         }
