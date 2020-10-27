@@ -25,7 +25,7 @@ This is some block text with an {{inline}}
 
 {{!-- a comment --}}
 
-{{foo null true false -20 3.14 2E+2 "blah\"baz"}}
+{{foo null true false -20 3.14 2E+2 "blah\"baz}}
 
 \{{[1,2,3]}}
 \{{false}}
@@ -39,6 +39,7 @@ This is some block text with an {{inline}}
     let options = ParserOptions {
         file_name: String::from("src/main.rs"),
         line_offset: 3,
+        byte_offset: 0,
     };
 
     match Registry::compile(s, options) {

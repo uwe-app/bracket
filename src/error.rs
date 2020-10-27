@@ -24,6 +24,7 @@ pub struct ErrorInfo<'source> {
     source: &'source str,
     file_name: String,
     source_pos: SourcePos,
+    notes: Vec<&'static str>,
 }
 
 impl<'source> ErrorInfo<'source> {
@@ -35,14 +36,15 @@ impl<'source> ErrorInfo<'source> {
     }
 }
 
-impl<'source> From<(&'source str, &ParserOptions, SourcePos)>
+impl<'source> From<(&'source str, &ParserOptions, SourcePos, Vec<&'static str>)>
     for ErrorInfo<'source>
 {
-    fn from(opts: (&'source str, &ParserOptions, SourcePos)) -> Self {
+    fn from(opts: (&'source str, &ParserOptions, SourcePos, Vec<&'static str>)) -> Self {
         Self {
             source: opts.0,
             file_name: opts.1.file_name.clone(),
             source_pos: opts.2,
+            notes: opts.3,
         }
     }
 }
@@ -90,6 +92,7 @@ pub enum SyntaxError<'source> {
     PartialIdentifier(ErrorInfo<'source>),
     PartialSimpleIdentifier(ErrorInfo<'source>),
     BlockIdentifier(ErrorInfo<'source>),
+    OpenStatement(ErrorInfo<'source>),
 }
 
 impl SyntaxError<'_> {
@@ -100,6 +103,7 @@ impl SyntaxError<'_> {
             Self::PartialIdentifier(_) => "partial requires an identifier",
             Self::PartialSimpleIdentifier(_) => "partial requires a simple identifier (not a path)",
             Self::BlockIdentifier(_) => "block scope requires an identifier",
+            Self::OpenStatement(_) => "statement not terminated",
         }
     }
 
@@ -110,6 +114,7 @@ impl SyntaxError<'_> {
             Self::PartialIdentifier(ref info) => info,
             Self::PartialSimpleIdentifier(ref info) => info,
             Self::BlockIdentifier(ref info) => info,
+            Self::OpenStatement(ref info) => info,
         }
     }
 
@@ -191,7 +196,16 @@ impl fmt::Debug for SyntaxError<'_> {
         write!(f, "{}--> {}\n", line_padding, file_info)?;
         write!(f, "{} |\n", line_padding)?;
         write!(f, "{}{}\n", line_prefix, line_slice)?;
-        write!(f, "{} | {}", line_padding, err_pointer)
+        write!(f, "{} | {}", line_padding, err_pointer)?;
+
+        if !info.notes.is_empty() {
+            write!(f, "\n")?;
+            for n in info.notes.iter() {
+                write!(f, "{} = note: {}", line_padding, n)?;
+            } 
+        }
+
+        Ok(())
     }
 }
 

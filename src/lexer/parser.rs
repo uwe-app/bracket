@@ -23,6 +23,8 @@ pub struct ParserOptions {
     /// A line offset into the file for error reporting,
     /// the first line has index zero.
     pub line_offset: usize,
+    /// Byte offset into the source file.
+    pub byte_offset: usize,
 }
 
 impl Default for ParserOptions {
@@ -30,6 +32,7 @@ impl Default for ParserOptions {
         Self {
             file_name: UNKNOWN.to_string(),
             line_offset: 0,
+            byte_offset: 0,
         }
     }
 }
@@ -79,9 +82,10 @@ impl<'source> Parser<'source> {
         &self,
         source: &'source str,
         line: &mut usize,
-        byte_offset: usize) -> ErrorInfo<'source> {
+        byte_offset: &mut usize,
+        notes: Option<Vec<&'static str>>) -> ErrorInfo<'source> {
         let pos = SourcePos(line.clone(), byte_offset.clone());
-        ErrorInfo::from((source, &self.options, pos))
+        ErrorInfo::from((source, &self.options, pos, notes.unwrap_or(vec![])))
     }
 
     fn enter_stack(
@@ -195,6 +199,9 @@ impl<'source> Parser<'source> {
                     }
 
                     // FIXME: error on non-terminated string literal
+                    if !terminated {
+                        panic!("Got unterminated string literal");
+                    }
 
                     let str_value = &source[str_start..str_end];
                     call.add_argument(ParameterValue::Json(Value::String(str_value.to_string())));
@@ -291,6 +298,7 @@ impl<'source> Parser<'source> {
         &mut self,
         source: &'source str,
         line: &mut usize,
+        byte_offset: &mut usize,
         statement: ParameterCache,
     ) -> Result<Call<'source>, SyntaxError<'source>> {
         let context = statement.context.clone();
@@ -298,22 +306,23 @@ impl<'source> Parser<'source> {
         let stmt_end = statement.end.clone();
         let mut iter = statement.tokens.into_iter();
 
-        // Position as byte offset for syntax errors
-        let mut byte_offset = stmt_start.end.clone();
 
-        let next = self.consume_whitespace(&mut iter, &mut byte_offset, line);
+        // Position as byte offset for syntax errors
+        *byte_offset = stmt_start.end;
+
+        let next = self.consume_whitespace(&mut iter, byte_offset, line);
 
         //println!("Next {:?}", next);
 
         if next.is_none() {
-            return Err(SyntaxError::EmptyStatement(self.err_info(source, line, byte_offset)));
+            return Err(SyntaxError::EmptyStatement(self.err_info(source, line, byte_offset, None)));
         }
 
         //println!("After leading whitespce {:?}", next);
-        let (partial, next) = self.parse_partial(source, &mut iter, &mut byte_offset, line, next);
+        let (partial, next) = self.parse_partial(source, &mut iter, byte_offset, line, next);
         //println!("After partial parse {:?} {:?}", partial, &next);
         if partial && next.is_none() {
-            return Err(SyntaxError::PartialIdentifier(self.err_info(source, line, byte_offset)));
+            return Err(SyntaxError::PartialIdentifier(self.err_info(source, line, byte_offset, None)));
         }
 
         let mut call = Call::new(
@@ -324,13 +333,13 @@ impl<'source> Parser<'source> {
         );
 
         let next = self.parse_path(
-            source, &mut iter, &mut byte_offset, line, next, call.path_mut());
+            source, &mut iter, byte_offset, line, next, call.path_mut());
 
         //println!("Got path {:?}", call.path());
         //println!("Got path {:?}", call.path().is_simple());
 
         if partial && !call.path().is_simple() {
-            return Err(SyntaxError::PartialSimpleIdentifier(self.err_info(source, line, byte_offset)));
+            return Err(SyntaxError::PartialSimpleIdentifier(self.err_info(source, line, byte_offset, None)));
         }
 
         match context {
@@ -349,10 +358,11 @@ impl<'source> Parser<'source> {
                 source,
                 line,
                 byte_offset,
+                None,
             )));
         }
 
-        self.parse_arguments(source, &mut iter, &mut byte_offset, line, &mut call);
+        self.parse_arguments(source, &mut iter, byte_offset, line, &mut call);
 
         println!("Arguments {:?}", call.arguments());
 
@@ -369,7 +379,9 @@ impl<'source> Parser<'source> {
             Token::Comment(lex, _) => lex == &grammar::Comment::Newline,
             Token::Block(lex, _) => lex == &grammar::Block::Newline,
             Token::Parameters(lex, _) => lex == &grammar::Parameters::Newline,
-            Token::StringLiteral(lex, _) => lex == &grammar::StringLiteral::Newline,
+            // NOTE: new lines are not allows in string literals
+            // NOTE: so we have special handling for this case
+            Token::StringLiteral(lex, _) => false,
         }
     }
 
@@ -381,7 +393,8 @@ impl<'source> Parser<'source> {
         let mut text: Option<Text> = None;
 
         let mut parameters: Option<ParameterCache> = None;
-        let mut line: usize = self.options.line_offset.clone();
+        let mut line = &mut self.options.line_offset.clone();
+        let mut byte_offset = &mut self.options.byte_offset.clone();
 
         self.enter_stack(Block::new(s, BlockType::Root, None), &mut text);
 
@@ -397,7 +410,7 @@ impl<'source> Parser<'source> {
             }
 
             if self.newline(&t) {
-                line += 1;
+                *line += 1;
                 continue;
             }
 
@@ -487,7 +500,8 @@ impl<'source> Parser<'source> {
 
                             let call = self.parse_parameters(
                                 s,
-                                &mut line,
+                                line,
+                                byte_offset,
                                 params.clone(),
                             )?;
                             match ctx {
@@ -511,6 +525,10 @@ impl<'source> Parser<'source> {
                     }
                 },
                 Token::StringLiteral(lex, span) => match lex {
+                    grammar::StringLiteral::Newline => {
+                        *line += 1;
+                        panic!("String literal has newline...");
+                    }
                     _ => {
                         if let Some(params) = parameters.as_mut() {
                             params.tokens.push((Parameters::StringToken(lex), span));
@@ -518,6 +536,27 @@ impl<'source> Parser<'source> {
                     }
                 },
             }
+        }
+
+        if let Some(mut params) = parameters.take() {
+            if !params.tokens.is_empty() {
+                let (lex, span) = params.tokens.pop().unwrap(); 
+                *byte_offset = span.end - 1;
+
+            }
+
+            let str_literal = params.tokens.iter().find(|(t,_)| {
+                &Parameters::StringLiteral == t
+            });
+
+            let mut notes: Vec<&'static str> = Vec::new();
+            if str_literal.is_some() {
+                notes.push("string literal was not closed"); 
+            }
+
+            return Err(
+                SyntaxError::OpenStatement(
+                    self.err_info(s, line, byte_offset, Some(notes))));
         }
 
         // Must append any remaining normalized text!

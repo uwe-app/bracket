@@ -17,7 +17,7 @@ fn err_empty_statement() -> Result<'static, ()> {
         Err(e) => {
             println!("{:?}", e);
             let pos = SourcePos(0, 2);
-            let info = ErrorInfo::from((value, &options, pos));
+            let info = ErrorInfo::from((value, &options, pos, vec![]));
             assert_eq!(Error::Syntax(SyntaxError::EmptyStatement(info)), e);
         }
     }
