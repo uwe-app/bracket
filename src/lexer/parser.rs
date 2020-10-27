@@ -206,19 +206,14 @@ impl<'source> Parser<'source> {
         iter.next()
     }
 
-    fn starts_path(&self, lex: &Parameters) -> bool {
+    fn is_path_component(&self, lex: &Parameters) -> bool {
         match lex {
             Parameters::ExplicitThisRef
             | Parameters::ParentRef
             | Parameters::Identifier
-            | Parameters::LocalIdentifier => true,
+            | Parameters::LocalIdentifier
+            | Parameters::PathDelimiter => true,
             _ => false,
-        }
-    }
-
-    fn is_path_component(&self, lex: &Parameters) -> bool {
-        match lex {
-            _ => self.starts_path(lex) || lex == &Parameters::PathDelimiter,
         }
     }
 
@@ -241,9 +236,9 @@ impl<'source> Parser<'source> {
         line: &mut usize,
         current: Option<(Parameters, Span)>,
         path: &mut Path<'source>,
-    ) -> Option<(Parameters, Span)> {
+    ) -> Result<Option<(Parameters, Span)>, SyntaxError<'source>> {
         if let Some((mut lex, mut span)) = current {
-            if self.starts_path(&lex) {
+            if self.is_path_component(&lex) {
                 *byte_offset = span.end;
 
                 // Consume parent references
@@ -267,24 +262,99 @@ impl<'source> Parser<'source> {
                     _ => {}
                 }
 
-                let component = Component(source, self.component_type(&lex), span);
+                // Cannot start with a path delimiter!
+                match &lex {
+                    Parameters::PathDelimiter => {
+                        *byte_offset = span.start;
+                        return Err(SyntaxError::UnexpectedPathDelimiter(self.err_info(
+                            source,
+                            line,
+                            byte_offset,
+                            None,
+                        )));
+                    }
+                    _ => {}
+                }
 
+                let component = Component(source, self.component_type(&lex), span);
                 // Flag as a path that should be resolved from the root object
                 if path.is_empty() && component.is_root() {
                     path.set_root(true);
                 }
 
+                if component.is_explicit() {
+                    path.set_explicit(true);
+                }
+
                 path.add_component(component);
+
+                let mut wants_delimiter = true;
+
                 while let Some((lex, span)) = iter.next() {
                     if self.is_path_component(&lex) {
+
+                        match &lex {
+                            Parameters::ExplicitThisRef => {
+                                *byte_offset = span.start;
+                                return Err(SyntaxError::UnexpectedPathExplicitThis(self.err_info(
+                                    source,
+                                    line,
+                                    byte_offset,
+                                    None,
+                                )));
+                            }
+                            Parameters::ParentRef => {
+                                *byte_offset = span.start;
+                                return Err(SyntaxError::UnexpectedPathParent(self.err_info(
+                                    source,
+                                    line,
+                                    byte_offset,
+                                    None,
+                                )));
+                            }
+                            _ => {}
+                        }
+
+                        if wants_delimiter {
+                            match &lex {
+                                Parameters::PathDelimiter => {
+                                    wants_delimiter = false;
+                                    continue;
+                                }
+                                _ => {
+                                    *byte_offset = span.start;
+                                    println!("Lex {:?}", &lex);
+                                    return Err(SyntaxError::ExpectedPathDelimiter(self.err_info(
+                                        source,
+                                        line,
+                                        byte_offset,
+                                        None,
+                                    )));
+                                }
+                            }
+                        } else {
+                            match &lex {
+                                Parameters::PathDelimiter => {
+                                    *byte_offset = span.start;
+                                    return Err(SyntaxError::UnexpectedPathDelimiter(self.err_info(
+                                        source,
+                                        line,
+                                        byte_offset,
+                                        None,
+                                    )));
+                                }
+                                _ => {}
+                            }
+                        }
+                        println!("Adding component for {:?}", &lex);
                         path.add_component(Component(source, self.component_type(&lex), span));
                     } else {
-                        return Some((lex, span));
+                        return Ok(Some((lex, span)));
                     }
                 }
             }
         }
-        None
+        Ok(None)
     }
 
     fn parse_partial(
@@ -359,7 +429,7 @@ impl<'source> Parser<'source> {
             line,
             next,
             call.path_mut(),
-        );
+        )?;
 
         //println!("Got path {:?}", call.path());
         //println!("Got path {:?}", call.path().is_simple());

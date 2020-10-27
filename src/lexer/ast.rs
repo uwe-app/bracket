@@ -94,6 +94,14 @@ impl<'source> Component<'source> {
         self.as_str() == ROOT 
     }
 
+    pub fn kind(&self) -> &ComponentType {
+        &self.1
+    }
+
+    pub fn is_explicit(&self) -> bool {
+        &ComponentType::This == self.kind()
+    }
+
     pub fn as_str(&self) -> &'source str {
         &self.0[self.2.start..self.2.end] 
     }
@@ -137,6 +145,10 @@ impl<'source> Path<'source> {
 
     pub fn is_root(&self) -> bool {
         self.root 
+    }
+
+    pub fn set_explicit(&mut self, explicit: bool) {
+        self.explicit = explicit;
     }
 
     pub fn is_explicit(&self) -> bool {

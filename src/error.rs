@@ -96,6 +96,10 @@ pub enum SyntaxError<'source> {
     BlockIdentifier(ErrorInfo<'source>),
     OpenStatement(ErrorInfo<'source>),
     StringLiteralNewline(ErrorInfo<'source>),
+    UnexpectedPathExplicitThis(ErrorInfo<'source>),
+    UnexpectedPathParent(ErrorInfo<'source>),
+    UnexpectedPathDelimiter(ErrorInfo<'source>),
+    ExpectedPathDelimiter(ErrorInfo<'source>),
 }
 
 impl SyntaxError<'_> {
@@ -112,6 +116,10 @@ impl SyntaxError<'_> {
             Self::StringLiteralNewline(_) => {
                 "new lines in string literals must be escaped (\\n)"
             }
+            Self::UnexpectedPathExplicitThis(_) => "explicit this reference must be at the start of a path",
+            Self::UnexpectedPathParent(_) => "parent scope references must be at the start of a path",
+            Self::UnexpectedPathDelimiter(_) => "expected identifier but got path delimiter",
+            Self::ExpectedPathDelimiter(_) => "expected path delimiter (.)",
         }
     }
 
@@ -124,6 +132,10 @@ impl SyntaxError<'_> {
             Self::BlockIdentifier(ref info) => info,
             Self::OpenStatement(ref info) => info,
             Self::StringLiteralNewline(ref info) => info,
+            Self::UnexpectedPathExplicitThis(ref info) => info,
+            Self::UnexpectedPathParent(ref info) => info,
+            Self::UnexpectedPathDelimiter(ref info) => info,
+            Self::ExpectedPathDelimiter(ref info) => info,
         }
     }
 
