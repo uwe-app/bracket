@@ -98,6 +98,10 @@ impl<'source> Component<'source> {
         &self.1
     }
 
+    pub fn is_local(&self) -> bool {
+        &ComponentType::LocalIdentifier == self.kind()
+    }
+
     pub fn is_explicit(&self) -> bool {
         &ComponentType::This == self.kind()
     }

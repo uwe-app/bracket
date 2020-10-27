@@ -98,7 +98,10 @@ pub enum SyntaxError<'source> {
     StringLiteralNewline(ErrorInfo<'source>),
     UnexpectedPathExplicitThis(ErrorInfo<'source>),
     UnexpectedPathParent(ErrorInfo<'source>),
+    UnexpectedPathLocal(ErrorInfo<'source>),
     UnexpectedPathDelimiter(ErrorInfo<'source>),
+    UnexpectedPathParentWithLocal(ErrorInfo<'source>),
+    UnexpectedPathParentWithExplicit(ErrorInfo<'source>),
     ExpectedPathDelimiter(ErrorInfo<'source>),
 }
 
@@ -117,8 +120,11 @@ impl SyntaxError<'_> {
                 "new lines in string literals must be escaped (\\n)"
             }
             Self::UnexpectedPathExplicitThis(_) => "explicit this reference must be at the start of a path",
-            Self::UnexpectedPathParent(_) => "parent scope references must be at the start of a path",
+            Self::UnexpectedPathParent(_) => "parent scopes must be at the start of a path",
+            Self::UnexpectedPathLocal(_) => "local scope identifiers must be at the start of a path",
             Self::UnexpectedPathDelimiter(_) => "expected identifier but got path delimiter",
+            Self::UnexpectedPathParentWithLocal(_) => "parent scopes and local identifiers are mutually exclusive",
+            Self::UnexpectedPathParentWithExplicit(_) => "parent scopes and explicit this are mutually exclusive",
             Self::ExpectedPathDelimiter(_) => "expected path delimiter (.)",
         }
     }
@@ -134,7 +140,10 @@ impl SyntaxError<'_> {
             Self::StringLiteralNewline(ref info) => info,
             Self::UnexpectedPathExplicitThis(ref info) => info,
             Self::UnexpectedPathParent(ref info) => info,
+            Self::UnexpectedPathLocal(ref info) => info,
             Self::UnexpectedPathDelimiter(ref info) => info,
+            Self::UnexpectedPathParentWithLocal(ref info) => info,
+            Self::UnexpectedPathParentWithExplicit(ref info) => info,
             Self::ExpectedPathDelimiter(ref info) => info,
         }
     }

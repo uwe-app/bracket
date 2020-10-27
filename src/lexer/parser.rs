@@ -276,6 +276,8 @@ impl<'source> Parser<'source> {
                     _ => {}
                 }
 
+                *byte_offset = span.start;
+
                 let component = Component(source, self.component_type(&lex), span);
                 // Flag as a path that should be resolved from the root object
                 if path.is_empty() && component.is_root() {
@@ -284,6 +286,24 @@ impl<'source> Parser<'source> {
 
                 if component.is_explicit() {
                     path.set_explicit(true);
+                }
+
+                if component.is_local() && path.parents() > 0 {
+                    return Err(SyntaxError::UnexpectedPathParentWithLocal(self.err_info(
+                        source,
+                        line,
+                        byte_offset,
+                        None,
+                    )));
+                }
+
+                if component.is_explicit() && path.parents() > 0 {
+                    return Err(SyntaxError::UnexpectedPathParentWithExplicit(self.err_info(
+                        source,
+                        line,
+                        byte_offset,
+                        None,
+                    )));
                 }
 
                 path.add_component(component);
@@ -306,6 +326,15 @@ impl<'source> Parser<'source> {
                             Parameters::ParentRef => {
                                 *byte_offset = span.start;
                                 return Err(SyntaxError::UnexpectedPathParent(self.err_info(
+                                    source,
+                                    line,
+                                    byte_offset,
+                                    None,
+                                )));
+                            }
+                            Parameters::LocalIdentifier => {
+                                *byte_offset = span.start;
+                                return Err(SyntaxError::UnexpectedPathLocal(self.err_info(
                                     source,
                                     line,
                                     byte_offset,
@@ -594,7 +623,6 @@ impl<'source> Parser<'source> {
                 },
                 Token::Parameters(lex, span) => match lex {
                     Parameters::End => {
-                        println!("Got parameters end!!");
                         if let Some(mut params) = parameters.take() {
                             let ctx = params.context.clone();
                             params.end = span;
