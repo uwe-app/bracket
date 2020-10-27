@@ -170,6 +170,10 @@ impl<'source> Call<'source> {
     pub fn close(&self) -> &'source str {
         &self.source[self.close.start..self.close.end]
     }
+
+    pub fn is_partial(&self) -> bool {
+        self.partial 
+    }
 }
 
 impl fmt::Display for Call<'_> {
