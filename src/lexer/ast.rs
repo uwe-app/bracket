@@ -87,35 +87,75 @@ pub enum ComponentType {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct Component(pub ComponentType, pub Range<usize>);
+pub struct Component<'source>(pub &'source str, pub ComponentType, pub Range<usize>);
 
-#[derive(Debug, Eq, PartialEq)]
-pub struct Path {
-    components: Vec<Component>,
-}
-
-impl Path {
-    pub fn new() -> Self {
-        Self {components: Vec::new()} 
+impl<'source> Component<'source> {
+    pub fn is_root(&self) -> bool {
+        self.as_str() == ROOT 
     }
 
-    pub fn add_component(&mut self, part: Component) {
-        self.components.push(part); 
+    pub fn as_str(&self) -> &'source str {
+        &self.0[self.2.start..self.2.end] 
+    }
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct Path<'source> {
+    source: &'source str,
+    components: Vec<Component<'source>>,
+    parents: u8,
+    explicit: bool,
+    root: bool,
+}
+
+impl<'source> Path<'source> {
+    pub fn new(source: &'source str) -> Self {
+        Self {
+            source,
+            components: Vec::new(),
+            parents: 0,
+            explicit: false,
+            root: false,
+        }
+    }
+
+    pub fn add_component(&mut self, part: Component<'source>) {
+        self.components.push(part);
+    }
+
+    pub fn parents(&self) -> u8 {
+        self.parents
+    }
+
+    pub fn set_parents(&mut self, parents: u8) {
+        self.parents = parents;
+    }
+
+    pub fn set_root(&mut self, root: bool) {
+        self.root = root;
+    }
+
+    pub fn is_root(&self) -> bool {
+        self.root 
+    }
+
+    pub fn is_explicit(&self) -> bool {
+        self.explicit 
     }
 
     pub fn is_empty(&self) -> bool {
-        self.components.is_empty() 
+        self.components.is_empty()
     }
 
     pub fn is_simple(&self) -> bool {
         return self.components.len() == 1
-            && self.components.first().unwrap().0 == ComponentType::Identifier;
+            && self.components.first().unwrap().1 == ComponentType::Identifier;
     }
 }
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum ParameterValue<'source> {
-    Path(Path),
+    Path(Path<'source>),
     Json(Value),
     SubExpr(Call<'source>),
 }
@@ -127,7 +167,7 @@ pub struct Call<'source> {
     partial: bool,
     open: Range<usize>,
     close: Range<usize>,
-    path: Path,
+    path: Path<'source>,
     arguments: Vec<ParameterValue<'source>>,
     hash: HashMap<String, ParameterValue<'source>>,
 }
@@ -144,22 +184,22 @@ impl<'source> Call<'source> {
             partial,
             open,
             close,
-            path: Path::new(),
+            path: Path::new(source),
             arguments: Vec::new(),
             hash: HashMap::new(),
         }
     }
 
-    pub fn path(&self) -> &Path {
-        &self.path 
+    pub fn path(&self) -> &Path<'source> {
+        &self.path
     }
 
-    pub fn path_mut(&mut self) -> &mut Path {
-        &mut self.path 
+    pub fn path_mut(&mut self) -> &mut Path<'source> {
+        &mut self.path
     }
 
     pub fn add_argument(&mut self, arg: ParameterValue<'source>) {
-        self.arguments.push(arg); 
+        self.arguments.push(arg);
     }
 
     pub fn arguments(&self) -> &Vec<ParameterValue<'source>> {
@@ -179,7 +219,7 @@ impl<'source> Call<'source> {
     }
 
     pub fn is_partial(&self) -> bool {
-        self.partial 
+        self.partial
     }
 }
 

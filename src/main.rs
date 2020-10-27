@@ -34,7 +34,7 @@ This is some block text with an {{inline}}
 \{{foo {"a": "b"}}}
 "#;
 
-//let s = "{{ > }}";
+    //let s = "{{ > }}";
 
     let options = ParserOptions {
         file_name: String::from("src/main.rs"),

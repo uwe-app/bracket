@@ -39,7 +39,9 @@ impl<'source> ErrorInfo<'source> {
 impl<'source> From<(&'source str, &ParserOptions, SourcePos, Vec<&'static str>)>
     for ErrorInfo<'source>
 {
-    fn from(opts: (&'source str, &ParserOptions, SourcePos, Vec<&'static str>)) -> Self {
+    fn from(
+        opts: (&'source str, &ParserOptions, SourcePos, Vec<&'static str>),
+    ) -> Self {
         Self {
             source: opts.0,
             file_name: opts.1.file_name.clone(),
@@ -102,10 +104,14 @@ impl SyntaxError<'_> {
             Self::EmptyStatement(_) => "statement is empty",
             Self::ExpectedIdentifier(_) => "expecting identifier",
             Self::PartialIdentifier(_) => "partial requires an identifier",
-            Self::PartialSimpleIdentifier(_) => "partial requires a simple identifier (not a path)",
+            Self::PartialSimpleIdentifier(_) => {
+                "partial requires a simple identifier (not a path)"
+            }
             Self::BlockIdentifier(_) => "block scope requires an identifier",
             Self::OpenStatement(_) => "statement not terminated",
-            Self::StringLiteralNewline(_) => "new lines in string literals must be escaped (\\n)",
+            Self::StringLiteralNewline(_) => {
+                "new lines in string literals must be escaped (\\n)"
+            }
         }
     }
 
@@ -205,7 +211,7 @@ impl fmt::Debug for SyntaxError<'_> {
             write!(f, "\n")?;
             for n in info.notes.iter() {
                 write!(f, "{} = note: {}", line_padding, n)?;
-            } 
+            }
         }
 
         Ok(())

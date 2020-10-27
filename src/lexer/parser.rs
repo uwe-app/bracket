@@ -1,14 +1,17 @@
 use std::ops::Range;
 use std::vec::IntoIter;
 
-use serde_json::{Value, Number};
+use serde_json::{Number, Value};
 
 use logos::Span;
 
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{
-        ast::{Block, BlockType, Call, Node, Path, Text, ParameterValue, Component, ComponentType},
+        ast::{
+            Block, BlockType, Call, Component, ComponentType, Node,
+            ParameterValue, Path, Text,
+        },
         grammar::{self, lex, Parameters, Token},
     },
 };
@@ -42,7 +45,6 @@ enum ParameterContext {
     Block,
     Statement,
 }
-
 
 #[derive(Debug, Clone)]
 struct ParameterCache {
@@ -83,7 +85,8 @@ impl<'source> Parser<'source> {
         source: &'source str,
         line: &mut usize,
         byte_offset: &mut usize,
-        notes: Option<Vec<&'static str>>) -> ErrorInfo<'source> {
+        notes: Option<Vec<&'static str>>,
+    ) -> ErrorInfo<'source> {
         let pos = SourcePos(line.clone(), byte_offset.clone());
         ErrorInfo::from((source, &self.options, pos, notes.unwrap_or(vec![])))
     }
@@ -152,11 +155,9 @@ impl<'source> Parser<'source> {
         line: &mut usize,
         call: &mut Call<'source>,
     ) -> Option<(Parameters, Span)> {
-        let next =
-            self.consume_whitespace(iter, byte_offset, line);
+        let next = self.consume_whitespace(iter, byte_offset, line);
         if let Some((lex, span)) = next {
-
-            println!("Parameter lex {:?}", lex);
+            //println!("Parameter lex {:?}", lex);
 
             match lex {
                 grammar::Parameters::Null => {
@@ -177,17 +178,15 @@ impl<'source> Parser<'source> {
                     let mut str_end = span.end;
                     while let Some((lex, span)) = iter.next() {
                         match lex {
-                            grammar::Parameters::StringToken(s) => {
-                                match s {
-                                    grammar::StringLiteral::End => {
-                                        break;
-                                    }
-                                    _ => {
-                                        *byte_offset = span.end;
-                                        str_end = span.end; 
-                                    }
+                            grammar::Parameters::StringToken(s) => match s {
+                                grammar::StringLiteral::End => {
+                                    break;
                                 }
-                            }
+                                _ => {
+                                    *byte_offset = span.end;
+                                    str_end = span.end;
+                                }
+                            },
                             _ => {
                                 panic!("Expected string token!");
                             }
@@ -195,11 +194,13 @@ impl<'source> Parser<'source> {
                     }
 
                     let str_value = &source[str_start..str_end];
-                    call.add_argument(ParameterValue::Json(Value::String(str_value.to_string())));
+                    call.add_argument(ParameterValue::Json(Value::String(
+                        str_value.to_string(),
+                    )));
                 }
-                _ => return None
+                _ => return None,
             }
-            return self.parse_arguments(source, iter, byte_offset, line, call)
+            return self.parse_arguments(source, iter, byte_offset, line, call);
         }
 
         iter.next()
@@ -208,16 +209,16 @@ impl<'source> Parser<'source> {
     fn starts_path(&self, lex: &Parameters) -> bool {
         match lex {
             Parameters::ExplicitThisRef
-                | Parameters::ParentRef
-                | Parameters::Identifier
-                | Parameters::LocalIdentifier => true,
-            _ => false
+            | Parameters::ParentRef
+            | Parameters::Identifier
+            | Parameters::LocalIdentifier => true,
+            _ => false,
         }
     }
 
     fn is_path_component(&self, lex: &Parameters) -> bool {
         match lex {
-            _ => self.starts_path(lex) || lex == &Parameters::PathDelimiter
+            _ => self.starts_path(lex) || lex == &Parameters::PathDelimiter,
         }
     }
 
@@ -228,12 +229,8 @@ impl<'source> Parser<'source> {
             Parameters::Identifier => ComponentType::Identifier,
             Parameters::LocalIdentifier => ComponentType::LocalIdentifier,
             Parameters::PathDelimiter => ComponentType::Delimiter,
-            _ => panic!("Expecting component parameter in parser")
+            _ => panic!("Expecting component parameter in parser"),
         }
-    }
-
-    fn component(&self, lex: Parameters, span: Span) -> Component {
-        Component(self.component_type(&lex), span)
     }
 
     fn parse_path(
@@ -243,16 +240,44 @@ impl<'source> Parser<'source> {
         byte_offset: &mut usize,
         line: &mut usize,
         current: Option<(Parameters, Span)>,
-        path: &mut Path,
+        path: &mut Path<'source>,
     ) -> Option<(Parameters, Span)> {
-
-        if let Some((lex, span)) = current {
+        if let Some((mut lex, mut span)) = current {
             if self.starts_path(&lex) {
                 *byte_offset = span.end;
-                path.add_component(self.component(lex, span));
+
+                // Consume parent references
+                match &lex {
+                    Parameters::ParentRef => {
+                        let mut parents = 1;
+                        while let Some((next_lex, next_span)) = iter.next() {
+                            match &next_lex {
+                                Parameters::ParentRef => {
+                                    parents += 1;
+                                }
+                                _ => {
+                                    lex = next_lex;
+                                    span = next_span;
+                                    break;
+                                }
+                            }
+                        }
+                        path.set_parents(parents);
+                    }
+                    _ => {}
+                }
+
+                let component = Component(source, self.component_type(&lex), span);
+
+                // Flag as a path that should be resolved from the root object
+                if path.is_empty() && component.is_root() {
+                    path.set_root(true);
+                }
+
+                path.add_component(component);
                 while let Some((lex, span)) = iter.next() {
                     if self.is_path_component(&lex) {
-                        path.add_component(self.component(lex, span));
+                        path.add_component(Component(source, self.component_type(&lex), span));
                     } else {
                         return Some((lex, span));
                     }
@@ -268,13 +293,12 @@ impl<'source> Parser<'source> {
         iter: &mut IntoIter<(Parameters, Span)>,
         byte_offset: &mut usize,
         line: &mut usize,
-        current: Option<(Parameters, Span)>
+        current: Option<(Parameters, Span)>,
     ) -> (bool, Option<(Parameters, Span)>) {
         if let Some((lex, span)) = current {
             match lex {
                 Parameters::Partial => {
-                    let next =
-                        self.consume_whitespace(iter, byte_offset, line);
+                    let next = self.consume_whitespace(iter, byte_offset, line);
                     return (true, next);
                 }
                 _ => {
@@ -297,7 +321,6 @@ impl<'source> Parser<'source> {
         let stmt_end = statement.end.clone();
         let mut iter = statement.tokens.into_iter();
 
-
         // Position as byte offset for syntax errors
         *byte_offset = stmt_start.end;
 
@@ -306,31 +329,48 @@ impl<'source> Parser<'source> {
         //println!("Next {:?}", next);
 
         if next.is_none() {
-            return Err(SyntaxError::EmptyStatement(self.err_info(source, line, byte_offset, None)));
+            return Err(SyntaxError::EmptyStatement(self.err_info(
+                source,
+                line,
+                byte_offset,
+                None,
+            )));
         }
 
         //println!("After leading whitespce {:?}", next);
-        let (partial, next) = self.parse_partial(source, &mut iter, byte_offset, line, next);
+        let (partial, next) =
+            self.parse_partial(source, &mut iter, byte_offset, line, next);
         //println!("After partial parse {:?} {:?}", partial, &next);
         if partial && next.is_none() {
-            return Err(SyntaxError::PartialIdentifier(self.err_info(source, line, byte_offset, None)));
+            return Err(SyntaxError::PartialIdentifier(self.err_info(
+                source,
+                line,
+                byte_offset,
+                None,
+            )));
         }
 
-        let mut call = Call::new(
-            source,
-            partial,
-            stmt_start,
-            stmt_end,
-        );
+        let mut call = Call::new(source, partial, stmt_start, stmt_end);
 
         let next = self.parse_path(
-            source, &mut iter, byte_offset, line, next, call.path_mut());
+            source,
+            &mut iter,
+            byte_offset,
+            line,
+            next,
+            call.path_mut(),
+        );
 
         //println!("Got path {:?}", call.path());
         //println!("Got path {:?}", call.path().is_simple());
 
         if partial && !call.path().is_simple() {
-            return Err(SyntaxError::PartialSimpleIdentifier(self.err_info(source, line, byte_offset, None)));
+            return Err(SyntaxError::PartialSimpleIdentifier(self.err_info(
+                source,
+                line,
+                byte_offset,
+                None,
+            )));
         }
 
         match context {
@@ -517,20 +557,21 @@ impl<'source> Parser<'source> {
                 },
                 Token::StringLiteral(lex, span) => match lex {
                     grammar::StringLiteral::Newline => {
-
                         if let Some(params) = parameters.take() {
                             if let Some((lex, span)) = params.tokens.last() {
                                 *byte_offset = span.end - 1;
-                            } 
+                            }
                         }
 
-                        return Err(
-                            SyntaxError::StringLiteralNewline(
-                                self.err_info(s, line, byte_offset, None)));
+                        return Err(SyntaxError::StringLiteralNewline(
+                            self.err_info(s, line, byte_offset, None),
+                        ));
                     }
                     _ => {
                         if let Some(params) = parameters.as_mut() {
-                            params.tokens.push((Parameters::StringToken(lex), span));
+                            params
+                                .tokens
+                                .push((Parameters::StringToken(lex), span));
                         }
                     }
                 },
@@ -539,23 +580,26 @@ impl<'source> Parser<'source> {
 
         if let Some(mut params) = parameters.take() {
             if !params.tokens.is_empty() {
-                let (lex, span) = params.tokens.pop().unwrap(); 
+                let (lex, span) = params.tokens.pop().unwrap();
                 *byte_offset = span.end - 1;
-
             }
 
-            let str_literal = params.tokens.iter().find(|(t,_)| {
-                &Parameters::StringLiteral == t
-            });
+            let str_literal = params
+                .tokens
+                .iter()
+                .find(|(t, _)| &Parameters::StringLiteral == t);
 
             let mut notes: Vec<&'static str> = Vec::new();
             if str_literal.is_some() {
-                notes.push("string literal was not closed"); 
+                notes.push("string literal was not closed");
             }
 
-            return Err(
-                SyntaxError::OpenStatement(
-                    self.err_info(s, line, byte_offset, Some(notes))));
+            return Err(SyntaxError::OpenStatement(self.err_info(
+                s,
+                line,
+                byte_offset,
+                Some(notes),
+            )));
         }
 
         // Must append any remaining normalized text!

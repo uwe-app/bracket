@@ -155,7 +155,7 @@ pub enum Parameters {
     #[token("\"")]
     StringLiteral,
 
-    // The parser creates these types when StringLiteral tokens 
+    // The parser creates these types when StringLiteral tokens
     // are encountered so they can be included in the parameters cache
     StringToken(StringLiteral),
 
@@ -210,7 +210,6 @@ pub enum StringLiteral {
 
     //#[regex(r"\\u\{[^}]*\}")]
     //EscapedCodepoint,
-
     #[token(r#"\""#)]
     EscapedQuote,
 
@@ -379,7 +378,8 @@ impl<'source> Iterator for ModeBridge<'source> {
 
                 if let Some(token) = result {
                     if Parameters::StringLiteral == token {
-                        self.mode = Modes::StringLiteral(lexer.to_owned().morph());
+                        self.mode =
+                            Modes::StringLiteral(lexer.to_owned().morph());
                     } else if Parameters::End == token {
                         self.mode = Modes::Block(lexer.to_owned().morph());
                     }
