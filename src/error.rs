@@ -93,6 +93,7 @@ pub enum SyntaxError<'source> {
     PartialSimpleIdentifier(ErrorInfo<'source>),
     BlockIdentifier(ErrorInfo<'source>),
     OpenStatement(ErrorInfo<'source>),
+    StringLiteralNewline(ErrorInfo<'source>),
 }
 
 impl SyntaxError<'_> {
@@ -104,6 +105,7 @@ impl SyntaxError<'_> {
             Self::PartialSimpleIdentifier(_) => "partial requires a simple identifier (not a path)",
             Self::BlockIdentifier(_) => "block scope requires an identifier",
             Self::OpenStatement(_) => "statement not terminated",
+            Self::StringLiteralNewline(_) => "new lines in string literals must be escaped (\\n)",
         }
     }
 
@@ -115,6 +117,7 @@ impl SyntaxError<'_> {
             Self::PartialSimpleIdentifier(ref info) => info,
             Self::BlockIdentifier(ref info) => info,
             Self::OpenStatement(ref info) => info,
+            Self::StringLiteralNewline(ref info) => info,
         }
     }
 

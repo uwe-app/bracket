@@ -46,7 +46,7 @@ fn parse_statement_partial() -> Result<'static, ()> {
 
 #[test]
 fn parse_statement_string_literal() -> Result<'static, ()> {
-    let value = r#"{{foo "bar}}"#;
+    let value = r#"{{foo "bar\nbaz"}}"#;
     let mut parser = Parser::new(Default::default());
     let node = parser.parse(value)?;
 

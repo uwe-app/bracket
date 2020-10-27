@@ -202,7 +202,7 @@ pub enum Statement {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 pub enum StringLiteral {
-    #[regex(r#"[^\\"]+"#)]
+    #[regex(r#"[^\\"\n]+"#)]
     Text,
 
     #[token("\\n")]

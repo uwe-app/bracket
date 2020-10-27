@@ -173,17 +173,13 @@ impl<'source> Parser<'source> {
                     call.add_argument(ParameterValue::Json(Value::Number(num)));
                 }
                 grammar::Parameters::StringLiteral => {
-                    println!("Got string literal start...");
                     let str_start = span.end;
                     let mut str_end = span.end;
-                    let mut terminated = false;
                     while let Some((lex, span)) = iter.next() {
                         match lex {
                             grammar::Parameters::StringToken(s) => {
-                                println!("Got string literal token...");
                                 match s {
                                     grammar::StringLiteral::End => {
-                                        terminated = true;
                                         break;
                                     }
                                     _ => {
@@ -196,11 +192,6 @@ impl<'source> Parser<'source> {
                                 panic!("Expected string token!");
                             }
                         }
-                    }
-
-                    // FIXME: error on non-terminated string literal
-                    if !terminated {
-                        panic!("Got unterminated string literal");
                     }
 
                     let str_value = &source[str_start..str_end];
@@ -379,7 +370,7 @@ impl<'source> Parser<'source> {
             Token::Comment(lex, _) => lex == &grammar::Comment::Newline,
             Token::Block(lex, _) => lex == &grammar::Block::Newline,
             Token::Parameters(lex, _) => lex == &grammar::Parameters::Newline,
-            // NOTE: new lines are not allows in string literals
+            // NOTE: new lines are not allowed in string literals
             // NOTE: so we have special handling for this case
             Token::StringLiteral(lex, _) => false,
         }
@@ -526,8 +517,16 @@ impl<'source> Parser<'source> {
                 },
                 Token::StringLiteral(lex, span) => match lex {
                     grammar::StringLiteral::Newline => {
-                        *line += 1;
-                        panic!("String literal has newline...");
+
+                        if let Some(params) = parameters.take() {
+                            if let Some((lex, span)) = params.tokens.last() {
+                                *byte_offset = span.end - 1;
+                            } 
+                        }
+
+                        return Err(
+                            SyntaxError::StringLiteralNewline(
+                                self.err_info(s, line, byte_offset, None)));
                     }
                     _ => {
                         if let Some(params) = parameters.as_mut() {
