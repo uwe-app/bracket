@@ -442,8 +442,6 @@ impl<'source> Parser<'source> {
                             let (_, last_span) = sub_expr.pop().unwrap();
                             *byte_offset = last_span.end;
                         }
-                        //panic!("Sub expression was not terminated");
-
                         return Err(SyntaxError::OpenSubExpression(self.err_info(
                             source,
                             line,
@@ -578,7 +576,7 @@ impl<'source> Parser<'source> {
             )));
         }
 
-        let (call, next) = self.parse_call(
+        let (mut call, next) = self.parse_call(
             source,
             &mut iter,
             byte_offset,
@@ -589,17 +587,48 @@ impl<'source> Parser<'source> {
             stmt_end,
         )?;
 
-        /*
-
-        if partial && !call.path().is_simple() {
-            return Err(SyntaxError::PartialSimpleIdentifier(self.err_info(
-                source,
-                line,
-                byte_offset,
-                None,
-            )));
+        // Partials must be simple identifiers or sub expressions.
+        if partial {
+            match call.target() {
+                CallTarget::Path(ref path) => {
+                    if !path.is_simple() {
+                        return Err(SyntaxError::PartialSimpleIdentifier(self.err_info(
+                            source,
+                            line,
+                            byte_offset,
+                            None,
+                        )));
+                    } 
+                }
+                _ => {}
+            }
         }
 
+        //if call.is_empty() {
+            //return Err(SyntaxError::ExpectedIdentifier(self.err_info(
+                //source,
+                //line,
+                //byte_offset,
+                //None,
+            //)));
+        //}
+
+        // FIXME: check for empty sub expressions too ^^^^^^^^^
+        match call.target() {
+            CallTarget::Path(ref path) => {
+                if path.is_empty() {
+                    return Err(SyntaxError::ExpectedIdentifier(self.err_info(
+                        source,
+                        line,
+                        byte_offset,
+                        None,
+                    )));
+                }
+            }
+            _ => {}
+        }
+
+        /*
         match context {
             ParameterContext::Block => {
                 if !call.path().is_simple() {
@@ -610,19 +639,9 @@ impl<'source> Parser<'source> {
                 // TODO: validate statement paths?
             }
         }
-
-        if call.path().is_empty() {
-            return Err(SyntaxError::ExpectedIdentifier(self.err_info(
-                source,
-                line,
-                byte_offset,
-                None,
-            )));
-        }
-
-        self.parse_arguments(source, &mut iter, byte_offset, line, &mut call);
         */
 
+        self.parse_arguments(source, &mut iter, byte_offset, line, &mut call);
         println!("Arguments {:?}", call.arguments());
 
         Ok(call)

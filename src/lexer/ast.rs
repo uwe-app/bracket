@@ -196,6 +196,18 @@ pub enum CallTarget<'source> {
     SubExpr(Box<Call<'source>>),
 }
 
+impl<'source> CallTarget<'source> {
+    pub fn is_empty(&self) -> bool {
+        match *self {
+            Self::Path(ref path) => path.is_empty(),
+            Self::SubExpr(ref call) => {
+                println!("Checking empty on sub expression...");
+                call.is_empty()
+            }
+        } 
+    }
+}
+
 #[derive(Debug, Eq, PartialEq)]
 pub struct Call<'source> {
     // Raw source input.
@@ -226,6 +238,10 @@ impl<'source> Call<'source> {
         }
     }
 
+    pub fn is_empty(&self) -> bool{
+        self.target.is_empty()
+    }
+
     pub fn target(&self) -> &CallTarget<'source> {
         &self.target
     }
@@ -233,10 +249,6 @@ impl<'source> Call<'source> {
     pub fn set_target(&mut self, target: CallTarget<'source>) {
         self.target = target;
     }
-
-    //pub fn path_mut(&mut self) -> &mut Path<'source> {
-    //&mut self.path
-    //}
 
     pub fn add_argument(&mut self, arg: ParameterValue<'source>) {
         self.arguments.push(arg);
