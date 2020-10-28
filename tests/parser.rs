@@ -153,6 +153,7 @@ fn parse_statement_partial() -> Result<'static, ()> {
 #[test]
 fn parse_arg_string() -> Result<'static, ()> {
     let value = r#"{{foo "bar\nbaz"}}"#;
+    //let value = r#"{{foo ../../bar}}"#;
     let mut parser = Parser::new(Default::default());
     let node = parser.parse(value)?;
 
@@ -170,6 +171,37 @@ fn parse_arg_string() -> Result<'static, ()> {
                             r"bar\nbaz"
                         ))),
                         args.first().unwrap()
+                    );
+                }
+                _ => panic!("Expecting statement node."),
+            }
+        }
+        _ => panic!("Bad root node type for parser()."),
+    }
+
+    Ok(())
+}
+
+#[test]
+fn parse_hash_string() -> Result<'static, ()> {
+    let value = r#"{{foo bar="baz"}}"#;
+    let mut parser = Parser::new(Default::default());
+    let node = parser.parse(value)?;
+
+    match node {
+        Node::Block(b) => {
+            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(1, b.nodes().len());
+            let node = b.nodes().first().unwrap();
+            match node {
+                Node::Statement(ref call) => {
+                    let hash = call.hash();
+                    assert_eq!(1, hash.len());
+                    assert_eq!(
+                        &ParameterValue::Json(Value::String(String::from(
+                            r"baz"
+                        ))),
+                        hash.get("bar").unwrap()
                     );
                 }
                 _ => panic!("Expecting statement node."),

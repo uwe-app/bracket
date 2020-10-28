@@ -214,6 +214,7 @@ impl<'source> Parser<'source> {
         SyntaxError<'source>,
     > {
         let mut value: Option<ParameterValue> = None;
+        let mut next: Option<(Parameters, Span)> = None;
         if let Some((lex, span)) = current {
             match &lex {
                 grammar::Parameters::Null
@@ -221,7 +222,7 @@ impl<'source> Parser<'source> {
                 | grammar::Parameters::False
                 | grammar::Parameters::Number
                 | grammar::Parameters::StringLiteral => {
-                    let (lit_value, next) = self.parse_literal(
+                    let (literal, next_token) = self.parse_literal(
                         source,
                         iter,
                         byte_offset,
@@ -229,17 +230,27 @@ impl<'source> Parser<'source> {
                         Some((lex, span)),
                     )?;
 
-                    value = lit_value.map(ParameterValue::Json);
+                    value = literal.map(ParameterValue::Json);
+                    next = next_token;
                 }
                 // TODO: parse array literals
                 // TODO: parse object literals
                 _ => {
-                    todo!("Try to parse path components too {:?}", &lex);
+                    let (path, next_token) = self.parse_path(
+                        source,
+                        iter,
+                        byte_offset,
+                        line,
+                        Some((lex, span)),
+                    )?;
+
+                    value = path.map(ParameterValue::Path);
+                    next = next_token
                 }
             }
         }
 
-        Ok((value, iter.next()))
+        Ok((value, next))
     }
 
     fn parse_hash_map(
@@ -361,9 +372,13 @@ impl<'source> Parser<'source> {
         byte_offset: &mut usize,
         line: &mut usize,
         current: Option<(Parameters, Span)>,
-        path: &mut Path<'source>,
-    ) -> Result<Option<(Parameters, Span)>, SyntaxError<'source>> {
+    ) -> Result<(Option<Path<'source>>, Option<(Parameters, Span)>), SyntaxError<'source>> {
+
+        let mut result: Option<Path> = None;
+        let mut next: Option<(Parameters, Span)> = None;
+
         if let Some((mut lex, mut span)) = current {
+            let mut path = Path::new(source);
             if self.is_path_component(&lex) {
                 *byte_offset = span.end;
 
@@ -509,19 +524,21 @@ impl<'source> Parser<'source> {
                                 _ => {}
                             }
                         }
-                        println!("Adding component for {:?}", &lex);
+                        //println!("Adding component for {:?}", &lex);
                         path.add_component(Component(
                             source,
                             self.component_type(&lex),
                             span,
                         ));
                     } else {
-                        return Ok(Some((lex, span)));
+                        next = Some((lex, span));
+                        break;
                     }
                 }
+                result = Some(path);
             }
         }
-        Ok(None)
+        Ok((result, next))
     }
 
     /// Collect sub expression tokens.
@@ -594,16 +611,17 @@ impl<'source> Parser<'source> {
                     next
                 }
                 _ => {
-                    let mut path = Path::new(source);
-                    let next = self.parse_path(
+                    let (mut path, next) = self.parse_path(
                         source,
                         iter,
                         byte_offset,
                         line,
                         Some((lex, span)),
-                        &mut path,
                     )?;
-                    call.set_target(CallTarget::Path(path));
+
+                    if let Some(path) = path.take() {
+                        call.set_target(CallTarget::Path(path));
+                    }
                     next
                 }
             };
