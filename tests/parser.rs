@@ -151,6 +151,44 @@ fn parse_statement_partial() -> Result<'static, ()> {
 }
 
 #[test]
+fn parse_arg_path() -> Result<'static, ()> {
+    let value = r#"{{foo ../../bar}}"#;
+    let mut parser = Parser::new(Default::default());
+    let node = parser.parse(value)?;
+
+    match node {
+        Node::Block(b) => {
+            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(1, b.nodes().len());
+            let node = b.nodes().first().unwrap();
+            match node {
+                Node::Statement(ref call) => {
+                    let args = call.arguments();
+                    assert_eq!(1, args.len());
+                    match args.first().unwrap() {
+                        ParameterValue::Path(ref path) => {
+                            assert_eq!(2, path.parents());
+                            assert_eq!(false, path.is_explicit());
+                            assert_eq!(false, path.is_root());
+                            assert_eq!(1, path.components().len());
+
+                            let component = path.components().first().unwrap();
+                            assert_eq!(true, component.is_identifier());
+                            assert_eq!(false, component.is_local());
+                        }
+                        _ => panic!("Expected path argument value")
+                    }
+                }
+                _ => panic!("Expecting statement node."),
+            }
+        }
+        _ => panic!("Bad root node type for parser()."),
+    }
+
+    Ok(())
+}
+
+#[test]
 fn parse_arg_string() -> Result<'static, ()> {
     let value = r#"{{foo "bar\nbaz"}}"#;
     //let value = r#"{{foo ../../bar}}"#;

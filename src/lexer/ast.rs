@@ -149,6 +149,10 @@ impl<'source> Path<'source> {
         self.components.push(part);
     }
 
+    pub fn components(&self) -> &Vec<Component<'source>> {
+        &self.components 
+    }
+
     pub fn parents(&self) -> u8 {
         self.parents
     }
