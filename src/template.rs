@@ -3,8 +3,8 @@ use std::fmt;
 
 use crate::{
     error::{RenderError, SyntaxError},
-    parser::{Parser, ParserOptions, ast::Node},
     output::Output,
+    parser::{ast::Node, Parser, ParserOptions},
     render::{Render, RenderContext, Renderer},
     Registry,
 };

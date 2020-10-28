@@ -1,8 +1,8 @@
 pub mod error;
 pub mod helper;
 pub mod lexer;
-pub mod parser;
 pub mod output;
+pub mod parser;
 pub mod registry;
 pub mod render;
 pub mod template;

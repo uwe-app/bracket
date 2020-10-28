@@ -8,8 +8,8 @@ use crate::{
         BlockHelper, EachHelper, Helper, IfHelper, LogHelper, LookupHelper,
         UnlessHelper, WithHelper,
     },
-    parser::ParserOptions,
     output::{Output, StringOutput},
+    parser::ParserOptions,
     template::Template,
     Error, Result,
 };

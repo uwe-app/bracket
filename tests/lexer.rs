@@ -1,8 +1,10 @@
-use hbs::lexer::{
-    collect as lex, Block, Comment, Parameters, RawBlock, RawComment,
-    RawStatement, Token,
+use hbs::{
+    lexer::{
+        collect as lex, Block, Comment, Parameters, RawBlock, RawComment,
+        RawStatement, Token,
+    },
+    Result,
 };
-use hbs::Result;
 
 #[test]
 fn lex_text_only() {

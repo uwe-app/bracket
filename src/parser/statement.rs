@@ -7,9 +7,10 @@ use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::Parameters,
     parser::{
+        arguments,
         ast::{Call, CallTarget},
-        arguments, path, whitespace, ParameterCache, ParseState
-    }
+        path, whitespace, ParameterCache, ParseState,
+    },
 };
 
 /// Collect sub expression tokens.
@@ -79,12 +80,8 @@ fn parse_call_target<'source>(
                 next
             }
             _ => {
-                let (mut path, next) = path::parse(
-                    source,
-                    iter,
-                    state,
-                    Some((lex, span)),
-                )?;
+                let (mut path, next) =
+                    path::parse(source, iter, state, Some((lex, span)))?;
 
                 if let Some(path) = path.take() {
                     call.set_target(CallTarget::Path(path));
@@ -107,16 +104,9 @@ fn parse_call<'source>(
     partial: bool,
     stmt_start: Range<usize>,
     stmt_end: Range<usize>,
-) -> Result<(Call<'source>, Option<(Parameters, Span)>), SyntaxError<'source>>
-{
+) -> Result<(Call<'source>, Option<(Parameters, Span)>), SyntaxError<'source>> {
     let mut call = Call::new(source, partial, stmt_start, stmt_end);
-    let next = parse_call_target(
-        source,
-        iter,
-        state,
-        current,
-        &mut call,
-    )?;
+    let next = parse_call_target(source, iter, state, current, &mut call)?;
 
     Ok((call, next))
 }
@@ -171,8 +161,7 @@ pub(crate) fn parse<'source>(
     }
 
     //println!("After leading whitespce {:?}", next);
-    let (partial, next) =
-        partial(source, &mut iter, state, next);
+    let (partial, next) = partial(source, &mut iter, state, next);
     //println!("After partial parse {:?} {:?}", partial, &next);
     if partial && next.is_none() {
         return Err(SyntaxError::PartialIdentifier(ErrorInfo::new(
@@ -183,13 +172,7 @@ pub(crate) fn parse<'source>(
     }
 
     let (mut call, next) = parse_call(
-        source,
-        &mut iter,
-        state,
-        next,
-        partial,
-        stmt_start,
-        stmt_end,
+        source, &mut iter, state, next, partial, stmt_start, stmt_end,
     )?;
 
     // Partials must be simple identifiers or sub expressions.
@@ -223,13 +206,11 @@ pub(crate) fn parse<'source>(
     match call.target() {
         CallTarget::Path(ref path) => {
             if path.is_empty() {
-                return Err(SyntaxError::ExpectedIdentifier(
-                    ErrorInfo::new(
-                        source,
-                        state.file_name(),
-                        SourcePos::from((state.line(), state.byte())),
-                    ),
-                ));
+                return Err(SyntaxError::ExpectedIdentifier(ErrorInfo::new(
+                    source,
+                    state.file_name(),
+                    SourcePos::from((state.line(), state.byte())),
+                )));
             }
         }
         _ => {}
@@ -253,5 +234,3 @@ pub(crate) fn parse<'source>(
 
     Ok(call)
 }
-
-

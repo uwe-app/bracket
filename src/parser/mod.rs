@@ -4,14 +4,8 @@ use logos::Span;
 
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
-    parser:: {
-        ast::{
-            Block, BlockType, Node, Text,
-        },
-    },
-    lexer::{
-        self, lex, Parameters, Token,
-    },
+    lexer::{self, lex, Parameters, Token},
+    parser::ast::{Block, BlockType, Node, Text},
 };
 
 /// Default file name.
@@ -54,7 +48,7 @@ pub(crate) struct ParseState {
 
 impl ParseState {
     pub fn file_name(&self) -> &str {
-        &self.file_name 
+        &self.file_name
     }
 
     pub fn line(&self) -> &usize {
@@ -80,7 +74,7 @@ impl From<&ParserOptions> for ParseState {
             file_name: opts.file_name.clone(),
             line: opts.line_offset.clone(),
             byte: opts.byte_offset.clone(),
-        } 
+        }
     }
 }
 
@@ -162,9 +156,7 @@ impl<'source> Parser<'source> {
         match t {
             Token::RawBlock(lex, _) => lex == &lexer::RawBlock::Newline,
             Token::RawComment(lex, _) => lex == &lexer::RawComment::Newline,
-            Token::RawStatement(lex, _) => {
-                lex == &lexer::RawStatement::Newline
-            }
+            Token::RawStatement(lex, _) => lex == &lexer::RawStatement::Newline,
             Token::Comment(lex, _) => lex == &lexer::Comment::Newline,
             Token::Block(lex, _) => lex == &lexer::Block::Newline,
             Token::Parameters(lex, _) => lex == &lexer::Parameters::Newline,
@@ -202,7 +194,7 @@ impl<'source> Parser<'source> {
             }
 
             if self.newline(&t) {
-                *state.line_mut() +=  1;
+                *state.line_mut() += 1;
                 *line += 1;
                 continue;
             }
@@ -219,13 +211,21 @@ impl<'source> Parser<'source> {
                     }
                     lexer::Block::StartRawComment => {
                         self.enter_stack(
-                            Block::new(source, BlockType::RawComment, Some(span)),
+                            Block::new(
+                                source,
+                                BlockType::RawComment,
+                                Some(span),
+                            ),
                             &mut text,
                         );
                     }
                     lexer::Block::StartRawStatement => {
                         self.enter_stack(
-                            Block::new(source, BlockType::RawStatement, Some(span)),
+                            Block::new(
+                                source,
+                                BlockType::RawStatement,
+                                Some(span),
+                            ),
                             &mut text,
                         );
                     }

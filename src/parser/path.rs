@@ -5,12 +5,10 @@ use logos::Span;
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::Parameters,
-    parser:: {
-        ast::{
-            Component, ComponentType, Path,
-        },
+    parser::{
+        ast::{Component, ComponentType, Path},
         ParseState,
-    }
+    },
 };
 
 fn is_path_component(lex: &Parameters) -> bool {
@@ -92,8 +90,7 @@ pub(crate) fn parse<'source>(
 
             *state.byte_mut() = span.start;
 
-            let component =
-                Component(source, component_type(&lex), span);
+            let component = Component(source, component_type(&lex), span);
             // Flag as a path that should be resolved from the root object
             if path.is_empty() && component.is_root() {
                 path.set_root(true);
@@ -152,7 +149,10 @@ pub(crate) fn parse<'source>(
                                 ErrorInfo::new(
                                     source,
                                     state.file_name(),
-                                    SourcePos::from((state.line(), state.byte())),
+                                    SourcePos::from((
+                                        state.line(),
+                                        state.byte(),
+                                    )),
                                 ),
                             ));
                         }
@@ -162,7 +162,10 @@ pub(crate) fn parse<'source>(
                                 ErrorInfo::new(
                                     source,
                                     state.file_name(),
-                                    SourcePos::from((state.line(), state.byte())),
+                                    SourcePos::from((
+                                        state.line(),
+                                        state.byte(),
+                                    )),
                                 ),
                             ));
                         }
@@ -228,4 +231,3 @@ pub(crate) fn parse<'source>(
     }
     Ok((result, next))
 }
-

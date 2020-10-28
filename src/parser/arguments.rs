@@ -5,12 +5,10 @@ use logos::Span;
 use crate::{
     error::SyntaxError,
     lexer::Parameters,
-    parser:: {
-        ast::{
-            Call, ParameterValue, 
-        },
-        json_literal, path, whitespace, ParseState
-    }
+    parser::{
+        ast::{Call, ParameterValue},
+        json_literal, path, whitespace, ParseState,
+    },
 };
 
 fn parse_value<'source>(
@@ -44,12 +42,8 @@ fn parse_value<'source>(
             // TODO: parse array literals
             // TODO: parse object literals
             _ => {
-                let (path, next_token) = path::parse(
-                    source,
-                    iter,
-                    state,
-                    Some((lex, span)),
-                )?;
+                let (path, next_token) =
+                    path::parse(source, iter, state, Some((lex, span)))?;
 
                 value = path.map(ParameterValue::Path);
                 next = next_token
@@ -71,12 +65,8 @@ fn parse_hash_map<'source>(
 
     let key = &source[span.start..span.end - 1];
     if let Some((lex, span)) = iter.next() {
-        let (mut value, next) = parse_value(
-            source,
-            iter,
-            state,
-            Some((lex, span)),
-        )?;
+        let (mut value, next) =
+            parse_value(source, iter, state, Some((lex, span)))?;
 
         if let Some(arg) = value.take() {
             call.add_hash(key, arg);
@@ -112,23 +102,13 @@ pub(crate) fn parse<'source>(
     if let Some((lex, span)) = next {
         match &lex {
             Parameters::HashKey => {
-                return parse_hash_map(
-                    source,
-                    iter,
-                    state,
-                    call,
-                    (lex, span),
-                );
+                return parse_hash_map(source, iter, state, call, (lex, span));
             }
             _ => {}
         }
 
-        let (mut value, next) = parse_value(
-            source,
-            iter,
-            state,
-            Some((lex, span)),
-        )?;
+        let (mut value, next) =
+            parse_value(source, iter, state, Some((lex, span)))?;
 
         if let Some(arg) = value.take() {
             call.add_argument(arg);
@@ -139,4 +119,3 @@ pub(crate) fn parse<'source>(
 
     Ok(iter.next())
 }
-

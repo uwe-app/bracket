@@ -3,8 +3,8 @@ use serde_json::Value;
 
 use crate::{
     error::RenderError,
-    parser::ast::{BlockType, Node},
     output::Output,
+    parser::ast::{BlockType, Node},
     registry::Registry,
 };
 
