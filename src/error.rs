@@ -17,8 +17,15 @@ impl SourcePos {
     }
 }
 
+// DEPRECATED
 impl From<(&mut usize, &mut usize)> for SourcePos {
     fn from(pos: (&mut usize, &mut usize)) -> Self {
+        SourcePos(pos.0.clone(), pos.1.clone())
+    }
+}
+
+impl From<(&usize, &usize)> for SourcePos {
+    fn from(pos: (&usize, &usize)) -> Self {
         SourcePos(pos.0.clone(), pos.1.clone())
     }
 }

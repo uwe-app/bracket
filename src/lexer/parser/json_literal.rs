@@ -9,12 +9,13 @@ use crate::{
     lexer::grammar::{Parameters, StringLiteral},
 };
 
+use super::ParseState;
+
 /// Parse a JSON literal value.
 pub(crate) fn parse<'source>(
     source: &'source str,
     iter: &mut IntoIter<(Parameters, Span)>,
-    byte_offset: &mut usize,
-    line: &mut usize,
+    state: &mut ParseState,
     current: Option<(Parameters, Span)>,
 ) -> Result<(Option<Value>, Option<(Parameters, Span)>), SyntaxError<'source>> {
     let mut value: Option<Value> = None;
@@ -39,7 +40,7 @@ pub(crate) fn parse<'source>(
                                 break;
                             }
                             _ => {
-                                *byte_offset = span.end;
+                                *state.byte_mut() = span.end;
                                 str_end = span.end;
                             }
                         },

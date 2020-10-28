@@ -12,6 +12,8 @@ use crate::{
     },
 };
 
+use super::ParseState;
+
 fn is_path_component(lex: &Parameters) -> bool {
     match lex {
         Parameters::ExplicitThisKeyword
@@ -38,10 +40,8 @@ fn component_type(lex: &Parameters) -> ComponentType {
 
 pub(crate) fn parse<'source>(
     source: &'source str,
-    file_name: &str,
     iter: &mut IntoIter<(Parameters, Span)>,
-    byte_offset: &mut usize,
-    line: &mut usize,
+    state: &mut ParseState,
     current: Option<(Parameters, Span)>,
 ) -> Result<
     (Option<Path<'source>>, Option<(Parameters, Span)>),
@@ -53,7 +53,7 @@ pub(crate) fn parse<'source>(
     if let Some((mut lex, mut span)) = current {
         let mut path = Path::new(source);
         if is_path_component(&lex) {
-            *byte_offset = span.end;
+            *state.byte_mut() = span.end;
 
             // Consume parent references
             match &lex {
@@ -79,19 +79,19 @@ pub(crate) fn parse<'source>(
             // Cannot start with a path delimiter!
             match &lex {
                 Parameters::PathDelimiter => {
-                    *byte_offset = span.start;
+                    *state.byte_mut() = span.start;
                     return Err(SyntaxError::UnexpectedPathDelimiter(
                         ErrorInfo::new(
                             source,
-                            file_name,
-                            SourcePos::from((line, byte_offset)),
+                            state.file_name(),
+                            SourcePos::from((state.line(), state.byte())),
                         ),
                     ));
                 }
                 _ => {}
             }
 
-            *byte_offset = span.start;
+            *state.byte_mut() = span.start;
 
             let component =
                 Component(source, component_type(&lex), span);
@@ -108,8 +108,8 @@ pub(crate) fn parse<'source>(
                 return Err(SyntaxError::UnexpectedPathParentWithLocal(
                     ErrorInfo::new(
                         source,
-                        file_name,
-                        SourcePos::from((line, byte_offset)),
+                        state.file_name(),
+                        SourcePos::from((state.line(), state.byte())),
                     ),
                 ));
             }
@@ -118,8 +118,8 @@ pub(crate) fn parse<'source>(
                 return Err(SyntaxError::UnexpectedPathParentWithExplicit(
                     ErrorInfo::new(
                         source,
-                        file_name,
-                        SourcePos::from((line, byte_offset)),
+                        state.file_name(),
+                        SourcePos::from((state.line(), state.byte())),
                     ),
                 ));
             }
@@ -133,37 +133,37 @@ pub(crate) fn parse<'source>(
                     match &lex {
                         Parameters::ExplicitThisKeyword
                         | Parameters::ExplicitThisDotSlash => {
-                            *byte_offset = span.start;
+                            *state.byte_mut() = span.start;
                             return Err(
                                 SyntaxError::UnexpectedPathExplicitThis(
                                     ErrorInfo::new(
                                         source,
-                                        file_name,
+                                        state.file_name(),
                                         SourcePos::from((
-                                            line,
-                                            byte_offset,
+                                            state.line(),
+                                            state.byte(),
                                         )),
                                     ),
                                 ),
                             );
                         }
                         Parameters::ParentRef => {
-                            *byte_offset = span.start;
+                            *state.byte_mut() = span.start;
                             return Err(SyntaxError::UnexpectedPathParent(
                                 ErrorInfo::new(
                                     source,
-                                    file_name,
-                                    SourcePos::from((line, byte_offset)),
+                                    state.file_name(),
+                                    SourcePos::from((state.line(), state.byte())),
                                 ),
                             ));
                         }
                         Parameters::LocalIdentifier => {
-                            *byte_offset = span.start;
+                            *state.byte_mut() = span.start;
                             return Err(SyntaxError::UnexpectedPathLocal(
                                 ErrorInfo::new(
                                     source,
-                                    file_name,
-                                    SourcePos::from((line, byte_offset)),
+                                    state.file_name(),
+                                    SourcePos::from((state.line(), state.byte())),
                                 ),
                             ));
                         }
@@ -177,16 +177,16 @@ pub(crate) fn parse<'source>(
                                 continue;
                             }
                             _ => {
-                                *byte_offset = span.start;
+                                *state.byte_mut() = span.start;
                                 println!("Lex {:?}", &lex);
                                 return Err(
                                     SyntaxError::ExpectedPathDelimiter(
                                         ErrorInfo::new(
                                             source,
-                                            file_name,
+                                            state.file_name(),
                                             SourcePos::from((
-                                                line,
-                                                byte_offset,
+                                                state.line(),
+                                                state.byte(),
                                             )),
                                         ),
                                     ),
@@ -196,15 +196,15 @@ pub(crate) fn parse<'source>(
                     } else {
                         match &lex {
                             Parameters::PathDelimiter => {
-                                *byte_offset = span.start;
+                                *state.byte_mut() = span.start;
                                 return Err(
                                     SyntaxError::UnexpectedPathDelimiter(
                                         ErrorInfo::new(
                                             source,
-                                            file_name,
+                                            state.file_name(),
                                             SourcePos::from((
-                                                line,
-                                                byte_offset,
+                                                state.line(),
+                                                state.byte(),
                                             )),
                                         ),
                                     ),

@@ -12,7 +12,7 @@ use crate::{
 };
 
 
-use super::{arguments, path, whitespace, ParameterCache};
+use super::{arguments, path, whitespace, ParameterCache, ParseState};
 
 /// Collect sub expression tokens.
 fn sub_expr(
@@ -36,10 +36,8 @@ fn sub_expr(
 
 fn parse_call_target<'source>(
     source: &'source str,
-    file_name: &str,
     iter: &mut IntoIter<(Parameters, Span)>,
-    byte_offset: &mut usize,
-    line: &mut usize,
+    state: &mut ParseState,
     current: Option<(Parameters, Span)>,
     call: &mut Call<'source>,
 ) -> Result<Option<(Parameters, Span)>, SyntaxError<'source>> {
@@ -51,16 +49,16 @@ fn parse_call_target<'source>(
                 let (mut sub_expr, stmt_end) = sub_expr(iter);
 
                 if stmt_end.is_none() {
-                    *byte_offset = stmt_start.end;
+                    *state.byte_mut() = stmt_start.end;
                     if !sub_expr.is_empty() {
                         let (_, last_span) = sub_expr.pop().unwrap();
-                        *byte_offset = last_span.end;
+                        *state.byte_mut() = last_span.end;
                     }
                     return Err(SyntaxError::OpenSubExpression(
                         ErrorInfo::new_notes(
                             source,
-                            file_name,
-                            SourcePos::from((line, byte_offset)),
+                            state.file_name(),
+                            SourcePos::from((state.line(), state.byte())),
                             vec!["requires closing parenthesis ')'"],
                         ),
                     ));
@@ -71,10 +69,8 @@ fn parse_call_target<'source>(
 
                 let (sub_call, next) = parse_call(
                     source,
-                    file_name,
                     &mut sub_expr.into_iter(),
-                    byte_offset,
-                    line,
+                    state,
                     next,
                     false,
                     stmt_start,
@@ -87,10 +83,8 @@ fn parse_call_target<'source>(
             _ => {
                 let (mut path, next) = path::parse(
                     source,
-                    file_name,
                     iter,
-                    byte_offset,
-                    line,
+                    state,
                     Some((lex, span)),
                 )?;
 
@@ -109,10 +103,8 @@ fn parse_call_target<'source>(
 
 fn parse_call<'source>(
     source: &'source str,
-    file_name: &str,
     iter: &mut IntoIter<(Parameters, Span)>,
-    byte_offset: &mut usize,
-    line: &mut usize,
+    state: &mut ParseState,
     current: Option<(Parameters, Span)>,
     partial: bool,
     stmt_start: Range<usize>,
@@ -122,10 +114,8 @@ fn parse_call<'source>(
     let mut call = Call::new(source, partial, stmt_start, stmt_end);
     let next = parse_call_target(
         source,
-        file_name,
         iter,
-        byte_offset,
-        line,
+        state,
         current,
         &mut call,
     )?;
@@ -137,14 +127,13 @@ fn parse_call<'source>(
 fn partial<'source>(
     source: &'source str,
     iter: &mut IntoIter<(Parameters, Span)>,
-    byte_offset: &mut usize,
-    line: &mut usize,
+    state: &mut ParseState,
     current: Option<(Parameters, Span)>,
 ) -> (bool, Option<(Parameters, Span)>) {
     if let Some((lex, span)) = current {
         match lex {
             Parameters::Partial => {
-                let next = whitespace::parse(iter, byte_offset, line);
+                let next = whitespace::parse(iter, state);
                 return (true, next);
             }
             _ => {
@@ -157,9 +146,10 @@ fn partial<'source>(
 
 pub(crate) fn parse<'source>(
     source: &'source str,
-    file_name: &str,
-    line: &mut usize,
-    byte_offset: &mut usize,
+    state: &mut ParseState,
+    //file_name: &str,
+    //line: &mut usize,
+    //byte_offset: &mut usize,
     statement: ParameterCache,
 ) -> Result<Call<'source>, SyntaxError<'source>> {
     let context = statement.context.clone();
@@ -168,38 +158,36 @@ pub(crate) fn parse<'source>(
     let mut iter = statement.tokens.into_iter();
 
     // Position as byte offset for syntax errors
-    *byte_offset = stmt_start.end;
+    *state.byte_mut() = stmt_start.end;
 
-    let next = whitespace::parse(&mut iter, byte_offset, line);
+    let next = whitespace::parse(&mut iter, state);
 
     //println!("Next {:?}", next);
 
     if next.is_none() {
         return Err(SyntaxError::EmptyStatement(ErrorInfo::new(
             source,
-            file_name,
-            SourcePos::from((line, byte_offset)),
+            state.file_name(),
+            SourcePos::from((state.line(), state.byte())),
         )));
     }
 
     //println!("After leading whitespce {:?}", next);
     let (partial, next) =
-        partial(source, &mut iter, byte_offset, line, next);
+        partial(source, &mut iter, state, next);
     //println!("After partial parse {:?} {:?}", partial, &next);
     if partial && next.is_none() {
         return Err(SyntaxError::PartialIdentifier(ErrorInfo::new(
             source,
-            file_name,
-            SourcePos::from((line, byte_offset)),
+            state.file_name(),
+            SourcePos::from((state.line(), state.byte())),
         )));
     }
 
     let (mut call, next) = parse_call(
         source,
-        file_name,
         &mut iter,
-        byte_offset,
-        line,
+        state,
         next,
         partial,
         stmt_start,
@@ -214,8 +202,8 @@ pub(crate) fn parse<'source>(
                     return Err(SyntaxError::PartialSimpleIdentifier(
                         ErrorInfo::new(
                             source,
-                            file_name,
-                            SourcePos::from((line, byte_offset)),
+                            state.file_name(),
+                            SourcePos::from((state.line(), state.byte())),
                         ),
                     ));
                 }
@@ -240,8 +228,8 @@ pub(crate) fn parse<'source>(
                 return Err(SyntaxError::ExpectedIdentifier(
                     ErrorInfo::new(
                         source,
-                        file_name,
-                        SourcePos::from((line, byte_offset)),
+                        state.file_name(),
+                        SourcePos::from((state.line(), state.byte())),
                     ),
                 ));
             }
@@ -262,7 +250,7 @@ pub(crate) fn parse<'source>(
     }
     */
 
-    arguments::parse(source, file_name, &mut iter, byte_offset, line, &mut call)?;
+    arguments::parse(source, &mut iter, state, &mut call)?;
     println!("Arguments {:?}", call.arguments());
 
     Ok(call)

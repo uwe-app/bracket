@@ -12,14 +12,12 @@ use crate::{
     },
 };
 
-use super::{json_literal, path, whitespace};
+use super::{json_literal, path, whitespace, ParseState};
 
 fn parse_value<'source>(
     source: &'source str,
-    file_name: &str,
     iter: &mut IntoIter<(Parameters, Span)>,
-    byte_offset: &mut usize,
-    line: &mut usize,
+    state: &mut ParseState,
     current: Option<(Parameters, Span)>,
 ) -> Result<
     (Option<ParameterValue<'source>>, Option<(Parameters, Span)>),
@@ -37,8 +35,7 @@ fn parse_value<'source>(
                 let (literal, next_token) = json_literal::parse(
                     source,
                     iter,
-                    byte_offset,
-                    line,
+                    state,
                     Some((lex, span)),
                 )?;
 
@@ -50,10 +47,8 @@ fn parse_value<'source>(
             _ => {
                 let (path, next_token) = path::parse(
                     source,
-                    file_name,
                     iter,
-                    byte_offset,
-                    line,
+                    state,
                     Some((lex, span)),
                 )?;
 
@@ -68,10 +63,8 @@ fn parse_value<'source>(
 
 fn parse_hash_map<'source>(
     source: &'source str,
-    file_name: &str,
     iter: &mut IntoIter<(Parameters, Span)>,
-    byte_offset: &mut usize,
-    line: &mut usize,
+    state: &mut ParseState,
     call: &mut Call<'source>,
     current: (Parameters, Span),
 ) -> Result<Option<(Parameters, Span)>, SyntaxError<'source>> {
@@ -81,10 +74,8 @@ fn parse_hash_map<'source>(
     if let Some((lex, span)) = iter.next() {
         let (mut value, next) = parse_value(
             source,
-            file_name,
             iter,
-            byte_offset,
-            line,
+            state,
             Some((lex, span)),
         )?;
 
@@ -92,16 +83,14 @@ fn parse_hash_map<'source>(
             call.add_hash(key, arg);
         }
 
-        let next = whitespace::parse(iter, byte_offset, line);
+        let next = whitespace::parse(iter, state);
         if let Some((lex, span)) = next {
             match &lex {
                 Parameters::HashKey => {
                     return parse_hash_map(
                         source,
-                        file_name,
                         iter,
-                        byte_offset,
-                        line,
+                        state,
                         call,
                         (lex, span),
                     );
@@ -116,22 +105,18 @@ fn parse_hash_map<'source>(
 
 pub(crate) fn parse<'source>(
     source: &'source str,
-    file_name: &str,
     iter: &mut IntoIter<(Parameters, Span)>,
-    byte_offset: &mut usize,
-    line: &mut usize,
+    state: &mut ParseState,
     call: &mut Call<'source>,
 ) -> Result<Option<(Parameters, Span)>, SyntaxError<'source>> {
-    let next = whitespace::parse(iter, byte_offset, line);
+    let next = whitespace::parse(iter, state);
     if let Some((lex, span)) = next {
         match &lex {
             Parameters::HashKey => {
                 return parse_hash_map(
                     source,
-                    file_name,
                     iter,
-                    byte_offset,
-                    line,
+                    state,
                     call,
                     (lex, span),
                 );
@@ -141,10 +126,8 @@ pub(crate) fn parse<'source>(
 
         let (mut value, next) = parse_value(
             source,
-            file_name,
             iter,
-            byte_offset,
-            line,
+            state,
             Some((lex, span)),
         )?;
 
@@ -152,7 +135,7 @@ pub(crate) fn parse<'source>(
             call.add_argument(arg);
         }
 
-        return parse(source, file_name, iter, byte_offset, line, call);
+        return parse(source, iter, state, call);
     }
 
     Ok(iter.next())

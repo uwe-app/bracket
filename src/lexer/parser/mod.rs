@@ -289,9 +289,7 @@ impl<'source> Parser<'source> {
 
                             let call = statement::parse(
                                 source,
-                                self.options.file_name.as_str(),
-                                line,
-                                byte_offset,
+                                &mut state,
                                 params.clone(),
                             )?;
 
