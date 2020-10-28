@@ -4,11 +4,13 @@ use logos::Span;
 
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
-    lexer::{
+    parser:: {
         ast::{
             Block, BlockType, Node, Text,
         },
-        grammar::{self, lex, Parameters, Token},
+    },
+    lexer::{
+        self, lex, Parameters, Token,
     },
 };
 
@@ -16,6 +18,7 @@ use crate::{
 static UNKNOWN: &str = "unknown";
 
 mod arguments;
+pub mod ast;
 mod json_literal;
 mod path;
 mod statement;
@@ -157,14 +160,14 @@ impl<'source> Parser<'source> {
 
     fn newline(&self, t: &Token) -> bool {
         match t {
-            Token::RawBlock(lex, _) => lex == &grammar::RawBlock::Newline,
-            Token::RawComment(lex, _) => lex == &grammar::RawComment::Newline,
+            Token::RawBlock(lex, _) => lex == &lexer::RawBlock::Newline,
+            Token::RawComment(lex, _) => lex == &lexer::RawComment::Newline,
             Token::RawStatement(lex, _) => {
-                lex == &grammar::RawStatement::Newline
+                lex == &lexer::RawStatement::Newline
             }
-            Token::Comment(lex, _) => lex == &grammar::Comment::Newline,
-            Token::Block(lex, _) => lex == &grammar::Block::Newline,
-            Token::Parameters(lex, _) => lex == &grammar::Parameters::Newline,
+            Token::Comment(lex, _) => lex == &lexer::Comment::Newline,
+            Token::Block(lex, _) => lex == &lexer::Block::Newline,
+            Token::Parameters(lex, _) => lex == &lexer::Parameters::Newline,
             // NOTE: new lines are not allowed in string literals
             // NOTE: so we have special handling for this case
             Token::StringLiteral(lex, _) => false,
@@ -208,31 +211,31 @@ impl<'source> Parser<'source> {
 
             match t {
                 Token::Block(lex, span) => match lex {
-                    grammar::Block::StartRawBlock => {
+                    lexer::Block::StartRawBlock => {
                         self.enter_stack(
                             Block::new(source, BlockType::RawBlock, Some(span)),
                             &mut text,
                         );
                     }
-                    grammar::Block::StartRawComment => {
+                    lexer::Block::StartRawComment => {
                         self.enter_stack(
                             Block::new(source, BlockType::RawComment, Some(span)),
                             &mut text,
                         );
                     }
-                    grammar::Block::StartRawStatement => {
+                    lexer::Block::StartRawStatement => {
                         self.enter_stack(
                             Block::new(source, BlockType::RawStatement, Some(span)),
                             &mut text,
                         );
                     }
-                    grammar::Block::StartComment => {
+                    lexer::Block::StartComment => {
                         self.enter_stack(
                             Block::new(source, BlockType::Comment, Some(span)),
                             &mut text,
                         );
                     }
-                    grammar::Block::StartBlockScope => {
+                    lexer::Block::StartBlockScope => {
                         parameters = Some(ParameterCache::new(
                             ParameterContext::Block,
                             span.clone(),
@@ -243,13 +246,13 @@ impl<'source> Parser<'source> {
                             &mut text,
                         );
                     }
-                    grammar::Block::EndBlockScope => {
+                    lexer::Block::EndBlockScope => {
                         // TODO: check the closing element matches the
                         // TODO: name of the open scope block
 
                         self.exit_stack(span, &mut text);
                     }
-                    grammar::Block::StartStatement => {
+                    lexer::Block::StartStatement => {
                         parameters = Some(ParameterCache::new(
                             ParameterContext::Statement,
                             span,
@@ -258,25 +261,25 @@ impl<'source> Parser<'source> {
                     _ => {}
                 },
                 Token::RawBlock(lex, span) => match lex {
-                    grammar::RawBlock::End => {
+                    lexer::RawBlock::End => {
                         self.exit_stack(span, &mut text);
                     }
                     _ => {}
                 },
                 Token::RawComment(lex, span) => match lex {
-                    grammar::RawComment::End => {
+                    lexer::RawComment::End => {
                         self.exit_stack(span, &mut text);
                     }
                     _ => {}
                 },
                 Token::RawStatement(lex, span) => match lex {
-                    grammar::RawStatement::End => {
+                    lexer::RawStatement::End => {
                         self.exit_stack(span, &mut text);
                     }
                     _ => {}
                 },
                 Token::Comment(lex, span) => match lex {
-                    grammar::Comment::End => {
+                    lexer::Comment::End => {
                         self.exit_stack(span, &mut text);
                     }
                     _ => {}
@@ -311,7 +314,7 @@ impl<'source> Parser<'source> {
                     }
                 },
                 Token::StringLiteral(lex, span) => match lex {
-                    grammar::StringLiteral::Newline => {
+                    lexer::StringLiteral::Newline => {
                         if let Some(params) = parameters.take() {
                             if let Some((lex, span)) = params.tokens.last() {
                                 *byte_offset = span.end - 1;

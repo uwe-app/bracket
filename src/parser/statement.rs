@@ -5,14 +5,12 @@ use logos::Span;
 
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
-    lexer::{
+    lexer::Parameters,
+    parser::{
         ast::{Call, CallTarget},
-        grammar::Parameters,
-    },
+        arguments, path, whitespace, ParameterCache, ParseState
+    }
 };
-
-
-use super::{arguments, path, whitespace, ParameterCache, ParseState};
 
 /// Collect sub expression tokens.
 fn sub_expr(

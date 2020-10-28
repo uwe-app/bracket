@@ -3,7 +3,7 @@ use serde_json::Value;
 
 use crate::{
     error::RenderError,
-    lexer::ast::{BlockType, Node},
+    parser::ast::{BlockType, Node},
     output::Output,
     registry::Registry,
 };

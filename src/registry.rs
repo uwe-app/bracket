@@ -8,7 +8,7 @@ use crate::{
         BlockHelper, EachHelper, Helper, IfHelper, LogHelper, LookupHelper,
         UnlessHelper, WithHelper,
     },
-    lexer::parser::ParserOptions,
+    parser::ParserOptions,
     output::{Output, StringOutput},
     template::Template,
     Error, Result,

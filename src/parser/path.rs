@@ -4,15 +4,14 @@ use logos::Span;
 
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
-    lexer::{
+    lexer::Parameters,
+    parser:: {
         ast::{
             Component, ComponentType, Path,
         },
-        grammar::Parameters,
-    },
+        ParseState,
+    }
 };
-
-use super::ParseState;
 
 fn is_path_component(lex: &Parameters) -> bool {
     match lex {

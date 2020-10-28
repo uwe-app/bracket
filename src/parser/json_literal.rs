@@ -5,8 +5,8 @@ use serde_json::{Number, Value};
 use logos::Span;
 
 use crate::{
-    error::{SyntaxError},
-    lexer::grammar::{Parameters, StringLiteral},
+    error::SyntaxError,
+    lexer::{Parameters, StringLiteral},
 };
 
 use super::ParseState;

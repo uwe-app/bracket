@@ -1,4 +1,4 @@
-use hbs::{lexer::ast::*, lexer::parser::*, Result};
+use hbs::{parser::{*, ast::*}, Result};
 
 use serde_json::{Number, Value};
 

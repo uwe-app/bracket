@@ -1,8 +1,8 @@
 use std::vec::IntoIter;
 use logos::Span;
 
-use crate::lexer::grammar::Parameters;
-use super::ParseState;
+use crate::lexer::Parameters;
+use crate::parser::ParseState;
 
 /// Consume whitespace tokens.
 pub(crate) fn parse(

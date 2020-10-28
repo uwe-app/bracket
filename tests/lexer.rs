@@ -1,4 +1,4 @@
-use hbs::lexer::grammar::{
+use hbs::lexer::{
     collect as lex, Block, Comment, Parameters, RawBlock, RawComment,
     RawStatement, Token,
 };

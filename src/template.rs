@@ -3,10 +3,7 @@ use std::fmt;
 
 use crate::{
     error::{RenderError, SyntaxError},
-    lexer::{
-        ast::Node,
-        parser::{Parser, ParserOptions},
-    },
+    parser::{Parser, ParserOptions, ast::Node},
     output::Output,
     render::{Render, RenderContext, Renderer},
     Registry,

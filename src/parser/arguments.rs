@@ -3,16 +3,15 @@ use std::vec::IntoIter;
 use logos::Span;
 
 use crate::{
-    error::{SyntaxError},
-    lexer::{
+    error::SyntaxError,
+    lexer::Parameters,
+    parser:: {
         ast::{
             Call, ParameterValue, 
         },
-        grammar::Parameters,
-    },
+        json_literal, path, whitespace, ParseState
+    }
 };
-
-use super::{json_literal, path, whitespace, ParseState};
 
 fn parse_value<'source>(
     source: &'source str,
