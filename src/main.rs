@@ -1,4 +1,4 @@
-use hbs::{parser::ParserOptions, Registry, Result};
+use hbs::{parser::{Parser, ParserOptions}, Registry, Result};
 
 fn main() -> Result<'static, ()> {
     let s = r#"\{{expr}}
@@ -38,12 +38,25 @@ This is some block text with an {{inline}}
 
     //let s = "{{ > }}";
 
+    //let s = "{{{{raw}}}}foo{{{{/raw}}}}{{!-- raw comment --}}";
+    //let s = "{{foo ../bar}}";
+
     let options = ParserOptions {
         file_name: String::from("src/main.rs"),
         line_offset: 3,
         byte_offset: 0,
     };
 
+    let mut parser = Parser::new(s, options);
+
+    for node in parser {
+        let node = node?;
+        println!("Got a node via iterator {:#?}", node);
+    }
+
+    //parser.parse().expect("Failed to parse!");
+
+    /*
     match Registry::compile(s, options) {
         Ok(tpl) => {
             //println!("{:#?}", tpl);
@@ -54,6 +67,7 @@ This is some block text with an {{inline}}
             std::process::exit(1);
         }
     }
+    */
 
     Ok(())
 }

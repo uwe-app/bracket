@@ -13,7 +13,7 @@ pub static KEY: &str = "@key";
 pub static INDEX: &str = "@index";
 pub static LEVEL: &str = "@level";
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Eq, PartialEq)]
 pub enum Node<'source> {
     Text(Text<'source>),
     Statement(Call<'source>),
@@ -62,6 +62,24 @@ impl fmt::Display for Node<'_> {
     }
 }
 
+impl fmt::Debug for Node<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            Self::Text(ref t) => {
+                f.debug_struct("Text")
+                 .field("value", &t.as_str())
+                 .finish()
+            }
+            Self::Block(ref b) => {
+                fmt::Debug::fmt(b, f)
+            }
+            Self::Statement(ref s) => {
+                fmt::Debug::fmt(s, f)
+            }
+        }
+    }
+}
+
 #[derive(Debug, Eq, PartialEq)]
 pub struct Text<'source>(pub &'source str, pub Range<usize>);
 
@@ -87,7 +105,7 @@ pub enum ComponentType {
     Delimiter,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Eq, PartialEq)]
 pub struct Component<'source>(
     pub &'source str,
     pub ComponentType,
@@ -101,6 +119,10 @@ impl<'source> Component<'source> {
 
     pub fn kind(&self) -> &ComponentType {
         &self.1
+    }
+
+    pub fn span(&self) -> &Range<usize> {
+        &self.2 
     }
 
     pub fn is_local(&self) -> bool {
@@ -121,11 +143,21 @@ impl<'source> Component<'source> {
     }
 
     pub fn as_str(&self) -> &'source str {
-        &self.0[self.2.start..self.2.end]
+        &self.0[self.span().start..self.span().end]
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+impl fmt::Debug for Component<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Component")
+         .field("source", &self.as_str())
+         .field("kind", &self.1)
+         .field("span", &self.2)
+         .finish()
+    }
+}
+
+#[derive(Eq, PartialEq)]
 pub struct Path<'source> {
     source: &'source str,
     components: Vec<Component<'source>>,
@@ -143,6 +175,14 @@ impl<'source> Path<'source> {
             explicit: false,
             root: false,
         }
+    }
+
+    pub fn as_str(&self) -> &'source str {
+        if !self.components.is_empty() {
+            let first = self.components.first().unwrap();
+            let last = self.components.last().unwrap();
+            &self.source[first.span().start..last.span().end]
+        } else {""}
     }
 
     pub fn add_component(&mut self, part: Component<'source>) {
@@ -187,6 +227,18 @@ impl<'source> Path<'source> {
     }
 }
 
+impl fmt::Debug for Path<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Path")
+         .field("source", &self.as_str())
+         .field("components", &self.components)
+         .field("parents", &self.parents)
+         .field("explicit", &self.explicit)
+         .field("root", &self.root)
+         .finish()
+    }
+}
+
 #[derive(Debug, Eq, PartialEq)]
 pub enum ParameterValue<'source> {
     Path(Path<'source>),
@@ -201,6 +253,8 @@ pub enum CallTarget<'source> {
 }
 
 impl<'source> CallTarget<'source> {
+
+    // FIXME!
     pub fn is_empty(&self) -> bool {
         match *self {
             Self::Path(ref path) => path.is_empty(),
@@ -313,7 +367,7 @@ impl Default for BlockType {
     }
 }
 
-#[derive(Debug, Default, Eq, PartialEq)]
+#[derive(Default, Eq, PartialEq)]
 pub struct Block<'source> {
     // Raw source input.
     source: &'source str,
@@ -426,5 +480,17 @@ impl fmt::Display for Block<'_> {
                 Ok(())
             }
         }
+    }
+}
+
+impl fmt::Debug for Block<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Block")
+         .field("kind", &self.kind)
+         .field("open", &self.open)
+         .field("close", &self.close)
+         .field("call", &self.call)
+         .field("nodes", &self.nodes)
+         .finish()
     }
 }

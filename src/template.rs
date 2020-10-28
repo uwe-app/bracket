@@ -33,8 +33,8 @@ impl<'source> Template<'source> {
         source: &'source str,
         options: ParserOptions,
     ) -> Result<Template, SyntaxError<'source>> {
-        let mut parser = Parser::new(options);
-        let node = parser.parse(source)?;
+        let mut parser = Parser::new(source, options);
+        let node = parser.parse()?;
         Ok(Template { source, node })
     }
 

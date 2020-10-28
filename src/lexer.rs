@@ -253,6 +253,20 @@ impl Token {
             Token::StringLiteral(_, _) => false,
         }
     }
+
+    pub fn is_newline(&self) -> bool {
+        match *self {
+            Token::RawBlock(ref lex, _) => lex == &RawBlock::Newline,
+            Token::RawComment(ref lex, _) => lex == &RawComment::Newline,
+            Token::RawStatement(ref lex, _) => lex == &RawStatement::Newline,
+            Token::Comment(ref lex, _) => lex == &Comment::Newline,
+            Token::Block(ref lex, _) => lex == &Block::Newline,
+            Token::Parameters(ref lex, _) => lex == &Parameters::Newline,
+            // NOTE: new lines are not allowed in string literals
+            // NOTE: so we have special handling for this case
+            Token::StringLiteral(ref lex, _) => false,
+        }
+    }
 }
 
 //pub struct Token(pub Box<dyn LexToken>, pub Span);

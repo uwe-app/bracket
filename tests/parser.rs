@@ -8,8 +8,8 @@ use serde_json::{Number, Value};
 #[test]
 fn parse_statement() -> Result<'static, ()> {
     let value = "{{foo}}";
-    let mut parser = Parser::new(Default::default());
-    let node = parser.parse(value)?;
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
 
     match node {
         Node::Block(b) => {
@@ -28,8 +28,8 @@ fn parse_statement() -> Result<'static, ()> {
 #[test]
 fn parse_statement_path_root() -> Result<'static, ()> {
     let value = "{{@root.foo}}";
-    let mut parser = Parser::new(Default::default());
-    let node = parser.parse(value)?;
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
 
     match node {
         Node::Block(b) => {
@@ -54,8 +54,8 @@ fn parse_statement_path_root() -> Result<'static, ()> {
 #[test]
 fn parse_statement_path_parents() -> Result<'static, ()> {
     let value = "{{../../../foo}}";
-    let mut parser = Parser::new(Default::default());
-    let node = parser.parse(value)?;
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
 
     match node {
         Node::Block(b) => {
@@ -80,8 +80,8 @@ fn parse_statement_path_parents() -> Result<'static, ()> {
 #[test]
 fn parse_statement_path_explicit_this() -> Result<'static, ()> {
     let value = "{{this.foo}}";
-    let mut parser = Parser::new(Default::default());
-    let node = parser.parse(value)?;
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
 
     match node {
         Node::Block(b) => {
@@ -106,8 +106,8 @@ fn parse_statement_path_explicit_this() -> Result<'static, ()> {
 #[test]
 fn parse_statement_path_explicit_dot() -> Result<'static, ()> {
     let value = "{{./foo}}";
-    let mut parser = Parser::new(Default::default());
-    let node = parser.parse(value)?;
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
 
     match node {
         Node::Block(b) => {
@@ -132,8 +132,8 @@ fn parse_statement_path_explicit_dot() -> Result<'static, ()> {
 #[test]
 fn parse_statement_partial() -> Result<'static, ()> {
     let value = "{{ > foo}}";
-    let mut parser = Parser::new(Default::default());
-    let node = parser.parse(value)?;
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
 
     match node {
         Node::Block(b) => {
@@ -156,8 +156,8 @@ fn parse_statement_partial() -> Result<'static, ()> {
 #[test]
 fn parse_arg_path() -> Result<'static, ()> {
     let value = r#"{{foo ../../bar}}"#;
-    let mut parser = Parser::new(Default::default());
-    let node = parser.parse(value)?;
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
 
     match node {
         Node::Block(b) => {
@@ -194,9 +194,8 @@ fn parse_arg_path() -> Result<'static, ()> {
 #[test]
 fn parse_arg_string() -> Result<'static, ()> {
     let value = r#"{{foo "bar\nbaz"}}"#;
-    //let value = r#"{{foo ../../bar}}"#;
-    let mut parser = Parser::new(Default::default());
-    let node = parser.parse(value)?;
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
 
     match node {
         Node::Block(b) => {
@@ -226,8 +225,8 @@ fn parse_arg_string() -> Result<'static, ()> {
 #[test]
 fn parse_hash_string() -> Result<'static, ()> {
     let value = r#"{{foo bar="baz"}}"#;
-    let mut parser = Parser::new(Default::default());
-    let node = parser.parse(value)?;
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
 
     match node {
         Node::Block(b) => {
@@ -257,8 +256,8 @@ fn parse_hash_string() -> Result<'static, ()> {
 #[test]
 fn parse_arg_bool_true() -> Result<'static, ()> {
     let value = r#"{{foo true}}"#;
-    let mut parser = Parser::new(Default::default());
-    let node = parser.parse(value)?;
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
 
     match node {
         Node::Block(b) => {
@@ -286,8 +285,8 @@ fn parse_arg_bool_true() -> Result<'static, ()> {
 #[test]
 fn parse_arg_bool_false() -> Result<'static, ()> {
     let value = r#"{{foo false}}"#;
-    let mut parser = Parser::new(Default::default());
-    let node = parser.parse(value)?;
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
 
     match node {
         Node::Block(b) => {
@@ -315,8 +314,8 @@ fn parse_arg_bool_false() -> Result<'static, ()> {
 #[test]
 fn parse_arg_null() -> Result<'static, ()> {
     let value = r#"{{foo null}}"#;
-    let mut parser = Parser::new(Default::default());
-    let node = parser.parse(value)?;
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
 
     match node {
         Node::Block(b) => {
@@ -344,8 +343,8 @@ fn parse_arg_null() -> Result<'static, ()> {
 #[test]
 fn parse_arg_num_int() -> Result<'static, ()> {
     let value = r#"{{foo 10}}"#;
-    let mut parser = Parser::new(Default::default());
-    let node = parser.parse(value)?;
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
 
     match node {
         Node::Block(b) => {
@@ -374,8 +373,8 @@ fn parse_arg_num_int() -> Result<'static, ()> {
 #[test]
 fn parse_arg_num_int_signed() -> Result<'static, ()> {
     let value = r#"{{foo -10}}"#;
-    let mut parser = Parser::new(Default::default());
-    let node = parser.parse(value)?;
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
 
     match node {
         Node::Block(b) => {
@@ -404,8 +403,8 @@ fn parse_arg_num_int_signed() -> Result<'static, ()> {
 #[test]
 fn parse_arg_num_int_signed_exponent() -> Result<'static, ()> {
     let value = r#"{{foo -2e+2}}"#;
-    let mut parser = Parser::new(Default::default());
-    let node = parser.parse(value)?;
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
 
     match node {
         Node::Block(b) => {
@@ -434,8 +433,8 @@ fn parse_arg_num_int_signed_exponent() -> Result<'static, ()> {
 #[test]
 fn parse_arg_num_float() -> Result<'static, ()> {
     let value = r#"{{foo 3.14}}"#;
-    let mut parser = Parser::new(Default::default());
-    let node = parser.parse(value)?;
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
 
     match node {
         Node::Block(b) => {
@@ -464,8 +463,8 @@ fn parse_arg_num_float() -> Result<'static, ()> {
 #[test]
 fn parse_arg_num_float_signed() -> Result<'static, ()> {
     let value = r#"{{foo -0.5}}"#;
-    let mut parser = Parser::new(Default::default());
-    let node = parser.parse(value)?;
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
 
     match node {
         Node::Block(b) => {
@@ -493,8 +492,8 @@ fn parse_arg_num_float_signed() -> Result<'static, ()> {
 #[test]
 fn parse_arg_num_float_signed_exponent() -> Result<'static, ()> {
     let value = r#"{{foo -0.5E-2}}"#;
-    let mut parser = Parser::new(Default::default());
-    let node = parser.parse(value)?;
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
 
     match node {
         Node::Block(b) => {
@@ -522,8 +521,8 @@ fn parse_arg_num_float_signed_exponent() -> Result<'static, ()> {
 #[test]
 fn parse_statement_trim() -> Result<'static, ()> {
     let value = "{{~foo~}}";
-    let mut parser = Parser::new(Default::default());
-    let node = parser.parse(value)?;
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
 
     match node {
         Node::Block(b) => {
@@ -542,8 +541,8 @@ fn parse_statement_trim() -> Result<'static, ()> {
 #[test]
 fn parse_block_trim() -> Result<'static, ()> {
     let value = "{{~#foo~}}bar{{~/foo~}}";
-    let mut parser = Parser::new(Default::default());
-    let node = parser.parse(value)?;
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
 
     match node {
         Node::Block(b) => {
