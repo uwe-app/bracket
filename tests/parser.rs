@@ -176,7 +176,7 @@ fn parse_arg_path() -> Result<'static, ()> {
                             assert_eq!(true, component.is_identifier());
                             assert_eq!(false, component.is_local());
                         }
-                        _ => panic!("Expected path argument value")
+                        _ => panic!("Expected path argument value"),
                     }
                 }
                 _ => panic!("Expecting statement node."),

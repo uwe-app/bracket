@@ -150,7 +150,7 @@ impl<'source> Path<'source> {
     }
 
     pub fn components(&self) -> &Vec<Component<'source>> {
-        &self.components 
+        &self.components
     }
 
     pub fn parents(&self) -> u8 {

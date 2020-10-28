@@ -1,8 +1,6 @@
 use std::fmt;
 use unicode_width::UnicodeWidthStr;
 
-use crate::lexer::parser::ParserOptions;
-
 static SYNTAX_PREFIX: &str = "Syntax error";
 
 /// Map a position for syntax errors.
@@ -19,6 +17,12 @@ impl SourcePos {
     }
 }
 
+impl From<(&mut usize, &mut usize)> for SourcePos {
+    fn from(pos: (&mut usize, &mut usize)) -> Self {
+        SourcePos(pos.0.clone(), pos.1.clone())
+    }
+}
+
 #[derive(Debug, Eq, PartialEq)]
 pub struct ErrorInfo<'source> {
     source: &'source str,
@@ -28,26 +32,35 @@ pub struct ErrorInfo<'source> {
 }
 
 impl<'source> ErrorInfo<'source> {
+    pub fn new(
+        source: &'source str,
+        file_name: &str,
+        source_pos: SourcePos,
+    ) -> Self {
+        Self {
+            source,
+            file_name: file_name.to_string(),
+            source_pos,
+            notes: vec![],
+        }
+    }
+
+    pub fn new_notes(
+        source: &'source str,
+        file_name: &str,
+        source_pos: SourcePos,
+        notes: Vec<&'static str>,
+    ) -> Self {
+        let mut info = ErrorInfo::new(source, file_name, source_pos);
+        info.notes = notes;
+        info
+    }
+
     pub fn source(&self) -> &'source str {
         self.source
     }
     pub fn position(&self) -> &SourcePos {
         &self.source_pos
-    }
-}
-
-impl<'source> From<(&'source str, &ParserOptions, SourcePos, Vec<&'static str>)>
-    for ErrorInfo<'source>
-{
-    fn from(
-        opts: (&'source str, &ParserOptions, SourcePos, Vec<&'static str>),
-    ) -> Self {
-        Self {
-            source: opts.0,
-            file_name: opts.1.file_name.clone(),
-            source_pos: opts.2,
-            notes: opts.3,
-        }
     }
 }
 
