@@ -42,6 +42,45 @@ impl Default for ParserOptions {
     }
 }
 
+#[derive(Debug)]
+pub(crate) struct ParseState {
+    file_name: String,
+    line: usize,
+    byte: usize,
+}
+
+impl ParseState {
+    pub fn file_name(&self) -> &str {
+        &self.file_name 
+    }
+
+    pub fn line(&self) -> &usize {
+        &self.line
+    }
+
+    pub fn line_mut(&mut self) -> &mut usize {
+        &mut self.line
+    }
+
+    pub fn byte(&self) -> &usize {
+        &self.byte
+    }
+
+    pub fn byte_mut(&mut self) -> &mut usize {
+        &mut self.byte
+    }
+}
+
+impl From<&ParserOptions> for ParseState {
+    fn from(opts: &ParserOptions) -> Self {
+        Self {
+            file_name: opts.file_name.clone(),
+            line: opts.line_offset.clone(),
+            byte: opts.byte_offset.clone(),
+        } 
+    }
+}
+
 #[derive(Clone, Debug)]
 pub(crate) enum ParameterContext {
     Block,
@@ -134,20 +173,23 @@ impl<'source> Parser<'source> {
 
     pub fn parse(
         &mut self,
-        s: &'source str,
+        source: &'source str,
     ) -> Result<Node<'source>, SyntaxError<'source>> {
         // Consecutive text to normalize
         let mut text: Option<Text> = None;
 
         let mut parameters: Option<ParameterCache> = None;
+
         let line = &mut self.options.line_offset.clone();
         let byte_offset = &mut self.options.byte_offset.clone();
 
-        self.enter_stack(Block::new(s, BlockType::Root, None), &mut text);
+        let mut state = ParseState::from(&self.options);
 
-        for t in lex(s) {
+        self.enter_stack(Block::new(source, BlockType::Root, None), &mut text);
+
+        for t in lex(source) {
             if t.is_text() {
-                let txt = text.get_or_insert(Text(s, t.span().clone()));
+                let txt = text.get_or_insert(Text(source, t.span().clone()));
                 txt.1.end = t.span().end;
             } else {
                 if let Some(txt) = text.take() {
@@ -157,6 +199,7 @@ impl<'source> Parser<'source> {
             }
 
             if self.newline(&t) {
+                *state.line_mut() +=  1;
                 *line += 1;
                 continue;
             }
@@ -167,25 +210,25 @@ impl<'source> Parser<'source> {
                 Token::Block(lex, span) => match lex {
                     grammar::Block::StartRawBlock => {
                         self.enter_stack(
-                            Block::new(s, BlockType::RawBlock, Some(span)),
+                            Block::new(source, BlockType::RawBlock, Some(span)),
                             &mut text,
                         );
                     }
                     grammar::Block::StartRawComment => {
                         self.enter_stack(
-                            Block::new(s, BlockType::RawComment, Some(span)),
+                            Block::new(source, BlockType::RawComment, Some(span)),
                             &mut text,
                         );
                     }
                     grammar::Block::StartRawStatement => {
                         self.enter_stack(
-                            Block::new(s, BlockType::RawStatement, Some(span)),
+                            Block::new(source, BlockType::RawStatement, Some(span)),
                             &mut text,
                         );
                     }
                     grammar::Block::StartComment => {
                         self.enter_stack(
-                            Block::new(s, BlockType::Comment, Some(span)),
+                            Block::new(source, BlockType::Comment, Some(span)),
                             &mut text,
                         );
                     }
@@ -196,7 +239,7 @@ impl<'source> Parser<'source> {
                         ));
 
                         self.enter_stack(
-                            Block::new(s, BlockType::Scoped, Some(span)),
+                            Block::new(source, BlockType::Scoped, Some(span)),
                             &mut text,
                         );
                     }
@@ -245,7 +288,7 @@ impl<'source> Parser<'source> {
                             params.end = span;
 
                             let call = statement::parse(
-                                s,
+                                source,
                                 self.options.file_name.as_str(),
                                 line,
                                 byte_offset,
@@ -279,7 +322,7 @@ impl<'source> Parser<'source> {
 
                         return Err(SyntaxError::StringLiteralNewline(
                             ErrorInfo::new(
-                                s,
+                                source,
                                 self.options.file_name.as_str(),
                                 SourcePos::from((line, byte_offset)),
                             ),
@@ -313,7 +356,7 @@ impl<'source> Parser<'source> {
             }
 
             return Err(SyntaxError::OpenStatement(ErrorInfo::new_notes(
-                s,
+                source,
                 self.options.file_name.as_str(),
                 SourcePos::from((line, byte_offset)),
                 notes,
