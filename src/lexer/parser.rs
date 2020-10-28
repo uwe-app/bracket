@@ -147,31 +147,27 @@ impl<'source> Parser<'source> {
         None
     }
 
-    fn parse_arguments(
+    /// Parse a JSON literal value.
+    fn parse_literal(
         &self,
         source: &'source str,
         iter: &mut IntoIter<(Parameters, Span)>,
         byte_offset: &mut usize,
         line: &mut usize,
-        call: &mut Call<'source>,
-    ) -> Option<(Parameters, Span)> {
-        let next = self.consume_whitespace(iter, byte_offset, line);
-        if let Some((lex, span)) = next {
+        current: Option<(Parameters, Span)>,
+    ) -> Result<(Option<Value>, Option<(Parameters, Span)>), SyntaxError<'source>>
+    {
+        let mut value: Option<Value> = None;
+        if let Some((lex, span)) = current {
             //println!("Parameter lex {:?}", lex);
 
-            match lex {
-                grammar::Parameters::Null => {
-                    call.add_argument(ParameterValue::Json(Value::Null));
-                }
-                grammar::Parameters::True => {
-                    call.add_argument(ParameterValue::Json(Value::Bool(true)));
-                }
-                grammar::Parameters::False => {
-                    call.add_argument(ParameterValue::Json(Value::Bool(false)));
-                }
+            value = match lex {
+                grammar::Parameters::Null => Some(Value::Null),
+                grammar::Parameters::True => Some(Value::Bool(true)),
+                grammar::Parameters::False => Some(Value::Bool(false)),
                 grammar::Parameters::Number => {
                     let num: Number = source[span].parse().unwrap();
-                    call.add_argument(ParameterValue::Json(Value::Number(num)));
+                    Some(Value::Number(num))
                 }
                 grammar::Parameters::StringLiteral => {
                     let str_start = span.end;
@@ -194,16 +190,144 @@ impl<'source> Parser<'source> {
                     }
 
                     let str_value = &source[str_start..str_end];
-                    call.add_argument(ParameterValue::Json(Value::String(
-                        str_value.to_string(),
-                    )));
+                    Some(Value::String(str_value.to_string()))
                 }
-                _ => return None,
+                _ => {
+                    // FIXME: how to handle this?
+                    panic!("Expecting JSON literal token.");
+                }
             }
+        }
+
+        Ok((value, iter.next()))
+    }
+
+    fn parse_value(
+        &self,
+        source: &'source str,
+        iter: &mut IntoIter<(Parameters, Span)>,
+        byte_offset: &mut usize,
+        line: &mut usize,
+        current: Option<(Parameters, Span)>,
+    ) -> Result<
+        (Option<ParameterValue<'source>>, Option<(Parameters, Span)>),
+        SyntaxError<'source>,
+    > {
+        let mut value: Option<ParameterValue> = None;
+        if let Some((lex, span)) = current {
+            match &lex {
+                grammar::Parameters::Null
+                | grammar::Parameters::True
+                | grammar::Parameters::False
+                | grammar::Parameters::Number
+                | grammar::Parameters::StringLiteral => {
+                    let (lit_value, next) = self.parse_literal(
+                        source,
+                        iter,
+                        byte_offset,
+                        line,
+                        Some((lex, span)),
+                    )?;
+
+                    value = lit_value.map(ParameterValue::Json);
+                }
+                // TODO: parse array literals
+                // TODO: parse object literals
+                _ => {
+                    todo!("Try to parse path components too {:?}", &lex);
+                }
+            }
+        }
+
+        Ok((value, iter.next()))
+    }
+
+    fn parse_hash_map(
+        &self,
+        source: &'source str,
+        iter: &mut IntoIter<(Parameters, Span)>,
+        byte_offset: &mut usize,
+        line: &mut usize,
+        call: &mut Call<'source>,
+        current: (Parameters, Span),
+    ) -> Result<Option<(Parameters, Span)>, SyntaxError<'source>> {
+        let (lex, span) = current;
+
+        let key = &source[span.start..span.end - 1];
+        if let Some((lex, span)) = iter.next() {
+            let (mut value, next) = self.parse_value(
+                source,
+                iter,
+                byte_offset,
+                line,
+                Some((lex, span)),
+            )?;
+
+            if let Some(arg) = value.take() {
+                call.add_hash(key, arg);
+            }
+
+            let next = self.consume_whitespace(iter, byte_offset, line);
+            if let Some((lex, span)) = next {
+                match &lex {
+                    Parameters::HashKey => {
+                        return self.parse_hash_map(
+                            source,
+                            iter,
+                            byte_offset,
+                            line,
+                            call,
+                            (lex, span),
+                        );
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        Ok(iter.next())
+    }
+
+    fn parse_arguments(
+        &self,
+        source: &'source str,
+        iter: &mut IntoIter<(Parameters, Span)>,
+        byte_offset: &mut usize,
+        line: &mut usize,
+        call: &mut Call<'source>,
+    ) -> Result<Option<(Parameters, Span)>, SyntaxError<'source>> {
+        let next = self.consume_whitespace(iter, byte_offset, line);
+        if let Some((lex, span)) = next {
+            match &lex {
+                Parameters::HashKey => {
+                    return self.parse_hash_map(
+                        source,
+                        iter,
+                        byte_offset,
+                        line,
+                        call,
+                        (lex, span),
+                    );
+                }
+                _ => {}
+            }
+
+            let (mut value, next) = self.parse_value(
+                source,
+                iter,
+                byte_offset,
+                line,
+                Some((lex, span)),
+            )?;
+
+            if let Some(arg) = value.take() {
+                call.add_argument(arg);
+            }
+
             return self.parse_arguments(source, iter, byte_offset, line, call);
         }
 
-        iter.next()
+        Ok(iter.next())
     }
 
     fn is_path_component(&self, lex: &Parameters) -> bool {
@@ -404,7 +528,7 @@ impl<'source> Parser<'source> {
     fn sub_expr(
         &self,
         iter: &mut IntoIter<(Parameters, Span)>,
-        ) -> (Vec<(Parameters, Span)>, Option<Range<usize>>) {
+    ) -> (Vec<(Parameters, Span)>, Option<Range<usize>>) {
         let mut stmt_end: Option<Range<usize>> = None;
         let mut sub_expr: Vec<(Parameters, Span)> = Vec::new();
         while let Some((lex, span)) = iter.next() {
@@ -442,12 +566,14 @@ impl<'source> Parser<'source> {
                             let (_, last_span) = sub_expr.pop().unwrap();
                             *byte_offset = last_span.end;
                         }
-                        return Err(SyntaxError::OpenSubExpression(self.err_info(
-                            source,
-                            line,
-                            byte_offset,
-                            Some(vec!["requires closing parenthesis ')'"]),
-                        )));
+                        return Err(SyntaxError::OpenSubExpression(
+                            self.err_info(
+                                source,
+                                line,
+                                byte_offset,
+                                Some(vec!["requires closing parenthesis ')'"]),
+                            ),
+                        ));
                     }
 
                     // NOTE: must advance past the start sub expresion token!
@@ -592,37 +718,31 @@ impl<'source> Parser<'source> {
             match call.target() {
                 CallTarget::Path(ref path) => {
                     if !path.is_simple() {
-                        return Err(SyntaxError::PartialSimpleIdentifier(self.err_info(
-                            source,
-                            line,
-                            byte_offset,
-                            None,
-                        )));
-                    } 
+                        return Err(SyntaxError::PartialSimpleIdentifier(
+                            self.err_info(source, line, byte_offset, None),
+                        ));
+                    }
                 }
                 _ => {}
             }
         }
 
         //if call.is_empty() {
-            //return Err(SyntaxError::ExpectedIdentifier(self.err_info(
-                //source,
-                //line,
-                //byte_offset,
-                //None,
-            //)));
+        //return Err(SyntaxError::ExpectedIdentifier(self.err_info(
+        //source,
+        //line,
+        //byte_offset,
+        //None,
+        //)));
         //}
 
         // FIXME: check for empty sub expressions too ^^^^^^^^^
         match call.target() {
             CallTarget::Path(ref path) => {
                 if path.is_empty() {
-                    return Err(SyntaxError::ExpectedIdentifier(self.err_info(
-                        source,
-                        line,
-                        byte_offset,
-                        None,
-                    )));
+                    return Err(SyntaxError::ExpectedIdentifier(
+                        self.err_info(source, line, byte_offset, None),
+                    ));
                 }
             }
             _ => {}
@@ -641,7 +761,7 @@ impl<'source> Parser<'source> {
         }
         */
 
-        self.parse_arguments(source, &mut iter, byte_offset, line, &mut call);
+        self.parse_arguments(source, &mut iter, byte_offset, line, &mut call)?;
         println!("Arguments {:?}", call.arguments());
 
         Ok(call)

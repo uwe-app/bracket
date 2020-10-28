@@ -204,7 +204,7 @@ impl<'source> CallTarget<'source> {
                 println!("Checking empty on sub expression...");
                 call.is_empty()
             }
-        } 
+        }
     }
 }
 
@@ -217,7 +217,7 @@ pub struct Call<'source> {
     close: Range<usize>,
     target: CallTarget<'source>,
     arguments: Vec<ParameterValue<'source>>,
-    hash: HashMap<String, ParameterValue<'source>>,
+    hash: HashMap<&'source str, ParameterValue<'source>>,
 }
 
 impl<'source> Call<'source> {
@@ -238,7 +238,7 @@ impl<'source> Call<'source> {
         }
     }
 
-    pub fn is_empty(&self) -> bool{
+    pub fn is_empty(&self) -> bool {
         self.target.is_empty()
     }
 
@@ -256,6 +256,18 @@ impl<'source> Call<'source> {
 
     pub fn arguments(&self) -> &Vec<ParameterValue<'source>> {
         &self.arguments
+    }
+
+    pub fn add_hash(
+        &mut self,
+        key: &'source str,
+        val: ParameterValue<'source>,
+    ) {
+        self.hash.insert(key, val);
+    }
+
+    pub fn hash(&self) -> &HashMap<&'source str, ParameterValue<'source>> {
+        &self.hash
     }
 
     pub fn as_str(&self) -> &'source str {

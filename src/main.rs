@@ -4,7 +4,7 @@ fn main() -> Result<'static, ()> {
     let s = r#"\{{expr}}
 {{{unescaped}}}
 
-{{var}}
+{{var foo="bar"}}
 
 {{> (var)}}
 

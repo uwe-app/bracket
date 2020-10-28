@@ -105,22 +105,6 @@ pub enum Comment {
     Error,
 }
 
-/*
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
-#[logos(extras = Extras)]
-#[logos(subpattern identifier = r#"[^\s"!#%&'()*+,./;<=>@\[/\]^`{|}~]"#)]
-pub enum BlockScope {
-    #[regex(r".")]
-    Text,
-
-    #[token("\n")]
-    Newline,
-
-    #[error]
-    Error,
-}
-*/
-
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 #[logos(subpattern identifier = r#"[^\s"!#%&'()*+,./;<=>@\[/\]^`{|}~]"#)]

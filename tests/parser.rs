@@ -1,6 +1,6 @@
 use hbs::{lexer::ast::*, lexer::parser::*, Result};
 
-use serde_json::{Value, Number};
+use serde_json::{Number, Value};
 
 #[test]
 fn parse_statement() -> Result<'static, ()> {
@@ -166,9 +166,11 @@ fn parse_arg_string() -> Result<'static, ()> {
                     let args = call.arguments();
                     assert_eq!(1, args.len());
                     assert_eq!(
-                        &ParameterValue::Json(
-                            Value::String(String::from(r"bar\nbaz"))),
-                        args.first().unwrap());
+                        &ParameterValue::Json(Value::String(String::from(
+                            r"bar\nbaz"
+                        ))),
+                        args.first().unwrap()
+                    );
                 }
                 _ => panic!("Expecting statement node."),
             }
@@ -196,7 +198,8 @@ fn parse_arg_bool_true() -> Result<'static, ()> {
                     assert_eq!(1, args.len());
                     assert_eq!(
                         &ParameterValue::Json(Value::Bool(true)),
-                        args.first().unwrap());
+                        args.first().unwrap()
+                    );
                 }
                 _ => panic!("Expecting statement node."),
             }
@@ -224,7 +227,8 @@ fn parse_arg_bool_false() -> Result<'static, ()> {
                     assert_eq!(1, args.len());
                     assert_eq!(
                         &ParameterValue::Json(Value::Bool(false)),
-                        args.first().unwrap());
+                        args.first().unwrap()
+                    );
                 }
                 _ => panic!("Expecting statement node."),
             }
@@ -252,7 +256,8 @@ fn parse_arg_null() -> Result<'static, ()> {
                     assert_eq!(1, args.len());
                     assert_eq!(
                         &ParameterValue::Json(Value::Null),
-                        args.first().unwrap());
+                        args.first().unwrap()
+                    );
                 }
                 _ => panic!("Expecting statement node."),
             }
@@ -281,7 +286,8 @@ fn parse_arg_num_int() -> Result<'static, ()> {
                     assert_eq!(1, args.len());
                     assert_eq!(
                         &ParameterValue::Json(Value::Number(expected)),
-                        args.first().unwrap());
+                        args.first().unwrap()
+                    );
                 }
                 _ => panic!("Expecting statement node."),
             }
@@ -310,7 +316,8 @@ fn parse_arg_num_int_signed() -> Result<'static, ()> {
                     assert_eq!(1, args.len());
                     assert_eq!(
                         &ParameterValue::Json(Value::Number(expected)),
-                        args.first().unwrap());
+                        args.first().unwrap()
+                    );
                 }
                 _ => panic!("Expecting statement node."),
             }
@@ -339,7 +346,8 @@ fn parse_arg_num_int_signed_exponent() -> Result<'static, ()> {
                     assert_eq!(1, args.len());
                     assert_eq!(
                         &ParameterValue::Json(Value::Number(expected)),
-                        args.first().unwrap());
+                        args.first().unwrap()
+                    );
                 }
                 _ => panic!("Expecting statement node."),
             }
@@ -368,7 +376,8 @@ fn parse_arg_num_float() -> Result<'static, ()> {
                     assert_eq!(1, args.len());
                     assert_eq!(
                         &ParameterValue::Json(Value::Number(expected)),
-                        args.first().unwrap());
+                        args.first().unwrap()
+                    );
                 }
                 _ => panic!("Expecting statement node."),
             }
@@ -397,7 +406,8 @@ fn parse_arg_num_float_signed() -> Result<'static, ()> {
                     assert_eq!(1, args.len());
                     assert_eq!(
                         &ParameterValue::Json(Value::Number(expected)),
-                        args.first().unwrap());
+                        args.first().unwrap()
+                    );
                 }
                 _ => panic!("Expecting statement node."),
             }
@@ -425,7 +435,8 @@ fn parse_arg_num_float_signed_exponent() -> Result<'static, ()> {
                     assert_eq!(1, args.len());
                     assert_eq!(
                         &ParameterValue::Json(Value::Number(expected)),
-                        args.first().unwrap());
+                        args.first().unwrap()
+                    );
                 }
                 _ => panic!("Expecting statement node."),
             }
