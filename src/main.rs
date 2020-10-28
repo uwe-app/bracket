@@ -1,4 +1,7 @@
-use hbs::{parser::{Parser, ParserOptions}, Registry, Result};
+use hbs::{
+    parser::{Parser, ParserOptions},
+    Registry, Result,
+};
 
 fn main() -> Result<'static, ()> {
     let s = r#"\{{expr}}

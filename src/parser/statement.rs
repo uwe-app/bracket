@@ -138,13 +138,13 @@ pub(crate) fn parse<'source>(
     //file_name: &str,
     //line: &mut usize,
     //byte_offset: &mut usize,
-    statement: &mut ParameterCache,
+    statement: ParameterCache,
 ) -> Result<Call<'source>, SyntaxError<'source>> {
     let context = statement.context.clone();
     let stmt_start = statement.start.clone();
     let stmt_end = statement.end.clone();
 
-    let mut iter = statement.tokens.clone().into_iter();
+    let mut iter = statement.tokens.into_iter();
 
     // Position as byte offset for syntax errors
     *state.byte_mut() = stmt_start.end;

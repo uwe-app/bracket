@@ -4,7 +4,7 @@ use logos::Span;
 
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
-    lexer::{self, lex, ModeBridge, Parameters, Token},
+    lexer::{self, lex, Lexer, Parameters, Token},
     parser::ast::{Block, BlockType, Node, Text},
 };
 
@@ -13,6 +13,7 @@ static UNKNOWN: &str = "unknown";
 
 mod arguments;
 pub mod ast;
+mod block;
 mod json_literal;
 mod path;
 mod statement;
@@ -105,7 +106,7 @@ impl ParameterCache {
 
 pub struct Parser<'source> {
     source: &'source str,
-    lexer: ModeBridge<'source>,
+    lexer: Lexer<'source>,
     state: ParseState,
     options: ParserOptions,
     stack: Vec<Block<'source>>,
@@ -160,7 +161,6 @@ impl<'source> Parser<'source> {
     }
 
     pub fn parse(&mut self) -> Result<Node<'source>, SyntaxError<'source>> {
-
         //let source = self.source;
 
         // Consecutive text to normalize
@@ -168,11 +168,15 @@ impl<'source> Parser<'source> {
 
         let mut parameters: Option<ParameterCache> = None;
 
-        self.enter_stack(Block::new(self.source, BlockType::Root, None), &mut text);
+        self.enter_stack(
+            Block::new(self.source, BlockType::Root, None),
+            &mut text,
+        );
 
         while let Some(t) = self.lexer.next() {
             if t.is_text() {
-                let txt = text.get_or_insert(Text(self.source, t.span().clone()));
+                let txt =
+                    text.get_or_insert(Text(self.source, t.span().clone()));
                 txt.1.end = t.span().end;
             } else {
                 if let Some(txt) = text.take() {
@@ -192,7 +196,11 @@ impl<'source> Parser<'source> {
                 Token::Block(lex, span) => match lex {
                     lexer::Block::StartRawBlock => {
                         self.enter_stack(
-                            Block::new(self.source, BlockType::RawBlock, Some(span)),
+                            Block::new(
+                                self.source,
+                                BlockType::RawBlock,
+                                Some(span),
+                            ),
                             &mut text,
                         );
                     }
@@ -218,7 +226,11 @@ impl<'source> Parser<'source> {
                     }
                     lexer::Block::StartComment => {
                         self.enter_stack(
-                            Block::new(self.source, BlockType::Comment, Some(span)),
+                            Block::new(
+                                self.source,
+                                BlockType::Comment,
+                                Some(span),
+                            ),
                             &mut text,
                         );
                     }
@@ -229,7 +241,11 @@ impl<'source> Parser<'source> {
                         ));
 
                         self.enter_stack(
-                            Block::new(self.source, BlockType::Scoped, Some(span)),
+                            Block::new(
+                                self.source,
+                                BlockType::Scoped,
+                                Some(span),
+                            ),
                             &mut text,
                         );
                     }
@@ -280,7 +296,7 @@ impl<'source> Parser<'source> {
                             let call = statement::parse(
                                 self.source,
                                 &mut self.state,
-                                &mut params,
+                                params,
                             )?;
 
                             let current = self.stack.last_mut().unwrap();
@@ -312,7 +328,10 @@ impl<'source> Parser<'source> {
                             ErrorInfo::new(
                                 self.source,
                                 self.state.file_name(),
-                                SourcePos::from((self.state.line(), self.state.byte())),
+                                SourcePos::from((
+                                    self.state.line(),
+                                    self.state.byte(),
+                                )),
                             ),
                         ));
                     }
@@ -363,233 +382,104 @@ impl<'source> Parser<'source> {
 
 impl<'source> Iterator for Parser<'source> {
     type Item = Result<Node<'source>, SyntaxError<'source>>;
+
     fn next(&mut self) -> Option<Self::Item> {
-        let state = &mut self.state;
-
         if let Some(t) = self.lexer.next() {
-
             if t.is_text() {
-                let txt = Node::Text(Text(self.source, t.span().clone()));
-                if self.stack.is_empty() {
-                    return Some(Ok(txt));
-                } else {
-                    let last = self.stack.last_mut().unwrap();
-                    last.push(txt);
-                }
+                return Some(Ok(Node::Text(Text(
+                    self.source,
+                    t.span().clone(),
+                ))));
             }
 
             if t.is_newline() {
-                *state.line_mut() += 1;
-                return Some(
-                    Ok(Node::Text(Text(self.source, t.span().clone()))));
+                *self.state.line_mut() += 1;
+                return Some(Ok(Node::Text(Text(
+                    self.source,
+                    t.span().clone(),
+                ))));
             }
 
             match t {
                 Token::Block(lex, span) => match lex {
                     lexer::Block::StartRawBlock => {
-                        let mut block = Block::new(self.source, BlockType::RawBlock, Some(span));
-                        while let Some(t) = self.lexer.next() {
-                            match t {
-                                Token::RawBlock(lex, span) => match lex {
-                                    lexer::RawBlock::End => {
-                                        block.exit(span);
-                                        return Some(Ok(Node::Block(block)));
-                                    }
-                                    _ => {
-                                        block.push(Node::Text(Text(self.source, span)));
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
+                        return block::raw(self.source, &mut self.lexer, span)
+                            .map(Ok);
                     }
                     lexer::Block::StartRawComment => {
-                        let mut block = Block::new(self.source, BlockType::RawComment, Some(span));
-                        while let Some(t) = self.lexer.next() {
-                            match t {
-                                Token::RawComment(lex, span) => match lex {
-                                    lexer::RawComment::End => {
-                                        block.exit(span);
-                                        return Some(Ok(Node::Block(block)));
-                                    }
-                                    _ => {
-                                        block.push(Node::Text(Text(self.source, span)));
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
+                        return block::raw_comment(
+                            self.source,
+                            &mut self.lexer,
+                            span,
+                        )
+                        .map(Ok);
                     }
                     lexer::Block::StartRawStatement => {
-                        let mut block = Block::new(self.source, BlockType::RawStatement, Some(span));
-                        while let Some(t) = self.lexer.next() {
-                            match t {
-                                Token::RawStatement(lex, span) => match lex {
-                                    lexer::RawStatement::End => {
-                                        block.exit(span);
-                                        return Some(Ok(Node::Block(block)));
-                                    }
-                                    _ => {
-                                        block.push(Node::Text(Text(self.source, span)));
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
+                        return block::escaped_statement(
+                            self.source,
+                            &mut self.lexer,
+                            span,
+                        )
+                        .map(Ok);
                     }
                     lexer::Block::StartComment => {
-                        let mut block = Block::new(self.source, BlockType::Comment, Some(span));
-                        while let Some(t) = self.lexer.next() {
-                            match t {
-                                Token::Comment(lex, span) => match lex {
-                                    lexer::Comment::End => {
-                                        block.exit(span);
-                                        return Some(Ok(Node::Block(block)));
-                                    }
-                                    _ => {
-                                        block.push(Node::Text(Text(self.source, span)));
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
+                        return block::comment(
+                            self.source,
+                            &mut self.lexer,
+                            span,
+                        )
+                        .map(Ok);
                     }
                     lexer::Block::StartBlockScope => {
-                        //parameters = Some(ParameterCache::new(
-                            //ParameterContext::Block,
-                            //span.clone(),
-                        //));
-
-                        //self.stack.push(
-                            //Block::new(self.source, BlockType::Scoped, Some(span)),
-                        //);
-
-                        let mut params = ParameterCache::new(
-                            ParameterContext::Statement,
-                            span.clone(),
-                        );
-                        let mut block = Block::new(self.source, BlockType::Scoped, Some(span));
-
-                        while let Some(t) = self.lexer.next() {
-                            match t {
-                                Token::Parameters(lex, span) => match lex {
-                                    lexer::Parameters::End => {
-                                        params.end = span;
-                                        match statement::parse(
-                                            self.source,
-                                            &mut self.state,
-                                            &mut params,
-                                        ) {
-                                            Ok(call) => block.set_call(call),
-                                            Err(e) => return Some(Err(e))
-                                        }
-                                    }
-                                    _ => {
-                                        params.tokens.push((lex, span));
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
-
+                        return block::scope(
+                            self.source,
+                            &mut self.lexer,
+                            &mut self.state,
+                            span,
+                        ).ok().map(|o| o.ok_or_else(|| {
+                            todo!("Handle no block node!")   
+                        }));
                     }
                     lexer::Block::EndBlockScope => {
                         // TODO: check the closing element matches the
                         // TODO: name of the open scope block
-
-                        //self.exit_stack(span, &mut text);
                     }
                     lexer::Block::StartStatement => {
-                        let mut params = ParameterCache::new(
-                            ParameterContext::Statement,
+                        match block::parameters(
+                            self.source,
+                            &mut self.lexer,
+                            &mut self.state,
                             span,
-                        );
-                        while let Some(t) = self.lexer.next() {
-                            match t {
-                                Token::Parameters(lex, span) => match lex {
-                                    lexer::Parameters::End => {
-                                        params.end = span;
-                                        match statement::parse(
-                                            self.source,
-                                            &mut self.state,
-                                            &mut params,
-                                        ) {
-                                            Ok(call) => return Some(Ok(Node::Statement(call))),
-                                            Err(e) => return Some(Err(e))
+                            ParameterContext::Statement,
+                        ) {
+                            Ok(mut parameters) => {
+
+                                if let Some(params) = parameters.take() {
+                                    match statement::parse(
+                                        self.source,
+                                        &mut self.state,
+                                        params,
+                                    ) {
+                                        Ok(call) => {
+                                            return Some(Ok(
+                                                Node::Statement(call),
+                                            ))
                                         }
-                                    }
-                                    _ => {
-                                        params.tokens.push((lex, span));
-                                    }
+                                        Err(e) => return Some(Err(e)),
+                                    } 
+                                } else {
+                                    // FIXME: use SyntaxError
+                                    panic!("Statement not terminated");
                                 }
-                                _ => {}
                             }
+                            Err(e) => return Some(Err(e))
                         }
                     }
                     _ => {}
                 },
-                Token::RawBlock(_, _) => {},
-                Token::RawComment(_, _) => {},
-                Token::RawStatement(_, _) => {},
-                Token::Comment(_, _) => {},
-                Token::Parameters(lex, span) => match lex {
-                    Parameters::End => {
-                        //if let Some(mut params) = parameters.take() {
-                            //let ctx = params.context.clone();
-                            //params.end = span;
-
-                            //let call = statement::parse(
-                                //self.source,
-                                //&mut self.state,
-                                //params.clone(),
-                            //)?;
-
-                            //let current = self.stack.last_mut().unwrap();
-                            //match ctx {
-                                //ParameterContext::Statement => {
-                                    //current.push(Node::Statement(call));
-                                //}
-                                //ParameterContext::Block => {
-                                    //current.set_call(call);
-                                //}
-                            //}
-                        //}
-                    }
-                    _ => {
-                        //if let Some(params) = parameters.as_mut() {
-                            //params.tokens.push((lex, span));
-                        //}
-                    }
-                },
-                Token::StringLiteral(lex, span) => match lex {
-                    //lexer::StringLiteral::Newline => {
-                        //if let Some(params) = parameters.take() {
-                            //if let Some((lex, span)) = params.tokens.last() {
-                                //*self.state.byte_mut() = span.end - 1;
-                            //}
-                        //}
-
-                        //return Err(SyntaxError::StringLiteralNewline(
-                            //ErrorInfo::new(
-                                //self.source,
-                                //self.state.file_name(),
-                                //SourcePos::from((self.state.line(), self.state.byte())),
-                            //),
-                        //));
-                    //}
-                    //_ => {
-                        //if let Some(params) = parameters.as_mut() {
-                            //params
-                                //.tokens
-                                //.push((Parameters::StringToken(lex), span));
-                        //}
-                    //}
-                    _ => {}
-                },
+                _ => panic!("Unexpected token {:?}", t),
             }
-
         }
-
         None
     }
 }

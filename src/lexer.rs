@@ -1,4 +1,4 @@
-use logos::{Lexer, Logos, Span};
+use logos::{Lexer as Lex, Logos, Span};
 
 #[derive(Clone, Default)]
 pub struct Extras;
@@ -272,14 +272,14 @@ impl Token {
 //pub struct Token(pub Box<dyn LexToken>, pub Span);
 
 enum Modes<'source> {
-    Block(Lexer<'source, Block>),
-    RawBlock(Lexer<'source, RawBlock>),
-    RawComment(Lexer<'source, RawComment>),
-    RawStatement(Lexer<'source, RawStatement>),
-    Comment(Lexer<'source, Comment>),
-    //BlockScope(Lexer<'source, BlockScope>),
-    Parameters(Lexer<'source, Parameters>),
-    StringLiteral(Lexer<'source, StringLiteral>),
+    Block(Lex<'source, Block>),
+    RawBlock(Lex<'source, RawBlock>),
+    RawComment(Lex<'source, RawComment>),
+    RawStatement(Lex<'source, RawStatement>),
+    Comment(Lex<'source, Comment>),
+    //BlockScope(Lex<'source, BlockScope>),
+    Parameters(Lex<'source, Parameters>),
+    StringLiteral(Lex<'source, StringLiteral>),
 }
 
 impl<'source> Modes<'source> {
@@ -288,12 +288,12 @@ impl<'source> Modes<'source> {
     }
 }
 
-pub struct ModeBridge<'source> {
+pub struct Lexer<'source> {
     mode: Modes<'source>,
 }
 
 /// Clone lexers as we switch between modes.
-impl<'source> Iterator for ModeBridge<'source> {
+impl<'source> Iterator for Lexer<'source> {
     type Item = Token;
     fn next(&mut self) -> Option<Self::Item> {
         match &mut self.mode {
@@ -435,8 +435,8 @@ fn normalize(tokens: Vec<Token>) -> Vec<Token> {
 }
 
 /// Iterator for the grammar tokens.
-pub fn lex(s: &str) -> ModeBridge {
-    ModeBridge {
+pub fn lex(s: &str) -> Lexer {
+    Lexer {
         mode: Modes::new(s),
     }
 }
