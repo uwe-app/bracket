@@ -487,6 +487,7 @@ impl<'source> Block<'source> {
         match self.kind {
             BlockType::Scoped => {
                 let close = self.close();
+                println!("Got before close {:?}", close);
                 close.len() > 2 && WHITESPACE == &close[2..3]
             }
             _ => false,

@@ -28,7 +28,7 @@ pub struct ErrorInfo<'source> {
     source: &'source str,
     file_name: String,
     source_pos: SourcePos,
-    notes: Vec<&'static str>,
+    notes: Vec<String>,
 }
 
 impl<'source> ErrorInfo<'source> {
@@ -49,7 +49,7 @@ impl<'source> ErrorInfo<'source> {
         source: &'source str,
         file_name: &str,
         source_pos: SourcePos,
-        notes: Vec<&'static str>,
+        notes: Vec<String>,
     ) -> Self {
         let mut info = ErrorInfo::new(source, file_name, source_pos);
         info.notes = notes;
@@ -104,6 +104,7 @@ impl<'source> From<SyntaxError<'source>> for Error<'source> {
 pub enum SyntaxError<'source> {
     EmptyStatement(ErrorInfo<'source>),
     ExpectedIdentifier(ErrorInfo<'source>),
+    ExpectedSimpleIdentifier(ErrorInfo<'source>),
     PartialIdentifier(ErrorInfo<'source>),
     PartialSimpleIdentifier(ErrorInfo<'source>),
     BlockIdentifier(ErrorInfo<'source>),
@@ -117,6 +118,7 @@ pub enum SyntaxError<'source> {
     UnexpectedPathParentWithExplicit(ErrorInfo<'source>),
     ExpectedPathDelimiter(ErrorInfo<'source>),
     OpenSubExpression(ErrorInfo<'source>),
+    TagNameMismatch(ErrorInfo<'source>),
 }
 
 impl SyntaxError<'_> {
@@ -124,6 +126,7 @@ impl SyntaxError<'_> {
         match *self {
             Self::EmptyStatement(_) => "statement is empty",
             Self::ExpectedIdentifier(_) => "expecting identifier",
+            Self::ExpectedSimpleIdentifier(_) => "expecting identifier not a path or sub-expression",
             Self::PartialIdentifier(_) => "partial requires an identifier",
             Self::PartialSimpleIdentifier(_) => {
                 "partial requires a simple identifier (not a path)"
@@ -153,6 +156,7 @@ impl SyntaxError<'_> {
             }
             Self::ExpectedPathDelimiter(_) => "expected path delimiter (.)",
             Self::OpenSubExpression(_) => "sub-expression not terminated",
+            Self::TagNameMismatch(_) => "closing name does not match",
         }
     }
 
@@ -160,6 +164,7 @@ impl SyntaxError<'_> {
         match *self {
             Self::EmptyStatement(ref info) => info,
             Self::ExpectedIdentifier(ref info) => info,
+            Self::ExpectedSimpleIdentifier(ref info) => info,
             Self::PartialIdentifier(ref info) => info,
             Self::PartialSimpleIdentifier(ref info) => info,
             Self::BlockIdentifier(ref info) => info,
@@ -173,6 +178,7 @@ impl SyntaxError<'_> {
             Self::UnexpectedPathParentWithExplicit(ref info) => info,
             Self::ExpectedPathDelimiter(ref info) => info,
             Self::OpenSubExpression(ref info) => info,
+            Self::TagNameMismatch(ref info) => info,
         }
     }
 

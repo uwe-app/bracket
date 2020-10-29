@@ -15,7 +15,7 @@ pub(crate) fn until<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     mut span: Range<usize>,
-    end: &Fn(&Token) -> bool,
+    end: &dyn Fn(&Token) -> bool,
 ) -> (Range<usize>, Option<Token>) {
     let mut next_token: Option<Token> = None;
     while let Some(t) = lexer.next() {
@@ -37,7 +37,7 @@ pub(crate) fn text_until<'source>(
     state: &mut ParseState,
     span: Range<usize>,
     block_type: BlockType,
-    end: &Fn(&Token) -> bool,
+    end: &dyn Fn(&Token) -> bool,
 ) -> Option<Node<'source>> {
     let text = span.end..span.end;
     let mut block = Block::new(source, block_type, Some(span));
@@ -171,7 +171,7 @@ pub(crate) fn parameters<'source>(
 }
 
 /// Open a scoped block `{{# block}}`.
-pub(crate) fn open<'source>(
+pub(crate) fn scope<'source>(
     source: &'source str,
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,

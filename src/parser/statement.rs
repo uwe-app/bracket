@@ -58,7 +58,7 @@ fn parse_call_target<'source>(
                             source,
                             state.file_name(),
                             SourcePos::from((state.line(), state.byte())),
-                            vec!["requires closing parenthesis ')'"],
+                            vec!["requires closing parenthesis ')'".to_string()],
                         ),
                     ));
                 }

@@ -49,7 +49,7 @@ This is some block text with an {{inline}}
 
     let options = ParserOptions {
         file_name: String::from("src/main.rs"),
-        line_offset: 3,
+        line_offset: 0,
         byte_offset: 0,
     };
 
@@ -57,7 +57,7 @@ This is some block text with an {{inline}}
 
     for node in parser {
         let node = node?;
-        println!("Got a node via iterator {:#?}", node);
+        println!("{:#?}", node);
     }
 
     //parser.parse().expect("Failed to parse!");
