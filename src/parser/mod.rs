@@ -129,7 +129,7 @@ impl<'source> Parser<'source> {
 
     /// Parse the entire document into a node tree.
     pub fn parse(&mut self) -> Result<Node<'source>, SyntaxError<'source>> {
-        let mut doc = Block::new(self.source, BlockType::Root, None);
+        let mut doc = Block::new(self.source, BlockType::Document, None);
         for node in self {
             let node = node?;
             doc.push(node);
@@ -180,7 +180,7 @@ impl<'source> Parser<'source> {
                         &mut self.lexer,
                         &mut self.state,
                         span,
-                    );
+                    ).map(Some);
                 }
                 lexer::Block::StartRawComment => {
                     return block::raw_comment(
@@ -188,15 +188,15 @@ impl<'source> Parser<'source> {
                         &mut self.lexer,
                         &mut self.state,
                         span,
-                    );
+                    ).map(Some);
                 }
                 lexer::Block::StartRawStatement => {
-                    return block::escaped_statement(
+                    return block::raw_statement(
                         self.source,
                         &mut self.lexer,
                         &mut self.state,
                         span,
-                    );
+                    ).map(Some);
                 }
                 lexer::Block::StartComment => {
                     return block::comment(
@@ -204,7 +204,7 @@ impl<'source> Parser<'source> {
                         &mut self.lexer,
                         &mut self.state,
                         span,
-                    );
+                    ).map(Some);
                 }
                 lexer::Block::StartBlockScope => {
                     let block = block::scope(

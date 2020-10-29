@@ -55,6 +55,9 @@ impl<'source> Render<'source> {
         rc: &mut RenderContext<'reg, 'render>,
         node: &Node<'source>,
     ) -> Result<(), RenderError> {
+
+        //println!("rendering node {:?}", node);
+
         match node {
             Node::Text(ref n) => {
                 rc.write_str(n.as_str())?;
@@ -63,27 +66,26 @@ impl<'source> Render<'source> {
                 println!("TODO: Evaluate statement in render!");
                 rc.write_str(n.as_str())?;
             }
+            Node::RawBlock(ref n) => {
+                rc.write_str(n.between())?;
+            }
+            Node::RawStatement(ref n) => {
+                let raw = &n.as_str()[1..];
+                rc.write_str(raw)?;
+            }
+            Node::RawComment(_) => {}
+            Node::Comment(_) => {}
             Node::Block(ref block) => {
                 //println!("rendering a block {:?}", block.kind());
                 match block.kind() {
-                    BlockType::RawBlock => {
-                        rc.write_str(block.between())?;
-                    }
-                    BlockType::RawComment | BlockType::Comment => {
-                        // NOTE: must ignore raw comments when rendering
-                    }
-                    BlockType::RawStatement => {
-                        let raw = &block.as_str()[1..];
-                        rc.write_str(raw)?;
-                    }
                     _ => {
                         for b in block.nodes().iter() {
-                            //println!("Rendering block {:?}", b.as_str());
                             self.render_node(rc, b)?;
                         }
                     }
                 }
             }
+            _ => todo!("Render other node types")
         }
 
         Ok(())

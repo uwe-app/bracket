@@ -4,7 +4,7 @@ use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{self, Lexer, Parameters, Token},
     parser::{
-        ast::{Block, BlockType, Node, Text},
+        ast::{Block, BlockType, Node, Text, TextBlock},
         statement,
         ParameterCache, ParameterContext, ParseState,
     },
@@ -36,17 +36,22 @@ pub(crate) fn text_until<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-    block_type: BlockType,
     end: &dyn Fn(&Token) -> bool,
+    wrap: &dyn Fn(TextBlock<'source>) -> Node<'source>,
 ) -> Option<Node<'source>> {
     let text = span.end..span.end;
-    let mut block = Block::new(source, block_type, Some(span));
+    let open = span;
     let (span, next_token) = until(lexer, state, text, end);
-    block.push(Node::Text(Text(source, span)));
     if let Some(close) = next_token {
-        block.exit(close.span().clone());
+        let block = TextBlock::new(
+            source,
+            Text(source, span),
+            open,
+            close.span().clone()
+        );
+        return Some(wrap(block))
     }
-    return Some(Node::Block(block));
+    None
 }
 
 /// Parse a raw block `{{{{raw}}}}{{{{/raw}}}}`.
@@ -55,7 +60,7 @@ pub(crate) fn raw<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-) -> Result<Option<Node<'source>>, SyntaxError<'source>> {
+) -> Result<Node<'source>, SyntaxError<'source>> {
     let end = |t: &Token| {
         match t {
             Token::RawBlock(lex, span) => match lex {
@@ -65,7 +70,15 @@ pub(crate) fn raw<'source>(
             _ => false
         }
     };
-    Ok(text_until(source, lexer, state, span, BlockType::RawBlock, &end))
+
+    let wrap = |t: TextBlock<'source>| { Node::RawBlock(t) };
+    let maybe_node = text_until(source, lexer, state, span, &end, &wrap);
+    if let Some(node) = maybe_node {
+        return Ok(node)
+    } else {
+        // FIXME:
+        panic!("Raw block was not terminated");
+    }
 }
 
 /// Parse a raw comment `{{!-- comment --}}`.
@@ -74,7 +87,7 @@ pub(crate) fn raw_comment<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-) -> Result<Option<Node<'source>>, SyntaxError<'source>> {
+) -> Result<Node<'source>, SyntaxError<'source>> {
     let end = |t: &Token| {
         match t {
             Token::RawComment(lex, span) => match lex {
@@ -84,16 +97,24 @@ pub(crate) fn raw_comment<'source>(
             _ => false
         }
     };
-    Ok(text_until(source, lexer, state, span, BlockType::RawComment, &end))
+
+    let wrap = |t: TextBlock<'source>| { Node::RawComment(t) };
+    let maybe_node = text_until(source, lexer, state, span, &end, &wrap);
+    if let Some(node) = maybe_node {
+        return Ok(node)
+    } else {
+        // FIXME:
+        panic!("Raw comment was not terminated");
+    }
 }
 
 /// Parse an escaped statement `\{{escaped}}`.
-pub(crate) fn escaped_statement<'source>(
+pub(crate) fn raw_statement<'source>(
     source: &'source str,
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-) -> Result<Option<Node<'source>>, SyntaxError<'source>> {
+) -> Result<Node<'source>, SyntaxError<'source>> {
     let end = |t: &Token| {
         match t {
             Token::RawStatement(lex, span) => match lex {
@@ -103,7 +124,15 @@ pub(crate) fn escaped_statement<'source>(
             _ => false
         }
     };
-    Ok(text_until(source, lexer, state, span, BlockType::RawStatement, &end))
+
+    let wrap = |t: TextBlock<'source>| { Node::RawStatement(t) };
+    let maybe_node = text_until(source, lexer, state, span, &end, &wrap);
+    if let Some(node) = maybe_node {
+        return Ok(node)
+    } else {
+        // FIXME:
+        panic!("Raw statement was not terminated");
+    }
 }
 
 /// Parse a comment block `{{! comment }}`.
@@ -112,7 +141,7 @@ pub(crate) fn comment<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-) -> Result<Option<Node<'source>>, SyntaxError<'source>> {
+) -> Result<Node<'source>, SyntaxError<'source>> {
     let end = |t: &Token| {
         match t {
             Token::Comment(lex, span) => match lex {
@@ -122,7 +151,15 @@ pub(crate) fn comment<'source>(
             _ => false
         }
     };
-    Ok(text_until(source, lexer, state, span, BlockType::Comment, &end))
+
+    let wrap = |t: TextBlock<'source>| { Node::Comment(t) };
+    let maybe_node = text_until(source, lexer, state, span, &end, &wrap);
+    if let Some(node) = maybe_node {
+        return Ok(node)
+    } else {
+        // FIXME:
+        panic!("Comment was not terminated");
+    }
 }
 
 /// Parse block or statement parameters.

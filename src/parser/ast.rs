@@ -18,6 +18,11 @@ pub enum Node<'source> {
     Text(Text<'source>),
     Statement(Call<'source>),
     Block(Block<'source>),
+
+    RawBlock(TextBlock<'source>),
+    RawStatement(TextBlock<'source>),
+    RawComment(TextBlock<'source>),
+    Comment(TextBlock<'source>),
 }
 
 impl<'source> Node<'source> {
@@ -26,12 +31,20 @@ impl<'source> Node<'source> {
             Self::Text(ref n) => n.as_str(),
             Self::Statement(ref n) => n.as_str(),
             Self::Block(ref n) => n.as_str(),
+            Self::RawBlock(ref n)
+                | Self::RawStatement(ref n)
+                | Self::RawComment(ref n)
+                | Self::Comment(ref n) => n.as_str(),
         }
     }
 
     pub fn trim_before(&self) -> bool {
         match *self {
-            Self::Text(_) => false,
+            Self::Text(_)
+                | Self::RawBlock(_)
+                | Self::RawStatement(_)
+                | Self::RawComment(_)
+                | Self::Comment(_) => false,
             Self::Statement(ref n) => n.open().ends_with(WHITESPACE),
             Self::Block(ref n) => {
                 let open = n.open();
@@ -42,7 +55,11 @@ impl<'source> Node<'source> {
 
     pub fn trim_after(&self) -> bool {
         match *self {
-            Self::Text(_) => false,
+            Self::Text(_)
+                | Self::RawBlock(_)
+                | Self::RawStatement(_)
+                | Self::RawComment(_)
+                | Self::Comment(_) => false,
             Self::Statement(ref n) => n.close().starts_with(WHITESPACE),
             Self::Block(ref n) => {
                 let open = n.open();
@@ -58,6 +75,10 @@ impl fmt::Display for Node<'_> {
             Self::Text(ref n) => n.fmt(f),
             Self::Statement(ref n) => n.fmt(f),
             Self::Block(ref n) => n.fmt(f),
+            Self::RawBlock(ref n)
+                | Self::RawStatement(ref n)
+                | Self::RawComment(ref n)
+                | Self::Comment(ref n) => n.fmt(f),
         }
     }
 }
@@ -65,16 +86,18 @@ impl fmt::Display for Node<'_> {
 impl fmt::Debug for Node<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            Self::Text(ref t) => {
-                f.debug_struct("Text").field("source", &t.as_str()).finish()
-            }
-            Self::Block(ref b) => fmt::Debug::fmt(b, f),
-            Self::Statement(ref s) => fmt::Debug::fmt(s, f),
+            Self::Text(ref n) => fmt::Debug::fmt(n, f),
+            Self::Block(ref n) => fmt::Debug::fmt(n, f),
+            Self::Statement(ref n) => fmt::Debug::fmt(n, f),
+            Self::RawBlock(ref n)
+                | Self::RawStatement(ref n)
+                | Self::RawComment(ref n)
+                | Self::Comment(ref n) => fmt::Debug::fmt(n, f),
         }
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Eq, PartialEq)]
 pub struct Text<'source>(pub &'source str, pub Range<usize>);
 
 impl<'source> Text<'source> {
@@ -86,6 +109,57 @@ impl<'source> Text<'source> {
 impl fmt::Display for Text<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.as_str())
+    }
+}
+
+impl fmt::Debug for Text<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Text")
+            .field("source", &self.as_str())
+            .field("range", &self.1)
+            .finish()
+    }
+}
+
+#[derive(Eq, PartialEq)]
+pub struct TextBlock<'source> {
+    source: &'source str,
+    text: Text<'source>,
+    open: Range<usize>,
+    close: Range<usize>,
+}
+
+impl<'source> TextBlock<'source> {
+    pub fn new(
+        source: &'source str,
+        text: Text<'source>,
+        open: Range<usize>,
+        close: Range<usize>) -> Self {
+        Self {source, text, open, close} 
+    }
+
+    pub fn as_str(&self) -> &'source str {
+        &self.source[self.open.start..self.close.end]
+    }
+
+    pub fn between(&self) -> &'source str {
+        &self.source[self.open.end..self.close.start]
+    }
+}
+
+impl fmt::Display for TextBlock<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+impl fmt::Debug for TextBlock<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TextBlock")
+            .field("source", &self.as_str())
+            .field("open", &self.open)
+            .field("close", &self.close)
+            .finish()
     }
 }
 
@@ -372,21 +446,11 @@ impl fmt::Debug for Call<'_> {
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum BlockType {
-    Root,
-    RawBlock,     // {{{{raw}}}}{{expr}}{{{{/raw}}}}
-    RawStatement, // \{{expr}}
-    RawComment,   // {{!-- {{expr}} --}}
-    Comment,      // {{! comment }}
-    Scoped,       // {{#> partial|helper}}{{/partial|helper}}
+    Document,
+    Scoped,
 }
 
-impl Default for BlockType {
-    fn default() -> Self {
-        Self::Root
-    }
-}
-
-#[derive(Default, Eq, PartialEq)]
+#[derive(Eq, PartialEq)]
 pub struct Block<'source> {
     // Raw source input.
     source: &'source str,
@@ -440,7 +504,7 @@ impl<'source> Block<'source> {
 
     pub fn as_str(&self) -> &'source str {
         match self.kind() {
-            BlockType::Root => self.source,
+            BlockType::Document => self.source,
             _ => {
                 let open = self.open.clone().unwrap_or(0..0);
                 let close = self.close.clone().unwrap_or(0..self.source.len());
@@ -452,23 +516,13 @@ impl<'source> Block<'source> {
     pub fn open(&self) -> &'source str {
         if let Some(ref open) = self.open {
             &self.source[open.start..open.end]
-        } else {
-            ""
-        }
-    }
-
-    pub fn between(&self) -> &'source str {
-        let open = self.open.clone().unwrap_or(0..0);
-        let close = self.close.clone().unwrap_or(0..self.source.len());
-        &self.source[open.end..close.start]
+        } else { "" }
     }
 
     pub fn close(&self) -> &'source str {
         if let Some(ref close) = self.close {
             &self.source[close.start..close.end]
-        } else {
-            ""
-        }
+        } else { "" }
     }
 
     pub fn push(&mut self, node: Node<'source>) {
@@ -508,7 +562,7 @@ impl<'source> Block<'source> {
 impl fmt::Display for Block<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.kind() {
-            BlockType::Root => write!(f, "{}", self.source),
+            BlockType::Document => write!(f, "{}", self.source),
             _ => {
                 for t in self.nodes() {
                     t.fmt(f)?;

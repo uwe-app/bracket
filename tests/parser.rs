@@ -13,7 +13,7 @@ fn parse_statement() -> Result<'static, ()> {
 
     match node {
         Node::Block(b) => {
-            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(&BlockType::Document, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             assert_eq!(false, node.trim_before());
@@ -33,7 +33,7 @@ fn parse_statement_path_root() -> Result<'static, ()> {
 
     match node {
         Node::Block(b) => {
-            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(&BlockType::Document, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
@@ -59,7 +59,7 @@ fn parse_statement_path_parents() -> Result<'static, ()> {
 
     match node {
         Node::Block(b) => {
-            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(&BlockType::Document, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
@@ -85,7 +85,7 @@ fn parse_statement_path_explicit_this() -> Result<'static, ()> {
 
     match node {
         Node::Block(b) => {
-            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(&BlockType::Document, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
@@ -111,7 +111,7 @@ fn parse_statement_path_explicit_dot() -> Result<'static, ()> {
 
     match node {
         Node::Block(b) => {
-            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(&BlockType::Document, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
@@ -137,7 +137,7 @@ fn parse_statement_partial() -> Result<'static, ()> {
 
     match node {
         Node::Block(b) => {
-            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(&BlockType::Document, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
@@ -161,7 +161,7 @@ fn parse_arg_path() -> Result<'static, ()> {
 
     match node {
         Node::Block(b) => {
-            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(&BlockType::Document, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
@@ -199,7 +199,7 @@ fn parse_arg_string() -> Result<'static, ()> {
 
     match node {
         Node::Block(b) => {
-            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(&BlockType::Document, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
@@ -230,7 +230,7 @@ fn parse_hash_string() -> Result<'static, ()> {
 
     match node {
         Node::Block(b) => {
-            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(&BlockType::Document, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
@@ -261,7 +261,7 @@ fn parse_arg_bool_true() -> Result<'static, ()> {
 
     match node {
         Node::Block(b) => {
-            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(&BlockType::Document, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
@@ -290,7 +290,7 @@ fn parse_arg_bool_false() -> Result<'static, ()> {
 
     match node {
         Node::Block(b) => {
-            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(&BlockType::Document, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
@@ -319,7 +319,7 @@ fn parse_arg_null() -> Result<'static, ()> {
 
     match node {
         Node::Block(b) => {
-            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(&BlockType::Document, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
@@ -348,7 +348,7 @@ fn parse_arg_num_int() -> Result<'static, ()> {
 
     match node {
         Node::Block(b) => {
-            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(&BlockType::Document, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
@@ -378,7 +378,7 @@ fn parse_arg_num_int_signed() -> Result<'static, ()> {
 
     match node {
         Node::Block(b) => {
-            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(&BlockType::Document, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
@@ -408,7 +408,7 @@ fn parse_arg_num_int_signed_exponent() -> Result<'static, ()> {
 
     match node {
         Node::Block(b) => {
-            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(&BlockType::Document, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
@@ -438,7 +438,7 @@ fn parse_arg_num_float() -> Result<'static, ()> {
 
     match node {
         Node::Block(b) => {
-            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(&BlockType::Document, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
@@ -468,7 +468,7 @@ fn parse_arg_num_float_signed() -> Result<'static, ()> {
 
     match node {
         Node::Block(b) => {
-            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(&BlockType::Document, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
@@ -497,7 +497,7 @@ fn parse_arg_num_float_signed_exponent() -> Result<'static, ()> {
 
     match node {
         Node::Block(b) => {
-            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(&BlockType::Document, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             match node {
@@ -526,7 +526,7 @@ fn parse_statement_trim() -> Result<'static, ()> {
 
     match node {
         Node::Block(b) => {
-            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(&BlockType::Document, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             assert_eq!(true, node.trim_before());
@@ -546,7 +546,7 @@ fn parse_block_trim() -> Result<'static, ()> {
 
     match node {
         Node::Block(b) => {
-            assert_eq!(&BlockType::Root, b.kind());
+            assert_eq!(&BlockType::Document, b.kind());
             assert_eq!(1, b.nodes().len());
             let node = b.nodes().first().unwrap();
             assert_eq!(true, node.trim_before());
