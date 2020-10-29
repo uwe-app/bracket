@@ -4,7 +4,7 @@ use serde_json::Value;
 use crate::{
     error::RenderError,
     output::Output,
-    parser::ast::{BlockType, Node},
+    parser::ast::{Node},
     registry::Registry,
 };
 
@@ -62,10 +62,6 @@ impl<'source> Render<'source> {
             Node::Text(ref n) => {
                 rc.write_str(n.as_str())?;
             }
-            Node::Statement(ref n) => {
-                println!("TODO: Evaluate statement in render!");
-                rc.write_str(n.as_str())?;
-            }
             Node::RawBlock(ref n) => {
                 rc.write_str(n.between())?;
             }
@@ -75,14 +71,19 @@ impl<'source> Render<'source> {
             }
             Node::RawComment(_) => {}
             Node::Comment(_) => {}
+            Node::Document(ref doc) => {
+                for b in doc.nodes().iter() {
+                    self.render_node(rc, b)?;
+                }
+            }
+            Node::Statement(ref n) => {
+                println!("TODO: Evaluate statement in render!");
+                rc.write_str(n.as_str())?;
+            }
             Node::Block(ref block) => {
-                //println!("rendering a block {:?}", block.kind());
-                match block.kind() {
-                    _ => {
-                        for b in block.nodes().iter() {
-                            self.render_node(rc, b)?;
-                        }
-                    }
+                // TODO: call partial / helper for blocks
+                for b in block.nodes().iter() {
+                    self.render_node(rc, b)?;
                 }
             }
             _ => todo!("Render other node types")

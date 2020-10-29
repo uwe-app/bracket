@@ -5,7 +5,7 @@ use logos::Span;
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{self, lex, Lexer, Parameters, Token},
-    parser::ast::{Block, BlockType, Node, Text, CallTarget},
+    parser::ast::{Document, Block, Node, Text, CallTarget},
 };
 
 /// Default file name.
@@ -129,12 +129,12 @@ impl<'source> Parser<'source> {
 
     /// Parse the entire document into a node tree.
     pub fn parse(&mut self) -> Result<Node<'source>, SyntaxError<'source>> {
-        let mut doc = Block::new(self.source, BlockType::Document, None);
+        let mut doc = Document(&self.source, vec![]);
         for node in self {
             let node = node?;
-            doc.push(node);
+            doc.nodes_mut().push(node);
         }
-        Ok(Node::Block(doc))
+        Ok(Node::Document(doc))
     }
 
     /// Yield the next token accounting for text normalization which 

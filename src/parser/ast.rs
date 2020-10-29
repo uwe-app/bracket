@@ -15,6 +15,7 @@ pub static LEVEL: &str = "@level";
 
 #[derive(Eq, PartialEq)]
 pub enum Node<'source> {
+    Document(Document<'source>),
     Text(Text<'source>),
     Statement(Call<'source>),
     Block(Block<'source>),
@@ -28,6 +29,7 @@ pub enum Node<'source> {
 impl<'source> Node<'source> {
     pub fn as_str(&self) -> &'source str {
         match *self {
+            Self::Document(ref n) => n.as_str(),
             Self::Text(ref n) => n.as_str(),
             Self::Statement(ref n) => n.as_str(),
             Self::Block(ref n) => n.as_str(),
@@ -40,7 +42,8 @@ impl<'source> Node<'source> {
 
     pub fn trim_before(&self) -> bool {
         match *self {
-            Self::Text(_)
+            Self::Document(_)
+                | Self::Text(_)
                 | Self::RawBlock(_)
                 | Self::RawStatement(_)
                 | Self::RawComment(_)
@@ -55,7 +58,8 @@ impl<'source> Node<'source> {
 
     pub fn trim_after(&self) -> bool {
         match *self {
-            Self::Text(_)
+            Self::Document(_)
+                | Self::Text(_)
                 | Self::RawBlock(_)
                 | Self::RawStatement(_)
                 | Self::RawComment(_)
@@ -67,11 +71,36 @@ impl<'source> Node<'source> {
             }
         }
     }
+
+    pub fn iter(&'source self) -> NodeIter<'source> {
+        NodeIter { node: self } 
+    }
+}
+
+pub struct NodeIter<'source> {
+    node: &'source Node<'source>,
+}
+
+impl<'source> Iterator for NodeIter<'source> {
+    type Item = &'source Node<'source>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match *self.node {
+            Node::Text(_) => Some(self.node),
+            Node::Statement(_) => Some(self.node),
+            Node::RawBlock(_)
+                | Node::RawStatement(_)
+                | Node::RawComment(_)
+                | Node::Comment(_) => Some(self.node),
+            _ => None
+        }
+    }
 }
 
 impl fmt::Display for Node<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
+            Self::Document(ref n) => n.fmt(f),
             Self::Text(ref n) => n.fmt(f),
             Self::Statement(ref n) => n.fmt(f),
             Self::Block(ref n) => n.fmt(f),
@@ -86,6 +115,7 @@ impl fmt::Display for Node<'_> {
 impl fmt::Debug for Node<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
+            Self::Document(ref n) => fmt::Debug::fmt(n, f),
             Self::Text(ref n) => fmt::Debug::fmt(n, f),
             Self::Block(ref n) => fmt::Debug::fmt(n, f),
             Self::Statement(ref n) => fmt::Debug::fmt(n, f),
@@ -444,19 +474,43 @@ impl fmt::Debug for Call<'_> {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
-pub enum BlockType {
-    Document,
-    Scoped,
+#[derive(Eq, PartialEq)]
+pub struct Document<'source>(pub &'source str, pub Vec<Node<'source>>);
+
+impl<'source> Document<'source> {
+    pub fn as_str(&self) -> &'source str {
+        self.0
+    }
+
+    pub fn nodes(&self) -> &Vec<Node<'source>> {
+        &self.1
+    }
+
+    pub fn nodes_mut(&mut self) -> &mut Vec<Node<'source>> {
+        &mut self.1
+    }
+}
+
+impl fmt::Display for Document<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl fmt::Debug for Document<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Block")
+            .field("nodes", &self.1)
+            .finish()
+    }
 }
 
 #[derive(Eq, PartialEq)]
 pub struct Block<'source> {
     // Raw source input.
     source: &'source str,
-    kind: BlockType,
     nodes: Vec<Node<'source>>,
-    open: Option<Range<usize>>,
+    open: Range<usize>,
     close: Option<Range<usize>>,
     call: Call<'source>,
 }
@@ -464,12 +518,10 @@ pub struct Block<'source> {
 impl<'source> Block<'source> {
     pub fn new(
         source: &'source str,
-        kind: BlockType,
-        open: Option<Range<usize>>,
+        open: Range<usize>,
     ) -> Self {
         Self {
             source,
-            kind,
             nodes: Vec::new(),
             open,
             close: None,
@@ -503,20 +555,12 @@ impl<'source> Block<'source> {
     }
 
     pub fn as_str(&self) -> &'source str {
-        match self.kind() {
-            BlockType::Document => self.source,
-            _ => {
-                let open = self.open.clone().unwrap_or(0..0);
-                let close = self.close.clone().unwrap_or(0..self.source.len());
-                &self.source[open.start..close.end]
-            }
-        }
+        let close = self.close.clone().unwrap_or(0..self.source.len());
+        &self.source[self.open.start..close.end]
     }
 
     pub fn open(&self) -> &'source str {
-        if let Some(ref open) = self.open {
-            &self.source[open.start..open.end]
-        } else { "" }
+        &self.source[self.open.start..self.open.end]
     }
 
     pub fn close(&self) -> &'source str {
@@ -529,54 +573,33 @@ impl<'source> Block<'source> {
         self.nodes.push(node);
     }
 
-    pub fn kind(&self) -> &BlockType {
-        &self.kind
-    }
-
     pub fn nodes(&self) -> &'source Vec<Node> {
         &self.nodes
     }
 
     pub fn trim_before_close(&self) -> bool {
-        match self.kind {
-            BlockType::Scoped => {
-                let close = self.close();
-                println!("Got before close {:?}", close);
-                close.len() > 2 && WHITESPACE == &close[2..3]
-            }
-            _ => false,
-        }
+        let close = self.close();
+        close.len() > 2 && WHITESPACE == &close[2..3]
     }
 
     pub fn trim_after_close(&self) -> bool {
-        match self.kind {
-            BlockType::Scoped => {
-                let close = self.call.close();
-                close.len() > 2 && WHITESPACE == &close[0..1]
-            }
-            _ => false,
-        }
+        let close = self.call.close();
+        close.len() > 2 && WHITESPACE == &close[0..1]
     }
 }
 
 impl fmt::Display for Block<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.kind() {
-            BlockType::Document => write!(f, "{}", self.source),
-            _ => {
-                for t in self.nodes() {
-                    t.fmt(f)?;
-                }
-                Ok(())
-            }
+        for t in self.nodes() {
+            t.fmt(f)?;
         }
+        Ok(())
     }
 }
 
 impl fmt::Debug for Block<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Block")
-            .field("kind", &self.kind)
             .field("open", &self.open)
             .field("close", &self.close)
             .field("call", &self.call)

@@ -4,7 +4,7 @@ use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{self, Lexer, Parameters, Token},
     parser::{
-        ast::{Block, BlockType, Node, Text, TextBlock},
+        ast::{Block, Node, Text, TextBlock},
         statement,
         ParameterCache, ParameterContext, ParseState,
     },
@@ -223,11 +223,7 @@ pub(crate) fn scope<'source>(
     )?;
 
     if let Some(params) = parameters.take() {
-        let mut block = Block::new(
-            source,
-            BlockType::Scoped,
-            Some(span),
-        );
+        let mut block = Block::new(source, span);
 
         match statement::parse(
             source,

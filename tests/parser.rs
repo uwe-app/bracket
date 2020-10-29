@@ -12,10 +12,9 @@ fn parse_statement() -> Result<'static, ()> {
     let node = parser.parse()?;
 
     match node {
-        Node::Block(b) => {
-            assert_eq!(&BlockType::Document, b.kind());
-            assert_eq!(1, b.nodes().len());
-            let node = b.nodes().first().unwrap();
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
             assert_eq!(false, node.trim_before());
             assert_eq!(false, node.trim_after());
         }
@@ -32,10 +31,9 @@ fn parse_statement_path_root() -> Result<'static, ()> {
     let node = parser.parse()?;
 
     match node {
-        Node::Block(b) => {
-            assert_eq!(&BlockType::Document, b.kind());
-            assert_eq!(1, b.nodes().len());
-            let node = b.nodes().first().unwrap();
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
             match node {
                 Node::Statement(ref call) => match call.target() {
                     CallTarget::Path(ref path) => {
@@ -58,10 +56,9 @@ fn parse_statement_path_parents() -> Result<'static, ()> {
     let node = parser.parse()?;
 
     match node {
-        Node::Block(b) => {
-            assert_eq!(&BlockType::Document, b.kind());
-            assert_eq!(1, b.nodes().len());
-            let node = b.nodes().first().unwrap();
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
             match node {
                 Node::Statement(ref call) => match call.target() {
                     CallTarget::Path(ref path) => {
@@ -84,10 +81,9 @@ fn parse_statement_path_explicit_this() -> Result<'static, ()> {
     let node = parser.parse()?;
 
     match node {
-        Node::Block(b) => {
-            assert_eq!(&BlockType::Document, b.kind());
-            assert_eq!(1, b.nodes().len());
-            let node = b.nodes().first().unwrap();
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
             match node {
                 Node::Statement(ref call) => match call.target() {
                     CallTarget::Path(ref path) => {
@@ -110,10 +106,9 @@ fn parse_statement_path_explicit_dot() -> Result<'static, ()> {
     let node = parser.parse()?;
 
     match node {
-        Node::Block(b) => {
-            assert_eq!(&BlockType::Document, b.kind());
-            assert_eq!(1, b.nodes().len());
-            let node = b.nodes().first().unwrap();
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
             match node {
                 Node::Statement(ref call) => match call.target() {
                     CallTarget::Path(ref path) => {
@@ -136,10 +131,9 @@ fn parse_statement_partial() -> Result<'static, ()> {
     let node = parser.parse()?;
 
     match node {
-        Node::Block(b) => {
-            assert_eq!(&BlockType::Document, b.kind());
-            assert_eq!(1, b.nodes().len());
-            let node = b.nodes().first().unwrap();
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
             match node {
                 Node::Statement(ref call) => {
                     assert_eq!(true, call.is_partial());
@@ -160,10 +154,9 @@ fn parse_arg_path() -> Result<'static, ()> {
     let node = parser.parse()?;
 
     match node {
-        Node::Block(b) => {
-            assert_eq!(&BlockType::Document, b.kind());
-            assert_eq!(1, b.nodes().len());
-            let node = b.nodes().first().unwrap();
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
             match node {
                 Node::Statement(ref call) => {
                     let args = call.arguments();
@@ -198,10 +191,9 @@ fn parse_arg_string() -> Result<'static, ()> {
     let node = parser.parse()?;
 
     match node {
-        Node::Block(b) => {
-            assert_eq!(&BlockType::Document, b.kind());
-            assert_eq!(1, b.nodes().len());
-            let node = b.nodes().first().unwrap();
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
             match node {
                 Node::Statement(ref call) => {
                     let args = call.arguments();
@@ -229,10 +221,9 @@ fn parse_hash_string() -> Result<'static, ()> {
     let node = parser.parse()?;
 
     match node {
-        Node::Block(b) => {
-            assert_eq!(&BlockType::Document, b.kind());
-            assert_eq!(1, b.nodes().len());
-            let node = b.nodes().first().unwrap();
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
             match node {
                 Node::Statement(ref call) => {
                     let hash = call.hash();
@@ -260,10 +251,9 @@ fn parse_arg_bool_true() -> Result<'static, ()> {
     let node = parser.parse()?;
 
     match node {
-        Node::Block(b) => {
-            assert_eq!(&BlockType::Document, b.kind());
-            assert_eq!(1, b.nodes().len());
-            let node = b.nodes().first().unwrap();
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
             match node {
                 Node::Statement(ref call) => {
                     let args = call.arguments();
@@ -289,10 +279,9 @@ fn parse_arg_bool_false() -> Result<'static, ()> {
     let node = parser.parse()?;
 
     match node {
-        Node::Block(b) => {
-            assert_eq!(&BlockType::Document, b.kind());
-            assert_eq!(1, b.nodes().len());
-            let node = b.nodes().first().unwrap();
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
             match node {
                 Node::Statement(ref call) => {
                     let args = call.arguments();
@@ -318,10 +307,9 @@ fn parse_arg_null() -> Result<'static, ()> {
     let node = parser.parse()?;
 
     match node {
-        Node::Block(b) => {
-            assert_eq!(&BlockType::Document, b.kind());
-            assert_eq!(1, b.nodes().len());
-            let node = b.nodes().first().unwrap();
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
             match node {
                 Node::Statement(ref call) => {
                     let args = call.arguments();
@@ -347,10 +335,9 @@ fn parse_arg_num_int() -> Result<'static, ()> {
     let node = parser.parse()?;
 
     match node {
-        Node::Block(b) => {
-            assert_eq!(&BlockType::Document, b.kind());
-            assert_eq!(1, b.nodes().len());
-            let node = b.nodes().first().unwrap();
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
             match node {
                 Node::Statement(ref call) => {
                     let args = call.arguments();
@@ -377,10 +364,9 @@ fn parse_arg_num_int_signed() -> Result<'static, ()> {
     let node = parser.parse()?;
 
     match node {
-        Node::Block(b) => {
-            assert_eq!(&BlockType::Document, b.kind());
-            assert_eq!(1, b.nodes().len());
-            let node = b.nodes().first().unwrap();
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
             match node {
                 Node::Statement(ref call) => {
                     let args = call.arguments();
@@ -407,10 +393,9 @@ fn parse_arg_num_int_signed_exponent() -> Result<'static, ()> {
     let node = parser.parse()?;
 
     match node {
-        Node::Block(b) => {
-            assert_eq!(&BlockType::Document, b.kind());
-            assert_eq!(1, b.nodes().len());
-            let node = b.nodes().first().unwrap();
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
             match node {
                 Node::Statement(ref call) => {
                     let args = call.arguments();
@@ -437,10 +422,9 @@ fn parse_arg_num_float() -> Result<'static, ()> {
     let node = parser.parse()?;
 
     match node {
-        Node::Block(b) => {
-            assert_eq!(&BlockType::Document, b.kind());
-            assert_eq!(1, b.nodes().len());
-            let node = b.nodes().first().unwrap();
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
             match node {
                 Node::Statement(ref call) => {
                     let args = call.arguments();
@@ -467,10 +451,9 @@ fn parse_arg_num_float_signed() -> Result<'static, ()> {
     let node = parser.parse()?;
 
     match node {
-        Node::Block(b) => {
-            assert_eq!(&BlockType::Document, b.kind());
-            assert_eq!(1, b.nodes().len());
-            let node = b.nodes().first().unwrap();
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
             match node {
                 Node::Statement(ref call) => {
                     let args = call.arguments();
@@ -496,10 +479,9 @@ fn parse_arg_num_float_signed_exponent() -> Result<'static, ()> {
     let node = parser.parse()?;
 
     match node {
-        Node::Block(b) => {
-            assert_eq!(&BlockType::Document, b.kind());
-            assert_eq!(1, b.nodes().len());
-            let node = b.nodes().first().unwrap();
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
             match node {
                 Node::Statement(ref call) => {
                     let args = call.arguments();
@@ -525,10 +507,9 @@ fn parse_statement_trim() -> Result<'static, ()> {
     let node = parser.parse()?;
 
     match node {
-        Node::Block(b) => {
-            assert_eq!(&BlockType::Document, b.kind());
-            assert_eq!(1, b.nodes().len());
-            let node = b.nodes().first().unwrap();
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
             assert_eq!(true, node.trim_before());
             assert_eq!(true, node.trim_after());
         }
@@ -545,10 +526,9 @@ fn parse_block_trim() -> Result<'static, ()> {
     let node = parser.parse()?;
 
     match node {
-        Node::Block(b) => {
-            assert_eq!(&BlockType::Document, b.kind());
-            assert_eq!(1, b.nodes().len());
-            let node = b.nodes().first().unwrap();
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
             assert_eq!(true, node.trim_before());
             assert_eq!(true, node.trim_after());
 
