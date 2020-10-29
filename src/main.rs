@@ -43,6 +43,7 @@ This is some block text with an {{inline}}
 
     //let s = "{{{{raw}}}}foo{{{{/raw}}}}{{!-- raw comment --}}";
     //let s = "{{foo ../bar}}";
+    //let s = "Some text";
 
     let options = ParserOptions {
         file_name: String::from("src/main.rs"),

@@ -10,100 +10,119 @@ use crate::{
     },
 };
 
+/// Consume consecutive tokens into a single span.
+pub(crate) fn until<'source>(
+    lexer: &mut Lexer<'source>,
+    state: &mut ParseState,
+    mut span: Range<usize>,
+    end: &Fn(&Token) -> bool,
+) -> (Range<usize>, Option<Token>) {
+    let mut next_token: Option<Token> = None;
+    while let Some(t) = lexer.next() {
+        if t.is_newline() { *state.line_mut() += 1; }
+        if !end(&t) {
+            span.end = t.span().end;        
+        } else {
+            next_token = Some(t);
+            break;
+        }
+    }
+    return (span, next_token);
+}
+
+/// Parse text until a test indicates the end of the block.
+pub(crate) fn text_until<'source>(
+    source: &'source str,
+    lexer: &mut Lexer<'source>,
+    state: &mut ParseState,
+    span: Range<usize>,
+    block_type: BlockType,
+    end: &Fn(&Token) -> bool,
+) -> Option<Node<'source>> {
+    let text = span.end..span.end;
+    let mut block = Block::new(source, block_type, Some(span));
+    let (span, next_token) = until(lexer, state, text, end);
+    block.push(Node::Text(Text(source, span)));
+    if let Some(close) = next_token {
+        block.exit(close.span().clone());
+    }
+    return Some(Node::Block(block));
+}
+
 /// Parse a raw block `{{{{raw}}}}{{{{/raw}}}}`.
 pub(crate) fn raw<'source>(
     source: &'source str,
     lexer: &mut Lexer<'source>,
+    state: &mut ParseState,
     span: Range<usize>,
 ) -> Option<Node<'source>> {
-    let mut block = Block::new(source, BlockType::RawBlock, Some(span));
-    while let Some(t) = lexer.next() {
+    let end = |t: &Token| {
         match t {
             Token::RawBlock(lex, span) => match lex {
-                lexer::RawBlock::End => {
-                    block.exit(span);
-                    return Some(Node::Block(block));
-                }
-                _ => {
-                    block.push(Node::Text(Text(source, span)));
-                }
+                lexer::RawBlock::End => true,
+                _ => false
             },
-            _ => {}
+            _ => false
         }
-    }
-    None
+    };
+    text_until(source, lexer, state, span, BlockType::RawBlock, &end)
 }
 
 /// Parse a raw comment `{{!-- comment --}}`.
 pub(crate) fn raw_comment<'source>(
     source: &'source str,
     lexer: &mut Lexer<'source>,
+    state: &mut ParseState,
     span: Range<usize>,
 ) -> Option<Node<'source>> {
-    let mut block = Block::new(source, BlockType::RawComment, Some(span));
-    while let Some(t) = lexer.next() {
+    let end = |t: &Token| {
         match t {
             Token::RawComment(lex, span) => match lex {
-                lexer::RawComment::End => {
-                    block.exit(span);
-                    return Some(Node::Block(block));
-                }
-                _ => {
-                    block.push(Node::Text(Text(source, span)));
-                }
+                lexer::RawComment::End => true,
+                _ => false
             },
-            _ => {}
+            _ => false
         }
-    }
-    None
+    };
+    text_until(source, lexer, state, span, BlockType::RawComment, &end)
 }
 
 /// Parse an escaped statement `\{{escaped}}`.
 pub(crate) fn escaped_statement<'source>(
     source: &'source str,
     lexer: &mut Lexer<'source>,
+    state: &mut ParseState,
     span: Range<usize>,
 ) -> Option<Node<'source>> {
-    let mut block = Block::new(source, BlockType::RawStatement, Some(span));
-    while let Some(t) = lexer.next() {
+    let end = |t: &Token| {
         match t {
             Token::RawStatement(lex, span) => match lex {
-                lexer::RawStatement::End => {
-                    block.exit(span);
-                    return Some(Node::Block(block));
-                }
-                _ => {
-                    block.push(Node::Text(Text(source, span)));
-                }
+                lexer::RawStatement::End => true,
+                _ => false
             },
-            _ => {}
+            _ => false
         }
-    }
-    None
+    };
+    text_until(source, lexer, state, span, BlockType::RawStatement, &end)
 }
 
 /// Parse a comment block `{{! comment }}`.
 pub(crate) fn comment<'source>(
     source: &'source str,
     lexer: &mut Lexer<'source>,
+    state: &mut ParseState,
     span: Range<usize>,
 ) -> Option<Node<'source>> {
-    let mut block = Block::new(source, BlockType::Comment, Some(span));
-    while let Some(t) = lexer.next() {
+    let end = |t: &Token| {
         match t {
             Token::Comment(lex, span) => match lex {
-                lexer::Comment::End => {
-                    block.exit(span);
-                    return Some(Node::Block(block));
-                }
-                _ => {
-                    block.push(Node::Text(Text(source, span)));
-                }
+                lexer::Comment::End => true,
+                _ => false
             },
-            _ => {}
+            _ => false
         }
-    }
-    None
+    };
+    text_until(source, lexer, state, span, BlockType::Comment, &end)
 }
 
 /// Parse block or statement parameters.
@@ -116,6 +135,7 @@ pub(crate) fn parameters<'source>(
 ) -> Result<Option<ParameterCache>, SyntaxError<'source>> {
     let mut params = ParameterCache::new(context, span);
     while let Some(t) = lexer.next() {
+        if t.is_newline() { *state.line_mut() += 1; }
         match t {
             Token::StringLiteral(lex, span) => match lex {
                 lexer::StringLiteral::Newline => {

@@ -66,7 +66,7 @@ impl fmt::Debug for Node<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Self::Text(ref t) => {
-                f.debug_struct("Text").field("value", &t.as_str()).finish()
+                f.debug_struct("Text").field("source", &t.as_str()).finish()
             }
             Self::Block(ref b) => fmt::Debug::fmt(b, f),
             Self::Statement(ref s) => fmt::Debug::fmt(s, f),
