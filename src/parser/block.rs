@@ -55,7 +55,7 @@ pub(crate) fn raw<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-) -> Option<Node<'source>> {
+) -> Result<Option<Node<'source>>, SyntaxError<'source>> {
     let end = |t: &Token| {
         match t {
             Token::RawBlock(lex, span) => match lex {
@@ -65,7 +65,7 @@ pub(crate) fn raw<'source>(
             _ => false
         }
     };
-    text_until(source, lexer, state, span, BlockType::RawBlock, &end)
+    Ok(text_until(source, lexer, state, span, BlockType::RawBlock, &end))
 }
 
 /// Parse a raw comment `{{!-- comment --}}`.
@@ -74,7 +74,7 @@ pub(crate) fn raw_comment<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-) -> Option<Node<'source>> {
+) -> Result<Option<Node<'source>>, SyntaxError<'source>> {
     let end = |t: &Token| {
         match t {
             Token::RawComment(lex, span) => match lex {
@@ -84,7 +84,7 @@ pub(crate) fn raw_comment<'source>(
             _ => false
         }
     };
-    text_until(source, lexer, state, span, BlockType::RawComment, &end)
+    Ok(text_until(source, lexer, state, span, BlockType::RawComment, &end))
 }
 
 /// Parse an escaped statement `\{{escaped}}`.
@@ -93,7 +93,7 @@ pub(crate) fn escaped_statement<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-) -> Option<Node<'source>> {
+) -> Result<Option<Node<'source>>, SyntaxError<'source>> {
     let end = |t: &Token| {
         match t {
             Token::RawStatement(lex, span) => match lex {
@@ -103,7 +103,7 @@ pub(crate) fn escaped_statement<'source>(
             _ => false
         }
     };
-    text_until(source, lexer, state, span, BlockType::RawStatement, &end)
+    Ok(text_until(source, lexer, state, span, BlockType::RawStatement, &end))
 }
 
 /// Parse a comment block `{{! comment }}`.
@@ -112,7 +112,7 @@ pub(crate) fn comment<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-) -> Option<Node<'source>> {
+) -> Result<Option<Node<'source>>, SyntaxError<'source>> {
     let end = |t: &Token| {
         match t {
             Token::Comment(lex, span) => match lex {
@@ -122,7 +122,7 @@ pub(crate) fn comment<'source>(
             _ => false
         }
     };
-    text_until(source, lexer, state, span, BlockType::Comment, &end)
+    Ok(text_until(source, lexer, state, span, BlockType::Comment, &end))
 }
 
 /// Parse block or statement parameters.
@@ -170,13 +170,13 @@ pub(crate) fn parameters<'source>(
     Ok(None)
 }
 
-/// Parse a scoped block `{{# block}}`.
-pub(crate) fn scope<'source>(
+/// Open a scoped block `{{# block}}`.
+pub(crate) fn open<'source>(
     source: &'source str,
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-) -> Result<Option<Node<'source>>, SyntaxError<'source>> {
+) -> Result<Option<Block<'source>>, SyntaxError<'source>> {
     let mut parameters = parameters(
         source,
         lexer,
@@ -186,9 +186,6 @@ pub(crate) fn scope<'source>(
     )?;
 
     if let Some(params) = parameters.take() {
-
-        println!("Parse a scoped block node...");
-
         let mut block = Block::new(
             source,
             BlockType::Scoped,
@@ -204,24 +201,8 @@ pub(crate) fn scope<'source>(
             Err(e) => return Err(e),
         }
 
-        println!("Start tag is {:?}", block.call());
-
-        while let Some(t) = lexer.next() {
-            println!("Got block token {:?}", t);
-            match t {
-                Token::Block(lex, span) => match lex {
-                    lexer::Block::EndBlockScope => {
-                        println!("Got END block token... {:?}", lex);
-                    }
-                    _ => {}
-                }
-                _ => {}
-            }
-        }
-
-    } else {
-        // FIXME: use SyntaxError
-        panic!("Statement not terminated");
+        return Ok(Some(block))
     }
+
     Ok(None)
 }

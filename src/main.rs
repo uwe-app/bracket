@@ -45,6 +45,8 @@ This is some block text with an {{inline}}
     //let s = "{{foo ../bar}}";
     //let s = "Some text";
 
+    let s = "{{# block}}foo{{/block}}";
+
     let options = ParserOptions {
         file_name: String::from("src/main.rs"),
         line_offset: 3,

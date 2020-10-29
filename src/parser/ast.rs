@@ -267,7 +267,7 @@ impl Default for CallTarget<'_> {
     }
 }
 
-#[derive(Default, Debug, Eq, PartialEq)]
+#[derive(Default, Eq, PartialEq)]
 pub struct Call<'source> {
     // Raw source input.
     source: &'source str,
@@ -329,8 +329,12 @@ impl<'source> Call<'source> {
         &self.hash
     }
 
+    //pub fn as_str(&self) -> &'source str {
+        //&self.source[self.open.start..self.close.end]
+    //}
+
     pub fn as_str(&self) -> &'source str {
-        &self.source[self.open.start..self.close.end]
+        &self.source[self.open.end..self.close.start]
     }
 
     pub fn open(&self) -> &'source str {
@@ -349,6 +353,20 @@ impl<'source> Call<'source> {
 impl fmt::Display for Call<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.as_str())
+    }
+}
+
+impl fmt::Debug for Call<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Call")
+            .field("source", &self.as_str())
+            .field("partial", &self.partial)
+            .field("open", &self.open)
+            .field("close", &self.close)
+            .field("target", &self.target)
+            .field("arguments", &self.arguments)
+            .field("hash", &self.hash)
+            .finish()
     }
 }
 
@@ -401,6 +419,19 @@ impl<'source> Block<'source> {
 
     pub fn set_call(&mut self, call: Call<'source>) {
         self.call = call;
+    }
+
+    /// The name of this block.
+    pub fn name(&self) -> Option<&'source str> {
+        match self.call.target() {
+            CallTarget::Path(ref path) => {
+                if path.is_simple() {
+                    let id = path.components().first().unwrap(); 
+                    Some(id.as_str())
+                } else { None }
+            }
+            CallTarget::SubExpr(_) => None
+        } 
     }
 
     pub(crate) fn exit(&mut self, span: Range<usize>) {

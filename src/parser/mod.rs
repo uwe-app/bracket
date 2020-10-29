@@ -5,7 +5,7 @@ use logos::Span;
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{self, lex, Lexer, Parameters, Token},
-    parser::ast::{Block, BlockType, Node, Text},
+    parser::ast::{Block, BlockType, Node, Text, CallTarget},
 };
 
 /// Default file name.
@@ -381,20 +381,18 @@ impl<'source> Parser<'source> {
         Ok(Node::Block(self.stack.swap_remove(0)))
     }
 
-}
-
-impl<'source> Iterator for Parser<'source> {
-    type Item = Result<Node<'source>, SyntaxError<'source>>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let next_token = if let Some(t) = self.next_token.take() {
+    fn token(&mut self) -> Option<Token> {
+        if let Some(t) = self.next_token.take() {
             self.next_token = None;
             Some(t)
         } else {
             self.lexer.next()
-        };
+        }
+    }
 
-        if let Some(t) = next_token {
+    fn advance(&mut self, next: Option<Token>) -> Result<Option<Node<'source>>, SyntaxError<'source>> {
+
+        if let Some(t) = next {
             if t.is_newline() {
                 *self.state.line_mut() += 1;
             }
@@ -408,8 +406,10 @@ impl<'source> Iterator for Parser<'source> {
                     &|t: &Token| !t.is_text(),
                 );
                 self.next_token = next;
-                return Some(Ok(Node::Text(Text(self.source, span))));
+                return Ok(Some(Node::Text(Text(self.source, span))));
             }
+
+            println!("Advance token {:?}", &t);
 
             match t {
                 Token::Block(lex, span) => match lex {
@@ -419,8 +419,7 @@ impl<'source> Iterator for Parser<'source> {
                             &mut self.lexer,
                             &mut self.state,
                             span,
-                        )
-                        .map(Ok);
+                        );
                     }
                     lexer::Block::StartRawComment => {
                         return block::raw_comment(
@@ -428,8 +427,7 @@ impl<'source> Iterator for Parser<'source> {
                             &mut self.lexer,
                             &mut self.state,
                             span,
-                        )
-                        .map(Ok);
+                        );
                     }
                     lexer::Block::StartRawStatement => {
                         return block::escaped_statement(
@@ -437,8 +435,7 @@ impl<'source> Iterator for Parser<'source> {
                             &mut self.lexer,
                             &mut self.state,
                             span,
-                        )
-                        .map(Ok);
+                        );
                     }
                     lexer::Block::StartComment => {
                         return block::comment(
@@ -446,24 +443,73 @@ impl<'source> Iterator for Parser<'source> {
                             &mut self.lexer,
                             &mut self.state,
                             span,
-                        )
-                        .map(Ok);
+                        );
                     }
                     lexer::Block::StartBlockScope => {
-                        return block::scope(
+                        let block = block::open(
                             self.source,
                             &mut self.lexer,
                             &mut self.state,
                             span,
-                        )
-                        .ok()
-                        .map(|o| {
-                            o.ok_or_else(|| todo!("Handle no block node!"))
-                        });
+                        )?;
+
+                        if let Some(block) = block {
+
+                            match block.call().target() {
+                                CallTarget::Path(ref path) => {
+                                    if !path.is_simple() {
+                                        panic!("Block scopes must use simple identifiers");
+                                    } 
+                                } 
+                                CallTarget::SubExpr(_) => {
+                                    if !block.call().is_partial() {
+                                        panic!("Sub expression block targets are only evaluated for partials");
+                                    } 
+                                }
+                            }
+
+                            let size = self.stack.len();
+
+                            //println!("Adding block to the stack...");
+                            self.stack.push(block);
+
+                            while let Some(t) = self.token() {
+                                //println!("Stack is consuming the token {:?}", t);
+                                match self.advance(Some(t)) {
+                                    Ok(node) => {
+                                        //println!("Got a node to add {:?}", node);
+                                        if node.is_none() || size == self.stack.len() {
+                                            //println!("BLOCK SCOPE WAS CLOSED");
+                                            return Ok(node);
+                                        } else {
+                                            let current = self.stack.last_mut().unwrap();
+                                            current.push(node.unwrap());
+                                        }
+                                    }
+                                    Err(e) => return Err(e),
+                                }
+                            }
+                        } else {
+                            // FIXME: use SyntaxError
+                            panic!("Block open statement not terminated!");
+                        }
                     }
                     lexer::Block::EndBlockScope => {
                         // TODO: check the closing element matches the
                         // TODO: name of the open scope block
+
+                        if self.stack.is_empty() {
+                            panic!("Got close block with no open block!");
+                        }
+
+                        let last_block = self.stack.pop().unwrap();
+                        if let Some(name) = last_block.name() {
+                            println!("Closing block with name {:?}", name);
+                        } else {
+                            panic!("Open block does not have a valid name");
+                        }
+
+                        return Ok(Some(Node::Block(last_block)))
                     }
                     lexer::Block::StartStatement => {
                         match block::parameters(
@@ -481,18 +527,18 @@ impl<'source> Iterator for Parser<'source> {
                                         params,
                                     ) {
                                         Ok(call) => {
-                                            return Some(Ok(Node::Statement(
+                                            return Ok(Some(Node::Statement(
                                                 call,
                                             )))
                                         }
-                                        Err(e) => return Some(Err(e)),
+                                        Err(e) => return Err(e),
                                     }
                                 } else {
                                     // FIXME: use SyntaxError
                                     panic!("Statement not terminated");
                                 }
                             }
-                            Err(e) => return Some(Err(e)),
+                            Err(e) => return Err(e),
                         }
                     }
                     _ => {}
@@ -503,6 +549,39 @@ impl<'source> Iterator for Parser<'source> {
                 Token::Comment(_, _) => {}
                 Token::Parameters(_, _) => {}
                 Token::StringLiteral(_, _) => {}
+            }
+        }
+        
+        Ok(None)
+    }
+}
+
+impl<'source> Iterator for Parser<'source> {
+    type Item = Result<Node<'source>, SyntaxError<'source>>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(t) = self.token() {
+            /*
+            if t.is_newline() {
+                *self.state.line_mut() += 1;
+            }
+
+            // Normalize consecutive text nodes
+            if t.is_text() {
+                let (span, next) = block::until(
+                    &mut self.lexer,
+                    &mut self.state,
+                    t.span().clone(),
+                    &|t: &Token| !t.is_text(),
+                );
+                self.next_token = next;
+                return Some(Ok(Node::Text(Text(self.source, span))));
+            }
+            */
+
+            match self.advance(Some(t)) {
+                Ok(node) => return node.map(Ok),
+                Err(e) => return Some(Err(e)),
             }
         }
 
