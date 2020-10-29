@@ -170,7 +170,6 @@ pub(crate) fn parameters<'source>(
     Ok(None)
 }
 
-
 /// Parse a scoped block `{{# block}}`.
 pub(crate) fn scope<'source>(
     source: &'source str,
@@ -203,6 +202,21 @@ pub(crate) fn scope<'source>(
         ) {
             Ok(call) => block.set_call(call),
             Err(e) => return Err(e),
+        }
+
+        println!("Start tag is {:?}", block.call());
+
+        while let Some(t) = lexer.next() {
+            println!("Got block token {:?}", t);
+            match t {
+                Token::Block(lex, span) => match lex {
+                    lexer::Block::EndBlockScope => {
+                        println!("Got END block token... {:?}", lex);
+                    }
+                    _ => {}
+                }
+                _ => {}
+            }
         }
 
     } else {

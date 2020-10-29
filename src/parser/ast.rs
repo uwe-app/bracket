@@ -261,7 +261,13 @@ impl<'source> CallTarget<'source> {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+impl Default for CallTarget<'_> {
+    fn default() -> Self {
+        CallTarget::Path(Path::new(""))
+    }
+}
+
+#[derive(Default, Debug, Eq, PartialEq)]
 pub struct Call<'source> {
     // Raw source input.
     source: &'source str,
@@ -370,7 +376,7 @@ pub struct Block<'source> {
     nodes: Vec<Node<'source>>,
     open: Option<Range<usize>>,
     close: Option<Range<usize>>,
-    call: Option<Call<'source>>,
+    call: Call<'source>,
 }
 
 impl<'source> Block<'source> {
@@ -385,12 +391,16 @@ impl<'source> Block<'source> {
             nodes: Vec::new(),
             open,
             close: None,
-            call: None,
+            call: Default::default(),
         }
     }
 
+    pub fn call(&self) -> &Call<'source> {
+        &self.call
+    }
+
     pub fn set_call(&mut self, call: Call<'source>) {
-        self.call = Some(call);
+        self.call = call;
     }
 
     pub(crate) fn exit(&mut self, span: Range<usize>) {
@@ -455,9 +465,8 @@ impl<'source> Block<'source> {
     pub fn trim_after_close(&self) -> bool {
         match self.kind {
             BlockType::Scoped => {
-                let close = self.close();
-                let pos = close.len() - 3;
-                close.len() > 2 && WHITESPACE == &close[pos..pos + 1]
+                let close = self.call.close();
+                close.len() > 2 && WHITESPACE == &close[0..1]
             }
             _ => false,
         }

@@ -248,7 +248,9 @@ fn lex_block_scope() {
         Token::Parameters(Parameters::Identifier, 14..17),
         Token::Parameters(Parameters::End, 17..19),
         Token::Block(Block::Text, 19..23),
-        Token::Block(Block::EndBlockScope, 23..31),
+        Token::Block(Block::EndBlockScope, 23..26),
+        Token::Parameters(Parameters::Identifier, 26..29),
+        Token::Parameters(Parameters::End, 29..31),
     ];
     assert_eq!(expect, tokens);
 }
@@ -266,7 +268,9 @@ fn lex_block_scope_partial() {
         Token::Block(Block::StartStatement, 9..11),
         Token::Parameters(Parameters::LocalIdentifier, 11..25),
         Token::Parameters(Parameters::End, 25..27),
-        Token::Block(Block::EndBlockScope, 27..35),
+        Token::Block(Block::EndBlockScope, 27..30),
+        Token::Parameters(Parameters::Identifier, 30..33),
+        Token::Parameters(Parameters::End, 33..35),
     ];
     assert_eq!(expect, tokens);
 }

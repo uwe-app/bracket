@@ -380,6 +380,7 @@ impl<'source> Parser<'source> {
 
         Ok(Node::Block(self.stack.swap_remove(0)))
     }
+
 }
 
 impl<'source> Iterator for Parser<'source> {

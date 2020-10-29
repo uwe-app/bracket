@@ -25,10 +25,7 @@ pub enum Block {
     #[regex(r"\{\{\~?#\s*")]
     StartBlockScope,
 
-    #[regex(r"\{\{\~?\s*else\s*")]
-    StartElseScope,
-
-    #[regex(r"\{\{\~?s*/(?&identifier)+\s*~?\}\}")]
+    #[regex(r"\{\{\~?s*/")]
     EndBlockScope,
 
     #[regex(r".")]
@@ -111,6 +108,9 @@ pub enum Comment {
 pub enum Parameters {
     #[token(r">")]
     Partial,
+
+    #[token(r"else")]
+    ElseKeyword,
 
     #[token(r"this")]
     ExplicitThisKeyword,
@@ -314,6 +314,8 @@ impl<'source> Iterator for Lexer<'source> {
                     } else if Block::StartStatement == token {
                         self.mode = Modes::Parameters(lexer.to_owned().morph());
                     } else if Block::StartBlockScope == token {
+                        self.mode = Modes::Parameters(lexer.to_owned().morph());
+                    } else if Block::EndBlockScope == token {
                         self.mode = Modes::Parameters(lexer.to_owned().morph());
                     }
                     Some(Token::Block(token, span))
