@@ -275,15 +275,6 @@ impl<'source> Parser<'source> {
                     }
                 }
                 lexer::Block::EndBlockScope => {
-                    // TODO: check the closing element matches the
-                    // TODO: name of the open scope block
-
-                    if self.stack.is_empty() {
-                        panic!("Got close block with no open block!");
-                    }
-
-                    let (open_name, mut block) = self.stack.pop().unwrap();
-
                     // Need a temp block to parse the call parameters so we 
                     // can match the tag end name
                     let temp = block::scope(
@@ -292,6 +283,35 @@ impl<'source> Parser<'source> {
                         &mut self.state,
                         span.clone(),
                     )?;
+
+                    if self.stack.is_empty() {
+                        let close_name = if let Some(close) = temp {
+                            close.name()
+                        } else { None };
+
+                        let notes = if let Some(close) = close_name {
+                            vec![format!("perhaps open the block '{}'", close)]
+                        } else {
+                            vec![]
+                        };
+
+                        *self.state.byte_mut() = span.start;
+
+                        return Err(SyntaxError::BlockNotOpen(
+                            ErrorInfo::new_notes(
+                                self.source,
+                                self.state.file_name(),
+                                SourcePos::from((
+                                    self.state.line(),
+                                    self.state.byte(),
+                                )),
+                                notes
+                            ),
+                        ));
+                        //panic!("Got close block with no open block!");
+                    }
+
+                    let (open_name, mut block) = self.stack.pop().unwrap();
 
                     if let Some(close) = temp {
                         if let Some(close_name) = close.name() {
@@ -329,7 +349,6 @@ impl<'source> Parser<'source> {
                     } else {
                         panic!("Unable to parse call parameters for close block");
                     }
-
                 }
                 lexer::Block::StartStatement => {
                     match block::parameters(

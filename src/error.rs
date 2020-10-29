@@ -119,6 +119,7 @@ pub enum SyntaxError<'source> {
     ExpectedPathDelimiter(ErrorInfo<'source>),
     OpenSubExpression(ErrorInfo<'source>),
     TagNameMismatch(ErrorInfo<'source>),
+    BlockNotOpen(ErrorInfo<'source>),
 }
 
 impl SyntaxError<'_> {
@@ -157,6 +158,7 @@ impl SyntaxError<'_> {
             Self::ExpectedPathDelimiter(_) => "expected path delimiter (.)",
             Self::OpenSubExpression(_) => "sub-expression not terminated",
             Self::TagNameMismatch(_) => "closing name does not match",
+            Self::BlockNotOpen(_) => "got a closing tag but no block is open",
         }
     }
 
@@ -179,6 +181,7 @@ impl SyntaxError<'_> {
             Self::ExpectedPathDelimiter(ref info) => info,
             Self::OpenSubExpression(ref info) => info,
             Self::TagNameMismatch(ref info) => info,
+            Self::BlockNotOpen(ref info) => info,
         }
     }
 
