@@ -146,6 +146,7 @@ impl<'reg, 'render> Render<'reg, 'render> {
         &self.scopes
     }
 
+    /*
     // Look up path parts in an object.
     pub fn find_parts<'a>(
         parts: Vec<&'a str>,
@@ -200,6 +201,7 @@ impl<'reg, 'render> Render<'reg, 'render> {
         }
         None
     }
+    */
 
     fn lookup(
         path: &Path,
@@ -217,7 +219,16 @@ impl<'reg, 'render> Render<'reg, 'render> {
                 .skip(1)
                 .map(|c| c.as_str())
                 .collect();
-            return Render::find_parts(parts, root);
+            return json::find_parts(parts, root);
+        // Handle explicit this only
+        } else if path.is_explicit() && path.components().len() == 1 {
+            println!("Got this keyword!!!!") ;
+            let this = if let Some(scope) = scope {
+                if let Some(base) = scope.base_value() {
+                    base    
+                } else { root }
+            } else { root };
+            return Some(this)
         } else if path.is_simple() {
             let name = path.as_str();
             if let Some(scope) = scope {
@@ -226,7 +237,7 @@ impl<'reg, 'render> Render<'reg, 'render> {
                 //println!("Look up in root scope...");
                 let parts =
                     path.components().iter().map(|c| c.as_str()).collect();
-                return Render::find_parts(parts, root);
+                return json::find_parts(parts, root);
             }
         }
         None
@@ -363,7 +374,7 @@ impl<'reg, 'render> Render<'reg, 'render> {
                     EvalResult::Json(maybe_json) => {
                         //println!("Got maybe json {:?}", maybe_json);
                         if let Some(value) = maybe_json {
-                            let val = json::stringify(value);
+                            let val = json::stringify(value)?;
                             //println!("Got a json string result {}", val);
                             self.write_str(&val, call.is_escaped())?;
                         } else {

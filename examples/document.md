@@ -12,6 +12,10 @@ To help debug our templates we can use the `log` helper: `\{{log "Message to pri
 {{log "Info message"~}}
 {{log "Error message" level="error"}}
 
+```
+{{{this}}}
+```
+
 \{{expr}}
 {{{unescaped}}}
 

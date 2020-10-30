@@ -1,9 +1,9 @@
-use serde_json::Value;
+use serde_json::{Error, Value, to_string};
 
-pub fn stringify(value: &Value) -> String {
+pub fn stringify(value: &Value) -> std::result::Result<String, Error> {
     match value {
-        Value::String(ref s) => s.to_owned(),
-        _ => todo!("Stringify other json types"),
+        Value::String(ref s) => Ok(s.to_owned()),
+        _ => to_string(value)
     }
 }
 
