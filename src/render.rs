@@ -78,6 +78,10 @@ impl<'reg, 'render> Render<'reg, 'render> {
         })
     }
 
+    pub fn out(&mut self) -> &mut Box<&'render mut dyn Output> {
+        &mut self.writer 
+    }
+
     fn write_str(
         &mut self,
         s: &str,
@@ -161,6 +165,10 @@ impl<'reg, 'render> Render<'reg, 'render> {
             }
         }
         None
+    }
+
+    pub fn is_truthy(&self, value: &Value) -> bool {
+        json::is_truthy(value)
     }
 
     pub fn arguments(&self) -> Vec<&'render Value> {

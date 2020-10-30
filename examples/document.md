@@ -13,7 +13,7 @@ To help debug our templates we can use the `log` helper: `\{{log "Message to pri
 {{log "Error message" level="error"}}
 
 ```
-{{{this}}}
+{{json this}}
 ```
 
 {{#with list}}

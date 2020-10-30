@@ -9,8 +9,11 @@ impl Helper for LogHelper {
         &self,
         rc: &mut Render<'reg, 'render>,
     ) -> Result {
-        let message = rc
-            .arguments()
+
+        let args = rc.arguments();
+        let hash = rc.hash();
+
+        let message = args
             .get(0)
             .ok_or_else(|| {
                 RenderError::from("Arity error for `log`, string message expected")
@@ -23,8 +26,7 @@ impl Helper for LogHelper {
             })?
             .to_string();
 
-        let level = rc
-            .hash()
+        let level = hash
             .get("level")
             .map(|v| v.as_str())
             .unwrap_or(Some("info"))

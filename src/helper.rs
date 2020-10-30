@@ -3,7 +3,7 @@ use crate::{
     render::{Render, Scope},
 };
 
-use serde_json::Value;
+use serde_json::{Value, to_string, to_string_pretty};
 
 pub type Result = std::result::Result<Option<Value>, RenderError>;
 
@@ -79,6 +79,44 @@ impl Helper for UnlessHelper {
         &self,
         rc: &mut Render<'reg, 'render>,
     ) -> Result {
+        Ok(None)
+    }
+}
+
+// Extended, non-standard helpers
+
+pub(crate) struct JsonHelper;
+
+impl Helper for JsonHelper {
+    fn call<'reg, 'render>(
+        &self,
+        rc: &mut Render<'reg, 'render>,
+    ) -> Result {
+
+        let args = rc.arguments();
+
+        let target = args
+            .get(0)
+            .ok_or_else(|| {
+                RenderError::from("Arity error for `json`, argument expected")
+            })?;
+
+        let compact = rc.is_truthy(args
+            .get(0)
+            .unwrap_or(&&Value::Bool(false)));
+
+        println!("JSON HELPER WAS CALLED");
+
+        if compact {
+            if let Ok(s) = to_string(target) {
+                rc.out().write(s.as_bytes())?;
+            }
+        } else {
+            if let Ok(s) = to_string_pretty(target) {
+                rc.out().write(s.as_bytes())?;
+            }
+        }
+
         Ok(None)
     }
 }
