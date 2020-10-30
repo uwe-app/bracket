@@ -53,10 +53,10 @@ pub struct Context<'render> {
 }
 
 impl<'render> Context<'render> {
-    pub fn new(arguments: Vec<Value>, hash: HashMap<String, Value>) -> Self {
+    pub fn new() -> Self {
         Self {
-            arguments,
-            hash,
+            arguments: Vec::new(),
+            hash: HashMap::new(),
             phantom: PhantomData,
         }
     }
@@ -75,6 +75,7 @@ pub struct Render<'reg, 'render> {
     root: Value,
     writer: Box<&'render mut dyn Output>,
     scopes: Vec<Scope<'render>>,
+    callee: Option<&'render Call<'render>>,
     trim_start: bool,
     trim_end: bool,
     prev_node: Option<&'render Node<'render>>,
@@ -93,6 +94,7 @@ impl<'reg, 'render> Render<'reg, 'render> {
             root,
             writer,
             scopes: Vec::new(),
+            callee: None,
             trim_start: false,
             trim_end: false,
             prev_node: None,
@@ -146,63 +148,6 @@ impl<'reg, 'render> Render<'reg, 'render> {
         &self.scopes
     }
 
-    /*
-    // Look up path parts in an object.
-    pub fn find_parts<'a>(
-        parts: Vec<&'a str>,
-        doc: &'render Value,
-    ) -> Option<&'render Value> {
-        let mut parent = None;
-        match doc {
-            Value::Object(ref _map) => {
-                let mut current: Option<&Value> = Some(doc);
-                for (i, part) in parts.iter().enumerate() {
-                    if i == parts.len() - 1 {
-                        if let Some(target) = current {
-                            return Render::find_field(&part, target);
-                        }
-                    } else {
-                        if let Some(target) = current {
-                            parent = Render::find_field(part, target);
-                            if parent.is_none() {
-                                break;
-                            }
-                            current = parent;
-                        } else {
-                            break;
-                        }
-                    }
-                }
-            }
-            _ => {}
-        }
-        None
-    }
-
-    // Look up a field in an array or object.
-    pub fn find_field<S: AsRef<str>>(
-        field: S,
-        parent: &'render Value,
-    ) -> Option<&'render Value> {
-        match parent {
-            Value::Object(ref map) => {
-                if let Some(val) = map.get(field.as_ref()) {
-                    return Some(val);
-                }
-            }
-            Value::Array(ref list) => {
-                if let Ok(index) = field.as_ref().parse::<usize>() {
-                    if !list.is_empty() && index < list.len() {
-                        return Some(&list[index]);
-                    }
-                }
-            }
-            _ => {}
-        }
-        None
-    }
-    */
-
     fn lookup(
         path: &Path,
         root: &'render Value,
@@ -222,7 +167,6 @@ impl<'reg, 'render> Render<'reg, 'render> {
             return json::find_parts(parts, root);
         // Handle explicit this only
         } else if path.is_explicit() && path.components().len() == 1 {
-            println!("Got this keyword!!!!") ;
             let this = if let Some(scope) = scope {
                 if let Some(base) = scope.base_value() {
                     base    
@@ -243,38 +187,43 @@ impl<'reg, 'render> Render<'reg, 'render> {
         None
     }
 
-    pub fn arguments(&self, call: &'render Call) -> Vec<Value> {
-        call.arguments()
-            .iter()
-            .map(|p| {
-                match p {
-                    ParameterValue::Json(ref val) => val.clone(),
-                    _ => {
-                        // TODO: lookup paths
-                        // TODO: evaluate sub-expressions
-                        Value::Null
+    pub fn arguments(&self) -> Vec<&'render Value> {
+        if let Some(call) = self.callee {
+            call.arguments()
+                .iter()
+                .map(|p| {
+                    match p {
+                        ParameterValue::Json(ref val) => val,
+                        _ => {
+                            // TODO: lookup paths
+                            // TODO: evaluate sub-expressions
+                            &Value::Null
+                        }
                     }
-                }
-            })
-            .collect()
+                })
+                .collect()
+        } else { Vec::new() }
     }
 
-    pub fn hash(&self, call: &'render Call) -> HashMap<String, Value> {
-        call.hash()
-            .iter()
-            .map(|(k, p)| {
-                match p {
-                    ParameterValue::Json(ref val) => {
-                        (k.to_string(), val.clone())
+    pub fn hash(&self) -> HashMap<String, &'render Value> {
+
+        if let Some(call) = self.callee {
+            call.hash()
+                .iter()
+                .map(|(k, p)| {
+                    match p {
+                        ParameterValue::Json(ref val) => {
+                            (k.to_string(), val)
+                        }
+                        _ => {
+                            // TODO: lookup paths
+                            // TODO: evaluate sub-expressions
+                            (k.to_string(), &Value::Null)
+                        }
                     }
-                    _ => {
-                        // TODO: lookup paths
-                        // TODO: evaluate sub-expressions
-                        (k.to_string(), Value::Null)
-                    }
-                }
-            })
-            .collect::<HashMap<_, _>>()
+                })
+                .collect::<HashMap<_, _>>()
+        } else { HashMap::new() }
     }
 
     pub fn invoke(
@@ -283,8 +232,10 @@ impl<'reg, 'render> Render<'reg, 'render> {
         name: &str,
         helper: &'reg Box<dyn Helper + 'reg>,
     ) -> Result<Option<Value>, RenderError> {
-        let ctx = Context::new(self.arguments(call), self.hash(call));
+        self.callee = Some(call);
+        let ctx = Context::new();
         helper.call(self, &ctx)?;
+        self.callee = None;
         Ok(None)
     }
 

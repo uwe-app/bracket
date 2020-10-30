@@ -35,6 +35,7 @@ impl Helper for WithHelper {
         rc: &mut Render<'reg, 'render>,
         ctx: &Context<'render>,
     ) -> Result {
+
         Ok(None)
     }
 }

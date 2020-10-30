@@ -10,7 +10,7 @@ impl Helper for LogHelper {
         rc: &mut Render<'reg, 'render>,
         ctx: &Context<'render>,
     ) -> Result {
-        let message = ctx
+        let message = rc
             .arguments()
             .get(0)
             .ok_or_else(|| {
@@ -24,7 +24,7 @@ impl Helper for LogHelper {
             })?
             .to_string();
 
-        let level = ctx
+        let level = rc
             .hash()
             .get("level")
             .map(|v| v.as_str())
