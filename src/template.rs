@@ -5,7 +5,7 @@ use crate::{
     error::{RenderError, SyntaxError},
     output::Output,
     parser::{ast::Node, Parser, ParserOptions},
-    render::{Render, RenderContext, Renderer},
+    render::{Render},
     Registry,
 };
 
@@ -48,8 +48,7 @@ impl<'source> Template<'source> {
     where
         T: Serialize,
     {
-        let mut rc = RenderContext::new(registry, data, Box::new(writer))?;
-        let renderer = Render::new(self.source, self.node());
-        renderer.render(&mut rc)
+        let mut rc = Render::new(registry, data, Box::new(writer))?;
+        rc.render(self.node())
     }
 }

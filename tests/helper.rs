@@ -10,7 +10,7 @@ pub(crate) struct MockHelper;
 impl Helper for MockHelper {
     fn call<'reg, 'render>(
         &self,
-        rc: &mut RenderContext<'reg, 'render>,
+        rc: &mut Render<'reg, 'render>,
     ) -> helper::Result {
         Ok(Value::Null)
     }
@@ -21,7 +21,7 @@ pub(crate) struct MockBlockHelper;
 impl BlockHelper for MockBlockHelper {
     fn call<'reg, 'render>(
         &self,
-        rc: &mut RenderContext<'reg, 'render>,
+        rc: &mut Render<'reg, 'render>,
     ) -> helper::BlockResult {
         Ok(())
     }
