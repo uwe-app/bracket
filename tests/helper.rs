@@ -1,7 +1,7 @@
 use hbs::{
     helper::{self, Helper},
     render::*,
-    Registry, Result,
+    Registry,
 };
 use serde_json::Value;
 
@@ -17,8 +17,7 @@ impl Helper for MockHelper {
 }
 
 #[test]
-fn helper_register() -> Result<'static, ()> {
+fn helper_register() {
     let mut registry = Registry::new();
     registry.register_helper("mock", Box::new(MockHelper {}));
-    Ok(())
 }

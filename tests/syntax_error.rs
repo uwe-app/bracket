@@ -1,6 +1,6 @@
 use hbs::{
-    error::{ErrorInfo, SourcePos, SyntaxError},
-    Error, Registry, Result,
+    error::{ErrorInfo, SourcePos, SyntaxError, Error},
+    Registry, Result,
 };
 use serde_json::json;
 

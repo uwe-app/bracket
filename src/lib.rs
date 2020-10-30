@@ -10,7 +10,7 @@ pub mod registry;
 pub mod render;
 pub mod template;
 
-pub(crate) type Result<'a, T> = std::result::Result<T, error::Error<'a>>;
+pub type Result<'a, T> = std::result::Result<T, error::Error<'a>>;
 
 pub(crate) use error::Error;
 pub use registry::Registry;

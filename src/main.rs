@@ -1,11 +1,11 @@
 use hbs::{
     parser::{Parser, ParserOptions},
-    Registry, Result,
+    Registry,
 };
 
 use serde_json::json;
 
-fn main() -> Result<'static, ()> {
+fn main() {
     let s = r#"\{{expr}}
 {{{unescaped}}}
 
@@ -92,6 +92,4 @@ This is some block text with an {{inline}}
         }
     }
     */
-
-    Ok(())
 }
