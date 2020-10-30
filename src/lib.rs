@@ -3,6 +3,7 @@ pub mod escape;
 pub mod helper;
 pub mod json;
 pub mod lexer;
+pub mod log;
 pub mod output;
 pub mod parser;
 pub mod registry;

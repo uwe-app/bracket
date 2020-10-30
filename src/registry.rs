@@ -6,12 +6,13 @@ use crate::{
     error::RenderError,
     escape::{html_escape, EscapeFn},
     helper::{
-        EachHelper, Helper, IfHelper, LogHelper, LookupHelper, UnlessHelper,
+        EachHelper, Helper, IfHelper, LookupHelper, UnlessHelper,
         WithHelper,
     },
     output::{Output, StringOutput},
     parser::ParserOptions,
     template::Template,
+    log::LogHelper,
     Error, Result,
 };
 
