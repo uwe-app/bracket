@@ -9,7 +9,7 @@ use hbs::{
 
 use serde_json::json;
 
-fn main() {
+fn main() -> Result<'static, ()> {
     std::env::set_var("RUST_LOG", "trace");
     pretty_env_logger::init();
 
@@ -20,4 +20,6 @@ fn main() {
     registry.register_template_string(name, content, Default::default());
     let result = registry.render(name, &data).unwrap();
     println!("{}", result);
+
+    Ok(())
 }

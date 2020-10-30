@@ -280,6 +280,9 @@ impl fmt::Debug for SyntaxError<'_> {
 
 #[derive(thiserror::Error, Debug)]
 pub enum RenderError {
+    #[error("{0}")]
+    Message(String),
+
     #[error("Template not found {0}")]
     TemplateNotFound(String),
 
@@ -301,3 +304,15 @@ impl PartialEq for RenderError {
 }
 
 impl Eq for RenderError {}
+
+impl From<String> for RenderError {
+    fn from(s: String) -> Self {
+        RenderError::Message(s)
+    }
+}
+
+impl From<&str> for RenderError {
+    fn from(s: &str) -> Self {
+        RenderError::from(s.to_owned())
+    }
+}
