@@ -5,7 +5,7 @@ use serde::Serialize;
 use crate::{
     error::RenderError,
     helper::{
-        BlockHelper, EachHelper, Helper, IfHelper, LogHelper, LookupHelper,
+        EachHelper, Helper, IfHelper, LogHelper, LookupHelper,
         UnlessHelper, WithHelper,
     },
     output::{Output, StringOutput},
@@ -17,7 +17,6 @@ use crate::{
 pub struct Registry<'reg> {
     templates: HashMap<&'reg str, Template<'reg>>,
     helpers: HashMap<&'reg str, Box<dyn Helper + 'reg>>,
-    block_helpers: HashMap<&'reg str, Box<dyn BlockHelper + 'reg>>,
 }
 
 impl<'reg, 'source> Registry<'reg> {
@@ -25,7 +24,6 @@ impl<'reg, 'source> Registry<'reg> {
         let mut reg = Self {
             templates: Default::default(),
             helpers: Default::default(),
-            block_helpers: Default::default(),
         };
         reg.builtins();
         reg
@@ -35,10 +33,10 @@ impl<'reg, 'source> Registry<'reg> {
         self.register_helper("log", Box::new(LogHelper {}));
         self.register_helper("lookup", Box::new(LookupHelper {}));
 
-        self.register_block_helper("with", Box::new(WithHelper {}));
-        self.register_block_helper("each", Box::new(EachHelper {}));
-        self.register_block_helper("if", Box::new(IfHelper {}));
-        self.register_block_helper("unless", Box::new(UnlessHelper {}));
+        self.register_helper("with", Box::new(WithHelper {}));
+        self.register_helper("each", Box::new(EachHelper {}));
+        self.register_helper("if", Box::new(IfHelper {}));
+        self.register_helper("unless", Box::new(UnlessHelper {}));
     }
 
     pub fn register_helper(
@@ -49,22 +47,8 @@ impl<'reg, 'source> Registry<'reg> {
         self.helpers.insert(name, helper);
     }
 
-    pub fn register_block_helper(
-        &mut self,
-        name: &'reg str,
-        helper: Box<dyn BlockHelper + 'reg>,
-    ) {
-        self.block_helpers.insert(name, helper);
-    }
-
     pub fn helpers(&self) -> &HashMap<&'reg str, Box<dyn Helper + 'reg>> {
         &self.helpers
-    }
-
-    pub fn block_helpers(
-        &self,
-    ) -> &HashMap<&'reg str, Box<dyn BlockHelper + 'reg>> {
-        &self.block_helpers
     }
 
     pub fn compile(

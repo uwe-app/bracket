@@ -1,5 +1,5 @@
 use hbs::{
-    helper::{self, BlockHelper, Helper},
+    helper::{self, Helper},
     render::*,
     Registry, Result,
 };
@@ -12,18 +12,7 @@ impl Helper for MockHelper {
         &self,
         rc: &mut Render<'reg, 'render>,
     ) -> helper::Result {
-        Ok(Value::Null)
-    }
-}
-
-pub(crate) struct MockBlockHelper;
-
-impl BlockHelper for MockBlockHelper {
-    fn call<'reg, 'render>(
-        &self,
-        rc: &mut Render<'reg, 'render>,
-    ) -> helper::BlockResult {
-        Ok(())
+        Ok(Some(Value::Null))
     }
 }
 
@@ -31,6 +20,5 @@ impl BlockHelper for MockBlockHelper {
 fn helper_register() -> Result<'static, ()> {
     let mut registry = Registry::new();
     registry.register_helper("mock", Box::new(MockHelper {}));
-    registry.register_block_helper("block", Box::new(MockBlockHelper {}));
     Ok(())
 }

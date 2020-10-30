@@ -231,7 +231,7 @@ pub(crate) fn parse<'source>(
     */
 
     arguments::parse(source, &mut iter, state, &mut call)?;
-    println!("Arguments {:?}", call.arguments());
+    //println!("Arguments {:?}", call.arguments());
 
     Ok(call)
 }

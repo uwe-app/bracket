@@ -65,11 +65,15 @@ impl<'reg, 'render> Render<'reg, 'render> {
         self.scopes.pop()
     }
 
+    pub fn scope(&self) -> Option<&Scope> {
+        self.scopes.last()
+    }
+
     pub fn evaluate(&mut self, call: &Call) -> EvalResult {
         if call.is_partial() {
             println!("Got partial call");
         } else {
-            println!("Evaluating a call...");
+            println!("Evaluating a call {:?}", call);
         }
         EvalResult::Json(Value::Null)
     }
@@ -99,14 +103,12 @@ impl<'reg, 'render> Render<'reg, 'render> {
                 self.pop_scope();
             }
             Node::Statement(ref call) => {
-                println!("TODO: Evaluate statement in render!");
                 match self.evaluate(call) {
                     EvalResult::Json(ref value) => {
                         println!("Got json value...");
                     }
                 }
                 //self.write_str(n.as_str())?;
-                //let value = 
             }
             Node::Block(ref block) => {
                 // TODO: call partial / helper for blocks

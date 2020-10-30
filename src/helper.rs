@@ -2,8 +2,7 @@ use crate::{error::RenderError, render::Render};
 
 use serde_json::Value;
 
-pub type Result = std::result::Result<Value, RenderError>;
-pub type BlockResult = std::result::Result<(), RenderError>;
+pub type Result = std::result::Result<Option<Value>, RenderError>;
 
 pub trait Helper: Send + Sync {
     fn call<'reg, 'render>(
@@ -12,12 +11,14 @@ pub trait Helper: Send + Sync {
     ) -> Result;
 }
 
+/*
 pub trait BlockHelper: Send + Sync {
     fn call<'reg, 'render>(
         &self,
         rc: &mut Render<'reg, 'render>,
     ) -> BlockResult;
 }
+*/
 
 pub(crate) struct LogHelper;
 
@@ -26,7 +27,7 @@ impl Helper for LogHelper {
         &self,
         rc: &mut Render<'reg, 'render>,
     ) -> Result {
-        Ok(Value::Null)
+        Ok(None)
     }
 }
 
@@ -37,50 +38,50 @@ impl Helper for LookupHelper {
         &self,
         rc: &mut Render<'reg, 'render>,
     ) -> Result {
-        Ok(Value::Null)
+        Ok(None)
     }
 }
 
 pub(crate) struct WithHelper;
 
-impl BlockHelper for WithHelper {
+impl Helper for WithHelper {
     fn call<'reg, 'render>(
         &self,
         rc: &mut Render<'reg, 'render>,
-    ) -> BlockResult {
-        Ok(())
+    ) -> Result {
+        Ok(None)
     }
 }
 
 pub(crate) struct EachHelper;
 
-impl BlockHelper for EachHelper {
+impl Helper for EachHelper {
     fn call<'reg, 'render>(
         &self,
         rc: &mut Render<'reg, 'render>,
-    ) -> BlockResult {
-        Ok(())
+    ) -> Result {
+        Ok(None)
     }
 }
 
 pub(crate) struct IfHelper;
 
-impl BlockHelper for IfHelper {
+impl Helper for IfHelper {
     fn call<'reg, 'render>(
         &self,
         rc: &mut Render<'reg, 'render>,
-    ) -> BlockResult {
-        Ok(())
+    ) -> Result {
+        Ok(None)
     }
 }
 
 pub(crate) struct UnlessHelper;
 
-impl BlockHelper for UnlessHelper {
+impl Helper for UnlessHelper {
     fn call<'reg, 'render>(
         &self,
         rc: &mut Render<'reg, 'render>,
-    ) -> BlockResult {
-        Ok(())
+    ) -> Result {
+        Ok(None)
     }
 }

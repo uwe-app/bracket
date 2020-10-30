@@ -168,7 +168,7 @@ impl<'source> Parser<'source> {
             return Ok(Some(Node::Text(Text(self.source, span))));
         }
 
-        println!("Advance token {:?}", &next);
+        //println!("Advance token {:?}", &next);
 
         match next {
             Token::Block(lex, span) => match lex {
