@@ -1,3 +1,4 @@
+//! Helper to print log messages.
 use crate::{error::RenderError, helper::{Helper, Result}, render::Render};
 
 use log::*;

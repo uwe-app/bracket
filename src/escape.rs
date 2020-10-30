@@ -1,6 +1,11 @@
+//! Escape function trait and default functions.
+//!
+//! The default is to escape for HTML content using `html_escape`.
+
+/// Type for escape functions.
 pub type EscapeFn = Box<dyn Fn(&str) -> String + Send + Sync>;
 
-// SEE: https://github.com/sunng87/handlebars-rust/blob/d8eff5d139fa7ff9a84882e0cda86fa0db4eeb8e/src/support.rs#L42-L58
+/// Escape for HTML output.
 pub fn html_escape(s: &str) -> String {
     let mut output = String::new();
     for c in s.chars() {
@@ -18,6 +23,7 @@ pub fn html_escape(s: &str) -> String {
     output
 }
 
+/// Do not escape output.
 pub fn no_escape(s: &str) -> String {
     s.to_owned()
 }

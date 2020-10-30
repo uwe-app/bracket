@@ -1,9 +1,13 @@
+//! Trait and type for rendering to destinations.
 use std::io::{Result, Write};
 
+/// Trait for types that we can render to.
 pub trait Output: Write {
+    /// Convenience function as we are typically writing string slices.
     fn write_str(&mut self, s: &str) -> Result<usize>;
 }
 
+/// Output type that wraps an `io::Write` writer.
 pub struct Writer<W: Write> {
     writer: W,
 }
@@ -24,6 +28,10 @@ impl<W: Write> Write for Writer<W> {
     }
 }
 
+/// Output type that buffers into a string.
+///
+/// Call `into()` to access the result after 
+/// rendering.
 pub struct StringOutput {
     value: String,
 }

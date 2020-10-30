@@ -1,3 +1,5 @@
+//! Error types.
+
 use std::fmt;
 use unicode_width::UnicodeWidthStr;
 

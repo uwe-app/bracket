@@ -1,3 +1,4 @@
+//! Compiled template that may be stored in the registry.
 use serde::Serialize;
 use std::fmt;
 

@@ -1,3 +1,4 @@
+//! Convert the lexer token stream to AST nodes.
 use logos::Span;
 
 use crate::{

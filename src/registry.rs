@@ -1,3 +1,4 @@
+//! Main entry point for compiling, storing and rendering templates.
 use std::collections::HashMap;
 
 use serde::Serialize;

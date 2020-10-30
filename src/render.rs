@@ -1,3 +1,4 @@
+//! Render a template to output using the data.
 use serde::Serialize;
 use serde_json::Value;
 use std::collections::HashMap;

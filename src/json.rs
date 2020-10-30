@@ -1,6 +1,6 @@
 use serde_json::{Error, Value, to_string};
 
-pub fn stringify(value: &Value) -> std::result::Result<String, Error> {
+pub(crate) fn stringify(value: &Value) -> std::result::Result<String, Error> {
     match value {
         Value::String(ref s) => Ok(s.to_owned()),
         _ => to_string(value)
@@ -8,7 +8,7 @@ pub fn stringify(value: &Value) -> std::result::Result<String, Error> {
 }
 
 // Look up path parts in an object.
-pub fn find_parts<'a, 'b>(
+pub(crate) fn find_parts<'a, 'b>(
     parts: Vec<&'a str>,
     doc: &'b Value,
 ) -> Option<&'b Value> {
@@ -40,7 +40,7 @@ pub fn find_parts<'a, 'b>(
 }
 
 // Look up a field in an array or object.
-pub fn find_field<'b, S: AsRef<str>>(
+pub(crate) fn find_field<'b, S: AsRef<str>>(
     field: S,
     parent: &'b Value,
 ) -> Option<&'b Value> {
@@ -62,7 +62,7 @@ pub fn find_field<'b, S: AsRef<str>>(
     None
 }
 
-pub fn is_truthy(val: &Value) -> bool {
+pub(crate) fn is_truthy(val: &Value) -> bool {
     match val {
         Value::Object(ref _map) => return true,
         Value::Array(ref _list) => return true,

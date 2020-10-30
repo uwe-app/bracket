@@ -1,7 +1,7 @@
 pub mod error;
 pub mod escape;
 pub mod helper;
-pub mod json;
+pub(crate) mod json;
 pub mod lexer;
 pub mod log;
 pub mod output;
@@ -10,8 +10,10 @@ pub mod registry;
 pub mod render;
 pub mod template;
 
-pub type Result<'a, T> = std::result::Result<T, error::Error<'a>>;
+pub(crate) type Result<'a, T> = std::result::Result<T, error::Error<'a>>;
 
-pub use error::Error;
+pub(crate) use error::Error;
 pub use registry::Registry;
 pub use template::Template;
+
+pub use escape::EscapeFn;

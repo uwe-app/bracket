@@ -1,3 +1,5 @@
+//! Helper trait and types for the default set of helpers.
+
 use crate::{
     error::RenderError,
     render::{Render, Scope},
@@ -5,8 +7,10 @@ use crate::{
 
 use serde_json::{Value, to_string, to_string_pretty};
 
+/// The result that helper functions should return.
 pub type Result = std::result::Result<Option<Value>, RenderError>;
 
+/// Trait for helpers.
 pub trait Helper: Send + Sync {
     fn call<'reg, 'render>(
         &self,

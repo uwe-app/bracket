@@ -1,3 +1,4 @@
+//! Iterator for grammar tokens.
 use logos::{Lexer as Lex, Logos, Span};
 
 #[derive(Clone, Default)]
