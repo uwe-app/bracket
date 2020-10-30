@@ -4,6 +4,7 @@ use serde::Serialize;
 
 use crate::{
     error::RenderError,
+    escape::{EscapeFn, html_escape},
     helper::{
         EachHelper, Helper, IfHelper, LogHelper, LookupHelper,
         UnlessHelper, WithHelper,
@@ -17,6 +18,7 @@ use crate::{
 pub struct Registry<'reg> {
     templates: HashMap<&'reg str, Template<'reg>>,
     helpers: HashMap<&'reg str, Box<dyn Helper + 'reg>>,
+    escape: EscapeFn,
 }
 
 impl<'reg, 'source> Registry<'reg> {
@@ -24,6 +26,7 @@ impl<'reg, 'source> Registry<'reg> {
         let mut reg = Self {
             templates: Default::default(),
             helpers: Default::default(),
+            escape: Box::new(html_escape),
         };
         reg.builtins();
         reg
@@ -39,6 +42,15 @@ impl<'reg, 'source> Registry<'reg> {
         self.register_helper("unless", Box::new(UnlessHelper {}));
     }
 
+    /// Set the escape function for the registry.
+    pub fn set_escape(&mut self, escape: EscapeFn) {
+        self.escape = escape;
+    }
+
+    pub fn escape(&self) -> &EscapeFn {
+        &self.escape
+    }
+
     pub fn register_helper(
         &mut self,
         name: &'reg str,
@@ -49,6 +61,10 @@ impl<'reg, 'source> Registry<'reg> {
 
     pub fn helpers(&self) -> &HashMap<&'reg str, Box<dyn Helper + 'reg>> {
         &self.helpers
+    }
+
+    pub fn get_helper(&self, name: &str) -> Option<&Box<dyn Helper + 'reg>> {
+        self.helpers.get(name) 
     }
 
     pub fn compile(

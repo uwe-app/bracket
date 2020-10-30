@@ -1,5 +1,7 @@
 # {{title}}
 
+This is a handlebars document 
+
 \{{expr}}
 {{{unescaped}}}
 

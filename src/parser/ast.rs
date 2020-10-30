@@ -461,6 +461,10 @@ impl<'source> Call<'source> {
     pub fn is_partial(&self) -> bool {
         self.partial
     }
+
+    pub fn is_escaped(&self) -> bool {
+        !self.open().starts_with("{{{")
+    }
 }
 
 impl fmt::Display for Call<'_> {

@@ -1,4 +1,5 @@
 pub mod error;
+pub mod escape;
 pub mod helper;
 pub mod lexer;
 pub mod output;
