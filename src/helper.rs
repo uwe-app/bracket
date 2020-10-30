@@ -1,6 +1,6 @@
 use crate::{
     error::RenderError,
-    render::{Context, Render},
+    render::{Render, Scope},
 };
 
 use serde_json::Value;
@@ -11,7 +11,6 @@ pub trait Helper: Send + Sync {
     fn call<'reg, 'render>(
         &self,
         rc: &mut Render<'reg, 'render>,
-        ctx: &Context<'render>,
     ) -> Result;
 }
 
@@ -21,7 +20,6 @@ impl Helper for LookupHelper {
     fn call<'reg, 'render>(
         &self,
         rc: &mut Render<'reg, 'render>,
-        ctx: &Context<'render>,
     ) -> Result {
         Ok(None)
     }
@@ -33,8 +31,20 @@ impl Helper for WithHelper {
     fn call<'reg, 'render>(
         &self,
         rc: &mut Render<'reg, 'render>,
-        ctx: &Context<'render>,
     ) -> Result {
+        let args = rc.arguments();
+        let scope = args
+            .get(0)
+            .ok_or_else(|| {
+                RenderError::from("Arity error for `with`, argument expected")
+            })?;
+
+        let mut block = Scope::new();
+        block.set_base_value(scope);
+
+        rc.push_scope(block);
+
+        rc.pop_scope();
 
         Ok(None)
     }
@@ -46,7 +56,6 @@ impl Helper for EachHelper {
     fn call<'reg, 'render>(
         &self,
         rc: &mut Render<'reg, 'render>,
-        ctx: &Context<'render>,
     ) -> Result {
         Ok(None)
     }
@@ -58,7 +67,6 @@ impl Helper for IfHelper {
     fn call<'reg, 'render>(
         &self,
         rc: &mut Render<'reg, 'render>,
-        ctx: &Context<'render>,
     ) -> Result {
         Ok(None)
     }
@@ -70,7 +78,6 @@ impl Helper for UnlessHelper {
     fn call<'reg, 'render>(
         &self,
         rc: &mut Render<'reg, 'render>,
-        ctx: &Context<'render>,
     ) -> Result {
         Ok(None)
     }

@@ -15,7 +15,10 @@ fn main() -> Result<'static, ()> {
 
     let content = include_str!("document.md");
     let name = "document";
-    let data = json!({"title": "Handlebars Test Document & Information"});
+    let data = json!({
+        "title": "Handlebars Test Document & Information",
+        "list": [1, 2, 3],
+    });
     let mut registry = Registry::new();
     registry.register_template_string(name, content, Default::default());
     let result = registry.render(name, &data).unwrap();

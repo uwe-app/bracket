@@ -16,6 +16,12 @@ To help debug our templates we can use the `log` helper: `\{{log "Message to pri
 {{{this}}}
 ```
 
+{{#with list}}
+```
+{{{this}}}
+```
+{{/with}}
+
 \{{expr}}
 {{{unescaped}}}
 

@@ -1,4 +1,4 @@
-use crate::{error::RenderError, helper::{Helper, Result}, render::{Render, Context}};
+use crate::{error::RenderError, helper::{Helper, Result}, render::Render};
 
 use log::*;
 
@@ -8,7 +8,6 @@ impl Helper for LogHelper {
     fn call<'reg, 'render>(
         &self,
         rc: &mut Render<'reg, 'render>,
-        ctx: &Context<'render>,
     ) -> Result {
         let message = rc
             .arguments()

@@ -19,7 +19,7 @@ pub enum EvalResult<'render> {
 
 #[derive(Debug)]
 pub struct Scope<'scope> {
-    locals: HashMap<String, Value>,
+    locals: HashMap<String, &'scope Value>,
     value: Option<&'scope Value>,
     phantom: PhantomData<&'scope Value>,
 }
@@ -33,7 +33,7 @@ impl<'scope> Scope<'scope> {
         }
     }
 
-    pub fn set_local(&mut self, name: &str, value: Value) {
+    pub fn set_local(&mut self, name: &str, value: &'scope Value) {
         self.locals.insert(format!("@{}", name), value);
     }
 
@@ -43,30 +43,6 @@ impl<'scope> Scope<'scope> {
 
     pub fn base_value(&self) -> &Option<&'scope Value> {
         &self.value
-    }
-}
-
-pub struct Context<'render> {
-    arguments: Vec<Value>,
-    hash: HashMap<String, Value>,
-    phantom: PhantomData<&'render Value>,
-}
-
-impl<'render> Context<'render> {
-    pub fn new() -> Self {
-        Self {
-            arguments: Vec::new(),
-            hash: HashMap::new(),
-            phantom: PhantomData,
-        }
-    }
-
-    pub fn arguments(&self) -> &Vec<Value> {
-        &self.arguments
-    }
-
-    pub fn hash(&self) -> &HashMap<String, Value> {
-        &self.hash
     }
 }
 
@@ -233,8 +209,7 @@ impl<'reg, 'render> Render<'reg, 'render> {
         helper: &'reg Box<dyn Helper + 'reg>,
     ) -> Result<Option<Value>, RenderError> {
         self.callee = Some(call);
-        let ctx = Context::new();
-        helper.call(self, &ctx)?;
+        helper.call(self)?;
         self.callee = None;
         Ok(None)
     }
@@ -336,9 +311,9 @@ impl<'reg, 'render> Render<'reg, 'render> {
             }
             Node::Block(ref block) => {
                 // TODO: call partial / helper for blocks
-                for node in block.nodes().iter() {
-                    self.render(node)?;
-                }
+                //for node in block.nodes().iter() {
+                    //self.render(node)?;
+                //}
             }
             _ => todo!("Render other node types"),
         }
