@@ -45,7 +45,7 @@ This is some block text with an {{inline}}
     //let s = "{{foo ../bar}}";
     //let s = "Some text";
 
-    let s = "{{# bar}}foo{{/bar}}";
+    let s = "some {{# bar}}foo{{/bar}} text";
 
     let options = ParserOptions {
         file_name: String::from("src/main.rs"),
@@ -55,10 +55,15 @@ This is some block text with an {{inline}}
 
     let mut parser = Parser::new(s, options);
 
-    for node in parser {
-        let node = node?;
-        println!("{:#?}", node);
+    let doc = parser.parse()?;
+    for node in doc.iter() {
+        println!("Got node {:?}", node);
     }
+
+    //for node in parser {
+        //let node = node?;
+        //println!("{:#?}", node);
+    //}
 
     //parser.parse().expect("Failed to parse!");
 

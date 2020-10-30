@@ -73,12 +73,13 @@ impl<'source> Node<'source> {
     }
 
     pub fn iter(&'source self) -> NodeIter<'source> {
-        NodeIter { node: self } 
+        NodeIter { node: self, document: None } 
     }
 }
 
 pub struct NodeIter<'source> {
     node: &'source Node<'source>,
+    document: Option<std::slice::Iter<'source, Node<'source>>>,
 }
 
 impl<'source> Iterator for NodeIter<'source> {
@@ -86,6 +87,14 @@ impl<'source> Iterator for NodeIter<'source> {
 
     fn next(&mut self) -> Option<Self::Item> {
         match *self.node {
+            Node::Document(ref doc) => {
+                let it = self.document.get_or_insert(doc.nodes().iter());
+                let child = it.next();
+                if child.is_none() {
+                    self.document.take();
+                }
+                child
+            },
             Node::Text(_) => Some(self.node),
             Node::Statement(_) => Some(self.node),
             Node::RawBlock(_)
