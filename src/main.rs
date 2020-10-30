@@ -3,6 +3,8 @@ use hbs::{
     Registry, Result,
 };
 
+use serde_json::json;
+
 fn main() -> Result<'static, ()> {
     let s = r#"\{{expr}}
 {{{unescaped}}}
@@ -45,8 +47,19 @@ This is some block text with an {{inline}}
     //let s = "{{foo ../bar}}";
     //let s = "Some text";
 
-    let s = "some {{# bar}}foo{{/bar}} text";
+    let name = "test";
+    //let s = "some {{# bar}}foo{{/bar}} text";
+    let s = "{{title}}";
+    let data = json!({"title": "foo"});
 
+    let mut registry = Registry::new();
+    registry.register_template_string(name, s, Default::default());
+
+    let result = registry.render(name, &data).unwrap();
+
+    println!("Render {:?}", result);
+
+    /*
     let options = ParserOptions {
         file_name: String::from("src/main.rs"),
         line_offset: 0,
@@ -54,11 +67,11 @@ This is some block text with an {{inline}}
     };
 
     let mut parser = Parser::new(s, options);
-
     let doc = parser.parse()?;
     for node in doc.iter() {
         println!("Got node {:?}", node);
     }
+    */
 
     //for node in parser {
         //let node = node?;

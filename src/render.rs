@@ -1,17 +1,40 @@
+use std::collections::HashMap;
 use serde::Serialize;
 use serde_json::Value;
 
 use crate::{
     error::RenderError,
     output::Output,
-    parser::ast::{Node},
+    parser::ast::{Call, Node},
     registry::Registry,
 };
+
+#[derive(Debug)]
+pub enum EvalResult {
+    Json(Value),
+}
+
+#[derive(Debug)]
+pub struct Scope {
+    locals: HashMap<String, Value>,
+}
+
+impl Scope {
+
+    pub fn new() -> Self {
+        Self {locals: HashMap::new()} 
+    }
+
+    pub fn set_local(&mut self, name: &str, value: Value) {
+        self.locals.insert(format!("@{}", name), value);
+    }
+}
 
 pub struct Render<'reg, 'render> {
     registry: &'reg Registry<'reg>,
     root: Value,
     writer: Box<&'render mut dyn Output>,
+    scopes: Vec<Scope>,
 }
 
 impl<'reg, 'render> Render<'reg, 'render> {
@@ -25,11 +48,30 @@ impl<'reg, 'render> Render<'reg, 'render> {
             registry,
             root,
             writer,
+            scopes: Vec::new(),
         })
     }
 
     fn write_str(&mut self, s: &str) -> Result<usize, RenderError> {
         Ok(self.writer.write_str(s).map_err(RenderError::from)?)
+    }
+
+    pub fn push_scope(&mut self) -> &mut Scope {
+        self.scopes.push(Scope::new());
+        self.scopes.last_mut().unwrap()
+    }
+
+    pub fn pop_scope(&mut self) -> Option<Scope> {
+        self.scopes.pop()
+    }
+
+    pub fn evaluate(&mut self, call: &Call) -> EvalResult {
+        if call.is_partial() {
+            println!("Got partial call");
+        } else {
+            println!("Evaluating a call...");
+        }
+        EvalResult::Json(Value::Null)
     }
 
     pub fn render(&mut self, node: &'render Node<'render>) -> Result<(), RenderError> {
@@ -50,13 +92,21 @@ impl<'reg, 'render> Render<'reg, 'render> {
             Node::RawComment(_) => {}
             Node::Comment(_) => {}
             Node::Document(ref doc) => {
+                self.push_scope();
                 for node in doc.nodes().iter() {
                     self.render(node)?;
                 }
+                self.pop_scope();
             }
-            Node::Statement(ref n) => {
+            Node::Statement(ref call) => {
                 println!("TODO: Evaluate statement in render!");
-                self.write_str(n.as_str())?;
+                match self.evaluate(call) {
+                    EvalResult::Json(ref value) => {
+                        println!("Got json value...");
+                    }
+                }
+                //self.write_str(n.as_str())?;
+                //let value = 
             }
             Node::Block(ref block) => {
                 // TODO: call partial / helper for blocks

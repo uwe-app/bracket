@@ -1,5 +1,3 @@
-use std::ops::Range;
-
 use logos::Span;
 
 use crate::{
