@@ -34,20 +34,20 @@ impl<'source> Node<'source> {
             Self::Statement(ref n) => n.as_str(),
             Self::Block(ref n) => n.as_str(),
             Self::RawBlock(ref n)
-                | Self::RawStatement(ref n)
-                | Self::RawComment(ref n)
-                | Self::Comment(ref n) => n.as_str(),
+            | Self::RawStatement(ref n)
+            | Self::RawComment(ref n)
+            | Self::Comment(ref n) => n.as_str(),
         }
     }
 
     pub fn trim_before(&self) -> bool {
         match *self {
             Self::Document(_)
-                | Self::Text(_)
-                | Self::RawBlock(_)
-                | Self::RawStatement(_)
-                | Self::RawComment(_)
-                | Self::Comment(_) => false,
+            | Self::Text(_)
+            | Self::RawBlock(_)
+            | Self::RawStatement(_)
+            | Self::RawComment(_)
+            | Self::Comment(_) => false,
             Self::Statement(ref n) => n.open().ends_with(WHITESPACE),
             Self::Block(ref n) => {
                 let open = n.open();
@@ -59,11 +59,11 @@ impl<'source> Node<'source> {
     pub fn trim_after(&self) -> bool {
         match *self {
             Self::Document(_)
-                | Self::Text(_)
-                | Self::RawBlock(_)
-                | Self::RawStatement(_)
-                | Self::RawComment(_)
-                | Self::Comment(_) => false,
+            | Self::Text(_)
+            | Self::RawBlock(_)
+            | Self::RawStatement(_)
+            | Self::RawComment(_)
+            | Self::Comment(_) => false,
             Self::Statement(ref n) => n.close().starts_with(WHITESPACE),
             Self::Block(ref n) => {
                 let open = n.open();
@@ -73,7 +73,10 @@ impl<'source> Node<'source> {
     }
 
     pub fn iter(&'source self) -> NodeIter<'source> {
-        NodeIter { node: self, document: None } 
+        NodeIter {
+            node: self,
+            document: None,
+        }
     }
 }
 
@@ -94,14 +97,14 @@ impl<'source> Iterator for NodeIter<'source> {
                     self.document.take();
                 }
                 child
-            },
+            }
             Node::Text(_) => Some(self.node),
             Node::Statement(_) => Some(self.node),
             Node::RawBlock(_)
-                | Node::RawStatement(_)
-                | Node::RawComment(_)
-                | Node::Comment(_) => Some(self.node),
-            _ => None
+            | Node::RawStatement(_)
+            | Node::RawComment(_)
+            | Node::Comment(_) => Some(self.node),
+            _ => None,
         }
     }
 }
@@ -114,9 +117,9 @@ impl fmt::Display for Node<'_> {
             Self::Statement(ref n) => n.fmt(f),
             Self::Block(ref n) => n.fmt(f),
             Self::RawBlock(ref n)
-                | Self::RawStatement(ref n)
-                | Self::RawComment(ref n)
-                | Self::Comment(ref n) => n.fmt(f),
+            | Self::RawStatement(ref n)
+            | Self::RawComment(ref n)
+            | Self::Comment(ref n) => n.fmt(f),
         }
     }
 }
@@ -129,9 +132,9 @@ impl fmt::Debug for Node<'_> {
             Self::Block(ref n) => fmt::Debug::fmt(n, f),
             Self::Statement(ref n) => fmt::Debug::fmt(n, f),
             Self::RawBlock(ref n)
-                | Self::RawStatement(ref n)
-                | Self::RawComment(ref n)
-                | Self::Comment(ref n) => fmt::Debug::fmt(n, f),
+            | Self::RawStatement(ref n)
+            | Self::RawComment(ref n)
+            | Self::Comment(ref n) => fmt::Debug::fmt(n, f),
         }
     }
 }
@@ -173,8 +176,14 @@ impl<'source> TextBlock<'source> {
         source: &'source str,
         text: Text<'source>,
         open: Range<usize>,
-        close: Range<usize>) -> Self {
-        Self {source, text, open, close} 
+        close: Range<usize>,
+    ) -> Self {
+        Self {
+            source,
+            text,
+            open,
+            close,
+        }
     }
 
     pub fn as_str(&self) -> &'source str {
@@ -443,7 +452,7 @@ impl<'source> Call<'source> {
     }
 
     //pub fn as_str(&self) -> &'source str {
-        //&self.source[self.open.start..self.close.end]
+    //&self.source[self.open.start..self.close.end]
     //}
 
     pub fn as_str(&self) -> &'source str {
@@ -512,9 +521,7 @@ impl fmt::Display for Document<'_> {
 
 impl fmt::Debug for Document<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Block")
-            .field("nodes", &self.1)
-            .finish()
+        f.debug_struct("Block").field("nodes", &self.1).finish()
     }
 }
 
@@ -529,10 +536,7 @@ pub struct Block<'source> {
 }
 
 impl<'source> Block<'source> {
-    pub fn new(
-        source: &'source str,
-        open: Range<usize>,
-    ) -> Self {
+    pub fn new(source: &'source str, open: Range<usize>) -> Self {
         Self {
             source,
             nodes: Vec::new(),
@@ -555,12 +559,14 @@ impl<'source> Block<'source> {
         match self.call.target() {
             CallTarget::Path(ref path) => {
                 if path.is_simple() {
-                    let id = path.components().first().unwrap(); 
+                    let id = path.components().first().unwrap();
                     Some(id.as_str())
-                } else { None }
+                } else {
+                    None
+                }
             }
-            CallTarget::SubExpr(_) => None
-        } 
+            CallTarget::SubExpr(_) => None,
+        }
     }
 
     pub(crate) fn exit(&mut self, span: Range<usize>) {
@@ -579,7 +585,9 @@ impl<'source> Block<'source> {
     pub fn close(&self) -> &'source str {
         if let Some(ref close) = self.close {
             &self.source[close.start..close.end]
-        } else { "" }
+        } else {
+            ""
+        }
     }
 
     pub fn push(&mut self, node: Node<'source>) {

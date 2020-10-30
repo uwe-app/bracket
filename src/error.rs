@@ -127,7 +127,9 @@ impl SyntaxError<'_> {
         match *self {
             Self::EmptyStatement(_) => "statement is empty",
             Self::ExpectedIdentifier(_) => "expecting identifier",
-            Self::ExpectedSimpleIdentifier(_) => "expecting identifier not a path or sub-expression",
+            Self::ExpectedSimpleIdentifier(_) => {
+                "expecting identifier not a path or sub-expression"
+            }
             Self::PartialIdentifier(_) => "partial requires an identifier",
             Self::PartialSimpleIdentifier(_) => {
                 "partial requires a simple identifier (not a path)"

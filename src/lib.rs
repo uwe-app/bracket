@@ -1,6 +1,7 @@
 pub mod error;
 pub mod escape;
 pub mod helper;
+pub mod json;
 pub mod lexer;
 pub mod output;
 pub mod parser;

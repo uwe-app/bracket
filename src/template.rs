@@ -5,7 +5,7 @@ use crate::{
     error::{RenderError, SyntaxError},
     output::Output,
     parser::{ast::Node, Parser, ParserOptions},
-    render::{Render},
+    render::Render,
     Registry,
 };
 

@@ -3,7 +3,7 @@ use logos::Span;
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{self, lex, Lexer, Parameters, Token},
-    parser::ast::{Document, Block, Node, Text, CallTarget},
+    parser::ast::{Block, CallTarget, Document, Node, Text},
 };
 
 /// Default file name.
@@ -135,7 +135,7 @@ impl<'source> Parser<'source> {
         Ok(Node::Document(doc))
     }
 
-    /// Yield the next token accounting for text normalization which 
+    /// Yield the next token accounting for text normalization which
     /// saves the next token for further processing.
     fn token(&mut self) -> Option<Token> {
         if let Some(t) = self.next_token.take() {
@@ -148,10 +148,12 @@ impl<'source> Parser<'source> {
 
     /// Consume tokens and yield nodes.
     ///
-    /// Decoupled from the iterator `next()` implementation as it needs to 
+    /// Decoupled from the iterator `next()` implementation as it needs to
     /// greedily consume tokens and advance again when entering block scopes.
-    fn advance(&mut self, next: Token) -> Result<Option<Node<'source>>, SyntaxError<'source>> {
-
+    fn advance(
+        &mut self,
+        next: Token,
+    ) -> Result<Option<Node<'source>>, SyntaxError<'source>> {
         if next.is_newline() {
             *self.state.line_mut() += 1;
         }
@@ -178,7 +180,8 @@ impl<'source> Parser<'source> {
                         &mut self.lexer,
                         &mut self.state,
                         span,
-                    ).map(Some);
+                    )
+                    .map(Some);
                 }
                 lexer::Block::StartRawComment => {
                     return block::raw_comment(
@@ -186,7 +189,8 @@ impl<'source> Parser<'source> {
                         &mut self.lexer,
                         &mut self.state,
                         span,
-                    ).map(Some);
+                    )
+                    .map(Some);
                 }
                 lexer::Block::StartRawStatement => {
                     return block::raw_statement(
@@ -194,7 +198,8 @@ impl<'source> Parser<'source> {
                         &mut self.lexer,
                         &mut self.state,
                         span,
-                    ).map(Some);
+                    )
+                    .map(Some);
                 }
                 lexer::Block::StartComment => {
                     return block::comment(
@@ -202,7 +207,8 @@ impl<'source> Parser<'source> {
                         &mut self.lexer,
                         &mut self.state,
                         span,
-                    ).map(Some);
+                    )
+                    .map(Some);
                 }
                 lexer::Block::StartBlockScope => {
                     let block = block::scope(
@@ -213,7 +219,6 @@ impl<'source> Parser<'source> {
                     )?;
 
                     if let Some(block) = block {
-
                         let name = block.name().ok_or_else(|| {
                             return SyntaxError::ExpectedIdentifier(
                                 ErrorInfo::new(
@@ -224,28 +229,30 @@ impl<'source> Parser<'source> {
                                         self.state.byte(),
                                     )),
                                 ),
-                            )
+                            );
                         })?;
 
                         match block.call().target() {
                             CallTarget::Path(ref path) => {
                                 if !path.is_simple() {
-                                    return Err(SyntaxError::ExpectedSimpleIdentifier(
-                                        ErrorInfo::new(
-                                            self.source,
-                                            self.state.file_name(),
-                                            SourcePos::from((
-                                                self.state.line(),
-                                                self.state.byte(),
-                                            )),
+                                    return Err(
+                                        SyntaxError::ExpectedSimpleIdentifier(
+                                            ErrorInfo::new(
+                                                self.source,
+                                                self.state.file_name(),
+                                                SourcePos::from((
+                                                    self.state.line(),
+                                                    self.state.byte(),
+                                                )),
+                                            ),
                                         ),
-                                    ))
-                                } 
-                            } 
+                                    );
+                                }
+                            }
                             CallTarget::SubExpr(_) => {
                                 if !block.call().is_partial() {
                                     panic!("Sub expression block targets are only evaluated for partials");
-                                } 
+                                }
                             }
                         }
 
@@ -260,7 +267,8 @@ impl<'source> Parser<'source> {
                                     if node.is_none() || self.stack.is_empty() {
                                         return Ok(node);
                                     } else {
-                                        let (_, current) = self.stack.last_mut().unwrap();
+                                        let (_, current) =
+                                            self.stack.last_mut().unwrap();
                                         current.push(node.unwrap());
                                     }
                                 }
@@ -273,7 +281,7 @@ impl<'source> Parser<'source> {
                     }
                 }
                 lexer::Block::EndBlockScope => {
-                    // Need a temp block to parse the call parameters so we 
+                    // Need a temp block to parse the call parameters so we
                     // can match the tag end name
                     let temp = block::scope(
                         self.source,
@@ -285,7 +293,9 @@ impl<'source> Parser<'source> {
                     if self.stack.is_empty() {
                         let close_name = if let Some(close) = temp {
                             close.name()
-                        } else { None };
+                        } else {
+                            None
+                        };
 
                         let notes = if let Some(close) = close_name {
                             vec![format!("perhaps open the block '{}'", close)]
@@ -303,7 +313,7 @@ impl<'source> Parser<'source> {
                                     self.state.line(),
                                     self.state.byte(),
                                 )),
-                                notes
+                                notes,
                             ),
                         ));
                         //panic!("Got close block with no open block!");
@@ -322,7 +332,10 @@ impl<'source> Parser<'source> {
                                             self.state.line(),
                                             self.state.byte(),
                                         )),
-                                        vec![format!("opening name is '{}'", open_name)]
+                                        vec![format!(
+                                            "opening name is '{}'",
+                                            open_name
+                                        )],
                                     ),
                                 ));
                             }
@@ -330,7 +343,7 @@ impl<'source> Parser<'source> {
                             // TODO: update span for entire close tag: `{{/name}}`!
                             block.exit(span);
 
-                            return Ok(Some(Node::Block(block)))
+                            return Ok(Some(Node::Block(block)));
                         } else {
                             return Err(SyntaxError::ExpectedIdentifier(
                                 ErrorInfo::new(
@@ -341,11 +354,12 @@ impl<'source> Parser<'source> {
                                         self.state.byte(),
                                     )),
                                 ),
-                            ))
+                            ));
                         }
-
                     } else {
-                        panic!("Unable to parse call parameters for close block");
+                        panic!(
+                            "Unable to parse call parameters for close block"
+                        );
                     }
                 }
                 lexer::Block::StartStatement => {
@@ -364,9 +378,7 @@ impl<'source> Parser<'source> {
                                     params,
                                 ) {
                                     Ok(call) => {
-                                        return Ok(Some(Node::Statement(
-                                            call,
-                                        )))
+                                        return Ok(Some(Node::Statement(call)))
                                     }
                                     Err(e) => return Err(e),
                                 }
@@ -387,7 +399,7 @@ impl<'source> Parser<'source> {
             Token::Parameters(_, _) => {}
             Token::StringLiteral(_, _) => {}
         }
-        
+
         Ok(None)
     }
 }

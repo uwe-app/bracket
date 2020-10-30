@@ -4,10 +4,10 @@ use serde::Serialize;
 
 use crate::{
     error::RenderError,
-    escape::{EscapeFn, html_escape},
+    escape::{html_escape, EscapeFn},
     helper::{
-        EachHelper, Helper, IfHelper, LogHelper, LookupHelper,
-        UnlessHelper, WithHelper,
+        EachHelper, Helper, IfHelper, LogHelper, LookupHelper, UnlessHelper,
+        WithHelper,
     },
     output::{Output, StringOutput},
     parser::ParserOptions,
@@ -64,7 +64,7 @@ impl<'reg, 'source> Registry<'reg> {
     }
 
     pub fn get_helper(&self, name: &str) -> Option<&Box<dyn Helper + 'reg>> {
-        self.helpers.get(name) 
+        self.helpers.get(name)
     }
 
     pub fn compile(

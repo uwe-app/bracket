@@ -1,96 +1,16 @@
-use std::collections::HashMap;
-use std::marker::PhantomData;
 use serde::Serialize;
 use serde_json::Value;
+use std::collections::HashMap;
+use std::marker::PhantomData;
 
 use crate::{
     error::RenderError,
+    helper::Helper,
+    json,
     output::Output,
-    parser::ast::{Call, CallTarget, Node, Path},
+    parser::ast::{Call, CallTarget, Node, ParameterValue, Path},
     registry::Registry,
 };
-
-mod json {
-    use serde_json::Value;
-
-    pub fn stringify(value: &Value) -> String {
-        match value {
-            Value::String(ref s) => {
-                s.to_owned()
-            }
-            _ => todo!("Stringify other json types"),
-        } 
-    }
-
-    // Look up path parts in an object.
-    pub fn find_parts<'a, 'b>(parts: Vec<&'a str>, doc: &'b Value) -> Option<&'b Value> {
-        let mut parent = None;
-        match doc {
-            Value::Object(ref _map) => {
-                let mut current: Option<&Value> = Some(doc);
-                for (i, part) in parts.iter().enumerate() {
-                    if i == parts.len() - 1 {
-                        if let Some(target) = current {
-                            return find_field(&part, target);
-                        }
-                    } else {
-                        if let Some(target) = current {
-                            parent = find_field(part, target);
-                            if parent.is_none() {
-                                break;
-                            }
-                            current = parent;
-                        } else {
-                            break;
-                        }
-                    }
-                }
-            }
-            _ => {}
-        }
-        None
-    }
-
-    // Look up a field in an array or object.
-    pub fn find_field<'b, S: AsRef<str>>(field: S, parent: &'b Value) -> Option<&'b Value> {
-        match parent {
-            Value::Object(ref map) => {
-                if let Some(val) = map.get(field.as_ref()) {
-                    return Some(val);
-                }
-            }
-            Value::Array(ref list) => {
-                if let Ok(index) = field.as_ref().parse::<usize>() {
-                    if !list.is_empty() && index < list.len() {
-                        return Some(&list[index]);
-                    }
-                }
-            }
-            _ => {}
-        }
-        None
-    }
-
-    pub fn is_truthy(val: &Value) -> bool {
-        match val {
-            Value::Object(ref _map) => return true,
-            Value::Array(ref _list) => return true,
-            Value::String(ref s) => return s.len() > 0,
-            Value::Bool(ref b) => return *b,
-            Value::Number(ref n) => {
-                if n.is_i64() {
-                    return n.as_i64().unwrap() != 0;
-                } else if n.is_u64() {
-                    return n.as_u64().unwrap() != 0;
-                } else if n.is_f64() {
-                    return n.as_f64().unwrap() != 0.0;
-                }
-            }
-            _ => {}
-        }
-        false
-    }
-}
 
 #[derive(Debug)]
 pub enum EvalResult<'render> {
@@ -101,12 +21,16 @@ pub enum EvalResult<'render> {
 pub struct Scope<'scope> {
     locals: HashMap<String, Value>,
     value: Option<&'scope Value>,
-    phantom: PhantomData<& 'scope Value>,
+    phantom: PhantomData<&'scope Value>,
 }
 
 impl<'scope> Scope<'scope> {
     pub fn new() -> Self {
-        Self {locals: HashMap::new(), phantom: PhantomData, value: None} 
+        Self {
+            locals: HashMap::new(),
+            phantom: PhantomData,
+            value: None,
+        }
     }
 
     pub fn set_local(&mut self, name: &str, value: Value) {
@@ -121,6 +45,54 @@ impl<'scope> Scope<'scope> {
         &self.value
     }
 }
+
+#[derive(Debug)]
+pub struct LazyValue<'scope> {
+    value: &'scope ParameterValue<'scope>,
+}
+
+impl<'scope> From<&'scope ParameterValue<'scope>> for LazyValue<'scope> {
+    fn from(value: &'scope ParameterValue<'scope>) -> Self {
+        Self { value }
+    }
+}
+
+pub struct Context<'render> {
+    arguments: Vec<LazyValue<'render>>,
+    hash: HashMap<String, LazyValue<'render>>,
+}
+
+impl<'render> Context<'render> {
+    pub fn new(
+        /* root: &'render Value, */
+        call: &'render Call<'render>,
+    ) -> Self {
+        let arguments = call.arguments().iter().map(LazyValue::from).collect();
+        let hash = call
+            .hash()
+            .iter()
+            .map(|(k, v)| (k.to_string(), LazyValue::from(v)))
+            .collect::<HashMap<_, _>>();
+        Self { arguments, hash }
+    }
+
+    pub fn arguments(&self) -> &Vec<LazyValue<'render>> {
+        return &self.arguments;
+    }
+}
+
+//impl<'scope> From<&'scope Call<'scope>> for Context<'scope> {
+//fn from(call: &'scope Call<'scope>) -> Self {
+//let arguments = call.arguments().iter().map(LazyValue::from).collect();
+//let hash = call.hash().iter().map(|(k, v)| {
+//(k.to_string(), LazyValue::from(v))
+//}).collect::<HashMap<_,_>>();
+//Self {
+//arguments,
+//hash,
+//}
+//}
+//}
 
 pub struct Render<'reg, 'render> {
     registry: &'reg Registry<'reg>,
@@ -144,15 +116,18 @@ impl<'reg, 'render> Render<'reg, 'render> {
         })
     }
 
-    fn write_str(&mut self, s: &str, escape: bool) -> Result<usize, RenderError> {
+    fn write_str(
+        &mut self,
+        s: &str,
+        escape: bool,
+    ) -> Result<usize, RenderError> {
         if escape {
-            let handler = self.registry.escape(); 
+            let handler = self.registry.escape();
             let escaped = handler(s);
             Ok(self.writer.write_str(&escaped).map_err(RenderError::from)?)
         } else {
             Ok(self.writer.write_str(s).map_err(RenderError::from)?)
         }
-
     }
 
     pub fn push_scope(&mut self, scope: Scope<'render>) -> &mut Scope<'render> {
@@ -172,63 +147,85 @@ impl<'reg, 'render> Render<'reg, 'render> {
         self.scopes.last_mut()
     }
 
-    fn resolve(&self, path: &Path, scope: Option<&Scope<'render>>) -> Option<&Value> {
+    fn resolve(
+        &self,
+        path: &Path,
+        scope: Option<&Scope<'render>>,
+    ) -> Option<&Value> {
         let root = &self.root;
-        if path.is_simple() {
-            let name = path.as_str(); 
-            println!("Lookup variable ... {}", name);
+
+        // Handle explicit `@root` reference
+        if path.is_root() {
+            let parts = path
+                .components()
+                .iter()
+                .skip(1)
+                .map(|c| c.as_str())
+                .collect();
+            return json::find_parts(parts, root);
+        } else if path.is_simple() {
+            let name = path.as_str();
             if let Some(scope) = scope {
-                println!("Look up in current scope...");
+                //println!("Look up in current scope...");
             } else {
-                println!("Look up in root scope...");
-
-                let parts = path.components()
-                    .iter()
-                    .map(|c| c.as_str())
-                    .collect();
-
-                let value = json::find_parts(parts, root);
-
-                println!("Got value {:?}", value);
-                return value
+                //println!("Look up in root scope...");
+                let parts =
+                    path.components().iter().map(|c| c.as_str()).collect();
+                return json::find_parts(parts, root);
             }
         }
-        None 
+        None
     }
 
     pub fn lookup(&self, path: &Path) -> Option<&Value> {
         return self.resolve(path, self.scope());
     }
 
-    pub fn evaluate(&mut self, call: &Call) -> EvalResult {
+    pub fn invoke(
+        &mut self,
+        call: &'render Call,
+        name: &str,
+        helper: &'reg Box<dyn Helper + 'reg>,
+    ) -> Result<Option<Value>, RenderError> {
+        let ctx = Context::new(call);
+        helper.call(self, &ctx);
+        Ok(None)
+    }
+
+    pub fn evaluate(
+        &mut self,
+        call: &'render Call,
+    ) -> Result<EvalResult, RenderError> {
         if call.is_partial() {
-            println!("Got partial call");
+            //println!("Got partial call");
         } else {
             println!("Evaluating a call {:?}", call);
-
             match call.target() {
                 CallTarget::Path(ref path) => {
                     if path.is_simple() {
-                        println!("Got simple path {}", path.as_str());
-                        if let Some(helper) = self.registry.get_helper(path.as_str()) {
-                            println!("Found a helper for the simple path!");
+                        if let Some(helper) =
+                            self.registry.get_helper(path.as_str())
+                        {
+                            //println!("Found a helper for the simple path!");
+                            self.invoke(call, path.as_str(), helper)?;
                         } else {
                             println!("Evaluate as a variable...");
-                            return EvalResult::Json(self.lookup(path))
+                            return Ok(EvalResult::Json(self.lookup(path)));
                         }
                     } else {
-                        return EvalResult::Json(self.lookup(path))
+                        return Ok(EvalResult::Json(self.lookup(path)));
                     }
-
                 }
-                _ => todo!("Handle sub expressions")
+                _ => todo!("Handle sub expressions"),
             }
-
         }
-        EvalResult::Json(None)
+        Ok(EvalResult::Json(None))
     }
 
-    pub fn render(&mut self, node: &'render Node<'render>) -> Result<(), RenderError> {
+    pub fn render(
+        &mut self,
+        node: &'render Node<'render>,
+    ) -> Result<(), RenderError> {
         match node {
             Node::Text(ref n) => {
                 self.write_str(n.as_str(), false)?;
@@ -248,7 +245,7 @@ impl<'reg, 'render> Render<'reg, 'render> {
                 }
             }
             Node::Statement(ref call) => {
-                let result = self.evaluate(call);
+                let result = self.evaluate(call)?;
                 match result {
                     EvalResult::Json(maybe_json) => {
                         println!("Got maybe json {:?}", maybe_json);
@@ -268,7 +265,7 @@ impl<'reg, 'render> Render<'reg, 'render> {
                     self.render(node)?;
                 }
             }
-            _ => todo!("Render other node types")
+            _ => todo!("Render other node types"),
         }
 
         Ok(())

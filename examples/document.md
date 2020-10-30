@@ -1,6 +1,12 @@
 # {{title}}
 
-This is a handlebars document 
+This is a markdown document using handlebars for templating. The first header is a basic variable substitution but we can also use explicit `@root` references too:
+
+> {{@root.title}}
+
+To help debug our templates we can use the `log` helper.
+
+{{log "A test log message"}}
 
 \{{expr}}
 {{{unescaped}}}

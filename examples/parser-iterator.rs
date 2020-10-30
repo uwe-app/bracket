@@ -1,6 +1,6 @@
 use hbs::{
-    Result,
     parser::{Parser, ParserOptions},
+    Result,
 };
 
 /// Demonstrates how to get nodes by iterating a parser.

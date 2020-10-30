@@ -11,6 +11,7 @@ impl Helper for MockHelper {
     fn call<'reg, 'render>(
         &self,
         rc: &mut Render<'reg, 'render>,
+        ctx: &Context<'render>,
     ) -> helper::Result {
         Ok(Some(Value::Null))
     }
