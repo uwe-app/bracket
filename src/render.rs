@@ -157,19 +157,19 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         self.scopes.last_mut()
     }
 
-    //pub fn root(&self) -> &'source Value {
-        //self.root
-    //}
+    pub fn root(&self) -> &Value {
+        self.root
+    }
 
-    //pub fn scopes(&mut self) -> &'source mut Vec<Scope<'source>> {
-        //self.scopes
-    //}
+    pub fn scopes(&mut self) -> &mut Vec<Scope<'source>> {
+        self.scopes
+    }
 
-    fn lookup<'a>(
+    fn lookup(
         path: &Path,
-        root: &'a Value,
-        scopes: &'a Vec<Scope<'source>>,
-    ) -> Option<&'a Value> {
+        root: &'source Value,
+        scopes: &'source Vec<Scope<'source>>,
+    ) -> Option<&'source Value> {
 
         println!("Lookup path {:?}", path.as_str());
 
@@ -207,8 +207,9 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     fn arguments(
-        &mut self,
         call: &'source Call<'source>,
+        root: &'source Value,
+        scopes: &'source Vec<Scope<'source>>,
         ) -> Vec<&'source Value> {
         call.arguments()
             .iter()
@@ -218,9 +219,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                         val
                     },
                     ParameterValue::Path(ref path) => {
-                        //if let Some(val) = Render::lookup(path, self.root, self.scopes) {
-                            //return val
-                        //}
+                        //Render::lookup(path, root, scopes).unwrap_or(&Value::Null)
+                        //val.foo();
                         &Value::Null
                     },
                     _ => {
@@ -287,7 +287,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                             self.registry.get_helper(path.as_str())
                         {
 
-                            let mut args = self.arguments(call);
+                            let mut args = Render::arguments(call, self.root(), self.scopes());
                             let mut hash = Render::hash(call);
                             let context = Context::new(path.as_str(), args, hash);
 
@@ -341,7 +341,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                             println!(
                                 "Found a helper for the block path {}", path.as_str());
 
-                            let mut args = self.arguments(call);
+                            let mut args = Render::arguments(call, self.root(), self.scopes());
                             let mut hash = Render::hash(call);
                             let context = Context::new(path.as_str(), args, hash);
 
