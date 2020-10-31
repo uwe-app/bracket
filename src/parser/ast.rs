@@ -51,15 +51,9 @@ impl<'source> Node<'source> {
             | Self::RawStatement(_)
             | Self::RawComment(_)
             | Self::Comment(_) => false,
-            Self::Statement(ref n) => n.open().ends_with(WHITESPACE),
-            Self::Fragment(n) => {
-                let open = n.open();
-                open.len() > 2 && WHITESPACE == &open[2..3]
-            }
-            Self::Block(ref n) => {
-                let open = n.open();
-                open.len() > 2 && WHITESPACE == &open[2..3]
-            }
+            Self::Statement(ref n) => n.trim_before(),
+            Self::Fragment(n) => n.trim_before(),
+            Self::Block(ref n) => n.trim_before(),
         }
     }
 
@@ -71,15 +65,9 @@ impl<'source> Node<'source> {
             | Self::RawStatement(_)
             | Self::RawComment(_)
             | Self::Comment(_) => false,
-            Self::Statement(ref n) => n.close().starts_with(WHITESPACE),
-            Self::Fragment(n) => {
-                let open = n.open();
-                open.len() > 2 && WHITESPACE == &open[2..3]
-            }
-            Self::Block(ref n) => {
-                let open = n.open();
-                open.len() > 2 && WHITESPACE == &open[2..3]
-            }
+            Self::Statement(ref n) => n.trim_after(),
+            Self::Fragment(n) => n.trim_after(),
+            Self::Block(ref n) => n.trim_after(),
         }
     }
 
@@ -480,6 +468,14 @@ impl<'source> Call<'source> {
         &self.source[self.close.start..self.close.end]
     }
 
+    pub fn trim_before(&self) -> bool {
+        self.open().ends_with(WHITESPACE)
+    }
+
+    pub fn trim_after(&self) -> bool {
+        self.close().starts_with(WHITESPACE)
+    }
+
     pub fn is_partial(&self) -> bool {
         self.partial
     }
@@ -609,6 +605,15 @@ impl<'source> Block<'source> {
 
     pub fn nodes(&self) -> &'source Vec<Node> {
         &self.nodes
+    }
+
+    pub fn trim_before(&self) -> bool {
+        let open = self.open();
+        open.len() > 2 && WHITESPACE == &open[2..3]
+    }
+
+    pub fn trim_after(&self) -> bool {
+        self.call.trim_after()
     }
 
     pub fn trim_before_close(&self) -> bool {
