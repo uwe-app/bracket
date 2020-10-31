@@ -7,13 +7,15 @@ use crate::{
     error::RenderError,
     escape::{html_escape, EscapeFn},
     helper::{
-        EachHelper, Helper, IfHelper, LookupHelper, UnlessHelper,
-        WithHelper, JsonHelper,
+        //EachHelper, Helper, IfHelper, LookupHelper, UnlessHelper,
+        //WithHelper, JsonHelper,
+        Helper,
+        WithHelper
     },
     output::{Output, StringOutput},
     parser::ParserOptions,
     template::Template,
-    log::LogHelper,
+    //log::LogHelper,
     Error, Result,
 };
 
@@ -35,14 +37,14 @@ impl<'reg, 'source> Registry<'reg> {
     }
 
     fn builtins(&mut self) {
-        self.register_helper("log", Box::new(LogHelper {}));
-        self.register_helper("json", Box::new(JsonHelper {}));
-        self.register_helper("lookup", Box::new(LookupHelper {}));
+        //self.register_helper("log", Box::new(LogHelper {}));
+        //self.register_helper("json", Box::new(JsonHelper {}));
+        //self.register_helper("lookup", Box::new(LookupHelper {}));
 
         self.register_helper("with", Box::new(WithHelper {}));
-        self.register_helper("each", Box::new(EachHelper {}));
-        self.register_helper("if", Box::new(IfHelper {}));
-        self.register_helper("unless", Box::new(UnlessHelper {}));
+        //self.register_helper("each", Box::new(EachHelper {}));
+        //self.register_helper("if", Box::new(IfHelper {}));
+        //self.register_helper("unless", Box::new(UnlessHelper {}));
     }
 
     /// Set the escape function for the registry.

@@ -44,7 +44,7 @@ impl Scope {
     }
 }
 
-pub struct Render<'reg, 'render, 'source> {
+pub struct Render<'reg, 'source, 'render> {
     source: &'source str,
     registry: &'reg Registry<'reg>,
     root: Value,
@@ -58,7 +58,7 @@ pub struct Render<'reg, 'render, 'source> {
     template: Option<Node<'source>>,
 }
 
-impl<'reg, 'render, 'source> Render<'reg, 'render, 'source> {
+impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     pub fn new<T: Serialize>(
         source: &'source str,
         registry: &'reg Registry<'reg>,
@@ -80,21 +80,6 @@ impl<'reg, 'render, 'source> Render<'reg, 'render, 'source> {
             template: None,
         })
     }
-
-    //pub fn render(&mut self) -> Result<(), RenderError> {
-        //println!("RENDER THE INNER TEMPLATE...");
-        //if let Some(template) = self.template.take() {
-            //println!("Got inner template to render...") ;
-            ////let node = template.node();
-            ////self.render_node(template.node())?;
-            ////node.foo();
-        //}
-        //Ok(())
-    //}
-
-    //pub fn context(&self) -> &Option<Context<'source>> {
-        //&self.context
-    //}
 
     pub fn out(&mut self) -> &mut Box<&'render mut dyn Output> {
         &mut self.writer 
@@ -235,22 +220,29 @@ impl<'reg, 'render, 'source> Render<'reg, 'render, 'source> {
     }
 
     pub fn invoke(
-        rc: &mut Render<'_, 'source, '_>,
+        rc: &mut Render<'reg, 'source, 'render>,
         call: &'source Call<'source>,
         name: &str,
         helper: &'reg Box<dyn Helper + 'reg>,
-        mut template: Option<&'source Node<'source>>,
+        template: &'source Node<'source>,
     ) -> Result<Option<Value>, RenderError> {
         let mut args = Render::arguments(call);
         let mut hash = Render::hash(call);
-        helper.call(rc, &mut args, &mut hash, &mut template)?;
+
+        let mut inner = || -> Result<(), RenderError> {
+            rc.render_inner(template)
+        };
+
+        //let mut inner_template = Some(inner);
+
+        helper.call(&mut args, &mut hash, &mut inner)?;
         //rc.callee = None;
         Ok(None)
     }
 
     fn statement(
         &mut self,
-        call: &'render Call<'source>,
+        call: &'source Call<'source>,
     ) -> Result<EvalResult, RenderError> {
         if call.is_partial() {
             println!("Got partial call for statement!");
@@ -263,7 +255,7 @@ impl<'reg, 'render, 'source> Render<'reg, 'render, 'source> {
                             self.registry.get_helper(path.as_str())
                         {
                             //println!("Found a helper for the simple path!");
-                            Render::invoke(self, call, path.as_str(), helper, None)?;
+                            //Render::invoke(self, call, path.as_str(), helper, None)?;
                         } else {
                             return Ok(EvalResult::Json(Render::lookup(
                                 path,
@@ -310,7 +302,7 @@ impl<'reg, 'render, 'source> Render<'reg, 'render, 'source> {
                             //let template = Node::Fragment(block);
                             println!(
                                 "Found a helper for the block path {}", path.as_str());
-                            Render::invoke(self, call, path.as_str(), helper, Some(node))?;
+                            Render::invoke(self, call, path.as_str(), helper, node)?;
                         } else {
                             return Ok(EvalResult::Json(Render::lookup(
                                 path,
@@ -333,11 +325,20 @@ impl<'reg, 'render, 'source> Render<'reg, 'render, 'source> {
         Ok(EvalResult::Json(None))
     }
 
-    pub(crate) fn render(
+    pub(crate) fn render_inner(
         &mut self,
         node: &'source Node<'source>,
     ) -> Result<(), RenderError> {
-        println!("Public helper render called!!!");
+        println!("RENDER INNER BLOCK");
+        match node {
+            Node::Block(ref block) => {
+                for node in block.nodes().iter() {
+                    self.render_node(node)?;
+                }
+            }
+            _ => {}
+        }
+
         Ok(())
     }
 

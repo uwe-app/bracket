@@ -6,6 +6,7 @@ use serde_json::Value;
 
 use log::*;
 
+/*
 pub(crate) struct LogHelper;
 
 impl Helper for LogHelper {
@@ -14,7 +15,7 @@ impl Helper for LogHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         arguments: &mut Vec<&Value>,
         hash: &mut HashMap<String, &'source Value>,
-        template: &mut Option<&'source Node<'source>>,
+        template: &'source Node<'source>,
     ) -> Result {
         
         //let args = rc.arguments();
@@ -50,4 +51,4 @@ impl Helper for LogHelper {
         Ok(None)
     }
 }
-
+*/

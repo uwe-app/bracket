@@ -12,40 +12,44 @@ use crate::{
 /// The result that helper functions should return.
 pub type Result = std::result::Result<Option<Value>, RenderError>;
 
+//pub type HelperArguments<'a> = &'a mut Vec<&'a Value>;
+
 /// Trait for helpers.
 pub trait Helper: Send + Sync {
     fn call<'reg, 'source, 'render>(
         &self,
-        rc: &mut Render<'reg, 'source, 'render>,
+        //rc: &mut Render<'reg, 'source, 'render>,
         arguments: &mut Vec<&Value>,
         hash: &mut HashMap<String, &'source Value>,
-        template: &mut Option<&'source Node<'source>>,
+        template: &mut dyn FnMut() -> std::result::Result<(), RenderError>,
+        //template: &'source Node<'source>,
     ) -> Result;
 }
 
-pub(crate) struct LookupHelper;
+//pub(crate) struct LookupHelper;
 
-impl Helper for LookupHelper {
-    fn call<'reg, 'source, 'render>(
-        &self,
-        rc: &mut Render<'reg, 'source, 'render>,
-        arguments: &mut Vec<&Value>,
-        hash: &mut HashMap<String, &'source Value>,
-        template: &mut Option<&'source Node<'source>>,
-    ) -> Result {
-        Ok(None)
-    }
-}
+//impl Helper for LookupHelper {
+    //fn call<'reg, 'source, 'render>(
+        //&self,
+        //rc: &mut Render<'reg, 'source, 'render>,
+        //arguments: &mut Vec<&Value>,
+        //hash: &mut HashMap<String, &'source Value>,
+        //template: &'source Node<'source>,
+    //) -> Result {
+        //Ok(None)
+    //}
+//}
 
 pub(crate) struct WithHelper;
 
 impl Helper for WithHelper {
     fn call<'reg, 'source, 'render>(
         &self,
-        rc: &mut Render<'reg, 'source, 'render>,
+        //rc: &mut Render<'reg, 'source, 'render>,
         arguments: &mut Vec<&Value>,
         hash: &mut HashMap<String, &'source Value>,
-        template: &mut Option<&'source Node<'source>>,
+        template: &mut dyn FnMut() -> std::result::Result<(), RenderError>,
+        //template: &'source Node<'source>,
     ) -> Result {
 
         let scope = arguments
@@ -54,23 +58,27 @@ impl Helper for WithHelper {
                 RenderError::from("Arity error for `with`, argument expected")
             })?;
 
+
+        template()?;
+
         //let node = template.unwrap();
         //node.goo();
 
-        if let Some(node) = template.take() {
+        //if let Some(ref node) = template {
             //node.goo();
 
-            let block = rc.push_scope();
+            //let block = rc.push_scope();
             //block.set_base_value(scope.clone());
             //node.goo();
-            //rc.render(node)?;
-            rc.pop_scope();
-        }
+            //rc.render(template)?;
+            //rc.pop_scope();
+        //}
 
         Ok(None)
     }
 }
 
+/*
 pub(crate) struct EachHelper;
 
 impl Helper for EachHelper {
@@ -79,7 +87,7 @@ impl Helper for EachHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         arguments: &mut Vec<&Value>,
         hash: &mut HashMap<String, &'source Value>,
-        template: &mut Option<&'source Node<'source>>,
+        template: &'source Node<'source>,
     ) -> Result {
         Ok(None)
     }
@@ -93,7 +101,7 @@ impl Helper for IfHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         arguments: &mut Vec<&Value>,
         hash: &mut HashMap<String, &'source Value>,
-        template: &mut Option<&'source Node<'source>>,
+        template: &'source Node<'source>,
     ) -> Result {
         Ok(None)
     }
@@ -107,7 +115,7 @@ impl Helper for UnlessHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         arguments: &mut Vec<&Value>,
         hash: &mut HashMap<String, &'source Value>,
-        template: &mut Option<&'source Node<'source>>,
+        template: &'source Node<'source>,
     ) -> Result {
         Ok(None)
     }
@@ -123,7 +131,7 @@ impl Helper for JsonHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         arguments: &mut Vec<&Value>,
         hash: &mut HashMap<String, &'source Value>,
-        template: &mut Option<&'source Node<'source>>,
+        template: &'source Node<'source>,
     ) -> Result {
 
         let target = arguments
@@ -151,3 +159,4 @@ impl Helper for JsonHelper {
         Ok(None)
     }
 }
+*/
