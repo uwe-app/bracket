@@ -17,12 +17,12 @@ pub enum EvalResult<'source> {
 }
 
 #[derive(Debug)]
-pub struct Scope<'source> {
-    value: Option<&'source Value>,
+pub struct Scope {
+    value: Option<Value>,
     locals: HashMap<String, Value>,
 }
 
-impl<'source> Scope<'source> {
+impl Scope {
     pub fn new() -> Self {
         Self {
             locals: HashMap::new(),
@@ -34,25 +34,25 @@ impl<'source> Scope<'source> {
         self.locals.insert(format!("@{}", name), value);
     }
 
-    pub fn set_base_value(&mut self, value: &'source Value) {
+    pub fn set_base_value(&mut self, value: Value) {
         self.value = Some(value);
     }
 
-    pub fn base_value(&self) -> &Option<&'source Value> {
+    pub fn base_value(&self) -> &Option<Value> {
         &self.value
     }
 }
 
 pub struct Context<'source> {
     name: &'source str,
-    arguments: Vec<&'source Value>,
+    arguments: Vec<Value>,
     hash: HashMap<String, &'source Value>,
 }
 
 impl<'source> Context<'source> {
     pub fn new(
         name: &'source str,
-        arguments: Vec<&'source Value>,
+        arguments: Vec<Value>,
         hash: HashMap<String, &'source Value>,
     ) -> Self {
         Self {
@@ -66,7 +66,7 @@ impl<'source> Context<'source> {
         self.name
     }
 
-    pub fn arguments(&self) -> &Vec<&'source Value> {
+    pub fn arguments(&self) -> &Vec<Value> {
         &self.arguments
     }
 
@@ -84,7 +84,7 @@ pub struct Render<'reg, 'source, 'render> {
     registry: &'reg Registry<'reg>,
     root: &'source Value,
     writer: Box<&'render mut dyn Output>,
-    scopes: &'source mut Vec<Scope<'source>>,
+    scopes: &'source mut Vec<Scope>,
     trim_start: bool,
     trim_end: bool,
     prev_node: Option<&'source Node<'source>>,
@@ -97,7 +97,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         source: &'source str,
         registry: &'reg Registry<'reg>,
         root: &'source Value,
-        scopes: &'source mut Vec<Scope<'source>>,
+        scopes: &'source mut Vec<Scope>,
         writer: Box<&'render mut dyn Output>,
     ) -> Result<Self, RenderError> {
         Ok(Self {
@@ -139,13 +139,13 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         }
     }
 
-    pub fn push_scope(&mut self) -> &mut Scope<'source> {
+    pub fn push_scope(&mut self) -> &mut Scope {
         let scope = Scope::new();
         self.scopes.push(scope);
         self.scopes.last_mut().unwrap()
     }
 
-    pub fn pop_scope(&mut self) -> Option<Scope<'source>> {
+    pub fn pop_scope(&mut self) -> Option<Scope> {
         self.scopes.pop()
     }
 
@@ -153,7 +153,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         //self.scopes.last()
     //}
 
-    pub fn scope_mut(&mut self) -> Option<&mut Scope<'source>> {
+    pub fn scope_mut(&mut self) -> Option<&mut Scope> {
         self.scopes.last_mut()
     }
 
@@ -161,14 +161,14 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         self.root
     }
 
-    pub fn scopes(&mut self) -> &mut Vec<Scope<'source>> {
+    pub fn scopes(&mut self) -> &mut Vec<Scope> {
         self.scopes
     }
 
     fn lookup(
         path: &Path,
         root: &'source Value,
-        scopes: &'source Vec<Scope<'source>>,
+        scopes: &'source Vec<Scope>,
     ) -> Option<&'source Value> {
 
         println!("Lookup path {:?}", path.as_str());
@@ -206,26 +206,20 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         None
     }
 
-    fn arguments(
-        call: &'source Call<'source>,
-        //root: &'source Value,
-        //scopes: &'source Vec<Scope<'source>>,
-        ) -> Vec<&'source Value> {
+    fn arguments(&mut self, call: &'source Call<'source>) -> Vec<Value> {
         call.arguments()
             .iter()
             .map(|p| {
                 match p {
-                    ParameterValue::Json(val) => {
-                        val
-                    },
+                    ParameterValue::Json(val) => val.clone(),
                     ParameterValue::Path(ref path) => {
-                        //Render::lookup(path, root, scopes).unwrap_or(&Value::Null)
-                        //val.foo();
-                        &Value::Null
+                        Render::lookup(path, self.root, self.scopes)
+                            .map(|v| v.clone())
+                            .unwrap_or(Value::Null)
                     },
                     _ => {
                         // TODO: evaluate sub-expressions
-                        &Value::Null
+                        Value::Null
                     }
                 }
             })
@@ -286,16 +280,11 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                         if let Some(helper) =
                             self.registry.get_helper(path.as_str())
                         {
-
-                            let mut args = Render::arguments(call);
+                            let mut args = self.arguments(call);
                             let mut hash = Render::hash(call);
-                            let context = Context::new(path.as_str(), args, hash);
+                            let ctx = Context::new(path.as_str(), args, hash);
 
-                            //println!("Found a helper for the simple path!");
-                            Render::invoke_helper(
-                                self,
-                                &context,
-                                helper)?;
+                            Render::invoke_helper(self, &ctx, helper)?;
                         } else {
                             return Ok(EvalResult::Json(Render::lookup(
                                 path,
@@ -322,15 +311,14 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         node: &'source Node<'source>,
         block: &'source Block<'source>,
     ) -> Result<(), RenderError> {
+
         println!("Render a block...");
         let call = block.call();
 
         if call.is_partial() {
             println!("Got partial call for block!");
         } else {
-
             println!("Call the block...");
-
             //println!("Evaluating a call {:?}", call);
             match call.target() {
                 CallTarget::Path(ref path) => {
@@ -341,7 +329,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                             println!(
                                 "Found a helper for the block path {}", path.as_str());
 
-                            let mut args = Render::arguments(call);
+                            let mut args = self.arguments(call);
                             let mut hash = Render::hash(call);
                             let context = Context::new(path.as_str(), args, hash);
 
@@ -350,26 +338,12 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                                 &context,
                                 helper,
                                 node)?;
-
-                        } else {
-                            //return Ok(EvalResult::Json(Render::lookup(
-                                //path,
-                                //self.root,
-                                //self.scopes,
-                            //)));
                         }
-                    } else {
-                        //return Ok(EvalResult::Json(Render::lookup(
-                            //path,
-                            //self.root,
-                            //self.scopes,
-                        //)));
                     }
                 }
                 _ => todo!("Handle sub expressions"),
             }
         }
-
         Ok(())
     }
 

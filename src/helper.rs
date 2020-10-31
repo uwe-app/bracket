@@ -62,7 +62,7 @@ impl BlockHelper for WithHelper {
         println!("With is setting the scope {:?}", scope);
 
         let block = rc.push_scope();
-        block.set_base_value(scope);
+        block.set_base_value(scope.clone());
         rc.render_inner()?;
         rc.pop_scope();
 

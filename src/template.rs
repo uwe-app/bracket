@@ -58,7 +58,7 @@ impl<'source> Template<'source> {
         T: Serialize,
     {
         let root = serde_json::to_value(data).map_err(RenderError::from)?;
-        let mut scopes: Vec<Scope<'_>> = Vec::new();
+        let mut scopes: Vec<Scope> = Vec::new();
         let mut rc = Render::new(self.source, registry, &root, &mut scopes, Box::new(writer))?;
         rc.render_node(self.node())
     }
