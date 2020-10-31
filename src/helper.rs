@@ -2,7 +2,7 @@
 
 use crate::{
     error::RenderError,
-    render::{Render, Scope},
+    render::{Render},
 };
 
 use serde_json::{Value, to_string, to_string_pretty};
@@ -12,18 +12,18 @@ pub type Result = std::result::Result<Option<Value>, RenderError>;
 
 /// Trait for helpers.
 pub trait Helper: Send + Sync {
-    fn call<'reg, 'render>(
+    fn call<'reg, 'source, 'render>(
         &self,
-        rc: &mut Render<'reg, 'render>,
+        rc: &mut Render<'reg, 'source, 'render>,
     ) -> Result;
 }
 
 pub(crate) struct LookupHelper;
 
 impl Helper for LookupHelper {
-    fn call<'reg, 'render>(
+    fn call<'reg, 'source, 'render>(
         &self,
-        rc: &mut Render<'reg, 'render>,
+        rc: &mut Render<'reg, 'source, 'render>,
     ) -> Result {
         Ok(None)
     }
@@ -32,9 +32,9 @@ impl Helper for LookupHelper {
 pub(crate) struct WithHelper;
 
 impl Helper for WithHelper {
-    fn call<'reg, 'render>(
+    fn call<'reg, 'source, 'render>(
         &self,
-        rc: &mut Render<'reg, 'render>,
+        rc: &mut Render<'reg, 'source, 'render>,
     ) -> Result {
         let args = rc.arguments();
         let scope = args
@@ -43,12 +43,14 @@ impl Helper for WithHelper {
                 RenderError::from("Arity error for `with`, argument expected")
             })?;
 
-        let mut block = Scope::new();
-        block.set_base_value(scope);
+        if let Some(ref template) = rc.template() {
+            println!("WITH HELPER WAS CALLED");
 
-        rc.push_scope(block);
-
-        rc.pop_scope();
+            let block = rc.push_scope();
+            block.set_base_value(&scope);
+            //rc.render(template);
+            rc.pop_scope();
+        }
 
         Ok(None)
     }
@@ -57,9 +59,9 @@ impl Helper for WithHelper {
 pub(crate) struct EachHelper;
 
 impl Helper for EachHelper {
-    fn call<'reg, 'render>(
+    fn call<'reg, 'source, 'render>(
         &self,
-        rc: &mut Render<'reg, 'render>,
+        rc: &mut Render<'reg, 'source, 'render>,
     ) -> Result {
         Ok(None)
     }
@@ -68,9 +70,9 @@ impl Helper for EachHelper {
 pub(crate) struct IfHelper;
 
 impl Helper for IfHelper {
-    fn call<'reg, 'render>(
+    fn call<'reg, 'source, 'render>(
         &self,
-        rc: &mut Render<'reg, 'render>,
+        rc: &mut Render<'reg, 'source, 'render>,
     ) -> Result {
         Ok(None)
     }
@@ -79,9 +81,9 @@ impl Helper for IfHelper {
 pub(crate) struct UnlessHelper;
 
 impl Helper for UnlessHelper {
-    fn call<'reg, 'render>(
+    fn call<'reg, 'source, 'render>(
         &self,
-        rc: &mut Render<'reg, 'render>,
+        rc: &mut Render<'reg, 'source, 'render>,
     ) -> Result {
         Ok(None)
     }
@@ -92,11 +94,10 @@ impl Helper for UnlessHelper {
 pub(crate) struct JsonHelper;
 
 impl Helper for JsonHelper {
-    fn call<'reg, 'render>(
+    fn call<'reg, 'source, 'render>(
         &self,
-        rc: &mut Render<'reg, 'render>,
+        rc: &mut Render<'reg, 'source, 'render>,
     ) -> Result {
-
         let args = rc.arguments();
 
         let target = args

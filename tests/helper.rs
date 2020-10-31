@@ -1,5 +1,5 @@
 use hbs::{
-    helper::{self, Helper},
+    helper::{Result, Helper},
     render::*,
     Registry,
 };
@@ -8,10 +8,10 @@ use serde_json::Value;
 pub(crate) struct MockHelper;
 
 impl Helper for MockHelper {
-    fn call<'reg, 'render>(
+    fn call<'reg, 'source, 'render>(
         &self,
-        rc: &mut Render<'reg, 'render>,
-    ) -> helper::Result {
+        rc: &mut Render<'reg, 'source, 'render>,
+    ) -> Result {
         Ok(Some(Value::Null))
     }
 }

@@ -6,11 +6,10 @@ use log::*;
 pub(crate) struct LogHelper;
 
 impl Helper for LogHelper {
-    fn call<'reg, 'render>(
+    fn call<'reg, 'source, 'render>(
         &self,
-        rc: &mut Render<'reg, 'render>,
+        rc: &mut Render<'reg, 'source, 'render>,
     ) -> Result {
-
         let args = rc.arguments();
         let hash = rc.hash();
 
