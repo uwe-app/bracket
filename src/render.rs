@@ -12,8 +12,8 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub enum EvalResult<'render> {
-    Json(Option<&'render Value>),
+pub enum EvalResult<'source> {
+    Json(Option<&'source Value>),
 }
 
 #[derive(Debug)]
@@ -208,8 +208,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
     fn arguments(
         call: &'source Call<'source>,
-        root: &'source Value,
-        scopes: &'source Vec<Scope<'source>>,
+        //root: &'source Value,
+        //scopes: &'source Vec<Scope<'source>>,
         ) -> Vec<&'source Value> {
         call.arguments()
             .iter()
@@ -275,7 +275,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     fn statement(
         &mut self,
         call: &'source Call<'source>,
-    ) -> Result<EvalResult, RenderError> {
+    ) -> Result<EvalResult<'_>, RenderError> {
         if call.is_partial() {
             println!("Got partial call for statement!");
         } else {
@@ -287,7 +287,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                             self.registry.get_helper(path.as_str())
                         {
 
-                            let mut args = Render::arguments(call, self.root(), self.scopes());
+                            let mut args = Render::arguments(call);
                             let mut hash = Render::hash(call);
                             let context = Context::new(path.as_str(), args, hash);
 
@@ -321,7 +321,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         &mut self,
         node: &'source Node<'source>,
         block: &'source Block<'source>,
-    ) -> Result<EvalResult, RenderError> {
+    ) -> Result<(), RenderError> {
         println!("Render a block...");
         let call = block.call();
 
@@ -341,7 +341,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                             println!(
                                 "Found a helper for the block path {}", path.as_str());
 
-                            let mut args = Render::arguments(call, self.root(), self.scopes());
+                            let mut args = Render::arguments(call);
                             let mut hash = Render::hash(call);
                             let context = Context::new(path.as_str(), args, hash);
 
@@ -352,25 +352,25 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                                 node)?;
 
                         } else {
-                            return Ok(EvalResult::Json(Render::lookup(
-                                path,
-                                self.root,
-                                self.scopes,
-                            )));
+                            //return Ok(EvalResult::Json(Render::lookup(
+                                //path,
+                                //self.root,
+                                //self.scopes,
+                            //)));
                         }
                     } else {
-                        return Ok(EvalResult::Json(Render::lookup(
-                            path,
-                            self.root,
-                            self.scopes,
-                        )));
+                        //return Ok(EvalResult::Json(Render::lookup(
+                            //path,
+                            //self.root,
+                            //self.scopes,
+                        //)));
                     }
                 }
                 _ => todo!("Handle sub expressions"),
             }
         }
 
-        Ok(EvalResult::Json(None))
+        Ok(())
     }
 
     pub(crate) fn render_inner(
