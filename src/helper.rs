@@ -43,14 +43,23 @@ impl Helper for WithHelper {
                 RenderError::from("Arity error for `with`, argument expected")
             })?;
 
-        if let Some(ref template) = rc.template() {
-            println!("WITH HELPER WAS CALLED");
+        //if let Some(ref ctx) = rc.context() {
+            //let tpl = ctx.template();
+            //rc.render(tpl);
+        //}
 
-            let block = rc.push_scope();
-            block.set_base_value(&scope);
-            //rc.render(template);
-            rc.pop_scope();
+        /*
+        if let Some(template) = rc.template() {
+            ////println!("WITH HELPER WAS CALLED");
+            //template.foo();
+
         }
+        */
+
+        let block = rc.push_scope();
+        block.set_base_value(&scope);
+        //rc.render();
+        rc.pop_scope();
 
         Ok(None)
     }

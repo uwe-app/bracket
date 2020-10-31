@@ -17,6 +17,14 @@ pub struct Template<'source> {
 }
 
 impl<'source> Template<'source> {
+    pub fn new(source: &'source str, node: Node<'source>) -> Self {
+        Self {source, node} 
+    }
+
+    pub fn as_str(&self) -> &'source str {
+        self.source
+    }
+
     pub fn node(&self) -> &'source Node {
         &self.node
     }
@@ -49,7 +57,7 @@ impl<'source> Template<'source> {
     where
         T: Serialize,
     {
-        let mut rc = Render::new(registry, data, Box::new(writer))?;
-        rc.render(self.node())
+        let mut rc = Render::new(self.source, registry, data, Box::new(writer))?;
+        rc.render_node(self.node())
     }
 }

@@ -7,6 +7,7 @@ use std::marker::PhantomData;
 use crate::{
     error::RenderError,
     helper::Helper,
+    template::Template,
     json,
     output::Output,
     parser::ast::{Call, CallTarget, Node, Block, ParameterValue, Path},
@@ -47,7 +48,18 @@ impl<'source, 'render> Scope<'source, 'render> {
     }
 }
 
+//pub struct Context<'source> {
+    //template: Option<Node<'source>>,
+//}
+
+//impl<'source> Context<'source> {
+    //pub fn template(&'source self) -> &Option<Node<'source>> {
+        //&self.template 
+    //}
+//}
+
 pub struct Render<'reg, 'render, 'source> {
+    source: &'source str,
     registry: &'reg Registry<'reg>,
     root: Value,
     writer: Box<&'render mut dyn Output>,
@@ -57,17 +69,20 @@ pub struct Render<'reg, 'render, 'source> {
     trim_end: bool,
     prev_node: Option<&'source Node<'source>>,
     next_node: Option<&'source Node<'source>>,
-    template: Option<Node<'source>>,
+    //context: Option<Context<'source>>,
+    template: Option<Template<'source>>,
 }
 
 impl<'reg, 'render, 'source> Render<'reg, 'render, 'source> {
     pub fn new<T: Serialize>(
+        source: &'source str,
         registry: &'reg Registry<'reg>,
         data: &T,
         writer: Box<&'render mut dyn Output>,
     ) -> Result<Self, RenderError> {
         let root = serde_json::to_value(data).map_err(RenderError::from)?;
         Ok(Self {
+            source,
             registry,
             root,
             writer,
@@ -77,14 +92,24 @@ impl<'reg, 'render, 'source> Render<'reg, 'render, 'source> {
             trim_end: false,
             prev_node: None,
             next_node: None,
-            //fragment: Node::Fragment(Block::new("", 0..0)),
             template: None,
         })
     }
 
-    pub fn template(&mut self) -> &Option<Node<'source>> {
-        &self.template
-    }
+    //pub fn render(&mut self) -> Result<(), RenderError> {
+        //println!("RENDER THE INNER TEMPLATE...");
+        //if let Some(template) = self.template.take() {
+            //println!("Got inner template to render...") ;
+            ////let node = template.node();
+            ////self.render_node(template.node())?;
+            ////node.foo();
+        //}
+        //Ok(())
+    //}
+
+    //pub fn context(&self) -> &Option<Context<'source>> {
+        //&self.context
+    //}
 
     pub fn out(&mut self) -> &mut Box<&'render mut dyn Output> {
         &mut self.writer 
@@ -291,8 +316,7 @@ impl<'reg, 'render, 'source> Render<'reg, 'render, 'source> {
                         if let Some(helper) =
                             self.registry.get_helper(path.as_str())
                         {
-                            //self.fragment = Node::Fragment(block);
-                            self.template = Some(Node::Fragment(block));
+                            self.template = Some(Template::new(self.source, Node::Fragment(block)));
                             println!(
                                 "Found a helper for the block path {}", path.as_str());
                             self.invoke(call, path.as_str(), helper)?;
@@ -318,7 +342,7 @@ impl<'reg, 'render, 'source> Render<'reg, 'render, 'source> {
         Ok(EvalResult::Json(None))
     }
 
-    pub fn render(
+    pub(crate) fn render_node(
         &mut self,
         node: &'source Node<'source>,
     ) -> Result<(), RenderError> {
@@ -353,7 +377,7 @@ impl<'reg, 'render, 'source> Render<'reg, 'render, 'source> {
                 self.next_node = it.next();
                 while let Some(node) = self.next_node {
                     self.next_node = it.next();
-                    self.render(node)?;
+                    self.render_node(node)?;
                 }
             }
             Node::Statement(ref call) => {
