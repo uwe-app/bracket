@@ -1,5 +1,6 @@
 use hbs::{
     helper::{Result, Helper},
+    parser::ast::Node,
     render::*,
     Registry,
 };
@@ -11,6 +12,7 @@ impl Helper for MockHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
+        template: Option<&'source Node<'source>>,
     ) -> Result {
         Ok(Some(Value::Null))
     }

@@ -1,5 +1,8 @@
 //! Helper to print log messages.
-use crate::{error::RenderError, helper::{Helper, Result}, render::Render};
+use std::collections::HashMap;
+use crate::{error::RenderError, helper::{Helper, Result}, render::Render, parser::ast::Node};
+
+use serde_json::Value;
 
 use log::*;
 
@@ -9,11 +12,15 @@ impl Helper for LogHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
+        arguments: &mut Vec<&Value>,
+        hash: &mut HashMap<String, &'source Value>,
+        template: &mut Option<&'source Node<'source>>,
     ) -> Result {
-        let args = rc.arguments();
-        let hash = rc.hash();
+        
+        //let args = rc.arguments();
+        //let hash = rc.hash();
 
-        let message = args
+        let message = arguments
             .get(0)
             .ok_or_else(|| {
                 RenderError::from("Arity error for `log`, string message expected")

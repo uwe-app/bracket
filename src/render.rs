@@ -2,12 +2,10 @@
 use serde::Serialize;
 use serde_json::Value;
 use std::collections::HashMap;
-use std::marker::PhantomData;
 
 use crate::{
     error::RenderError,
     helper::Helper,
-    template::Template,
     json,
     output::Output,
     parser::ast::{Call, CallTarget, Node, Block, ParameterValue, Path},
@@ -20,57 +18,44 @@ pub enum EvalResult<'render> {
 }
 
 #[derive(Debug)]
-pub struct Scope<'source, 'render> {
-    value: Option<&'source Value>,
-    locals: HashMap<String, &'render Value>,
-    phantom: PhantomData<&'render Value>,
+pub struct Scope {
+    value: Option<Value>,
+    locals: HashMap<String, Value>,
 }
 
-impl<'source, 'render> Scope<'source, 'render> {
+impl Scope {
     pub fn new() -> Self {
         Self {
             locals: HashMap::new(),
-            phantom: PhantomData,
             value: None,
         }
     }
 
-    pub fn set_local(&mut self, name: &str, value: &'render Value) {
+    pub fn set_local(&mut self, name: &str, value: Value) {
         self.locals.insert(format!("@{}", name), value);
     }
 
-    pub fn set_base_value(&mut self, value: &'source Value) {
+    pub fn set_base_value(&mut self, value: Value) {
         self.value = Some(value);
     }
 
-    pub fn base_value(&self) -> &Option<&'source Value> {
+    pub fn base_value(&self) -> &Option<Value> {
         &self.value
     }
 }
-
-//pub struct Context<'source> {
-    //template: Option<Node<'source>>,
-//}
-
-//impl<'source> Context<'source> {
-    //pub fn template(&'source self) -> &Option<Node<'source>> {
-        //&self.template 
-    //}
-//}
 
 pub struct Render<'reg, 'render, 'source> {
     source: &'source str,
     registry: &'reg Registry<'reg>,
     root: Value,
     writer: Box<&'render mut dyn Output>,
-    scopes: Vec<Scope<'source, 'render>>,
-    callee: Option<&'source Call<'source>>,
+    scopes: Vec<Scope>,
+    callee: Option<&'render Call<'source>>,
     trim_start: bool,
     trim_end: bool,
     prev_node: Option<&'source Node<'source>>,
     next_node: Option<&'source Node<'source>>,
-    //context: Option<Context<'source>>,
-    template: Option<Template<'source>>,
+    template: Option<Node<'source>>,
 }
 
 impl<'reg, 'render, 'source> Render<'reg, 'render, 'source> {
@@ -136,21 +121,21 @@ impl<'reg, 'render, 'source> Render<'reg, 'render, 'source> {
         }
     }
 
-    pub fn push_scope(&mut self) -> &mut Scope<'source, 'render> {
+    pub fn push_scope(&mut self) -> &mut Scope {
         let scope = Scope::new();
         self.scopes.push(scope);
         self.scopes.last_mut().unwrap()
     }
 
-    pub fn pop_scope(&mut self) -> Option<Scope<'source, 'render>> {
+    pub fn pop_scope(&mut self) -> Option<Scope> {
         self.scopes.pop()
     }
 
-    pub fn scope(&self) -> Option<&Scope<'source, 'render>> {
+    pub fn scope(&self) -> Option<&Scope> {
         self.scopes.last()
     }
 
-    pub fn scope_mut(&mut self) -> Option<&mut Scope<'source, 'render>> {
+    pub fn scope_mut(&mut self) -> Option<&mut Scope> {
         self.scopes.last_mut()
     }
 
@@ -158,14 +143,14 @@ impl<'reg, 'render, 'source> Render<'reg, 'render, 'source> {
         &self.root
     }
 
-    pub fn scopes(&self) -> &Vec<Scope<'source, 'render>> {
+    pub fn scopes(&self) -> &Vec<Scope> {
         &self.scopes
     }
 
     fn lookup(
         path: &Path,
         root: &'render Value,
-        scopes: &'render Vec<Scope<'source, 'render>>,
+        scopes: &'render Vec<Scope>,
     ) -> Option<&'render Value> {
         let scope = scopes.last();
 
@@ -208,60 +193,64 @@ impl<'reg, 'render, 'source> Render<'reg, 'render, 'source> {
         json::is_truthy(value)
     }
 
-    pub fn arguments(&self) -> Vec<&'source Value> {
-        if let Some(call) = self.callee {
-            call.arguments()
-                .iter()
-                .map(|p| {
-                    match p {
-                        ParameterValue::Json(val) => val,
-                        _ => {
-                            // TODO: lookup paths
-                            // TODO: evaluate sub-expressions
-                            &Value::Null
-                        }
+    fn arguments(
+        call: &'source Call<'source>,
+        ) -> Vec<&'source Value> {
+        call.arguments()
+            .iter()
+            .map(|p| {
+                match p {
+                    ParameterValue::Json(val) => {
+                        val
+                    },
+                    _ => {
+                        // TODO: lookup paths
+                        // TODO: evaluate sub-expressions
+                        &Value::Null
                     }
-                })
-                .collect()
-        } else { Vec::new() }
+                }
+            })
+            .collect()
     }
 
-    pub fn hash(&self) -> HashMap<String, &'source Value> {
+    fn hash(
+        call: &'source Call<'source>,
+        ) -> HashMap<String, &'source Value> {
 
-        if let Some(call) = self.callee {
-            call.hash()
-                .iter()
-                .map(|(k, p)| {
-                    match p {
-                        ParameterValue::Json(val) => {
-                            (k.to_string(), val)
-                        }
-                        _ => {
-                            // TODO: lookup paths
-                            // TODO: evaluate sub-expressions
-                            (k.to_string(), &Value::Null)
-                        }
+        call.hash()
+            .iter()
+            .map(|(k, p)| {
+                match p {
+                    ParameterValue::Json(val) => {
+                        (k.to_string(), val)
                     }
-                })
-                .collect::<HashMap<String, &'source Value>>()
-        } else { HashMap::new() }
+                    _ => {
+                        // TODO: lookup paths
+                        // TODO: evaluate sub-expressions
+                        (k.to_string(), &Value::Null)
+                    }
+                }
+            })
+            .collect::<HashMap<_, _>>()
     }
 
     pub fn invoke(
-        &mut self,
-        call: &'source Call,
+        rc: &mut Render<'_, 'source, '_>,
+        call: &'source Call<'source>,
         name: &str,
         helper: &'reg Box<dyn Helper + 'reg>,
+        mut template: Option<&'source Node<'source>>,
     ) -> Result<Option<Value>, RenderError> {
-        self.callee = Some(call);
-        helper.call(self)?;
-        self.callee = None;
+        let mut args = Render::arguments(call);
+        let mut hash = Render::hash(call);
+        helper.call(rc, &mut args, &mut hash, &mut template)?;
+        //rc.callee = None;
         Ok(None)
     }
 
     fn statement(
         &mut self,
-        call: &'source Call,
+        call: &'render Call<'source>,
     ) -> Result<EvalResult, RenderError> {
         if call.is_partial() {
             println!("Got partial call for statement!");
@@ -274,7 +263,7 @@ impl<'reg, 'render, 'source> Render<'reg, 'render, 'source> {
                             self.registry.get_helper(path.as_str())
                         {
                             //println!("Found a helper for the simple path!");
-                            self.invoke(call, path.as_str(), helper)?;
+                            Render::invoke(self, call, path.as_str(), helper, None)?;
                         } else {
                             return Ok(EvalResult::Json(Render::lookup(
                                 path,
@@ -298,6 +287,7 @@ impl<'reg, 'render, 'source> Render<'reg, 'render, 'source> {
 
     fn block(
         &mut self,
+        node: &'source Node<'source>,
         block: &'source Block<'source>,
     ) -> Result<EvalResult, RenderError> {
         println!("Render a block...");
@@ -316,10 +306,11 @@ impl<'reg, 'render, 'source> Render<'reg, 'render, 'source> {
                         if let Some(helper) =
                             self.registry.get_helper(path.as_str())
                         {
-                            self.template = Some(Template::new(self.source, Node::Fragment(block)));
+                            //self.template = Some(Template::new(self.source, Node::Fragment(block)));
+                            //let template = Node::Fragment(block);
                             println!(
                                 "Found a helper for the block path {}", path.as_str());
-                            self.invoke(call, path.as_str(), helper)?;
+                            Render::invoke(self, call, path.as_str(), helper, Some(node))?;
                         } else {
                             return Ok(EvalResult::Json(Render::lookup(
                                 path,
@@ -340,6 +331,14 @@ impl<'reg, 'render, 'source> Render<'reg, 'render, 'source> {
         }
 
         Ok(EvalResult::Json(None))
+    }
+
+    pub(crate) fn render(
+        &mut self,
+        node: &'source Node<'source>,
+    ) -> Result<(), RenderError> {
+        println!("Public helper render called!!!");
+        Ok(())
     }
 
     pub(crate) fn render_node(
@@ -397,7 +396,7 @@ impl<'reg, 'render, 'source> Render<'reg, 'render, 'source> {
             }
             Node::Block(ref block) => {
                 println!("got block to render...");
-                self.block(block);
+                self.block(node, block);
                 // TODO: call partial / helper for blocks
                 //for node in block.nodes().iter() {
                     //self.render(node)?;

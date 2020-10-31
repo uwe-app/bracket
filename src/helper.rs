@@ -1,11 +1,13 @@
 //! Helper trait and types for the default set of helpers.
 
+use std::collections::HashMap;
+use serde_json::{Value, to_string, to_string_pretty};
+
 use crate::{
     error::RenderError,
     render::{Render},
+    parser::ast::Node,
 };
-
-use serde_json::{Value, to_string, to_string_pretty};
 
 /// The result that helper functions should return.
 pub type Result = std::result::Result<Option<Value>, RenderError>;
@@ -15,6 +17,9 @@ pub trait Helper: Send + Sync {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
+        arguments: &mut Vec<&Value>,
+        hash: &mut HashMap<String, &'source Value>,
+        template: &mut Option<&'source Node<'source>>,
     ) -> Result;
 }
 
@@ -24,6 +29,9 @@ impl Helper for LookupHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
+        arguments: &mut Vec<&Value>,
+        hash: &mut HashMap<String, &'source Value>,
+        template: &mut Option<&'source Node<'source>>,
     ) -> Result {
         Ok(None)
     }
@@ -35,31 +43,29 @@ impl Helper for WithHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
+        arguments: &mut Vec<&Value>,
+        hash: &mut HashMap<String, &'source Value>,
+        template: &mut Option<&'source Node<'source>>,
     ) -> Result {
-        let args = rc.arguments();
-        let scope = args
+
+        let scope = arguments
             .get(0)
             .ok_or_else(|| {
                 RenderError::from("Arity error for `with`, argument expected")
             })?;
 
-        //if let Some(ref ctx) = rc.context() {
-            //let tpl = ctx.template();
-            //rc.render(tpl);
-        //}
+        //let node = template.unwrap();
+        //node.goo();
 
-        /*
-        if let Some(template) = rc.template() {
-            ////println!("WITH HELPER WAS CALLED");
-            //template.foo();
+        if let Some(node) = template.take() {
+            //node.goo();
 
+            let block = rc.push_scope();
+            //block.set_base_value(scope.clone());
+            //node.goo();
+            //rc.render(node)?;
+            rc.pop_scope();
         }
-        */
-
-        let block = rc.push_scope();
-        block.set_base_value(&scope);
-        //rc.render();
-        rc.pop_scope();
 
         Ok(None)
     }
@@ -71,6 +77,9 @@ impl Helper for EachHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
+        arguments: &mut Vec<&Value>,
+        hash: &mut HashMap<String, &'source Value>,
+        template: &mut Option<&'source Node<'source>>,
     ) -> Result {
         Ok(None)
     }
@@ -82,6 +91,9 @@ impl Helper for IfHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
+        arguments: &mut Vec<&Value>,
+        hash: &mut HashMap<String, &'source Value>,
+        template: &mut Option<&'source Node<'source>>,
     ) -> Result {
         Ok(None)
     }
@@ -93,6 +105,9 @@ impl Helper for UnlessHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
+        arguments: &mut Vec<&Value>,
+        hash: &mut HashMap<String, &'source Value>,
+        template: &mut Option<&'source Node<'source>>,
     ) -> Result {
         Ok(None)
     }
@@ -106,16 +121,18 @@ impl Helper for JsonHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
+        arguments: &mut Vec<&Value>,
+        hash: &mut HashMap<String, &'source Value>,
+        template: &mut Option<&'source Node<'source>>,
     ) -> Result {
-        let args = rc.arguments();
 
-        let target = args
+        let target = arguments
             .get(0)
             .ok_or_else(|| {
                 RenderError::from("Arity error for `json`, argument expected")
             })?;
 
-        let compact = rc.is_truthy(args
+        let compact = rc.is_truthy(arguments
             .get(0)
             .unwrap_or(&&Value::Bool(false)));
 
