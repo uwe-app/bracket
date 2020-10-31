@@ -9,7 +9,7 @@ use crate::{
     helper::Helper,
     json,
     output::Output,
-    parser::ast::{Call, CallTarget, Node, ParameterValue, Path},
+    parser::ast::{Call, CallTarget, Node, Block, ParameterValue, Path},
     registry::Registry,
 };
 
@@ -57,6 +57,8 @@ pub struct Render<'reg, 'render> {
     trim_end: bool,
     prev_node: Option<&'render Node<'render>>,
     next_node: Option<&'render Node<'render>>,
+
+    //template: Node<'source>,
 }
 
 impl<'reg, 'render> Render<'reg, 'render> {
@@ -223,12 +225,12 @@ impl<'reg, 'render> Render<'reg, 'render> {
         Ok(None)
     }
 
-    pub fn evaluate(
+    fn statement(
         &mut self,
         call: &'render Call,
     ) -> Result<EvalResult, RenderError> {
         if call.is_partial() {
-            //println!("Got partial call");
+            println!("Got partial call for statement!");
         } else {
             //println!("Evaluating a call {:?}", call);
             match call.target() {
@@ -260,6 +262,51 @@ impl<'reg, 'render> Render<'reg, 'render> {
         Ok(EvalResult::Json(None))
     }
 
+    fn block(
+        &mut self,
+        block: &'render Block<'render>,
+    ) -> Result<EvalResult, RenderError> {
+        println!("Render a block...");
+        let call = block.call();
+
+        if call.is_partial() {
+            println!("Got partial call for block!");
+        } else {
+
+            println!("Call the block...");
+
+            //println!("Evaluating a call {:?}", call);
+            match call.target() {
+                CallTarget::Path(ref path) => {
+                    if path.is_simple() {
+                        if let Some(helper) =
+                            self.registry.get_helper(path.as_str())
+                        {
+                            //self.template = Node::Fragment(block);
+                            println!("Found a helper for the block path {}", path.as_str());
+                            self.invoke(call, path.as_str(), helper)?;
+                        } else {
+                            return Ok(EvalResult::Json(Render::lookup(
+                                path,
+                                self.root(),
+                                self.scopes(),
+                            )));
+                        }
+                    } else {
+                        return Ok(EvalResult::Json(Render::lookup(
+                            path,
+                            self.root(),
+                            self.scopes(),
+                        )));
+                    }
+                }
+                _ => todo!("Handle sub expressions"),
+            }
+        }
+
+        Ok(EvalResult::Json(None))
+    }
+
     pub fn render(
         &mut self,
         node: &'render Node<'render>,
@@ -274,7 +321,6 @@ impl<'reg, 'render> Render<'reg, 'render> {
         } else { false };
 
         //let trim_after = node.trim_after();
-
         //println!("Has trim before {}", trim_before);
         //println!("Has trim after {}", trim_after);
 
@@ -298,13 +344,9 @@ impl<'reg, 'render> Render<'reg, 'render> {
                     self.next_node = it.next();
                     self.render(node)?;
                 }
-
-                //for node in doc.nodes().iter() {
-                    //self.render(node)?;
-                //}
             }
             Node::Statement(ref call) => {
-                let result = self.evaluate(call)?;
+                let result = self.statement(call)?;
                 match result {
                     EvalResult::Json(maybe_json) => {
                         //println!("Got maybe json {:?}", maybe_json);
@@ -319,6 +361,8 @@ impl<'reg, 'render> Render<'reg, 'render> {
                 }
             }
             Node::Block(ref block) => {
+                println!("got block to render...");
+                self.block(block);
                 // TODO: call partial / helper for blocks
                 //for node in block.nodes().iter() {
                     //self.render(node)?;
