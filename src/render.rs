@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use crate::{
     error::RenderError,
-    helper::Helper,
+    helper::{Helper, BlockHelper},
     json,
     output::Output,
     parser::ast::{Call, CallTarget, Node, Block, ParameterValue, Path},
@@ -44,18 +44,52 @@ impl Scope {
     }
 }
 
+pub struct Context<'source> {
+    name: &'source str,
+    arguments: Vec<&'source Value>,
+    hash: HashMap<String, &'source Value>,
+}
+
+impl<'source> Context<'source> {
+    pub fn new(
+        name: &'source str,
+        arguments: Vec<&'source Value>,
+        hash: HashMap<String, &'source Value>,
+    ) -> Self {
+        Self {
+            name,
+            arguments,
+            hash,
+        }
+    }
+
+    pub fn name(&self) -> &'source str {
+        self.name
+    }
+
+    pub fn arguments(&self) -> &Vec<&'source Value> {
+        &self.arguments
+    }
+
+    pub fn hash(&self) -> &HashMap<String, &'source Value> {
+        &self.hash
+    }
+
+    pub fn is_truthy(&self, value: &Value) -> bool {
+        json::is_truthy(value)
+    }
+}
+
 pub struct Render<'reg, 'source, 'render> {
     source: &'source str,
     registry: &'reg Registry<'reg>,
     root: Value,
     writer: Box<&'render mut dyn Output>,
     scopes: Vec<Scope>,
-    callee: Option<&'render Call<'source>>,
     trim_start: bool,
     trim_end: bool,
     prev_node: Option<&'source Node<'source>>,
     next_node: Option<&'source Node<'source>>,
-    template: Option<Node<'source>>,
 }
 
 impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
@@ -72,12 +106,10 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             root,
             writer,
             scopes: Vec::new(),
-            callee: None,
             trim_start: false,
             trim_end: false,
             prev_node: None,
             next_node: None,
-            template: None,
         })
     }
 
@@ -174,10 +206,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         None
     }
 
-    pub fn is_truthy(&self, value: &Value) -> bool {
-        json::is_truthy(value)
-    }
-
     fn arguments(
         call: &'source Call<'source>,
         ) -> Vec<&'source Value> {
@@ -220,23 +248,36 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     pub fn invoke(
-        rc: &mut Render<'reg, 'source, 'render>,
+        &mut self,
         call: &'source Call<'source>,
-        name: &str,
+        name: &'source str,
         helper: &'reg Box<dyn Helper + 'reg>,
+    ) -> Result<Option<Value>, RenderError> {
+        let mut args = Render::arguments(call);
+        let mut hash = Render::hash(call);
+        let context = Context::new(name, args, hash);
+        helper.call(&context, &mut self.writer)?;
+        Ok(None)
+    }
+
+    pub fn invoke_block(
+        &mut self,
+        call: &'source Call<'source>,
+        name: &'source str,
+        helper: &'reg Box<dyn BlockHelper + 'reg>,
         template: &'source Node<'source>,
     ) -> Result<Option<Value>, RenderError> {
         let mut args = Render::arguments(call);
         let mut hash = Render::hash(call);
+        let context = Context::new(name, args, hash);
 
-        let mut inner = || -> Result<(), RenderError> {
-            rc.render_inner(template)
-        };
+        //let mut inner = || -> Result<(), RenderError> {
+            //rc.render_inner(template)
+        //};
 
         //let mut inner_template = Some(inner);
 
-        helper.call(&mut args, &mut hash, &mut inner)?;
-        //rc.callee = None;
+        helper.call(&context, &mut self.writer)?;
         Ok(None)
     }
 
@@ -255,7 +296,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                             self.registry.get_helper(path.as_str())
                         {
                             //println!("Found a helper for the simple path!");
-                            //Render::invoke(self, call, path.as_str(), helper, None)?;
+                            self.invoke(call, path.as_str(), helper)?;
                         } else {
                             return Ok(EvalResult::Json(Render::lookup(
                                 path,
@@ -296,13 +337,15 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 CallTarget::Path(ref path) => {
                     if path.is_simple() {
                         if let Some(helper) =
-                            self.registry.get_helper(path.as_str())
+                            self.registry.get_block_helper(path.as_str())
                         {
                             //self.template = Some(Template::new(self.source, Node::Fragment(block)));
                             //let template = Node::Fragment(block);
                             println!(
                                 "Found a helper for the block path {}", path.as_str());
-                            Render::invoke(self, call, path.as_str(), helper, node)?;
+                            self.invoke_block(
+                                call, path.as_str(), helper, node)?;
+
                         } else {
                             return Ok(EvalResult::Json(Render::lookup(
                                 path,
