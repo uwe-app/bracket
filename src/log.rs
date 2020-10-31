@@ -1,13 +1,9 @@
 //! Helper to print log messages.
-use std::collections::HashMap;
 use crate::{
-    output::Output,
     error::RenderError,
-    helper::{Helper, Result, HelperOutput},
-    render::Context
+    helper::{Helper, Result},
+    render::{Render, Context}
 };
-
-use serde_json::Value;
 
 use log::*;
 
@@ -16,8 +12,8 @@ pub(crate) struct LogHelper;
 impl Helper for LogHelper {
     fn call<'reg, 'source, 'render>(
         &self,
+        rc: &mut Render<'reg, 'source, 'render>,
         ctx: &Context<'source>,
-        out: &mut HelperOutput<'render>,
     ) -> Result {
 
         let message = ctx

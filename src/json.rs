@@ -1,9 +1,9 @@
-use serde_json::{Error, Value, to_string};
+use serde_json::{Error, Value};
 
 pub(crate) fn stringify(value: &Value) -> std::result::Result<String, Error> {
     match value {
         Value::String(ref s) => Ok(s.to_owned()),
-        _ => to_string(value)
+        _ => Ok(value.to_string())
     }
 }
 

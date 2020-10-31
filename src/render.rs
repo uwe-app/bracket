@@ -1,5 +1,4 @@
 //! Render a template to output using the data.
-use serde::Serialize;
 use serde_json::Value;
 use std::collections::HashMap;
 
@@ -18,12 +17,12 @@ pub enum EvalResult<'render> {
 }
 
 #[derive(Debug)]
-pub struct Scope {
-    value: Option<Value>,
+pub struct Scope<'source> {
+    value: Option<&'source Value>,
     locals: HashMap<String, Value>,
 }
 
-impl Scope {
+impl<'source> Scope<'source> {
     pub fn new() -> Self {
         Self {
             locals: HashMap::new(),
@@ -35,11 +34,11 @@ impl Scope {
         self.locals.insert(format!("@{}", name), value);
     }
 
-    pub fn set_base_value(&mut self, value: Value) {
+    pub fn set_base_value(&mut self, value: &'source Value) {
         self.value = Some(value);
     }
 
-    pub fn base_value(&self) -> &Option<Value> {
+    pub fn base_value(&self) -> &Option<&'source Value> {
         &self.value
     }
 }
@@ -83,33 +82,35 @@ impl<'source> Context<'source> {
 pub struct Render<'reg, 'source, 'render> {
     source: &'source str,
     registry: &'reg Registry<'reg>,
-    root: Value,
+    root: &'source Value,
     writer: Box<&'render mut dyn Output>,
-    scopes: Vec<Scope>,
+    scopes: &'source mut Vec<Scope<'source>>,
     trim_start: bool,
     trim_end: bool,
     prev_node: Option<&'source Node<'source>>,
     next_node: Option<&'source Node<'source>>,
+    block_template_node: Option<&'source Node<'source>>,
 }
 
 impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
-    pub fn new<T: Serialize>(
+    pub fn new(
         source: &'source str,
         registry: &'reg Registry<'reg>,
-        data: &T,
+        root: &'source Value,
+        scopes: &'source mut Vec<Scope<'source>>,
         writer: Box<&'render mut dyn Output>,
     ) -> Result<Self, RenderError> {
-        let root = serde_json::to_value(data).map_err(RenderError::from)?;
         Ok(Self {
             source,
             registry,
             root,
             writer,
-            scopes: Vec::new(),
+            scopes,
             trim_start: false,
             trim_end: false,
             prev_node: None,
             next_node: None,
+            block_template_node: None,
         })
     }
 
@@ -138,38 +139,37 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         }
     }
 
-    pub fn push_scope(&mut self) -> &mut Scope {
+    pub fn push_scope(&mut self) -> &mut Scope<'source> {
         let scope = Scope::new();
         self.scopes.push(scope);
         self.scopes.last_mut().unwrap()
     }
 
-    pub fn pop_scope(&mut self) -> Option<Scope> {
+    pub fn pop_scope(&mut self) -> Option<Scope<'source>> {
         self.scopes.pop()
     }
 
-    pub fn scope(&self) -> Option<&Scope> {
-        self.scopes.last()
-    }
+    //pub fn scope(&self) -> Option<&Scope<'source>> {
+        //self.scopes.last()
+    //}
 
-    pub fn scope_mut(&mut self) -> Option<&mut Scope> {
+    pub fn scope_mut(&mut self) -> Option<&mut Scope<'source>> {
         self.scopes.last_mut()
     }
 
-    pub fn root(&self) -> &Value {
-        &self.root
-    }
+    //pub fn root(&self) -> &'source Value {
+        //self.root
+    //}
 
-    pub fn scopes(&self) -> &Vec<Scope> {
-        &self.scopes
-    }
+    //pub fn scopes(&mut self) -> &'source mut Vec<Scope<'source>> {
+        //self.scopes
+    //}
 
-    fn lookup(
+    fn lookup<'a>(
         path: &Path,
-        root: &'render Value,
-        scopes: &'render Vec<Scope>,
-    ) -> Option<&'render Value> {
-        let scope = scopes.last();
+        root: &'a Value,
+        scopes: &'a Vec<Scope<'source>>,
+    ) -> Option<&'a Value> {
 
         println!("Lookup path {:?}", path.as_str());
 
@@ -185,16 +185,16 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         // Handle explicit this only
         } else if path.is_explicit() && path.components().len() == 1 {
             println!("Got explicit this!!!");
-            let this = if let Some(scope) = scope {
+            let this = if let Some(scope) = scopes.last() {
                 if let Some(base) = scope.base_value() {
-                    println!("Got explicit this with a scope base value!!!");
+                    println!("Got explicit this with a scope base value!!! {:?}", base);
                     base    
                 } else { root }
             } else { root };
             return Some(this)
         } else if path.is_simple() {
             let name = path.as_str();
-            if let Some(scope) = scope {
+            if let Some(scope) = scopes.last() {
                 //println!("Look up in current scope...");
             } else {
                 //println!("Look up in root scope...");
@@ -207,6 +207,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     fn arguments(
+        &mut self,
         call: &'source Call<'source>,
         ) -> Vec<&'source Value> {
         call.arguments()
@@ -216,8 +217,13 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                     ParameterValue::Json(val) => {
                         val
                     },
+                    ParameterValue::Path(ref path) => {
+                        //if let Some(val) = Render::lookup(path, self.root, self.scopes) {
+                            //return val
+                        //}
+                        &Value::Null
+                    },
                     _ => {
-                        // TODO: lookup paths
                         // TODO: evaluate sub-expressions
                         &Value::Null
                     }
@@ -238,7 +244,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                         (k.to_string(), val)
                     }
                     _ => {
-                        // TODO: lookup paths
                         // TODO: evaluate sub-expressions
                         (k.to_string(), &Value::Null)
                     }
@@ -247,38 +252,24 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             .collect::<HashMap<_, _>>()
     }
 
-    pub fn invoke(
-        &mut self,
-        call: &'source Call<'source>,
-        name: &'source str,
+    pub fn invoke_helper(
+        rc: &mut Render<'reg, 'source, 'render>,
+        ctx: &Context<'source>,
         helper: &'reg Box<dyn Helper + 'reg>,
     ) -> Result<Option<Value>, RenderError> {
-        let mut args = Render::arguments(call);
-        let mut hash = Render::hash(call);
-        let context = Context::new(name, args, hash);
-        helper.call(&context, &mut self.writer)?;
+        helper.call(rc, ctx)?;
         Ok(None)
     }
 
-    pub fn invoke_block(
-        &mut self,
-        call: &'source Call<'source>,
-        name: &'source str,
+    pub fn invoke_block_helper(
+        rc: &mut Render<'reg, 'source, 'render>,
+        ctx: &Context<'source>,
         helper: &'reg Box<dyn BlockHelper + 'reg>,
         template: &'source Node<'source>,
-    ) -> Result<Option<Value>, RenderError> {
-        let mut args = Render::arguments(call);
-        let mut hash = Render::hash(call);
-        let context = Context::new(name, args, hash);
-
-        //let mut inner = || -> Result<(), RenderError> {
-            //rc.render_inner(template)
-        //};
-
-        //let mut inner_template = Some(inner);
-
-        helper.call(&context, &mut self.writer)?;
-        Ok(None)
+    ) -> Result<(), RenderError> {
+        rc.block_template_node = Some(template);
+        helper.call(rc, ctx)?;
+        Ok(())
     }
 
     fn statement(
@@ -295,20 +286,28 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                         if let Some(helper) =
                             self.registry.get_helper(path.as_str())
                         {
+
+                            let mut args = self.arguments(call);
+                            let mut hash = Render::hash(call);
+                            let context = Context::new(path.as_str(), args, hash);
+
                             //println!("Found a helper for the simple path!");
-                            self.invoke(call, path.as_str(), helper)?;
+                            Render::invoke_helper(
+                                self,
+                                &context,
+                                helper)?;
                         } else {
                             return Ok(EvalResult::Json(Render::lookup(
                                 path,
-                                self.root(),
-                                self.scopes(),
+                                self.root,
+                                self.scopes,
                             )));
                         }
                     } else {
                         return Ok(EvalResult::Json(Render::lookup(
                             path,
-                            self.root(),
-                            self.scopes(),
+                            self.root,
+                            self.scopes,
                         )));
                     }
                 }
@@ -339,25 +338,31 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                         if let Some(helper) =
                             self.registry.get_block_helper(path.as_str())
                         {
-                            //self.template = Some(Template::new(self.source, Node::Fragment(block)));
-                            //let template = Node::Fragment(block);
                             println!(
                                 "Found a helper for the block path {}", path.as_str());
-                            self.invoke_block(
-                                call, path.as_str(), helper, node)?;
+
+                            let mut args = self.arguments(call);
+                            let mut hash = Render::hash(call);
+                            let context = Context::new(path.as_str(), args, hash);
+
+                            Render::invoke_block_helper(
+                                self,
+                                &context,
+                                helper,
+                                node)?;
 
                         } else {
                             return Ok(EvalResult::Json(Render::lookup(
                                 path,
-                                self.root(),
-                                self.scopes(),
+                                self.root,
+                                self.scopes,
                             )));
                         }
                     } else {
                         return Ok(EvalResult::Json(Render::lookup(
                             path,
-                            self.root(),
-                            self.scopes(),
+                            self.root,
+                            self.scopes,
                         )));
                     }
                 }
@@ -370,16 +375,21 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
     pub(crate) fn render_inner(
         &mut self,
-        node: &'source Node<'source>,
     ) -> Result<(), RenderError> {
+
         println!("RENDER INNER BLOCK");
-        match node {
-            Node::Block(ref block) => {
-                for node in block.nodes().iter() {
-                    self.render_node(node)?;
+
+        if let Some(ref node) = self.block_template_node {
+        
+            match node {
+                Node::Block(ref block) => {
+                    for node in block.nodes().iter() {
+                        self.render_node(node)?;
+                    }
                 }
+                _ => {}
             }
-            _ => {}
+
         }
 
         Ok(())
