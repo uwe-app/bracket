@@ -185,7 +185,6 @@ pub(crate) fn parameters<'source>(
                 _ => {
                     params.tokens.push((Parameters::StringToken(lex), span));
                 }
-                _ => {}
             },
             Token::Parameters(lex, span) => match lex {
                 lexer::Parameters::End => {

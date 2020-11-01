@@ -296,8 +296,11 @@ impl fmt::Debug for SyntaxError<'_> {
 
 #[derive(thiserror::Error)]
 pub enum RenderError<'source> {
+    #[error("Unable to resolve partial name from '{0}'")]
+    PartialNameResolve(&'source str),
+
     #[error("Partial '{0}' not found")]
-    PartialNotFound(&'source str),
+    PartialNotFound(String),
 
     #[error(transparent)]
     Helper(#[from] HelperError),
@@ -312,6 +315,7 @@ pub enum RenderError<'source> {
 impl fmt::Debug for RenderError<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
+            Self::PartialNameResolve(_) => fmt::Display::fmt(self, f),
             Self::PartialNotFound(_) => fmt::Display::fmt(self, f),
             Self::Helper(ref e) => fmt::Display::fmt(self, f),
             Self::Io(ref e) => fmt::Debug::fmt(e, f),
@@ -389,7 +393,6 @@ impl PartialEq for IoError {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Io(ref s), Self::Io(ref o)) => s.kind() == o.kind(),
-            _ => false,
         }
     }
 }

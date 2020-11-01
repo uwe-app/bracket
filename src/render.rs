@@ -4,6 +4,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 use crate::{
+    RenderResult,
     error::{HelperError, RenderError},
     helper::{BlockHelper, Context, Helper},
     json,
@@ -224,7 +225,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &Context<'source>,
         helper: &'reg Box<dyn Helper + 'reg>,
-    ) -> Result<Option<Value>, RenderError<'source>> {
+    ) -> RenderResult<'source, Option<Value>> {
         helper.call(rc, ctx)?;
         Ok(None)
     }
@@ -234,71 +235,66 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         ctx: &Context<'source>,
         helper: &'reg Box<dyn BlockHelper + 'reg>,
         template: &'source Node<'source>,
-    ) -> Result<(), RenderError<'source>> {
+    ) -> RenderResult<'source, ()> {
         rc.block_template_node = Some(template);
         helper.call(rc, ctx)?;
         Ok(())
     }
 
-    fn invoke_partial(
+    fn render_partial(
         rc: &mut Render<'reg, 'source, 'render>,
-        template: &'reg Template<'reg>,
-        name: &'source str,
-    ) -> Result<(), RenderError<'source>> {
+        call: &'source Call<'source>,
+        name: String,
+    ) -> RenderResult<'source, ()> {
+
+        let template: &'source Template<'_> =
+            rc.registry.get_template(&name)
+            .ok_or_else(|| {
+                RenderError::PartialNotFound(name.clone())
+            })?;
+
+        let hash = Render::hash(call);
+        let scope = Scope::new_locals(hash);
+        rc.scopes.push(scope);
+
+        rc.block_template_node = Some(template.node());
+
+        //let node: &'source Node<'_> = template.node();
+
+        //Render::invoke_partial_node(rc, template.node())?;
+
+        //rc.block_template_node = Some(template.node());
+        //println!("Render partial with name {:?}", name);
+        //println!("Render partial with template {:?}", template);
+
+        //rc.render_node(node)?;
+
 
         Ok(())
     }
 
-    fn render_partial(
-        &mut self,
-        call: &'source Call<'source>,
-    ) -> Result<(), RenderError<'source>> {
+    fn invoke_partial_node(
+        rc: &mut Render<'reg, 'source, 'render>,
+        template: &'source Node<'source>,
+    ) -> RenderResult<'source, ()> {
+        //rc.block_template_node = Some(template);
+        //helper.call(rc, ctx)?;
+        rc.scopes.pop();
+        Ok(())
+    }
+
+    fn get_partial_name(&self, call: &'source Call<'source>) -> Option<String> {
         match call.target() {
             CallTarget::Path(ref path) => {
                 if path.is_simple() {
-                    if let Some(template) =
-                        self.registry.get_template(path.as_str())
-                    {
-                        let mut hash = Render::hash(call);
-                        let scope = Scope::new_locals(hash);
-                        self.scopes.push(scope);
-
-                        //Render::invoke_partial(self, template, path.as_str());
-
-                        //let render_partial = |node: &'source Node<'_>| {
-                            //self.render_node(node); 
-                        //};
-
-                        //render_partial(template.node());
-
-                        //self.render_node(template.node());
-
-                        self.scopes.pop();
-
-                        //Render::invoke_partial(template, path.as_str());
-                        //self.render_node(template.node());
-                        //self.block_template_node = Some(template.node());
-                        //let node = template.node();
-                        //let mut hash = Render::hash(call);
-                        //let scope = Scope::new_locals(hash);
-
-                        //rc.scopes.push(scope);
-                        ////println!("RENDER THE PARTIAL");
-                        //rc.render_node(node)?;
-                        //rc.scopes.pop();
-                    } else {
-                        return Err(RenderError::PartialNotFound(
-                            path.as_str(),
-                        ));
-                    }
+                    return Some(path.as_str().to_owned());
                 } else {
                     panic!("Partials must be simple identifiers");
                 }
             }
             _ => todo!("Handle sub expressions"),
         }
-
-        Ok(())
+        None
     }
 
     fn statement(
@@ -307,7 +303,11 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     ) -> Result<HelperValue<'_>, RenderError<'source>> {
         if call.is_partial() {
             println!("GOT PARTIAL CALL FOR STATEMENT!");
-            self.render_partial(call)?;
+            let name = self.get_partial_name(call)
+                .ok_or_else(|| {
+                    RenderError::PartialNameResolve(call.as_str())
+                })?;
+            Render::render_partial(self, call, name)?;
         } else {
             //println!("Evaluating a call {:?}", call);
             match call.target() {
@@ -316,8 +316,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                         if let Some(helper) =
                             self.registry.get_helper(path.as_str())
                         {
-                            let mut args = self.arguments(call);
-                            let mut hash = Render::hash(call);
+                            let args = self.arguments(call);
+                            let hash = Render::hash(call);
                             let ctx = Context::new(path.as_str(), args, hash);
 
                             // FIXME: return the result from invoking the helper
@@ -367,8 +367,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                                 path.as_str()
                             );
 
-                            let mut args = self.arguments(call);
-                            let mut hash = Render::hash(call);
+                            let args = self.arguments(call);
+                            let hash = Render::hash(call);
                             let context =
                                 Context::new(path.as_str(), args, hash);
 
@@ -405,8 +405,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
     pub(crate) fn render_node(
         &mut self,
-        node: &'source Node<'_>,
-    ) -> Result<(), RenderError<'source>> {
+        node: &'source Node<'source>,
+    ) -> RenderResult<'source, ()> {
         self.trim_start = if let Some(node) = self.prev_node {
             node.trim_after()
         } else {

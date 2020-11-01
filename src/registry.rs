@@ -1,11 +1,10 @@
 //! Main entry point for compiling, storing and rendering templates.
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use serde::Serialize;
 
 use crate::{
-    error::RenderError,
     escape::{html_escape, EscapeFn},
     helper::{
         BlockHelper,
@@ -174,7 +173,7 @@ impl<'reg> Registry<'reg> {
         self.templates.remove(name)
     }
 
-    pub fn get_template(&self, name: &'reg str) -> Option<&Template<'reg>> {
+    pub fn get_template(&self, name: &str) -> Option<&Template<'_>> {
         self.templates.get(name)
     }
 
@@ -213,20 +212,4 @@ impl<'reg> Registry<'reg> {
         Ok(())
     }
 
-    //fn from(&mut self, loader: &'reg Loader) -> Result<()> {
-        //for (k, v) in loader.sources() {
-            //self.register_template_string(k.as_str(), v.as_str(), Default::default())?;
-        //}
-        //Ok(())
-    //}
 }
-
-//impl<'loader> From<&'loader Loader> for Registry<'loader> {
-    //fn from(loader: &'loader Loader) -> Self {
-        //let mut reg = Registry::new();
-        //for (k, v) in loader.sources() {
-            //reg.register_template_string(k, v, Default::default())?;
-        //}
-        //reg
-    //}
-//}

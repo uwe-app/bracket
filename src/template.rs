@@ -3,10 +3,11 @@ use serde::Serialize;
 use std::fmt;
 
 use crate::{
-    error::{RenderError, SyntaxError},
+    error::SyntaxError,
     output::Output,
     parser::{ast::Node, Parser, ParserOptions},
     render::Render,
+    RenderResult,
     Registry,
 };
 
@@ -37,6 +38,7 @@ impl fmt::Display for Template<'_> {
 }
 
 impl<'source> Template<'source> {
+
     /// Compile a block.
     pub fn compile(
         source: &'source str,
@@ -47,13 +49,14 @@ impl<'source> Template<'source> {
         Ok(Template { source, node })
     }
 
+    /// Render this template to the given writer.
     pub fn render<'reg, T>(
-        &'source self,
-        registry: &Registry<'reg>,
-        name: &'reg str,
+        &self,
+        registry: &'reg Registry<'reg>,
+        name: &str,
         data: &T,
         writer: &mut impl Output,
-    ) -> Result<(), RenderError<'source>>
+    ) -> RenderResult<'_, ()>
     where
         T: Serialize,
     {
