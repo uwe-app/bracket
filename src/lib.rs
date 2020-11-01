@@ -14,7 +14,7 @@ pub type Result<'a, T> = std::result::Result<T, error::Error<'a>>;
 pub type RenderResult<'a, T> = std::result::Result<T, error::RenderError<'a>>;
 
 pub(crate) use error::Error;
-pub use registry::{Loader, Registry};
+pub use registry::Registry;
 pub use template::Template;
 
 pub use escape::EscapeFn;

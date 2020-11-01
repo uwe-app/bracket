@@ -21,6 +21,7 @@ fn render_text() {
     assert_eq!(0, registry.templates().len());
 }
 
+/*
 #[test]
 fn render_html_comment() {
     let mut registry = Registry::new();
@@ -125,3 +126,4 @@ fn render_statement() {
     let result = registry.render(name, &data).unwrap();
     println!("Render statement result: {}", result);
 }
+*/

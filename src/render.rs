@@ -260,17 +260,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         let scope = Scope::new_locals(hash);
         rc.scopes.push(scope);
         rc.render_node(node)?;
-
-        Ok(())
-    }
-
-    fn invoke_partial_node(
-        rc: &mut Render<'reg, 'source, 'render>,
-        template: &'source Node<'source>,
-    ) -> RenderResult<'source, ()> {
-        //rc.block_template_node = Some(template);
-        //helper.call(rc, ctx)?;
         rc.scopes.pop();
+
         Ok(())
     }
 

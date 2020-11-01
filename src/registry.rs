@@ -106,6 +106,10 @@ impl<'source> Templates<'source> {
     pub fn get(&self, name: &str) -> Option<&Template<'source>> {
         self.templates.get(name)
     }
+
+    pub fn compile(s: &str, options: ParserOptions) -> Result<Template> {
+        Ok(Template::compile(s, options).map_err(Error::from)?)
+    }
 }
 
 pub struct Registry<'reg> {
@@ -177,49 +181,6 @@ impl<'reg> Registry<'reg> {
     ) -> Option<&Box<dyn BlockHelper + 'reg>> {
         self.block_helpers.get(name)
     }
-
-    pub fn compile(s: &str, options: ParserOptions) -> Result<Template> {
-        Ok(Template::compile(s, options).map_err(Error::from)?)
-    }
-
-    //pub fn templates_mut(&mut self) -> &mut Templates<'source> {
-        //&mut self.templates
-    //}
-
-    //pub fn templates(&self) -> &Templates<'source> {
-        //&self.templates
-    //}
-
-    /*
-    pub fn register_template(
-        &mut self,
-        name: &'source str,
-        template: Template<'source>,
-    ) {
-        self.templates.insert(name, template);
-    }
-
-    pub fn unregister_template(
-        &mut self,
-        name: &'source str,
-    ) -> Option<Template<'source>> {
-        self.templates.remove(name)
-    }
-
-    pub fn get_template(&self, name: &str) -> Option<&Template<'source>> {
-        self.templates.get(name)
-    }
-    */
-
-    //pub fn register_template_string(
-    //&mut self,
-    //name: &'source str,
-    //source: &'source str,
-    //options: ParserOptions,
-    //) -> Result<()> {
-    //let tpl = Registry::compile(source, options)?;
-    //Ok(self.templates_mut().register(name, tpl))
-    //}
 
     pub fn render<'a, T>(
         &'a self,
