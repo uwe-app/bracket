@@ -7,8 +7,8 @@ use crate::{
     output::Output,
     parser::{ast::Node, Parser, ParserOptions},
     render::Render,
+    registry::{Registry, Templates},
     RenderResult,
-    Registry,
 };
 
 #[derive(Debug)]
@@ -38,7 +38,6 @@ impl fmt::Display for Template<'_> {
 }
 
 impl<'source> Template<'source> {
-
     /// Compile a block.
     pub fn compile(
         source: &'source str,
@@ -52,7 +51,8 @@ impl<'source> Template<'source> {
     /// Render this template to the given writer.
     pub fn render<'reg, T>(
         &self,
-        registry: &'reg Registry<'reg, 'source>,
+        registry: &'reg Registry<'reg>,
+        templates: &'source Templates<'source>,
         name: &str,
         data: &T,
         writer: &mut impl Output,
@@ -61,7 +61,7 @@ impl<'source> Template<'source> {
         T: Serialize,
     {
         let mut rc =
-            Render::new(self.source, registry, data, Box::new(writer))?;
+            Render::new(self.source, registry, templates, data, Box::new(writer))?;
         rc.render_node(&self.node)
     }
 }

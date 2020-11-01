@@ -4,14 +4,14 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 use crate::{
-    RenderResult,
     error::{HelperError, RenderError},
     helper::{BlockHelper, Context, Helper},
     json,
     output::Output,
     parser::ast::{Block, Call, CallTarget, Node, ParameterValue, Path},
-    registry::Registry,
+    registry::{Registry, Templates},
     template::Template,
+    RenderResult,
 };
 
 #[derive(Debug)]
@@ -55,7 +55,8 @@ impl Scope {
 
 pub struct Render<'reg, 'source, 'render> {
     source: &'source str,
-    registry: &'reg Registry<'reg, 'source>,
+    registry: &'reg Registry<'reg>,
+    templates: &'source Templates<'source>,
     root: Value,
     writer: Box<&'render mut dyn Output>,
     scopes: Vec<Scope>,
@@ -69,7 +70,8 @@ pub struct Render<'reg, 'source, 'render> {
 impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     pub fn new<T>(
         source: &'source str,
-        registry: &'reg Registry<'reg, 'source>,
+        registry: &'reg Registry<'reg>,
+        templates: &'source Templates<'source>,
         data: &T,
         writer: Box<&'render mut dyn Output>,
     ) -> Result<Self, RenderError<'source>>
@@ -82,6 +84,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         Ok(Self {
             source,
             registry,
+            templates,
             root,
             writer,
             scopes,
@@ -247,28 +250,16 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         name: String,
     ) -> RenderResult<'source, ()> {
 
-        let template =
-            rc.registry.get_template(&name)
-            .ok_or_else(|| {
-                RenderError::PartialNotFound(name.clone())
-            })?;
+        let template = rc
+            .templates
+            .get(&name)
+            .ok_or_else(|| RenderError::PartialNotFound(name.clone()))?;
 
+        let node: &'source Node<'_> = template.node();
         let hash = Render::hash(call);
         let scope = Scope::new_locals(hash);
         rc.scopes.push(scope);
-
-        //rc.block_template_node = Some(template.node());
-
-        //let node: &'source Node<'_> = template.node();
-
-        //Render::invoke_partial_node(rc, template.node())?;
-
-        //rc.block_template_node = Some(template.node());
-        //println!("Render partial with name {:?}", name);
-        //println!("Render partial with template {:?}", template);
-
-        //rc.render_node(node)?;
-
+        rc.render_node(node)?;
 
         Ok(())
     }
@@ -303,10 +294,9 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     ) -> Result<HelperValue<'_>, RenderError<'source>> {
         if call.is_partial() {
             println!("GOT PARTIAL CALL FOR STATEMENT!");
-            let name = self.get_partial_name(call)
-                .ok_or_else(|| {
-                    RenderError::PartialNameResolve(call.as_str())
-                })?;
+            let name = self.get_partial_name(call).ok_or_else(|| {
+                RenderError::PartialNameResolve(call.as_str())
+            })?;
             Render::render_partial(self, call, name)?;
         } else {
             //println!("Evaluating a call {:?}", call);
