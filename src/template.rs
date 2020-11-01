@@ -1,4 +1,4 @@
-//! Compiled template that may be stored in the registry.
+//! Templates add rendering capability to nodes.
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -7,13 +7,16 @@ use std::fmt;
 
 use crate::{
     error::{Error, SyntaxError},
+    escape::EscapeFn,
+    helper::HelperRegistry,
     output::Output,
     parser::{ast::Node, Parser, ParserOptions},
-    render::Render,
     registry::Registry,
-    Result, RenderResult,
+    render::Render,
+    RenderResult, Result,
 };
 
+#[derive(Default)]
 pub struct Loader {
     sources: HashMap<String, String>,
 }
@@ -81,6 +84,14 @@ impl<'source> Templates<'source> {
         }
     }
 
+    pub fn build(&mut self, loader: &'source Loader) -> Result<'source, ()> {
+        for (k, v) in loader.sources() {
+            let template = Templates::compile(v, Default::default()).unwrap();
+            self.register(k.as_str(), template);
+        }
+        Ok(())
+    }
+
     pub fn register(
         &mut self,
         name: &'source str,
@@ -104,7 +115,6 @@ impl<'source> Templates<'source> {
         Ok(Template::compile(s, options).map_err(Error::from)?)
     }
 }
-
 
 #[derive(Debug)]
 pub struct Template<'source> {
@@ -132,7 +142,7 @@ impl fmt::Display for Template<'_> {
     }
 }
 
-impl<'source> Template<'source> {
+impl<'reg, 'source> Template<'source> {
     /// Compile a block.
     pub fn compile(
         source: &'source str,
@@ -140,13 +150,14 @@ impl<'source> Template<'source> {
     ) -> std::result::Result<Template, SyntaxError<'source>> {
         let mut parser = Parser::new(source, options);
         let node = parser.parse()?;
-        Ok(Template { source, node })
+        Ok(Template::new(source, node))
     }
 
     /// Render this template to the given writer.
-    pub fn render<'reg, T>(
+    pub fn render<T>(
         &self,
-        registry: &'reg Registry<'reg>,
+        escape: &EscapeFn,
+        helpers: &'reg HelperRegistry<'reg>,
         templates: &'source Templates<'source>,
         name: &str,
         data: &T,
@@ -155,8 +166,15 @@ impl<'source> Template<'source> {
     where
         T: Serialize,
     {
-        let mut rc =
-            Render::new(self.source, registry, templates, data, Box::new(writer))?;
+        let mut rc = Render::new(
+            escape,
+            helpers,
+            templates,
+            self.source,
+            data,
+            Box::new(writer),
+        )?;
+
         rc.render_node(&self.node)
     }
 }

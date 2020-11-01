@@ -5,11 +5,11 @@ use std::collections::HashMap;
 
 use crate::{
     error::{HelperError, RenderError},
-    helper::{BlockHelper, Context, Helper},
+    escape::EscapeFn,
+    helper::{BlockHelper, Context, Helper, HelperRegistry},
     json,
     output::Output,
     parser::ast::{Block, Call, CallTarget, Node, ParameterValue, Path},
-    registry::Registry,
     template::{Template, Templates},
     RenderResult,
 };
@@ -54,9 +54,10 @@ impl Scope {
 }
 
 pub struct Render<'reg, 'source, 'render> {
-    source: &'source str,
-    registry: &'reg Registry<'reg>,
+    escape: &'reg EscapeFn,
+    helpers: &'reg HelperRegistry<'reg>,
     templates: &'source Templates<'source>,
+    source: &'source str,
     root: Value,
     writer: Box<&'render mut dyn Output>,
     scopes: Vec<Scope>,
@@ -69,9 +70,10 @@ pub struct Render<'reg, 'source, 'render> {
 
 impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     pub fn new<T>(
-        source: &'source str,
-        registry: &'reg Registry<'reg>,
+        escape: &'reg EscapeFn,
+        helpers: &'reg HelperRegistry<'reg>,
         templates: &'source Templates<'source>,
+        source: &'source str,
         data: &T,
         writer: Box<&'render mut dyn Output>,
     ) -> Result<Self, RenderError<'source>>
@@ -82,9 +84,10 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         let scopes: Vec<Scope> = Vec::new();
 
         Ok(Self {
-            source,
-            registry,
+            escape,
+            helpers,
             templates,
+            source,
             root,
             writer,
             scopes,
@@ -112,8 +115,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         }
 
         if escape {
-            let handler = self.registry.escape();
-            let escaped = handler(val);
+            let escaped = (self.escape)(val);
             Ok(self.writer.write_str(&escaped).map_err(RenderError::from)?)
         } else {
             Ok(self.writer.write_str(val).map_err(RenderError::from)?)
@@ -249,7 +251,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         call: &'source Call<'source>,
         name: String,
     ) -> RenderResult<'source, ()> {
-
         let template = rc
             .templates
             .get(&name)
@@ -294,9 +295,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             match call.target() {
                 CallTarget::Path(ref path) => {
                     if path.is_simple() {
-                        if let Some(helper) =
-                            self.registry.get_helper(path.as_str())
-                        {
+                        if let Some(helper) = self.helpers.get(path.as_str()) {
                             let args = self.arguments(call);
                             let hash = Render::hash(call);
                             let ctx = Context::new(path.as_str(), args, hash);
@@ -341,7 +340,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 CallTarget::Path(ref path) => {
                     if path.is_simple() {
                         if let Some(helper) =
-                            self.registry.get_block_helper(path.as_str())
+                            self.helpers.get_block(path.as_str())
                         {
                             println!(
                                 "Found a helper for the block path: {}",

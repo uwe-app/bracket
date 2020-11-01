@@ -1,111 +1,115 @@
-//! Main entry point for compiling, storing and rendering templates.
-use std::collections::HashMap;
+//! Collection of helpers and function handlers.
 use serde::Serialize;
+use std::collections::HashMap;
 
 use crate::{
     escape::{html_escape, EscapeFn},
     helper::{
         BlockHelper,
         Helper,
-        //EachHelper, Helper, IfHelper, LookupHelper, UnlessHelper,
-        //WithHelper,
+        HelperRegistry,
         JsonHelper,
         WithHelper,
     },
     log::LogHelper,
     output::{Output, StringOutput},
     parser::ParserOptions,
-    template::{Template, Templates},
+    template::{Loader, Template, Templates},
     Error, Result,
 };
 
-pub struct Registry<'reg> {
-    //templates: HashMap<&'source str, Template<'source>>,
-    //templates: Templates<'source>,
-    helpers: HashMap<&'reg str, Box<dyn Helper + 'reg>>,
-    block_helpers: HashMap<&'reg str, Box<dyn BlockHelper + 'reg>>,
+pub struct Registry<'reg, 'source> {
+    helpers: HelperRegistry<'reg>,
+    templates: Templates<'source>,
     escape: EscapeFn,
 }
 
-impl<'reg> Registry<'reg> {
+impl<'reg, 'source> Registry<'reg, 'source> {
+
+    /// Create an empty registry.
     pub fn new() -> Self {
-        let mut reg = Self {
-            helpers: Default::default(),
-            block_helpers: Default::default(),
+        Self {
+            helpers: HelperRegistry::new(),
+            templates: Default::default(),
             escape: Box::new(html_escape),
-        };
-        reg.builtins();
+        }
+    }
+
+    /// Create a registry using a collection of templates.
+    pub fn new_templates(templates: Templates<'source>) -> Self {
+        let mut reg = Registry::new();
+        reg.templates = templates;
         reg
     }
 
-    fn builtins(&mut self) {
-        self.register_helper("log", Box::new(LogHelper {}));
-        self.register_helper("json", Box::new(JsonHelper {}));
-        //self.register_helper("lookup", Box::new(LookupHelper {}));
-
-        self.register_block_helper("with", Box::new(WithHelper {}));
-        //self.register_helper("each", Box::new(EachHelper {}));
-        //self.register_helper("if", Box::new(IfHelper {}));
-        //self.register_helper("unless", Box::new(UnlessHelper {}));
-    }
-
-    /// Set the escape function for the registry.
+    /// Set the escape function for rendering.
     pub fn set_escape(&mut self, escape: EscapeFn) {
         self.escape = escape;
     }
 
+    /// The escape function to use for rendering.
     pub fn escape(&self) -> &EscapeFn {
         &self.escape
     }
 
-    pub fn register_helper(
-        &mut self,
-        name: &'reg str,
-        helper: Box<dyn Helper + 'reg>,
-    ) {
-        self.helpers.insert(name, helper);
-    }
-
-    pub fn register_block_helper(
-        &mut self,
-        name: &'reg str,
-        helper: Box<dyn BlockHelper + 'reg>,
-    ) {
-        self.block_helpers.insert(name, helper);
-    }
-
-    pub fn helpers(&self) -> &HashMap<&'reg str, Box<dyn Helper + 'reg>> {
+    pub fn helpers(&self) -> &HelperRegistry<'reg> {
         &self.helpers
     }
 
-    pub fn get_helper(&self, name: &str) -> Option<&Box<dyn Helper + 'reg>> {
-        self.helpers.get(name)
+    pub fn helpers_mut(&mut self) -> &mut HelperRegistry<'reg> {
+        &mut self.helpers
     }
 
-    pub fn get_block_helper(
-        &self,
-        name: &str,
-    ) -> Option<&Box<dyn BlockHelper + 'reg>> {
-        self.block_helpers.get(name)
+    pub fn templates(&self) -> &Templates<'source> {
+        &self.templates
     }
 
-    pub fn render<'a, T>(
+    pub fn templates_mut(&mut self) -> &mut Templates<'source> {
+        &mut self.templates
+    }
+
+    /// Compile a string to a template.
+    pub fn compile<'a>(
         &'a self,
-        templates: &'a Templates<'a>,
+        template: &'a str,
+        options: ParserOptions,
+    ) -> Result<'a, Template<'a>> {
+        Templates::compile(template, options)
+    }
+
+    /// Render a template without registering it and return the result.
+    pub fn once<'a, T>(
+        &'a self,
         name: &str,
+        template: &'a Template<'source>,
         data: &T,
-    ) -> Result<String>
+    ) -> Result<'a, String>
     where
         T: Serialize,
     {
         let mut writer = StringOutput::new();
-        self.render_to_write(templates, name, data, &mut writer)?;
+        template.render(
+            self.escape(),
+            self.helpers(),
+            self.templates(),
+            name,
+            data,
+            &mut writer,
+        )?;
+        Ok(writer.into())
+    }
+
+    pub fn render<'a, T>(&'a self, name: &str, data: &T) -> Result<'a, String>
+    where
+        T: Serialize,
+    {
+        let mut writer = StringOutput::new();
+        self.render_to_write(name, data, &mut writer)?;
         Ok(writer.into())
     }
 
     pub fn render_to_write<'a, T>(
         &'a self,
-        templates: &'a Templates<'a>,
         name: &str,
         data: &T,
         writer: &mut impl Output,
@@ -113,11 +117,18 @@ impl<'reg> Registry<'reg> {
     where
         T: Serialize,
     {
-        let tpl = templates
-            //.templates()
+        let tpl = self
+            .templates
             .get(name)
             .ok_or_else(|| Error::TemplateNotFound(name.to_string()))?;
-        tpl.render(self, templates, name, data, writer)?;
+        tpl.render(
+            self.escape(),
+            self.helpers(),
+            self.templates(),
+            name,
+            data,
+            writer,
+        )?;
         Ok(())
     }
 }

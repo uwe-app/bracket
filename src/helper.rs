@@ -3,7 +3,9 @@ use serde_json::{to_string, to_string_pretty, Value};
 use std::collections::HashMap;
 use std::ops::Range;
 
-use crate::{error::HelperError as Error, json, render::Render};
+use crate::{
+    error::HelperError as Error, json, log::LogHelper, render::Render,
+};
 
 /// The result that helper functions should return.
 pub type Result<'source> = std::result::Result<Option<Value>, Error>;
@@ -191,5 +193,64 @@ impl Helper for JsonHelper {
         }
 
         Ok(None)
+    }
+}
+
+/// Registry of helpers.
+pub struct HelperRegistry<'reg> {
+    helpers: HashMap<&'reg str, Box<dyn Helper + 'reg>>,
+    block_helpers: HashMap<&'reg str, Box<dyn BlockHelper + 'reg>>,
+}
+
+impl<'reg> HelperRegistry<'reg> {
+    pub fn new() -> Self {
+        let mut reg = Self {
+            helpers: Default::default(),
+            block_helpers: Default::default(),
+        };
+        reg.builtins();
+        reg
+    }
+
+    fn builtins(&mut self) {
+        self.register_helper("log", Box::new(LogHelper {}));
+        self.register_helper("json", Box::new(JsonHelper {}));
+        //self.register_helper("lookup", Box::new(LookupHelper {}));
+
+        self.register_block_helper("with", Box::new(WithHelper {}));
+        //self.register_helper("each", Box::new(EachHelper {}));
+        //self.register_helper("if", Box::new(IfHelper {}));
+        //self.register_helper("unless", Box::new(UnlessHelper {}));
+    }
+
+    pub fn register_helper(
+        &mut self,
+        name: &'reg str,
+        helper: Box<dyn Helper + 'reg>,
+    ) {
+        self.helpers.insert(name, helper);
+    }
+
+    pub fn register_block_helper(
+        &mut self,
+        name: &'reg str,
+        helper: Box<dyn BlockHelper + 'reg>,
+    ) {
+        self.block_helpers.insert(name, helper);
+    }
+
+    //pub fn helpers(&self) -> &HashMap<&'reg str, Box<dyn Helper + 'reg>> {
+    //&self.helpers
+    //}
+
+    pub fn get(&self, name: &str) -> Option<&Box<dyn Helper + 'reg>> {
+        self.helpers.get(name)
+    }
+
+    pub fn get_block(
+        &self,
+        name: &str,
+    ) -> Option<&Box<dyn BlockHelper + 'reg>> {
+        self.block_helpers.get(name)
     }
 }

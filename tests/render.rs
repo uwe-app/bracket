@@ -10,28 +10,19 @@ fn render_text() {
     let name = "mock-template";
     let value = r"Some text";
     let data = json!({});
-    registry
-        .register_template_string(name, value, Default::default())
-        .unwrap();
-    let result = registry.render(name, &data).unwrap();
+    let template = registry.compile(value, Default::default()).unwrap();
+    let result = registry.once(name, &template, &data).unwrap();
     assert_eq!(value, result);
-
-    // Verify removing templates
-    registry.unregister_template(name);
-    assert_eq!(0, registry.templates().len());
 }
 
-/*
 #[test]
 fn render_html_comment() {
     let mut registry = Registry::new();
     let name = "mock-template";
     let value = r"<!-- foo -->";
     let data = json!({});
-    registry
-        .register_template_string(name, value, Default::default())
-        .unwrap();
-    let result = registry.render(name, &data).unwrap();
+    let template = registry.compile(value, Default::default()).unwrap();
+    let result = registry.once(name, &template, &data).unwrap();
     assert_eq!(value, result);
 }
 
@@ -42,10 +33,8 @@ fn render_raw_block() {
     let value = r"{{{{raw}}}}foo {{bar}} baz{{{{/raw}}}}";
     let expected = r"foo {{bar}} baz";
     let data = json!({});
-    registry
-        .register_template_string(name, value, Default::default())
-        .unwrap();
-    let result = registry.render(name, &data).unwrap();
+    let template = registry.compile(value, Default::default()).unwrap();
+    let result = registry.once(name, &template, &data).unwrap();
     assert_eq!(expected, result);
 }
 
@@ -64,10 +53,8 @@ foo
 baz
 text";
     let data = json!({});
-    registry
-        .register_template_string(name, value, Default::default())
-        .unwrap();
-    let result = registry.render(name, &data).unwrap();
+    let template = registry.compile(value, Default::default()).unwrap();
+    let result = registry.once(name, &template, &data).unwrap();
     assert_eq!(expected, result);
 }
 
@@ -78,10 +65,8 @@ fn render_comment() {
     let value = r"{{! simple comment }}";
     let expected = r"";
     let data = json!({});
-    registry
-        .register_template_string(name, value, Default::default())
-        .unwrap();
-    let result = registry.render(name, &data).unwrap();
+    let template = registry.compile(value, Default::default()).unwrap();
+    let result = registry.once(name, &template, &data).unwrap();
     assert_eq!(expected, result);
 }
 
@@ -92,10 +77,8 @@ fn render_raw_comment() {
     let value = r"{{!-- foo {{bar}} baz --}}";
     let expected = r"";
     let data = json!({});
-    registry
-        .register_template_string(name, value, Default::default())
-        .unwrap();
-    let result = registry.render(name, &data).unwrap();
+    let template = registry.compile(value, Default::default()).unwrap();
+    let result = registry.once(name, &template, &data).unwrap();
     assert_eq!(expected, result);
 }
 
@@ -106,10 +89,8 @@ fn render_raw_statement() {
     let value = r"\{{expr}}";
     let expected = r"{{expr}}";
     let data = json!({});
-    registry
-        .register_template_string(name, value, Default::default())
-        .unwrap();
-    let result = registry.render(name, &data).unwrap();
+    let template = registry.compile(value, Default::default()).unwrap();
+    let result = registry.once(name, &template, &data).unwrap();
     assert_eq!(expected, result);
 }
 
@@ -120,10 +101,7 @@ fn render_statement() {
     let value = r"{{foo}}";
     let expected = r"bar";
     let data = json!({"foo": "bar"});
-    registry
-        .register_template_string(name, value, Default::default())
-        .unwrap();
-    let result = registry.render(name, &data).unwrap();
+    let template = registry.compile(value, Default::default()).unwrap();
+    let result = registry.once(name, &template, &data).unwrap();
     println!("Render statement result: {}", result);
 }
-*/
