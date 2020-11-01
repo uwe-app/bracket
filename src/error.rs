@@ -71,6 +71,7 @@ pub enum Error<'source> {
     Syntax(SyntaxError<'source>),
     Render(RenderError<'source>),
     TemplateNotFound(String),
+    Io(IoError),
 }
 
 impl fmt::Display for Error<'_> {
@@ -81,6 +82,7 @@ impl fmt::Display for Error<'_> {
             Self::TemplateNotFound(ref name) => {
                 write!(f, "Template not found {}", name) 
             },
+            Self::Io(ref e) => fmt::Display::fmt(e, f),
         }
     }
 }
@@ -91,7 +93,14 @@ impl fmt::Debug for Error<'_> {
             Self::Syntax(ref e) => fmt::Debug::fmt(e, f),
             Self::Render(ref e) => fmt::Debug::fmt(e, f),
             Self::TemplateNotFound(ref e) => fmt::Display::fmt(e, f),
+            Self::Io(ref e) => fmt::Debug::fmt(e, f),
         }
+    }
+}
+
+impl From<std::io::Error> for Error<'_> {
+    fn from(err: std::io::Error) -> Self {
+        Self::Io(IoError::Io(err))
     }
 }
 
@@ -294,7 +303,7 @@ pub enum RenderError<'source> {
     Helper(#[from] HelperError),
 
     #[error(transparent)]
-    Io(#[from] std::io::Error),
+    Io(#[from] IoError),
 
     #[error(transparent)]
     Json(#[from] serde_json::Error),
@@ -324,6 +333,12 @@ impl PartialEq for RenderError<'_> {
 
 impl Eq for RenderError<'_> {}
 
+impl From<std::io::Error> for RenderError<'_> {
+    fn from(err: std::io::Error) -> Self {
+        Self::Io(IoError::Io(err))
+    }
+}
+
 #[derive(thiserror::Error, Debug)]
 pub enum HelperError {
     /// Generic error message for helpers.
@@ -349,10 +364,36 @@ pub enum HelperError {
 
     /// Transparent wrapper for input output errors.
     #[error(transparent)]
-    Io(#[from] std::io::Error),
+    Io(#[from] IoError),
 
     /// Transparent wrapper for JSON errors.
     #[error(transparent)]
     Json(#[from] serde_json::Error),
 }
 
+impl From<std::io::Error> for HelperError {
+    fn from(err: std::io::Error) -> Self {
+        Self::Io(IoError::Io(err))
+    }
+}
+
+/// Wrapper for IO errors that implements `PartialEq` to 
+/// facilitate easier testing using `assert_eq!()`.
+#[derive(thiserror::Error, Debug)]
+pub enum IoError {
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+}
+
+impl PartialEq for IoError {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Io(ref s), Self::Io(ref o)) => {
+                s.kind() == o.kind()
+            }
+            _ => false,
+        }
+    }
+}
+
+impl Eq for IoError {}

@@ -1,4 +1,5 @@
 //! Main entry point for compiling, storing and rendering templates.
+use std::path::Path;
 use std::collections::HashMap;
 
 use serde::Serialize;
@@ -22,6 +23,7 @@ use crate::{
 };
 
 pub struct Registry<'reg> {
+    files: HashMap<String, String>,
     templates: HashMap<&'reg str, Template<'reg>>,
     helpers: HashMap<&'reg str, Box<dyn Helper + 'reg>>,
     block_helpers: HashMap<&'reg str, Box<dyn BlockHelper + 'reg>>,
@@ -31,6 +33,7 @@ pub struct Registry<'reg> {
 impl<'reg, 'source> Registry<'reg> {
     pub fn new() -> Self {
         let mut reg = Self {
+            files: HashMap::new(),
             templates: Default::default(),
             helpers: Default::default(),
             block_helpers: Default::default(),
@@ -126,6 +129,46 @@ impl<'reg, 'source> Registry<'reg> {
     ) -> Result<()> {
         let tpl = Registry::compile(source, options)?;
         Ok(self.register_template(name, tpl))
+    }
+
+    fn register_compiled_template(
+        registry: &'reg mut Registry<'reg>,
+        name: &'reg str,
+        template: Template<'reg>,
+    ) {
+        registry.templates.insert(name, template);
+    }
+
+    fn load_file<P: AsRef<Path>>(
+        registry: &'reg mut Registry<'reg>,
+        file: P) -> Result<'reg, &'reg str> {
+
+        let path = file.as_ref();
+        let file_name = path.to_string_lossy().to_owned().to_string();
+        let content = std::fs::read_to_string(path)?;
+        registry.files.insert(file_name.clone(), content);
+        Ok(registry.files.get(&file_name).unwrap().as_str())
+    }
+
+    /// Register a file as a template.
+    ///
+    /// If a file with the same path already exists it is overwritten.
+    pub fn register_template_file<P: AsRef<Path>>(
+        &mut self,
+        name: &'reg str,
+        file: P,
+    ) -> Result<()> {
+        let path = file.as_ref();
+        let file_name = path.to_string_lossy().to_owned().to_string();
+        //let content = std::fs::read_to_string(path)?;
+        //self.files.insert(file_name.clone(), content);
+
+        /*
+        let source = Registry::load_file(self, file)?;
+        let options = ParserOptions { file_name, line_offset: 0, byte_offset: 0 };
+        let tpl = Registry::compile(source, options)?;
+        Ok(Registry::register_compiled_template(self, name, tpl))
+        */
     }
 
     pub fn render<T>(&self, name: &'reg str, data: &T) -> Result<String>

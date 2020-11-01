@@ -190,11 +190,11 @@ impl Helper for JsonHelper {
 
         if compact {
             if let Ok(s) = to_string(target) {
-                rc.out().write(s.as_bytes())?;
+                rc.out().write(s.as_bytes()).map_err(Error::from)?;
             }
         } else {
             if let Ok(s) = to_string_pretty(target) {
-                rc.out().write(s.as_bytes())?;
+                rc.out().write(s.as_bytes()).map_err(Error::from)?;
             }
         }
 

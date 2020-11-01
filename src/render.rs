@@ -66,7 +66,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     ) -> Result<Self, RenderError<'source>> where T: Serialize {
 
         let root = serde_json::to_value(data).map_err(RenderError::from)?;
-        let mut scopes: Vec<Scope> = Vec::new();
+        let scopes: Vec<Scope> = Vec::new();
 
         Ok(Self {
             source,

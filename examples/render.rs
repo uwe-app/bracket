@@ -2,6 +2,8 @@ extern crate pretty_env_logger;
 #[macro_use]
 extern crate log;
 
+use std::path::PathBuf;
+
 use hbs::{
     parser::{Parser, ParserOptions},
     Registry, Result,
@@ -19,7 +21,12 @@ fn main() -> Result<'static, ()> {
         "title": "Handlebars Test Document & Information",
         "list": [1, 2, 3],
     });
+
     let mut registry = Registry::new();
+    registry.register_template_file(
+        "partial", PathBuf::from("examples/partial.md"))
+        .expect("Unable to load partial");
+
     registry.register_template_string(name, content, Default::default());
     match registry.render(name, &data) {
         Ok(result) => {
