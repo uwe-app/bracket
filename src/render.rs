@@ -241,13 +241,13 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         Ok(())
     }
 
-    fn render_partial(
-        rc: &mut Render<'reg, 'source, 'render>,
+    fn render_partial<'a>(
+        rc: &'a mut Render<'reg, 'source, 'render>,
         call: &'source Call<'source>,
         name: String,
     ) -> RenderResult<'source, ()> {
 
-        let template: &'source Template<'_> =
+        let template =
             rc.registry.get_template(&name)
             .ok_or_else(|| {
                 RenderError::PartialNotFound(name.clone())
@@ -257,7 +257,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         let scope = Scope::new_locals(hash);
         rc.scopes.push(scope);
 
-        rc.block_template_node = Some(template.node());
+        //rc.block_template_node = Some(template.node());
 
         //let node: &'source Node<'_> = template.node();
 
