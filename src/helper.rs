@@ -1,13 +1,9 @@
 //! Helper trait and types for the default set of helpers.
+use serde_json::{to_string, to_string_pretty, Value};
 use std::collections::HashMap;
 use std::ops::Range;
-use serde_json::{Value, to_string, to_string_pretty};
 
-use crate::{
-    error::HelperError as Error,
-    render::Render,
-    json,
-};
+use crate::{error::HelperError as Error, json, render::Render};
 
 /// The result that helper functions should return.
 pub type Result<'source> = std::result::Result<Option<Value>, Error>;
@@ -54,10 +50,11 @@ impl<'source> Context<'source> {
             println!("Asserting on arity... {}", self.arguments.len());
             if self.arguments.len() != range.start {
                 println!("Returning arity error");
-                return Err(
-                    Error::ArityExact(
-                        self.name().to_owned(), range.start))
-            } 
+                return Err(Error::ArityExact(
+                    self.name().to_owned(),
+                    range.start,
+                ));
+            }
         }
         Ok(())
     }
@@ -84,15 +81,15 @@ pub trait BlockHelper: Send + Sync {
 //pub(crate) struct LookupHelper;
 
 //impl Helper for LookupHelper {
-    //fn call<'reg, 'source, 'render>(
-        //&self,
-        //rc: &mut Render<'reg, 'source, 'render>,
-        //arguments: &mut Vec<&Value>,
-        //hash: &mut HashMap<String, &'source Value>,
-        //template: &'source Node<'source>,
-    //) -> Result {
-        //Ok(None)
-    //}
+//fn call<'reg, 'source, 'render>(
+//&self,
+//rc: &mut Render<'reg, 'source, 'render>,
+//arguments: &mut Vec<&Value>,
+//hash: &mut HashMap<String, &'source Value>,
+//template: &'source Node<'source>,
+//) -> Result {
+//Ok(None)
+//}
 //}
 
 pub(crate) struct WithHelper;
@@ -103,10 +100,10 @@ impl BlockHelper for WithHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &Context<'source>,
     ) -> Result {
-
         ctx.assert_arity(1..1)?;
 
-        let scope = ctx.arguments()
+        let scope = ctx
+            .arguments()
             .get(0)
             .ok_or_else(|| Error::ArityExact(ctx.name().to_string(), 1))?;
 
@@ -175,18 +172,13 @@ impl Helper for JsonHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &Context<'source>,
     ) -> Result {
-
         let target = ctx
             .arguments()
             .get(0)
             .ok_or_else(|| Error::ArityExact(ctx.name().to_string(), 1))?;
 
-        let compact = ctx.is_truthy(
-            ctx
-            .arguments()
-            .get(0)
-            .unwrap_or(&&Value::Bool(false))
-        );
+        let compact = ctx
+            .is_truthy(ctx.arguments().get(0).unwrap_or(&&Value::Bool(false)));
 
         if compact {
             if let Ok(s) = to_string(target) {

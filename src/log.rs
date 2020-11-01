@@ -1,8 +1,8 @@
 //! Helper to print log messages.
 use crate::{
     error::HelperError as Error,
-    helper::{Helper, Result, Context},
-    render::Render
+    helper::{Context, Helper, Result},
+    render::Render,
 };
 
 use log::*;
@@ -15,13 +15,14 @@ impl Helper for LogHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &Context<'source>,
     ) -> Result {
-
         let message = ctx
             .arguments()
             .get(0)
             .ok_or_else(|| Error::ArityExact(ctx.name().to_string(), 1))?
             .as_str()
-            .ok_or_else(|| Error::ArgumentTypeString(ctx.name().to_string(), 1))?
+            .ok_or_else(|| {
+                Error::ArgumentTypeString(ctx.name().to_string(), 1)
+            })?
             .to_string();
 
         let level = ctx

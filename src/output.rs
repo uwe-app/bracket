@@ -30,7 +30,7 @@ impl<W: Write> Write for Writer<W> {
 
 /// Output type that buffers into a string.
 ///
-/// Call `into()` to access the result after 
+/// Call `into()` to access the result after
 /// rendering.
 pub struct StringOutput {
     value: String,

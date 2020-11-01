@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 use hbs::{
     parser::{Parser, ParserOptions},
-    Registry, Result,
+    Loader, Registry, Result,
 };
 
 use serde_json::json;
@@ -22,18 +22,25 @@ fn main() -> Result<'static, ()> {
         "list": [1, 2, 3],
     });
 
-    let mut registry = Registry::new();
-    registry.register_template_file(
-        "partial", PathBuf::from("examples/partial.md"))
-        .expect("Unable to load partial");
+    //let mut loader = Box::leak(Box::new(Loader::new()));
+    let mut loader = Loader::new();
+    loader.add("partial", PathBuf::from("examples/partial.md"))?;
+    loader.insert(name, content);
 
-    registry.register_template_string(name, content, Default::default());
-    match registry.render(name, &data) {
-        Ok(result) => {
-            println!("{}", result);
-        }
-        Err(e) => log::error!("{:?}", e),
+    let mut registry = Registry::new();
+    for (k, v) in loader.sources() {
+        registry.register_template_string(k, v, Default::default()).unwrap();
     }
+
+    //let child = std::thread::spawn(move || {
+        match registry.render(name, &data) {
+            Ok(result) => {
+                println!("{}", result);
+            }
+            Err(e) => log::error!("{:?}", e),
+        }
+    //});
+    //let res = child.join();
 
     Ok(())
 }

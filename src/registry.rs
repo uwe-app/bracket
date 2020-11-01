@@ -1,6 +1,6 @@
 //! Main entry point for compiling, storing and rendering templates.
-use std::path::Path;
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 
@@ -8,22 +8,76 @@ use crate::{
     error::RenderError,
     escape::{html_escape, EscapeFn},
     helper::{
+        BlockHelper,
+        Helper,
         //EachHelper, Helper, IfHelper, LookupHelper, UnlessHelper,
         //WithHelper,
         JsonHelper,
-        Helper,
-        BlockHelper,
-        WithHelper
+        WithHelper,
     },
+    log::LogHelper,
     output::{Output, StringOutput},
     parser::ParserOptions,
     template::Template,
-    log::LogHelper,
     Error, Result,
 };
 
+pub struct Loader {
+    sources: HashMap<String, String>,
+}
+
+impl Loader {
+    pub fn new() -> Self {
+        Self {
+            sources: HashMap::new(),
+        }
+    }
+
+    /// Get the map of template content.
+    pub fn sources(&self) -> &HashMap<String, String> {
+        &self.sources
+    }
+
+    /// Insert a named string template.
+    pub fn insert<N, S>(&mut self, name: N, content: S)
+    where
+        N: AsRef<str>,
+        S: AsRef<str>,
+    {
+        self.sources
+            .insert(name.as_ref().to_owned(), content.as_ref().to_owned());
+    }
+
+    /// Add a named template from a file.
+    pub fn add<N, P>(&mut self, name: N, file: P) -> std::io::Result<()>
+    where
+        N: AsRef<str>,
+        P: AsRef<Path>,
+    {
+        let (_, content) = self.read(file)?;
+        self.insert(name, &content);
+        Ok(())
+    }
+
+    /// Load a file and use the file path as the template name.
+    pub fn load<P: AsRef<Path>>(&mut self, file: P) -> std::io::Result<()> {
+        let (name, content) = self.read(file)?;
+        self.insert(name, &content);
+        Ok(())
+    }
+
+    fn read<P: AsRef<Path>>(
+        &mut self,
+        file: P,
+    ) -> std::io::Result<(String, String)> {
+        let path = file.as_ref();
+        let name = path.to_string_lossy().to_owned().to_string();
+        let content = std::fs::read_to_string(path)?;
+        Ok((name, content))
+    }
+}
+
 pub struct Registry<'reg> {
-    files: HashMap<String, String>,
     templates: HashMap<&'reg str, Template<'reg>>,
     helpers: HashMap<&'reg str, Box<dyn Helper + 'reg>>,
     block_helpers: HashMap<&'reg str, Box<dyn BlockHelper + 'reg>>,
@@ -31,9 +85,9 @@ pub struct Registry<'reg> {
 }
 
 impl<'reg, 'source> Registry<'reg> {
+
     pub fn new() -> Self {
         let mut reg = Self {
-            files: HashMap::new(),
             templates: Default::default(),
             helpers: Default::default(),
             block_helpers: Default::default(),
@@ -87,7 +141,10 @@ impl<'reg, 'source> Registry<'reg> {
         self.helpers.get(name)
     }
 
-    pub fn get_block_helper(&self, name: &str) -> Option<&Box<dyn BlockHelper + 'reg>> {
+    pub fn get_block_helper(
+        &self,
+        name: &str,
+    ) -> Option<&Box<dyn BlockHelper + 'reg>> {
         self.block_helpers.get(name)
     }
 
@@ -131,46 +188,6 @@ impl<'reg, 'source> Registry<'reg> {
         Ok(self.register_template(name, tpl))
     }
 
-    fn register_compiled_template(
-        registry: &'reg mut Registry<'reg>,
-        name: &'reg str,
-        template: Template<'reg>,
-    ) {
-        registry.templates.insert(name, template);
-    }
-
-    fn load_file<P: AsRef<Path>>(
-        registry: &'reg mut Registry<'reg>,
-        file: P) -> Result<'reg, &'reg str> {
-
-        let path = file.as_ref();
-        let file_name = path.to_string_lossy().to_owned().to_string();
-        let content = std::fs::read_to_string(path)?;
-        registry.files.insert(file_name.clone(), content);
-        Ok(registry.files.get(&file_name).unwrap().as_str())
-    }
-
-    /// Register a file as a template.
-    ///
-    /// If a file with the same path already exists it is overwritten.
-    pub fn register_template_file<P: AsRef<Path>>(
-        &mut self,
-        name: &'reg str,
-        file: P,
-    ) -> Result<()> {
-        let path = file.as_ref();
-        let file_name = path.to_string_lossy().to_owned().to_string();
-        //let content = std::fs::read_to_string(path)?;
-        //self.files.insert(file_name.clone(), content);
-
-        /*
-        let source = Registry::load_file(self, file)?;
-        let options = ParserOptions { file_name, line_offset: 0, byte_offset: 0 };
-        let tpl = Registry::compile(source, options)?;
-        Ok(Registry::register_compiled_template(self, name, tpl))
-        */
-    }
-
     pub fn render<T>(&self, name: &'reg str, data: &T) -> Result<String>
     where
         T: Serialize,
@@ -189,10 +206,27 @@ impl<'reg, 'source> Registry<'reg> {
     where
         T: Serialize,
     {
-        let tpl = self.get_template(name).ok_or_else(|| {
-            Error::TemplateNotFound(name.to_string())
-        })?;
+        let tpl = self
+            .get_template(name)
+            .ok_or_else(|| Error::TemplateNotFound(name.to_string()))?;
         tpl.render(self, name, data, writer)?;
         Ok(())
     }
+
+    //fn from(&mut self, loader: &'reg Loader) -> Result<()> {
+        //for (k, v) in loader.sources() {
+            //self.register_template_string(k.as_str(), v.as_str(), Default::default())?;
+        //}
+        //Ok(())
+    //}
 }
+
+//impl<'loader> From<&'loader Loader> for Registry<'loader> {
+    //fn from(loader: &'loader Loader) -> Self {
+        //let mut reg = Registry::new();
+        //for (k, v) in loader.sources() {
+            //reg.register_template_string(k, v, Default::default())?;
+        //}
+        //reg
+    //}
+//}

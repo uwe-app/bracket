@@ -13,7 +13,7 @@ pub mod template;
 pub type Result<'a, T> = std::result::Result<T, error::Error<'a>>;
 
 pub(crate) use error::Error;
-pub use registry::Registry;
+pub use registry::{Loader, Registry};
 pub use template::Template;
 
 pub use escape::EscapeFn;

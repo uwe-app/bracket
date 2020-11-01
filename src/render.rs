@@ -5,10 +5,10 @@ use std::collections::HashMap;
 
 use crate::{
     error::{HelperError, RenderError},
-    helper::{Helper, BlockHelper, Context},
+    helper::{BlockHelper, Context, Helper},
     json,
     output::Output,
-    parser::ast::{Call, CallTarget, Node, Block, ParameterValue, Path},
+    parser::ast::{Block, Call, CallTarget, Node, ParameterValue, Path},
     registry::Registry,
 };
 
@@ -63,8 +63,10 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         registry: &'reg Registry<'reg>,
         data: &T,
         writer: Box<&'render mut dyn Output>,
-    ) -> Result<Self, RenderError<'source>> where T: Serialize {
-
+    ) -> Result<Self, RenderError<'source>>
+    where
+        T: Serialize,
+    {
         let root = serde_json::to_value(data).map_err(RenderError::from)?;
         let scopes: Vec<Scope> = Vec::new();
 
@@ -83,7 +85,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     pub fn out(&mut self) -> &mut Box<&'render mut dyn Output> {
-        &mut self.writer 
+        &mut self.writer
     }
 
     fn write_str(
@@ -91,7 +93,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         s: &str,
         escape: bool,
     ) -> Result<usize, RenderError<'source>> {
-
         let val = if self.trim_start { s.trim_start() } else { s };
         let val = if self.trim_end { val.trim_end() } else { val };
         if val.is_empty() {
@@ -118,7 +119,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     //pub fn scope(&self) -> Option<&Scope<'source>> {
-        //self.scopes.last()
+    //self.scopes.last()
     //}
 
     pub fn scope_mut(&mut self) -> Option<&mut Scope> {
@@ -138,7 +139,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         root: &'source Value,
         scopes: &'source Vec<Scope>,
     ) -> Option<&'source Value> {
-
         println!("Lookup path {:?}", path.as_str());
 
         // Handle explicit `@root` reference
@@ -155,11 +155,18 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             println!("Got explicit this!!!");
             let this = if let Some(scope) = scopes.last() {
                 if let Some(base) = scope.base_value() {
-                    println!("Got explicit this with a scope base value!!! {:?}", base);
-                    base    
-                } else { root }
-            } else { root };
-            return Some(this)
+                    println!(
+                        "Got explicit this with a scope base value!!! {:?}",
+                        base
+                    );
+                    base
+                } else {
+                    root
+                }
+            } else {
+                root
+            };
+            return Some(this);
         } else if path.is_simple() {
             let name = path.as_str();
             if let Some(scope) = scopes.last() {
@@ -184,7 +191,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                         Render::lookup(path, &self.root, &self.scopes)
                             .map(|v| v.clone())
                             .unwrap_or(Value::Null)
-                    },
+                    }
                     _ => {
                         // TODO: evaluate sub-expressions
                         Value::Null
@@ -194,17 +201,12 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             .collect()
     }
 
-    fn hash(
-        call: &'source Call<'source>,
-        ) -> HashMap<String, &'source Value> {
-
+    fn hash(call: &'source Call<'source>) -> HashMap<String, &'source Value> {
         call.hash()
             .iter()
             .map(|(k, p)| {
                 match p {
-                    ParameterValue::Json(val) => {
-                        (k.to_string(), val)
-                    }
+                    ParameterValue::Json(val) => (k.to_string(), val),
                     _ => {
                         // TODO: evaluate sub-expressions
                         (k.to_string(), &Value::Null)
@@ -238,15 +240,17 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         &mut self,
         call: &'source Call<'source>,
     ) -> Result<(), RenderError<'source>> {
-
         match call.target() {
             CallTarget::Path(ref path) => {
                 if path.is_simple() {
-                    if let Some(template) = self.registry.get_template(path.as_str()) {
+                    if let Some(template) =
+                        self.registry.get_template(path.as_str())
+                    {
                         println!("RENDER THE PARTIAL");
                     } else {
-                        return Err(
-                            RenderError::PartialNotFound(path.as_str()));
+                        return Err(RenderError::PartialNotFound(
+                            path.as_str(),
+                        ));
                     }
                 } else {
                     panic!("Partials must be simple identifiers");
@@ -305,7 +309,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         node: &'source Node<'source>,
         block: &'source Block<'source>,
     ) -> Result<(), RenderError<'source>> {
-
         println!("Render a block...");
         let call = block.call();
 
@@ -321,17 +324,18 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                             self.registry.get_block_helper(path.as_str())
                         {
                             println!(
-                                "Found a helper for the block path: {}", path.as_str());
+                                "Found a helper for the block path: {}",
+                                path.as_str()
+                            );
 
                             let mut args = self.arguments(call);
                             let mut hash = Render::hash(call);
-                            let context = Context::new(path.as_str(), args, hash);
+                            let context =
+                                Context::new(path.as_str(), args, hash);
 
                             Render::invoke_block_helper(
-                                self,
-                                &context,
-                                helper,
-                                node)?;
+                                self, &context, helper, node,
+                            )?;
                         }
                     }
                 }
@@ -341,24 +345,20 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         Ok(())
     }
 
-    pub(crate) fn render_inner(
-        &mut self,
-    ) -> Result<(), HelperError> {
-
+    pub(crate) fn render_inner(&mut self) -> Result<(), HelperError> {
         //println!("RENDER INNER BLOCK");
 
         if let Some(ref node) = self.block_template_node {
-        
             match node {
                 Node::Block(ref block) => {
                     for node in block.nodes().iter() {
-                        self.render_node(node)
-                            .map_err(|e| HelperError::Render(format!("{:?}", e)))?;
+                        self.render_node(node).map_err(|e| {
+                            HelperError::Render(format!("{:?}", e))
+                        })?;
                     }
                 }
                 _ => {}
             }
-
         }
 
         Ok(())
@@ -368,14 +368,17 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         &mut self,
         node: &'source Node<'source>,
     ) -> Result<(), RenderError<'source>> {
-
         self.trim_start = if let Some(node) = self.prev_node {
             node.trim_after()
-        } else { false };
+        } else {
+            false
+        };
 
         self.trim_end = if let Some(node) = self.next_node {
             node.trim_before()
-        } else { false };
+        } else {
+            false
+        };
 
         //let trim_after = node.trim_after();
         //println!("Has trim before {}", trim_before);
@@ -422,7 +425,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 self.block(node, block)?;
                 // TODO: call partial / helper for blocks
                 //for node in block.nodes().iter() {
-                    //self.render(node)?;
+                //self.render(node)?;
                 //}
             }
             _ => todo!("Render other node types"),

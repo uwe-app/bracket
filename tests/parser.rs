@@ -1,7 +1,7 @@
 use hbs::{
-    Result,
     error::Error,
     parser::{ast::*, *},
+    Result,
 };
 
 use serde_json::{Number, Value};

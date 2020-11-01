@@ -80,8 +80,8 @@ impl fmt::Display for Error<'_> {
             Self::Syntax(ref e) => fmt::Display::fmt(e, f),
             Self::Render(ref e) => fmt::Display::fmt(e, f),
             Self::TemplateNotFound(ref name) => {
-                write!(f, "Template not found {}", name) 
-            },
+                write!(f, "Template not found '{}'", name)
+            }
             Self::Io(ref e) => fmt::Display::fmt(e, f),
         }
     }
@@ -92,7 +92,7 @@ impl fmt::Debug for Error<'_> {
         match *self {
             Self::Syntax(ref e) => fmt::Debug::fmt(e, f),
             Self::Render(ref e) => fmt::Debug::fmt(e, f),
-            Self::TemplateNotFound(ref e) => fmt::Display::fmt(e, f),
+            Self::TemplateNotFound(ref e) => fmt::Display::fmt(self, f),
             Self::Io(ref e) => fmt::Debug::fmt(e, f),
         }
     }
@@ -345,7 +345,7 @@ pub enum HelperError {
     #[error("{0}")]
     Message(String),
 
-    /// Wrapper for render errors that occur via helpers; for example 
+    /// Wrapper for render errors that occur via helpers; for example
     /// when rendering inner templates.
     #[error("{0}")]
     Render(String),
@@ -377,7 +377,7 @@ impl From<std::io::Error> for HelperError {
     }
 }
 
-/// Wrapper for IO errors that implements `PartialEq` to 
+/// Wrapper for IO errors that implements `PartialEq` to
 /// facilitate easier testing using `assert_eq!()`.
 #[derive(thiserror::Error, Debug)]
 pub enum IoError {
@@ -388,9 +388,7 @@ pub enum IoError {
 impl PartialEq for IoError {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Self::Io(ref s), Self::Io(ref o)) => {
-                s.kind() == o.kind()
-            }
+            (Self::Io(ref s), Self::Io(ref o)) => s.kind() == o.kind(),
             _ => false,
         }
     }

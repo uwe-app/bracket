@@ -1,4 +1,7 @@
-use hbs::{error::{SyntaxError, Error}, Registry};
+use hbs::{
+    error::{Error, SyntaxError},
+    Registry,
+};
 use serde_json::json;
 
 #[test]
