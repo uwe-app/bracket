@@ -1,7 +1,5 @@
 //! Main entry point for compiling, storing and rendering templates.
 use std::collections::HashMap;
-use std::path::Path;
-
 use serde::Serialize;
 
 use crate::{
@@ -17,100 +15,9 @@ use crate::{
     log::LogHelper,
     output::{Output, StringOutput},
     parser::ParserOptions,
-    template::Template,
+    template::{Template, Templates},
     Error, Result,
 };
-
-pub struct Loader {
-    sources: HashMap<String, String>,
-}
-
-impl Loader {
-    pub fn new() -> Self {
-        Self {
-            sources: HashMap::new(),
-        }
-    }
-
-    /// Get the map of template content.
-    pub fn sources(&self) -> &HashMap<String, String> {
-        &self.sources
-    }
-
-    /// Insert a named string template.
-    pub fn insert<N, S>(&mut self, name: N, content: S)
-    where
-        N: AsRef<str>,
-        S: AsRef<str>,
-    {
-        self.sources
-            .insert(name.as_ref().to_owned(), content.as_ref().to_owned());
-    }
-
-    /// Add a named template from a file.
-    pub fn add<N, P>(&mut self, name: N, file: P) -> std::io::Result<()>
-    where
-        N: AsRef<str>,
-        P: AsRef<Path>,
-    {
-        let (_, content) = self.read(file)?;
-        self.insert(name, &content);
-        Ok(())
-    }
-
-    /// Load a file and use the file path as the template name.
-    pub fn load<P: AsRef<Path>>(&mut self, file: P) -> std::io::Result<()> {
-        let (name, content) = self.read(file)?;
-        self.insert(name, &content);
-        Ok(())
-    }
-
-    fn read<P: AsRef<Path>>(
-        &mut self,
-        file: P,
-    ) -> std::io::Result<(String, String)> {
-        let path = file.as_ref();
-        let name = path.to_string_lossy().to_owned().to_string();
-        let content = std::fs::read_to_string(path)?;
-        Ok((name, content))
-    }
-}
-
-#[derive(Default)]
-pub struct Templates<'source> {
-    templates: HashMap<&'source str, Template<'source>>,
-}
-
-impl<'source> Templates<'source> {
-    pub fn new() -> Self {
-        Self {
-            templates: HashMap::new(),
-        }
-    }
-
-    pub fn register(
-        &mut self,
-        name: &'source str,
-        template: Template<'source>,
-    ) {
-        self.templates.insert(name, template);
-    }
-
-    pub fn unregister(
-        &mut self,
-        name: &'source str,
-    ) -> Option<Template<'source>> {
-        self.templates.remove(name)
-    }
-
-    pub fn get(&self, name: &str) -> Option<&Template<'source>> {
-        self.templates.get(name)
-    }
-
-    pub fn compile(s: &str, options: ParserOptions) -> Result<Template> {
-        Ok(Template::compile(s, options).map_err(Error::from)?)
-    }
-}
 
 pub struct Registry<'reg> {
     //templates: HashMap<&'source str, Template<'source>>,

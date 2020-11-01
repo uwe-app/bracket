@@ -5,8 +5,9 @@ extern crate log;
 use std::path::PathBuf;
 
 use hbs::{
-    parser::{Parser, ParserOptions},
-    registry::{Registry, Loader, Templates}, Result,
+    parser::ParserOptions,
+    template::{Loader, Templates},
+    registry::{Registry}, Result,
 };
 
 use serde_json::json;
@@ -31,8 +32,8 @@ fn main() -> Result<'static, ()> {
     loader.insert(name, content);
 
     for (k, v) in loader.sources() {
-        println!("register with {:?}", k);
-        templates.register(k, Templates::compile(v, Default::default()).unwrap());
+        let template = Templates::compile(v, Default::default()).unwrap();
+        templates.register(k, template);
     }
 
     //let child = std::thread::spawn(move || {

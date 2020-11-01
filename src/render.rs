@@ -9,8 +9,8 @@ use crate::{
     json,
     output::Output,
     parser::ast::{Block, Call, CallTarget, Node, ParameterValue, Path},
-    registry::{Registry, Templates},
-    template::Template,
+    registry::Registry,
+    template::{Template, Templates},
     RenderResult,
 };
 
