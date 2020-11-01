@@ -6,7 +6,7 @@ use crate::{
     error::{RenderError, SyntaxError},
     output::Output,
     parser::{ast::Node, Parser, ParserOptions},
-    render::{Render, Scope},
+    render::Render,
     Registry,
 };
 
@@ -48,18 +48,16 @@ impl<'source> Template<'source> {
     }
 
     pub fn render<'reg, T>(
-        &self,
+        &'source self,
         registry: &Registry<'reg>,
         name: &'reg str,
         data: &T,
         writer: &mut impl Output,
-    ) -> Result<(), RenderError>
+    ) -> Result<(), RenderError<'source>>
     where
         T: Serialize,
     {
-        let root = serde_json::to_value(data).map_err(RenderError::from)?;
-        let mut scopes: Vec<Scope> = Vec::new();
-        let mut rc = Render::new(self.source, registry, &root, &mut scopes, Box::new(writer))?;
-        rc.render_node(self.node())
+        let mut rc = Render::new(self.source, registry, data, Box::new(writer))?;
+        rc.render_node(&self.node)
     }
 }

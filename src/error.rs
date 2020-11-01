@@ -69,7 +69,7 @@ impl<'source> ErrorInfo<'source> {
 #[derive(Eq, PartialEq)]
 pub enum Error<'source> {
     Syntax(SyntaxError<'source>),
-    Render(RenderError),
+    Render(RenderError<'source>),
 }
 
 impl fmt::Display for Error<'_> {
@@ -90,8 +90,8 @@ impl fmt::Debug for Error<'_> {
     }
 }
 
-impl From<RenderError> for Error<'_> {
-    fn from(err: RenderError) -> Self {
+impl<'source> From<RenderError<'source>> for Error<'source> {
+    fn from(err: RenderError<'source>) -> Self {
         Self::Render(err)
     }
 }
@@ -281,12 +281,15 @@ impl fmt::Debug for SyntaxError<'_> {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum RenderError {
+pub enum RenderError<'source> {
     #[error("{0}")]
     Message(String),
 
     #[error("Template not found {0}")]
     TemplateNotFound(String),
+
+    #[error("Partial template not found {0}")]
+    PartialNotFound(&'source str),
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -294,7 +297,7 @@ pub enum RenderError {
     Json(#[from] serde_json::Error),
 }
 
-impl PartialEq for RenderError {
+impl PartialEq for RenderError<'_> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::TemplateNotFound(ref s), Self::TemplateNotFound(ref o)) => {
@@ -305,15 +308,15 @@ impl PartialEq for RenderError {
     }
 }
 
-impl Eq for RenderError {}
+impl Eq for RenderError<'_> {}
 
-impl From<String> for RenderError {
+impl From<String> for RenderError<'_> {
     fn from(s: String) -> Self {
         RenderError::Message(s)
     }
 }
 
-impl From<&str> for RenderError {
+impl From<&str> for RenderError<'_> {
     fn from(s: &str) -> Self {
         RenderError::from(s.to_owned())
     }

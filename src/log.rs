@@ -11,10 +11,10 @@ pub(crate) struct LogHelper;
 
 impl Helper for LogHelper {
     fn call<'reg, 'source, 'render>(
-        &self,
+        &'source self,
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &Context<'source>,
-    ) -> Result {
+    ) -> Result<'source> {
 
         let message = ctx
             .arguments()

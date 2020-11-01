@@ -7,27 +7,24 @@ use crate::{
 };
 
 /// The result that helper functions should return.
-pub type Result = std::result::Result<Option<Value>, RenderError>;
+pub type Result<'source> = std::result::Result<Option<Value>, RenderError<'source>>;
 
 /// Trait for helpers.
 pub trait Helper: Send + Sync {
     fn call<'reg, 'source, 'render>(
-        &self,
+        &'source self,
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &Context<'source>,
-        //out: &mut HelperOutput<'render>,
-    ) -> Result;
+    ) -> Result<'source>;
 }
 
 /// Trait for block helpers.
 pub trait BlockHelper: Send + Sync {
     fn call<'reg, 'source, 'render>(
-        &self,
+        &'source self,
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &Context<'source>,
-        //out: &mut HelperOutput<'render>,
-        //template: &mut dyn FnMut() -> std::result::Result<(), RenderError>,
-    ) -> Result;
+    ) -> Result<'source>;
 }
 
 //pub(crate) struct LookupHelper;
@@ -48,10 +45,10 @@ pub(crate) struct WithHelper;
 
 impl BlockHelper for WithHelper {
     fn call<'reg, 'source, 'render>(
-        &self,
+        &'source self,
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &Context<'source>,
-    ) -> Result {
+    ) -> Result<'source> {
 
         let scope = ctx.arguments()
             .get(0)
@@ -120,11 +117,10 @@ pub(crate) struct JsonHelper;
 
 impl Helper for JsonHelper {
     fn call<'reg, 'source, 'render>(
-        &self,
+        &'source self,
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &Context<'source>,
-        //out: &mut HelperOutput<'render>,
-    ) -> Result {
+    ) -> Result<'source> {
 
         let target = ctx
             .arguments()

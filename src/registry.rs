@@ -114,10 +114,8 @@ impl<'reg, 'source> Registry<'reg> {
         self.templates.remove(name)
     }
 
-    pub fn get_template(&self, name: &'reg str) -> Result<&Template<'reg>> {
-        self.templates.get(name).ok_or_else(|| {
-            Error::from(RenderError::TemplateNotFound(name.to_string()))
-        })
+    pub fn get_template(&self, name: &'reg str) -> Option<&Template<'reg>> {
+        self.templates.get(name)
     }
 
     pub fn register_template_string(
@@ -148,7 +146,9 @@ impl<'reg, 'source> Registry<'reg> {
     where
         T: Serialize,
     {
-        let tpl = self.get_template(name)?;
+        let tpl = self.get_template(name).ok_or_else(|| {
+            Error::from(RenderError::TemplateNotFound(name.to_string())) 
+        })?;
         tpl.render(self, name, data, writer)?;
         Ok(())
     }
