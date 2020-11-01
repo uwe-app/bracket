@@ -11,8 +11,7 @@ fn err_empty_statement() -> Result<'static, ()> {
     let value = r"{{}}";
     let data = json!({});
 
-    /*
-    match registry.register_template_string(name, value, Default::default()) {
+    match registry.compile(value, Default::default()) {
         Ok(_) => panic!("Empty statement error expected"),
         Err(e) => {
             println!("{:?}", e);
@@ -21,6 +20,5 @@ fn err_empty_statement() -> Result<'static, ()> {
             assert_eq!(Error::Syntax(SyntaxError::EmptyStatement(info)), e);
         }
     }
-    */
     Ok(())
 }

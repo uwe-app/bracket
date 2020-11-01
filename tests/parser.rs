@@ -1,5 +1,4 @@
 use bracket::{
-    error::Error,
     parser::{ast::*, *},
     Result,
 };

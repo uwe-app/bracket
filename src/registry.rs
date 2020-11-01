@@ -1,6 +1,5 @@
 //! Collection of helpers and function handlers.
 use serde::Serialize;
-use std::collections::HashMap;
 
 use crate::{
     escape::{html_escape, EscapeFn},
