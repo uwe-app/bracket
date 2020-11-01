@@ -13,14 +13,14 @@ pub type AssertResult = std::result::Result<(), Error>;
 pub struct Context<'source> {
     name: &'source str,
     arguments: Vec<Value>,
-    hash: HashMap<String, &'source Value>,
+    hash: HashMap<String, Value>,
 }
 
 impl<'source> Context<'source> {
     pub fn new(
         name: &'source str,
         arguments: Vec<Value>,
-        hash: HashMap<String, &'source Value>,
+        hash: HashMap<String, Value>,
     ) -> Self {
         Self {
             name,
@@ -37,7 +37,7 @@ impl<'source> Context<'source> {
         &self.arguments
     }
 
-    pub fn hash(&self) -> &HashMap<String, &'source Value> {
+    pub fn hash(&self) -> &HashMap<String, Value> {
         &self.hash
     }
 

@@ -84,7 +84,7 @@ pub struct Registry<'reg> {
     escape: EscapeFn,
 }
 
-impl<'reg, 'source> Registry<'reg> {
+impl<'reg> Registry<'reg> {
 
     pub fn new() -> Self {
         let mut reg = Self {
@@ -149,7 +149,7 @@ impl<'reg, 'source> Registry<'reg> {
     }
 
     pub fn compile(
-        s: &'source str,
+        s: &str,
         options: ParserOptions,
     ) -> Result<Template> {
         Ok(Template::compile(s, options).map_err(Error::from)?)

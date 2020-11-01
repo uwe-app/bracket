@@ -10,10 +10,11 @@ use crate::{
     output::Output,
     parser::ast::{Block, Call, CallTarget, Node, ParameterValue, Path},
     registry::Registry,
+    template::Template,
 };
 
 #[derive(Debug)]
-pub enum EvalResult<'source> {
+pub enum HelperValue<'source> {
     Json(Option<&'source Value>),
 }
 
@@ -27,6 +28,13 @@ impl Scope {
     pub fn new() -> Self {
         Self {
             locals: HashMap::new(),
+            value: None,
+        }
+    }
+
+    pub fn new_locals(locals: HashMap<String, Value>) -> Self {
+        Self {
+            locals,
             value: None,
         }
     }
@@ -118,10 +126,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         self.scopes.pop()
     }
 
-    //pub fn scope(&self) -> Option<&Scope<'source>> {
-    //self.scopes.last()
-    //}
-
     pub fn scope_mut(&mut self) -> Option<&mut Scope> {
         self.scopes.last_mut()
     }
@@ -201,22 +205,22 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             .collect()
     }
 
-    fn hash(call: &'source Call<'source>) -> HashMap<String, &'source Value> {
+    fn hash(call: &'source Call<'source>) -> HashMap<String, Value> {
         call.hash()
             .iter()
             .map(|(k, p)| {
                 match p {
-                    ParameterValue::Json(val) => (k.to_string(), val),
+                    ParameterValue::Json(val) => (k.to_string(), val.clone()),
                     _ => {
                         // TODO: evaluate sub-expressions
-                        (k.to_string(), &Value::Null)
+                        (k.to_string(), Value::Null)
                     }
                 }
             })
             .collect::<HashMap<_, _>>()
     }
 
-    pub fn invoke_helper(
+    fn invoke_helper(
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &Context<'source>,
         helper: &'reg Box<dyn Helper + 'reg>,
@@ -225,7 +229,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         Ok(None)
     }
 
-    pub fn invoke_block_helper(
+    fn invoke_block_helper(
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &Context<'source>,
         helper: &'reg Box<dyn BlockHelper + 'reg>,
@@ -233,6 +237,15 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     ) -> Result<(), RenderError<'source>> {
         rc.block_template_node = Some(template);
         helper.call(rc, ctx)?;
+        Ok(())
+    }
+
+    fn invoke_partial(
+        rc: &mut Render<'reg, 'source, 'render>,
+        template: &'reg Template<'reg>,
+        name: &'source str,
+    ) -> Result<(), RenderError<'source>> {
+
         Ok(())
     }
 
@@ -246,7 +259,33 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                     if let Some(template) =
                         self.registry.get_template(path.as_str())
                     {
-                        println!("RENDER THE PARTIAL");
+                        let mut hash = Render::hash(call);
+                        let scope = Scope::new_locals(hash);
+                        self.scopes.push(scope);
+
+                        //Render::invoke_partial(self, template, path.as_str());
+
+                        //let render_partial = |node: &'source Node<'_>| {
+                            //self.render_node(node); 
+                        //};
+
+                        //render_partial(template.node());
+
+                        //self.render_node(template.node());
+
+                        self.scopes.pop();
+
+                        //Render::invoke_partial(template, path.as_str());
+                        //self.render_node(template.node());
+                        //self.block_template_node = Some(template.node());
+                        //let node = template.node();
+                        //let mut hash = Render::hash(call);
+                        //let scope = Scope::new_locals(hash);
+
+                        //rc.scopes.push(scope);
+                        ////println!("RENDER THE PARTIAL");
+                        //rc.render_node(node)?;
+                        //rc.scopes.pop();
                     } else {
                         return Err(RenderError::PartialNotFound(
                             path.as_str(),
@@ -265,7 +304,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     fn statement(
         &mut self,
         call: &'source Call<'source>,
-    ) -> Result<EvalResult<'_>, RenderError<'source>> {
+    ) -> Result<HelperValue<'_>, RenderError<'source>> {
         if call.is_partial() {
             println!("GOT PARTIAL CALL FOR STATEMENT!");
             self.render_partial(call)?;
@@ -284,14 +323,14 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                             // FIXME: return the result from invoking the helper
                             Render::invoke_helper(self, &ctx, helper)?;
                         } else {
-                            return Ok(EvalResult::Json(Render::lookup(
+                            return Ok(HelperValue::Json(Render::lookup(
                                 path,
                                 &self.root,
                                 &self.scopes,
                             )));
                         }
                     } else {
-                        return Ok(EvalResult::Json(Render::lookup(
+                        return Ok(HelperValue::Json(Render::lookup(
                             path,
                             &self.root,
                             &self.scopes,
@@ -301,7 +340,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 _ => todo!("Handle sub expressions"),
             }
         }
-        Ok(EvalResult::Json(None))
+        Ok(HelperValue::Json(None))
     }
 
     fn block(
@@ -348,7 +387,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     pub(crate) fn render_inner(&mut self) -> Result<(), HelperError> {
         //println!("RENDER INNER BLOCK");
 
-        if let Some(ref node) = self.block_template_node {
+        if let Some(node) = self.block_template_node {
             match node {
                 Node::Block(ref block) => {
                     for node in block.nodes().iter() {
@@ -366,7 +405,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
     pub(crate) fn render_node(
         &mut self,
-        node: &'source Node<'source>,
+        node: &'source Node<'_>,
     ) -> Result<(), RenderError<'source>> {
         self.trim_start = if let Some(node) = self.prev_node {
             node.trim_after()
@@ -408,7 +447,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             Node::Statement(ref call) => {
                 let result = self.statement(call)?;
                 match result {
-                    EvalResult::Json(maybe_json) => {
+                    HelperValue::Json(maybe_json) => {
                         //println!("Got maybe json {:?}", maybe_json);
                         if let Some(value) = maybe_json {
                             let val = json::stringify(value)?;

@@ -12,9 +12,15 @@ To help debug our templates we can use the `log` helper: `\{{log "Message to pri
 {{log "Info message"~}}
 {{log "Error message" level="error"}}
 
+The `json` helper is useful for debugging template data, for example: `\{{json this}}` yields:
+
 ```
 {{json this}}
 ```
+
+## With
+
+Use the `with` helper to change the current scope:
 
 {{#with list}}
 ```
