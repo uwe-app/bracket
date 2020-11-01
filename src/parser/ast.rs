@@ -19,9 +19,6 @@ pub enum Node<'source> {
     Text(Text<'source>),
     Statement(Call<'source>),
     Block(Block<'source>),
-
-    Fragment(&'source Block<'source>),
-
     RawBlock(TextBlock<'source>),
     RawStatement(TextBlock<'source>),
     RawComment(TextBlock<'source>),
@@ -35,7 +32,6 @@ impl<'source> Node<'source> {
             Self::Text(ref n) => n.as_str(),
             Self::Statement(ref n) => n.as_str(),
             Self::Block(ref n) => n.as_str(),
-            Self::Fragment(n) => n.as_str(),
             Self::RawBlock(ref n)
             | Self::RawStatement(ref n)
             | Self::RawComment(ref n)
@@ -52,7 +48,6 @@ impl<'source> Node<'source> {
             | Self::RawComment(_)
             | Self::Comment(_) => false,
             Self::Statement(ref n) => n.trim_before(),
-            Self::Fragment(n) => n.trim_before(),
             Self::Block(ref n) => n.trim_before(),
         }
     }
@@ -66,7 +61,6 @@ impl<'source> Node<'source> {
             | Self::RawComment(_)
             | Self::Comment(_) => false,
             Self::Statement(ref n) => n.trim_after(),
-            Self::Fragment(n) => n.trim_after(),
             Self::Block(ref n) => n.trim_after(),
         }
     }
@@ -115,7 +109,6 @@ impl fmt::Display for Node<'_> {
             Self::Text(ref n) => n.fmt(f),
             Self::Statement(ref n) => n.fmt(f),
             Self::Block(ref n) => n.fmt(f),
-            Self::Fragment(n) => n.fmt(f),
             Self::RawBlock(ref n)
             | Self::RawStatement(ref n)
             | Self::RawComment(ref n)
@@ -130,7 +123,6 @@ impl fmt::Debug for Node<'_> {
             Self::Document(ref n) => fmt::Debug::fmt(n, f),
             Self::Text(ref n) => fmt::Debug::fmt(n, f),
             Self::Block(ref n) => fmt::Debug::fmt(n, f),
-            Self::Fragment(n) => fmt::Debug::fmt(n, f),
             Self::Statement(ref n) => fmt::Debug::fmt(n, f),
             Self::RawBlock(ref n)
             | Self::RawStatement(ref n)

@@ -330,7 +330,8 @@ pub enum HelperError {
     #[error("{0}")]
     Message(String),
 
-    /// Wrapper for render errors that occur via helpers.
+    /// Wrapper for render errors that occur via helpers; for example 
+    /// when rendering inner templates.
     #[error("{0}")]
     Render(String),
 
