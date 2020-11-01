@@ -1,4 +1,4 @@
-use hbs::lexer::lex;
+use bracket::lexer::lex;
 
 /// Demonstrates low-level access to the token stream.
 fn main() {

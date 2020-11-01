@@ -3,7 +3,7 @@ extern crate pretty_env_logger;
 
 use std::path::PathBuf;
 
-use hbs::{
+use bracket::{
     registry::Registry,
     template::{Loader, Templates},
     Result,

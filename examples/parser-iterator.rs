@@ -1,4 +1,4 @@
-use hbs::{
+use bracket::{
     parser::{Parser, ParserOptions},
     Result,
 };

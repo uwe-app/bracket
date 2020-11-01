@@ -1,4 +1,4 @@
-use hbs::{
+use bracket::{
     lexer::{
         collect as lex, Block, Comment, Parameters, RawBlock, RawComment,
         RawStatement, Token,
