@@ -28,4 +28,4 @@ Use the `with` helper to change the current scope:
 ```
 {{/with}}
 
-{{> partial}}
+{{> partial message="Hello from document"}}

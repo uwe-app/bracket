@@ -52,18 +52,25 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         &self.escape
     }
 
+    /// Registry of helpers.
     pub fn helpers(&self) -> &HelperRegistry<'reg> {
         &self.helpers
     }
 
+    /// Mutable reference to the helper registry.
     pub fn helpers_mut(&mut self) -> &mut HelperRegistry<'reg> {
         &mut self.helpers
     }
 
+    /// Registry of templates.
+    ///
+    /// For partials to be located they must exist in this 
+    /// templates collection.
     pub fn templates(&self) -> &Templates<'source> {
         &self.templates
     }
 
+    /// Mutable reference to the templates registry.
     pub fn templates_mut(&mut self) -> &mut Templates<'source> {
         &mut self.templates
     }

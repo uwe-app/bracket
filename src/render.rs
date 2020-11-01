@@ -44,6 +44,10 @@ impl Scope {
         self.locals.insert(format!("@{}", name), value);
     }
 
+    pub fn local(&self, name: &str) -> Option<&Value> {
+        self.locals.get(name)
+    }
+
     pub fn set_base_value(&mut self, value: Value) {
         self.value = Some(value);
     }
@@ -180,7 +184,10 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         } else if path.is_simple() {
             let name = path.as_str();
             if let Some(scope) = scopes.last() {
-                //println!("Look up in current scope...");
+                println!("Look up in current scope...");
+                if let Some(val) = scope.local(name) {
+                    return Some(val);
+                }
             } else {
                 //println!("Look up in root scope...");
                 let parts =
@@ -328,11 +335,14 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         node: &'source Node<'source>,
         block: &'source Block<'source>,
     ) -> Result<(), RenderError<'source>> {
-        println!("Render a block...");
+
         let call = block.call();
 
         if call.is_partial() {
+            // TODO: support passing block to the partial
+            // TODO: as @partial-block
             println!("Got partial call for block!");
+
         } else {
             println!("Call the block...");
             //println!("Evaluating a call {:?}", call);
