@@ -55,7 +55,7 @@ impl Scope {
 
 pub struct Render<'reg, 'source, 'render> {
     source: &'source str,
-    registry: &'reg Registry<'reg>,
+    registry: &'reg Registry<'reg, 'source>,
     root: Value,
     writer: Box<&'render mut dyn Output>,
     scopes: Vec<Scope>,
@@ -69,7 +69,7 @@ pub struct Render<'reg, 'source, 'render> {
 impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     pub fn new<T>(
         source: &'source str,
-        registry: &'reg Registry<'reg>,
+        registry: &'reg Registry<'reg, 'source>,
         data: &T,
         writer: Box<&'render mut dyn Output>,
     ) -> Result<Self, RenderError<'source>>

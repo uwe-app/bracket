@@ -52,7 +52,7 @@ impl<'source> Template<'source> {
     /// Render this template to the given writer.
     pub fn render<'reg, T>(
         &self,
-        registry: &'reg Registry<'reg>,
+        registry: &'reg Registry<'reg, 'source>,
         name: &str,
         data: &T,
         writer: &mut impl Output,

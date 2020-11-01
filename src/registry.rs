@@ -76,14 +76,14 @@ impl Loader {
     }
 }
 
-pub struct Registry<'reg> {
-    templates: HashMap<&'reg str, Template<'reg>>,
+pub struct Registry<'reg, 'source> {
+    templates: HashMap<&'reg str, Template<'source>>,
     helpers: HashMap<&'reg str, Box<dyn Helper + 'reg>>,
     block_helpers: HashMap<&'reg str, Box<dyn BlockHelper + 'reg>>,
     escape: EscapeFn,
 }
 
-impl<'reg> Registry<'reg> {
+impl<'reg, 'source> Registry<'reg, 'source> {
 
     pub fn new() -> Self {
         let mut reg = Self {
@@ -154,14 +154,14 @@ impl<'reg> Registry<'reg> {
         Ok(Template::compile(s, options).map_err(Error::from)?)
     }
 
-    pub fn templates(&self) -> &HashMap<&str, Template<'reg>> {
+    pub fn templates(&self) -> &HashMap<&str, Template<'source>> {
         &self.templates
     }
 
     pub fn register_template(
         &mut self,
         name: &'reg str,
-        template: Template<'reg>,
+        template: Template<'source>,
     ) {
         self.templates.insert(name, template);
     }
@@ -169,18 +169,18 @@ impl<'reg> Registry<'reg> {
     pub fn unregister_template(
         &mut self,
         name: &'reg str,
-    ) -> Option<Template<'reg>> {
+    ) -> Option<Template<'source>> {
         self.templates.remove(name)
     }
 
-    pub fn get_template(&self, name: &str) -> Option<&Template<'_>> {
+    pub fn get_template(&self, name: &str) -> Option<&Template<'source>> {
         self.templates.get(name)
     }
 
     pub fn register_template_string(
         &mut self,
         name: &'reg str,
-        source: &'reg str,
+        source: &'source str,
         options: ParserOptions,
     ) -> Result<()> {
         let tpl = Registry::compile(source, options)?;
