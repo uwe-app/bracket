@@ -202,6 +202,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         call.arguments()
             .iter()
             .map(|p| {
+                println!("Param {:?}", p);
                 match p {
                     ParameterValue::Json(val) => val.clone(),
                     ParameterValue::Path(ref path) => {
@@ -211,7 +212,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                     }
                     _ => {
                         // TODO: evaluate sub-expressions
-                        Value::Null
+                        panic!("Evaluate sub expression in argument");
+                        //Value::Null
                     }
                 }
             })

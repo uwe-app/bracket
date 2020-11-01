@@ -4,6 +4,8 @@ This is a markdown document using handlebars for templating. The first header is
 
 > {{@root.title}}
 
+## Log
+
 To help debug our templates we can use the `log` helper: `\{{log "Message to print"}}`.
 
 {{~log "Trace message" level="trace"~}}
@@ -12,11 +14,19 @@ To help debug our templates we can use the `log` helper: `\{{log "Message to pri
 {{log "Info message"~}}
 {{log "Error message" level="error"}}
 
+## JSON
+
 The `json` helper is useful for debugging template data, for example: `\{{json this}}` yields:
 
 ```
 {{json this}}
 ```
+
+## Debugging
+
+Use sub expressions to combine logging with JSON evaluation `\{{log (json this)}}`.
+
+{{log (json this)}}
 
 ## With
 
