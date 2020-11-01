@@ -4,8 +4,8 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 use crate::{
-    error::RenderError,
-    helper::{Helper, BlockHelper},
+    error::{HelperError, RenderError},
+    helper::{Helper, BlockHelper, Context},
     json,
     output::Output,
     parser::ast::{Call, CallTarget, Node, Block, ParameterValue, Path},
@@ -41,42 +41,6 @@ impl Scope {
 
     pub fn base_value(&self) -> &Option<Value> {
         &self.value
-    }
-}
-
-pub struct Context<'source> {
-    name: &'source str,
-    arguments: Vec<Value>,
-    hash: HashMap<String, &'source Value>,
-}
-
-impl<'source> Context<'source> {
-    pub fn new(
-        name: &'source str,
-        arguments: Vec<Value>,
-        hash: HashMap<String, &'source Value>,
-    ) -> Self {
-        Self {
-            name,
-            arguments,
-            hash,
-        }
-    }
-
-    pub fn name(&self) -> &'source str {
-        self.name
-    }
-
-    pub fn arguments(&self) -> &Vec<Value> {
-        &self.arguments
-    }
-
-    pub fn hash(&self) -> &HashMap<String, &'source Value> {
-        &self.hash
-    }
-
-    pub fn is_truthy(&self, value: &Value) -> bool {
-        json::is_truthy(value)
     }
 }
 
@@ -266,7 +230,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         template: &'source Node<'source>,
     ) -> Result<(), RenderError<'source>> {
         rc.block_template_node = Some(template);
-        //helper.call(rc, ctx)?;
+        helper.call(rc, ctx)?;
         Ok(())
     }
 
@@ -279,9 +243,10 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             CallTarget::Path(ref path) => {
                 if path.is_simple() {
                     if let Some(template) = self.registry.get_template(path.as_str()) {
-                        println!("Got a template node {:?}", template.node());
+                        println!("RENDER THE PARTIAL");
                     } else {
-                        panic!("Partial not found");
+                        return Err(
+                            RenderError::PartialNotFound(path.as_str()));
                     }
                 } else {
                     panic!("Partials must be simple identifiers");
@@ -356,7 +321,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                             self.registry.get_block_helper(path.as_str())
                         {
                             println!(
-                                "Found a helper for the block path {}", path.as_str());
+                                "Found a helper for the block path: {}", path.as_str());
 
                             let mut args = self.arguments(call);
                             let mut hash = Render::hash(call);
@@ -378,7 +343,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
     pub(crate) fn render_inner(
         &mut self,
-    ) -> Result<(), RenderError<'source>> {
+    ) -> Result<(), HelperError> {
 
         //println!("RENDER INNER BLOCK");
 
@@ -387,7 +352,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             match node {
                 Node::Block(ref block) => {
                     for node in block.nodes().iter() {
-                        self.render_node(node)?;
+                        self.render_node(node)
+                            .map_err(|e| HelperError::Render(format!("{:?}", e)))?;
                     }
                 }
                 _ => {}
@@ -453,7 +419,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             }
             Node::Block(ref block) => {
                 println!("got block to render...");
-                self.block(node, block);
+                self.block(node, block)?;
                 // TODO: call partial / helper for blocks
                 //for node in block.nodes().iter() {
                     //self.render(node)?;

@@ -1,8 +1,8 @@
 //! Helper to print log messages.
 use crate::{
-    error::RenderError,
-    helper::{Helper, Result},
-    render::{Render, Context}
+    error::HelperError as Error,
+    helper::{Helper, Result, Context},
+    render::Render
 };
 
 use log::*;
@@ -11,23 +11,17 @@ pub(crate) struct LogHelper;
 
 impl Helper for LogHelper {
     fn call<'reg, 'source, 'render>(
-        &'source self,
+        &self,
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &Context<'source>,
-    ) -> Result<'source> {
+    ) -> Result {
 
         let message = ctx
             .arguments()
             .get(0)
-            .ok_or_else(|| {
-                RenderError::from("Arity error for `log`, string message expected")
-            })?
+            .ok_or_else(|| Error::ArityExact(ctx.name().to_string(), 1))?
             .as_str()
-            .ok_or_else(|| {
-                RenderError::from(
-                    "Type error for `log` helper, string expected",
-                )
-            })?
+            .ok_or_else(|| Error::ArgumentTypeString(ctx.name().to_string(), 1))?
             .to_string();
 
         let level = ctx

@@ -70,6 +70,7 @@ impl<'source> ErrorInfo<'source> {
 pub enum Error<'source> {
     Syntax(SyntaxError<'source>),
     Render(RenderError<'source>),
+    TemplateNotFound(String),
 }
 
 impl fmt::Display for Error<'_> {
@@ -77,6 +78,9 @@ impl fmt::Display for Error<'_> {
         match *self {
             Self::Syntax(ref e) => fmt::Display::fmt(e, f),
             Self::Render(ref e) => fmt::Display::fmt(e, f),
+            Self::TemplateNotFound(ref name) => {
+                write!(f, "Template not found {}", name) 
+            },
         }
     }
 }
@@ -86,6 +90,7 @@ impl fmt::Debug for Error<'_> {
         match *self {
             Self::Syntax(ref e) => fmt::Debug::fmt(e, f),
             Self::Render(ref e) => fmt::Debug::fmt(e, f),
+            Self::TemplateNotFound(ref e) => fmt::Display::fmt(e, f),
         }
     }
 }
@@ -280,27 +285,36 @@ impl fmt::Debug for SyntaxError<'_> {
     }
 }
 
-#[derive(thiserror::Error, Debug)]
+#[derive(thiserror::Error)]
 pub enum RenderError<'source> {
-    #[error("{0}")]
-    Message(String),
-
-    #[error("Template not found {0}")]
-    TemplateNotFound(String),
-
-    #[error("Partial template not found {0}")]
+    #[error("Partial '{0}' not found")]
     PartialNotFound(&'source str),
 
     #[error(transparent)]
+    Helper(#[from] HelperError),
+
+    #[error(transparent)]
     Io(#[from] std::io::Error),
+
     #[error(transparent)]
     Json(#[from] serde_json::Error),
+}
+
+impl fmt::Debug for RenderError<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            Self::PartialNotFound(_) => fmt::Display::fmt(self, f),
+            Self::Helper(ref e) => fmt::Display::fmt(self, f),
+            Self::Io(ref e) => fmt::Debug::fmt(e, f),
+            Self::Json(ref e) => fmt::Debug::fmt(e, f),
+        }
+    }
 }
 
 impl PartialEq for RenderError<'_> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Self::TemplateNotFound(ref s), Self::TemplateNotFound(ref o)) => {
+            (Self::PartialNotFound(ref s), Self::PartialNotFound(ref o)) => {
                 s == o
             }
             _ => false,
@@ -310,14 +324,34 @@ impl PartialEq for RenderError<'_> {
 
 impl Eq for RenderError<'_> {}
 
-impl From<String> for RenderError<'_> {
-    fn from(s: String) -> Self {
-        RenderError::Message(s)
-    }
+#[derive(thiserror::Error, Debug)]
+pub enum HelperError {
+    /// Generic error message for helpers.
+    #[error("{0}")]
+    Message(String),
+
+    /// Wrapper for render errors that occur via helpers.
+    #[error("{0}")]
+    Render(String),
+
+    /// Error when supplied arguments do not match an exact arity.
+    #[error("Helper '{0}' got invalid arity expects {1} arguments(s)")]
+    ArityExact(String, usize),
+
+    /// Error when supplied arguments do not match an arity range.
+    #[error("Helper '{0}' got invalid arity expects {1}-{2} argument(s)")]
+    ArityRange(String, usize, usize),
+
+    /// Error when a helper expects a string argument.
+    #[error("Helper '{0}' got invalid argument at index {1}, string expected")]
+    ArgumentTypeString(String, usize),
+
+    /// Transparent wrapper for input output errors.
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+
+    /// Transparent wrapper for JSON errors.
+    #[error(transparent)]
+    Json(#[from] serde_json::Error),
 }
 
-impl From<&str> for RenderError<'_> {
-    fn from(s: &str) -> Self {
-        RenderError::from(s.to_owned())
-    }
-}

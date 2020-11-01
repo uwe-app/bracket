@@ -147,7 +147,7 @@ impl<'reg, 'source> Registry<'reg> {
         T: Serialize,
     {
         let tpl = self.get_template(name).ok_or_else(|| {
-            Error::from(RenderError::TemplateNotFound(name.to_string())) 
+            Error::TemplateNotFound(name.to_string())
         })?;
         tpl.render(self, name, data, writer)?;
         Ok(())

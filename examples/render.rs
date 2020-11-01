@@ -21,8 +21,12 @@ fn main() -> Result<'static, ()> {
     });
     let mut registry = Registry::new();
     registry.register_template_string(name, content, Default::default());
-    let result = registry.render(name, &data).unwrap();
-    println!("{}", result);
+    match registry.render(name, &data) {
+        Ok(result) => {
+            println!("{}", result);
+        }
+        Err(e) => log::error!("{:?}", e),
+    }
 
     Ok(())
 }
