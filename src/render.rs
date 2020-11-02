@@ -1,6 +1,6 @@
 //! Render a template to output using the data.
 use serde::Serialize;
-use serde_json::Value;
+use serde_json::{Value, Map};
 use std::collections::HashMap;
 
 use crate::{
@@ -21,30 +21,34 @@ type HelperValue = Option<Value>;
 #[derive(Debug)]
 pub struct Scope {
     value: Option<Value>,
-    locals: HashMap<String, Value>,
+    locals: Value,
 }
 
 impl Scope {
     pub fn new() -> Self {
         Self {
-            locals: HashMap::new(),
+            locals: Value::Object(Map::new()),
             value: None,
         }
     }
 
-    pub fn new_locals(locals: HashMap<String, Value>) -> Self {
+    pub fn new_locals(locals: Map<String, Value>) -> Self {
         Self {
-            locals,
+            locals: Value::Object(locals),
             value: None,
         }
+    }
+
+    pub fn as_value(&self) -> &Value {
+        &self.locals
     }
 
     pub fn set_local(&mut self, name: &str, value: Value) {
-        self.locals.insert(format!("@{}", name), value);
+        self.locals.as_object_mut().unwrap().insert(format!("@{}", name), value);
     }
 
     pub fn local(&self, name: &str) -> Option<&Value> {
-        self.locals.get(name)
+        self.locals.as_object().unwrap().get(name)
     }
 
     pub fn set_base_value(&mut self, value: Value) {
@@ -160,7 +164,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 .skip(1)
                 .map(|c| c.as_str())
                 .collect();
-            return json::find_parts(parts, root);
+            json::find_parts(parts, root)
         // Handle explicit this only
         } else if path.is_explicit() && path.components().len() == 1 {
             let this = if let Some(scope) = scopes.last() {
@@ -172,22 +176,29 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             } else {
                 root
             };
-            return Some(this);
+            Some(this)
+        // Handle local @variable references which must 
+        // be resolved using the current scope
+        } else if path.is_local() {
+            if let Some(scope) = scopes.last() {
+                let parts =
+                    path.components().iter().map(|c| c.as_str()).collect();
+                json::find_parts(parts, scope.as_value())
+            } else { None }
         } else if path.is_simple() {
             let name = path.as_str();
             // Lookup in the current scope
             if let Some(scope) = scopes.last() {
                 if let Some(val) = scope.local(name) {
-                    return Some(val);
-                }
+                    Some(val)
+                } else { None }
             // Lookup in the root scope
             } else {
                 let parts =
                     path.components().iter().map(|c| c.as_str()).collect();
-                return json::find_parts(parts, root);
+                json::find_parts(parts, root)
             }
-        }
-        None
+        } else { None }
     }
 
     fn arguments(&mut self, call: &'source Call<'source>) -> Vec<Value> {
@@ -210,7 +221,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             .collect()
     }
 
-    fn hash(call: &'source Call<'source>) -> HashMap<String, Value> {
+    fn hash(call: &'source Call<'source>) -> Map<String, Value> {
         call.hash()
             .iter()
             .map(|(k, p)| {
@@ -222,7 +233,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                     }
                 }
             })
-            .collect::<HashMap<_, _>>()
+            .collect::<Map<_, _>>()
     }
 
     fn invoke_helper(

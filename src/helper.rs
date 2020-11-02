@@ -1,5 +1,5 @@
 //! Helper trait and types for the default set of helpers.
-use serde_json::{to_string, to_string_pretty, Value};
+use serde_json::{to_string, to_string_pretty, Value, Map};
 use std::collections::HashMap;
 use std::ops::Range;
 
@@ -19,14 +19,14 @@ pub type Result = std::result::Result<(), Error>;
 pub struct Context<'source> {
     name: &'source str,
     arguments: Vec<Value>,
-    hash: HashMap<String, Value>,
+    hash: Map<String, Value>,
 }
 
 impl<'source> Context<'source> {
     pub fn new(
         name: &'source str,
         arguments: Vec<Value>,
-        hash: HashMap<String, Value>,
+        hash: Map<String, Value>,
     ) -> Self {
         Self {
             name,
@@ -43,7 +43,7 @@ impl<'source> Context<'source> {
         &self.arguments
     }
 
-    pub fn hash(&self) -> &HashMap<String, Value> {
+    pub fn hash(&self) -> &Map<String, Value> {
         &self.hash
     }
 

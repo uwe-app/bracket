@@ -332,6 +332,11 @@ impl<'source> Path<'source> {
         self.components.is_empty()
     }
 
+    pub fn is_local(&self) -> bool {
+        return !self.components.is_empty()
+            && self.components.first().unwrap().is_local();
+    }
+
     pub fn is_simple(&self) -> bool {
         return self.components.len() == 1
             && self.components.first().unwrap().1 == ComponentType::Identifier;
