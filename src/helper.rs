@@ -127,7 +127,6 @@ impl BlockHelper for WithHelper {
     }
 }
 
-
 pub(crate) struct EachHelper;
 
 impl BlockHelper for EachHelper {
@@ -151,23 +150,26 @@ impl BlockHelper for EachHelper {
                 while let Some((index, (key, value))) = next_value {
                     next_value = it.next();
                     if let Some(ref mut scope) = rc.scope_mut() {
-                        if next_value.is_none() {
-                            scope.set_local(LAST, Value::Bool(true));
-                        }
                         scope.set_local(FIRST, Value::Bool(index == 0));
+                        scope.set_local(LAST, Value::Bool(next_value.is_none()));
                         scope.set_local(INDEX, Value::Number(Number::from(index)));
                         scope.set_local(KEY, Value::String(key.to_owned()));
-
                         scope.set_base_value(value);
                     }
                     rc.template(template)?;
                 }
             }
-            Value::Array(ref t) => {
-                println!("EACH ON ARRAY");
-                //for (index, value) in t.iter() {
-                
-                //}
+            Value::Array(t) => {
+                let len = t.len();
+                for (index, value) in t.into_iter().enumerate() {
+                    if let Some(ref mut scope) = rc.scope_mut() {
+                        scope.set_local(FIRST, Value::Bool(index == 0));
+                        scope.set_local(LAST, Value::Bool(index == len - 1));
+                        scope.set_local(INDEX, Value::Number(Number::from(index)));
+                        scope.set_base_value(value);
+                    }
+                    rc.template(template)?;
+                }
             }
             _ => todo!("Each only accepts iterables!")
         }

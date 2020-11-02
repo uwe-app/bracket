@@ -40,10 +40,16 @@ Use the `with` helper to change the current scope:
 
 ## Each
 
+The `each` helper can be used to iterate arrays or objects. First let's iterate a list of numbers:
+
 {{#each list}}
-```
-{{{this}}}
-```
+* Item: {{this}}, Index: {{@index}}, First: {{@first}}, Last: {{@last}}
+{{/each}}
+
+When we iterate objects we can also access the `@key` field:
+
+{{#each map}}
+* {{@key}} = {{this}}, Index: {{@index}}, First: {{@first}}, Last: {{@last}}
 {{/each}}
 
 {{> partial message="Hello from document"}}

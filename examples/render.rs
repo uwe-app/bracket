@@ -20,6 +20,11 @@ fn main() -> Result<'static, ()> {
     let data = json!({
         "title": "Handlebars Test Document & Information",
         "list": [1, 2, 3],
+        "map": {
+            "apples": 1,
+            "oranges": 2,
+            "pears": 3,
+        }
     });
 
     let mut loader = Loader::new();
