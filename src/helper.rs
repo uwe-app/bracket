@@ -12,7 +12,7 @@ use crate::{
 };
 
 /// The result that helper functions should return.
-pub type Result<'source> = std::result::Result<Option<Value>, Error>;
+pub type Result = std::result::Result<Option<Value>, Error>;
 pub type AssertResult = std::result::Result<(), Error>;
 
 /// Context for the call to a helper.

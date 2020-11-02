@@ -14,10 +14,7 @@ use crate::{
     RenderResult,
 };
 
-#[derive(Debug)]
-pub enum HelperValue<'source> {
-    Json(Option<&'source Value>),
-}
+type HelperValue = Option<Value>;
 
 #[derive(Debug)]
 pub struct Scope {
@@ -200,7 +197,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         call.arguments()
             .iter()
             .map(|p| {
-                println!("Param {:?}", p);
                 match p {
                     ParameterValue::Json(val) => val.clone(),
                     ParameterValue::Path(ref path) => {
@@ -235,20 +231,35 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
     fn invoke_helper(
         &mut self,
-        ctx: &Context<'source>,
-        helper: &'reg Box<dyn Helper + 'reg>,
-    ) -> RenderResult<'source, Option<Value>> {
-        helper.call(self, ctx)?;
+        name: &'source str,
+        call: &'source Call<'source>,
+    ) -> RenderResult<'source, HelperValue> {
+
+        if let Some(helper) = self.helpers.get(name) {
+            let args = self.arguments(call);
+            let hash = Render::hash(call);
+            let context = Context::new(name, args, hash);
+            // FIXME: return the result from invoking the helper
+            return Ok(helper.call(self, &context)?)
+        }
+
         Ok(None)
     }
 
     fn invoke_block_helper(
-        rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &Context<'source>,
-        helper: &'reg Box<dyn BlockHelper + 'reg>,
+        &mut self,
+        name: &'source str,
+        call: &'source Call<'source>,
         template: &'source Node<'source>,
     ) -> RenderResult<'source, ()> {
-        helper.call(rc, ctx, template)?;
+        if let Some(helper) =
+            self.helpers.get_block(name)
+        {
+            let args = self.arguments(call);
+            let hash = Render::hash(call);
+            let context = Context::new(name, args, hash);
+            helper.call(self, &context, template)?;
+        }
         Ok(())
     }
 
@@ -289,44 +300,51 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     fn statement(
         &mut self,
         call: &'source Call<'source>,
-    ) -> Result<HelperValue<'_>, RenderError<'source>> {
+    ) -> Result<HelperValue, RenderError<'source>> {
+
+        println!("Statement {:?}", call.as_str());
+
         if call.is_partial() {
-            println!("GOT PARTIAL CALL FOR STATEMENT!");
             let name = self.get_partial_name(call).ok_or_else(|| {
                 RenderError::PartialNameResolve(call.as_str())
             })?;
             Render::render_partial(self, call, name)?;
         } else {
-            //println!("Evaluating a call {:?}", call);
             match call.target() {
                 CallTarget::Path(ref path) => {
-                    if path.is_simple() {
-                        if let Some(helper) = self.helpers.get(path.as_str()) {
-                            let args = self.arguments(call);
-                            let hash = Render::hash(call);
-                            let ctx = Context::new(path.as_str(), args, hash);
-
-                            // FIXME: return the result from invoking the helper
-                            Render::invoke_helper(self, &ctx, helper)?;
-                        } else {
-                            return Ok(HelperValue::Json(Render::lookup(
-                                path,
-                                &self.root,
-                                &self.scopes,
-                            )));
-                        }
-                    } else {
-                        return Ok(HelperValue::Json(Render::lookup(
+                    // Explicit paths should resolve to a lookup
+                    if path.is_explicit() {
+                        return Ok(Render::lookup(
                             path,
                             &self.root,
                             &self.scopes,
-                        )));
+                        ).cloned());
+                    // Simple paths may be helpers
+                    } else if path.is_simple() {
+                        if let Some(_) = self.helpers.get(path.as_str()) {
+                            self.invoke_helper(path.as_str(), call);
+                        } else {
+                            if let Some(value) = Render::lookup(
+                                path, &self.root, &self.scopes).cloned().take() {
+                                return Ok(Some(value));
+                            } else {
+                                panic!("Missing variable with path {:?}", path);
+                            }
+                            // TODO: helper does not exist so try to resolve a variable
+                            // TODO: otherwise fallback to missing variable handling
+                        }
+                    } else {
+                        return Ok(Render::lookup(
+                            path,
+                            &self.root,
+                            &self.scopes,
+                        ).cloned());
                     }
                 }
                 _ => todo!("Handle sub expressions"),
             }
         }
-        Ok(HelperValue::Json(None))
+        Ok(None)
     }
 
     fn block(
@@ -346,23 +364,24 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             match call.target() {
                 CallTarget::Path(ref path) => {
                     if path.is_simple() {
-                        if let Some(helper) =
-                            self.helpers.get_block(path.as_str())
-                        {
-                            println!(
-                                "Found a helper for the block path: {}",
-                                path.as_str()
-                            );
+                        self.invoke_block_helper(path.as_str(), call, node)?;
+                        //if let Some(helper) =
+                            //self.helpers.get_block(path.as_str())
+                        //{
+                            //println!(
+                                //"Found a helper for the block path: {}",
+                                //path.as_str()
+                            //);
 
-                            let args = self.arguments(call);
-                            let hash = Render::hash(call);
-                            let context =
-                                Context::new(path.as_str(), args, hash);
+                            //let args = self.arguments(call);
+                            //let hash = Render::hash(call);
+                            //let context =
+                                //Context::new(path.as_str(), args, hash);
 
-                            Render::invoke_block_helper(
-                                self, &context, helper, node,
-                            )?;
-                        }
+                            //self.invoke_block_helper(
+                                //&context, helper, node,
+                            //)?;
+                        //}
                     }
                 }
                 _ => todo!("Handle sub expressions"),
@@ -432,19 +451,23 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 }
             }
             Node::Statement(ref call) => {
-                let result = self.statement(call)?;
-                match result {
-                    HelperValue::Json(maybe_json) => {
-                        //println!("Got maybe json {:?}", maybe_json);
-                        if let Some(value) = maybe_json {
-                            let val = json::stringify(value)?;
-                            //println!("Got a json string result {}", val);
-                            self.write_str(&val, call.is_escaped())?;
-                        } else {
-                            //todo!("Error on missing varaible.");
-                        }
-                    }
+                if let Some(ref value) = self.statement(call)? {
+                    let val = json::stringify(value)?;
+                    //println!("Got a json string result {}", val);
+                    self.write_str(&val, call.is_escaped())?;
                 }
+                //match result {
+                    //HelperValue::Json(maybe_json) => {
+                        ////println!("Got maybe json {:?}", maybe_json);
+                        //if let Some(value) = maybe_json {
+                            //let val = json::stringify(value)?;
+                            ////println!("Got a json string result {}", val);
+                            //self.write_str(&val, call.is_escaped())?;
+                        //} else {
+                            ////todo!("Error on missing varaible.");
+                        //}
+                    //}
+                //}
             }
             Node::Block(ref block) => {
                 println!("got block to render...");
