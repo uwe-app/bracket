@@ -104,50 +104,50 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         })
     }
 
+    /// Get a mutable reference to the output writer.
     pub fn out(&mut self) -> &mut Box<&'render mut dyn Output> {
         &mut self.writer
     }
 
-    fn write_str(
-        &mut self,
-        s: &str,
-        escape: bool,
-    ) -> Result<usize, RenderError<'source>> {
-        let val = if self.trim_start { s.trim_start() } else { s };
-        let val = if self.trim_end { val.trim_end() } else { val };
-        if val.is_empty() {
-            return Ok(0);
-        }
-
-        if escape {
-            let escaped = (self.escape)(val);
-            Ok(self.writer.write_str(&escaped).map_err(RenderError::from)?)
-        } else {
-            Ok(self.writer.write_str(val).map_err(RenderError::from)?)
-        }
-    }
-
+    /// Push a scope onto the stack.
     pub fn push_scope(&mut self, scope: Scope) {
         self.scopes.push(scope);
     }
 
+    /// Remove a scope from the stack.
     pub fn pop_scope(&mut self) -> Option<Scope> {
         self.scopes.pop()
     }
 
+    /// Get a mutable reference to the current scope.
     pub fn scope_mut(&mut self) -> Option<&mut Scope> {
         self.scopes.last_mut()
     }
 
+    /// Reference to the root data for the render.
     pub fn root(&self) -> &Value {
         &self.root
     }
 
-    pub fn scopes(&mut self) -> &mut Vec<Scope> {
-        &mut self.scopes
+    /// Render an inner template.
+    ///
+    /// Block helpers should call this when they want to render an inner template.
+    pub fn template(
+        &mut self,
+        node: &'source Node<'source>,
+    ) -> Result<(), HelperError> {
+        match node {
+            Node::Block(ref block) => {
+                for node in block.nodes().iter() {
+                    self.render_helper(node)?;
+                }
+            }
+            _ => return self.render_helper(node),
+        }
+        Ok(())
     }
 
-    /// Infallible path lookup.
+    /// Infallible variable lookup by path.
     fn lookup(&'source self, path: &'source Path) -> Option<&'source Value> {
         //println!("Lookup path {:?}", path.as_str());
 
@@ -199,6 +199,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         } else { None }
     }
 
+    /// Create the context arguments list.
     fn arguments(&mut self, call: &'source Call<'source>) -> Vec<Value> {
         call.arguments()
             .iter()
@@ -219,6 +220,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             .collect()
     }
 
+    /// Create the context hash parameters.
     fn hash(call: &'source Call<'source>) -> Map<String, Value> {
         call.hash()
             .iter()
@@ -386,24 +388,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         Ok(())
     }
 
-    /// Render an inner template.
-    ///
-    /// Block helpers should call this when they want to render an inner template.
-    pub fn template(
-        &mut self,
-        node: &'source Node<'source>,
-    ) -> Result<(), HelperError> {
-        match node {
-            Node::Block(ref block) => {
-                for node in block.nodes().iter() {
-                    self.render_helper(node)?;
-                }
-            }
-            _ => return self.render_helper(node),
-        }
-        Ok(())
-    }
-
     /// Render and return a helper result wrapping the underlying render error.
     pub(crate) fn render_helper(
         &mut self,
@@ -457,29 +441,11 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             Node::Statement(ref call) => {
                 if let Some(ref value) = self.statement(call)? {
                     let val = json::stringify(value)?;
-                    //println!("Got a json string result {}", val);
                     self.write_str(&val, call.is_escaped())?;
                 }
-                //match result {
-                //HelperValue::Json(maybe_json) => {
-                ////println!("Got maybe json {:?}", maybe_json);
-                //if let Some(value) = maybe_json {
-                //let val = json::stringify(value)?;
-                ////println!("Got a json string result {}", val);
-                //self.write_str(&val, call.is_escaped())?;
-                //} else {
-                ////todo!("Error on missing varaible.");
-                //}
-                //}
-                //}
             }
             Node::Block(ref block) => {
-                println!("got block to render...");
                 self.block(node, block)?;
-                // TODO: call partial / helper for blocks
-                //for node in block.nodes().iter() {
-                //self.render(node)?;
-                //}
             }
             _ => todo!("Render other node types"),
         }
@@ -488,4 +454,24 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
         Ok(())
     }
+
+    fn write_str(
+        &mut self,
+        s: &str,
+        escape: bool,
+    ) -> Result<usize, RenderError<'source>> {
+        let val = if self.trim_start { s.trim_start() } else { s };
+        let val = if self.trim_end { val.trim_end() } else { val };
+        if val.is_empty() {
+            return Ok(0);
+        }
+
+        if escape {
+            let escaped = (self.escape)(val);
+            Ok(self.writer.write_str(&escaped).map_err(RenderError::from)?)
+        } else {
+            Ok(self.writer.write_str(val).map_err(RenderError::from)?)
+        }
+    }
+
 }
