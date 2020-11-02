@@ -323,8 +323,12 @@ impl From<serde_json::Error> for RenderError<'_> {
 impl fmt::Display for RenderError<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            Self::PartialNameResolve(name) => write!(f, "Unable to resolve partial name from '{0}'", name),
-            Self::PartialNotFound(name) => write!(f, "Partial '{0}' not found", name),
+            Self::PartialNameResolve(name) => {
+                write!(f, "Unable to resolve partial name from '{}'", name)
+            }
+            Self::PartialNotFound(name) => {
+                write!(f, "Partial '{}' not found", name)
+            }
             Self::Helper(ref e) => fmt::Display::fmt(self, f),
             Self::Io(ref e) => fmt::Debug::fmt(e, f),
             Self::Json(ref e) => fmt::Debug::fmt(e, f),
@@ -357,36 +361,49 @@ impl PartialEq for RenderError<'_> {
 
 impl Eq for RenderError<'_> {}
 
-#[derive(thiserror::Error, Debug)]
+#[derive(Debug)]
 pub enum HelperError {
     /// Generic error message for helpers.
-    #[error("{0}")]
     Message(String),
-
-    /// Wrapper for render errors that occur via helpers; for example
-    /// when rendering inner templates.
-    #[error("{0}")]
-    Render(String),
-
     /// Error when supplied arguments do not match an exact arity.
-    #[error("Helper '{0}' got invalid arity expects {1} arguments(s)")]
     ArityExact(String, usize),
-
     /// Error when supplied arguments do not match an arity range.
-    #[error("Helper '{0}' got invalid arity expects {1}-{2} argument(s)")]
     ArityRange(String, usize, usize),
-
     /// Error when a helper expects a string argument.
-    #[error("Helper '{0}' got invalid argument at index {1}, string expected")]
     ArgumentTypeString(String, usize),
+    /// Proxy for render errors that occur via helpers; for example
+    /// when rendering inner templates.
+    Render(String),
+    /// Proxy I/O errors.
+    Io(IoError),
+    /// Proxy JSON errors.
+    Json(serde_json::Error),
+}
 
-    /// Transparent wrapper for input output errors.
-    #[error(transparent)]
-    Io(#[from] IoError),
-
-    /// Transparent wrapper for JSON errors.
-    #[error(transparent)]
-    Json(#[from] serde_json::Error),
+impl fmt::Display for HelperError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            Self::Message(ref name) => write!(f, "{}", name),
+            Self::ArityExact(ref name, ref num) => write!(
+                f,
+                "Helper '{}' got invalid arity expects {} arguments(s)",
+                name, num
+            ),
+            Self::ArityRange(ref name, ref from, ref to) => write!(
+                f,
+                "Helper '{}' got invalid arity expects {}-{} argument(s)",
+                name, from, to
+            ),
+            Self::ArgumentTypeString(ref name, ref index) => write!(
+                f,
+                "Helper '{}' got invalid argument at index {}, string expected",
+                name, index
+            ),
+            Self::Render(ref e) => fmt::Display::fmt(e, f),
+            Self::Io(ref e) => fmt::Debug::fmt(e, f),
+            Self::Json(ref e) => fmt::Debug::fmt(e, f),
+        }
+    }
 }
 
 impl From<std::io::Error> for HelperError {
@@ -395,12 +412,25 @@ impl From<std::io::Error> for HelperError {
     }
 }
 
+impl From<serde_json::Error> for HelperError {
+    fn from(err: serde_json::Error) -> Self {
+        Self::Json(err)
+    }
+}
+
 /// Wrapper for IO errors that implements `PartialEq` to
 /// facilitate easier testing using `assert_eq!()`.
-#[derive(thiserror::Error, Debug)]
+#[derive(Debug)]
 pub enum IoError {
-    #[error(transparent)]
-    Io(#[from] std::io::Error),
+    Io(std::io::Error),
+}
+
+impl fmt::Display for IoError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            Self::Io(ref e) => fmt::Debug::fmt(e, f),
+        }
+    }
 }
 
 impl PartialEq for IoError {

@@ -6,7 +6,9 @@ use std::collections::HashMap;
 use crate::{
     error::{HelperError, RenderError},
     escape::EscapeFn,
-    helper::{BlockHelper, Context, Helper, HelperRegistry, Result as HelperResult},
+    helper::{
+        BlockHelper, Context, Helper, HelperRegistry, Result as HelperResult,
+    },
     json,
     output::Output,
     parser::ast::{Block, Call, CallTarget, Node, ParameterValue, Path},
@@ -194,11 +196,10 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             .map(|p| {
                 match p {
                     ParameterValue::Json(val) => val.clone(),
-                    ParameterValue::Path(ref path) => {
-                        self.lookup(path)
-                            .map(|v| v.clone())
-                            .unwrap_or(Value::Null)
-                    }
+                    ParameterValue::Path(ref path) => self
+                        .lookup(path)
+                        .map(|v| v.clone())
+                        .unwrap_or(Value::Null),
                     _ => {
                         // TODO: evaluate sub-expressions
                         panic!("Evaluate sub expression in argument");
@@ -229,13 +230,12 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         name: &'source str,
         call: &'source Call<'source>,
     ) -> RenderResult<'source, HelperValue> {
-
         if let Some(helper) = self.helpers.get(name) {
             let args = self.arguments(call);
             let hash = Render::hash(call);
             let context = Context::new(name, args, hash);
             // FIXME: return the result from invoking the helper
-            return Ok(helper.call(self, &context)?)
+            return Ok(helper.call(self, &context)?);
         }
 
         Ok(None)
@@ -247,9 +247,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         call: &'source Call<'source>,
         template: &'source Node<'source>,
     ) -> RenderResult<'source, ()> {
-        if let Some(helper) =
-            self.helpers.get_block(name)
-        {
+        if let Some(helper) = self.helpers.get_block(name) {
             let args = self.arguments(call);
             let hash = Render::hash(call);
             let context = Context::new(name, args, hash);
@@ -278,7 +276,10 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         Ok(())
     }
 
-    fn get_partial_name(&self, call: &'source Call<'source>) -> Option<&'source str> {
+    fn get_partial_name(
+        &self,
+        call: &'source Call<'source>,
+    ) -> Option<&'source str> {
         match call.target() {
             CallTarget::Path(ref path) => {
                 if path.is_simple() {
@@ -296,7 +297,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         &mut self,
         call: &'source Call<'source>,
     ) -> Result<HelperValue, RenderError<'source>> {
-
         //println!("Statement {:?}", call.as_str());
 
         if call.is_partial() {
@@ -313,9 +313,11 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                     // Simple paths may be helpers
                     } else if path.is_simple() {
                         if let Some(_) = self.helpers.get(path.as_str()) {
-                            return self.invoke_helper(path.as_str(), call)
+                            return self.invoke_helper(path.as_str(), call);
                         } else {
-                            if let Some(value) = self.lookup(path).cloned().take() {
+                            if let Some(value) =
+                                self.lookup(path).cloned().take()
+                            {
                                 return Ok(Some(value));
                             } else {
                                 panic!("Missing variable with path {:?}", path);
@@ -352,21 +354,21 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                     if path.is_simple() {
                         self.invoke_block_helper(path.as_str(), call, node)?;
                         //if let Some(helper) =
-                            //self.helpers.get_block(path.as_str())
+                        //self.helpers.get_block(path.as_str())
                         //{
-                            //println!(
-                                //"Found a helper for the block path: {}",
-                                //path.as_str()
-                            //);
+                        //println!(
+                        //"Found a helper for the block path: {}",
+                        //path.as_str()
+                        //);
 
-                            //let args = self.arguments(call);
-                            //let hash = Render::hash(call);
-                            //let context =
-                                //Context::new(path.as_str(), args, hash);
+                        //let args = self.arguments(call);
+                        //let hash = Render::hash(call);
+                        //let context =
+                        //Context::new(path.as_str(), args, hash);
 
-                            //self.invoke_block_helper(
-                                //&context, helper, node,
-                            //)?;
+                        //self.invoke_block_helper(
+                        //&context, helper, node,
+                        //)?;
                         //}
                     }
                 }
@@ -451,16 +453,16 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                     self.write_str(&val, call.is_escaped())?;
                 }
                 //match result {
-                    //HelperValue::Json(maybe_json) => {
-                        ////println!("Got maybe json {:?}", maybe_json);
-                        //if let Some(value) = maybe_json {
-                            //let val = json::stringify(value)?;
-                            ////println!("Got a json string result {}", val);
-                            //self.write_str(&val, call.is_escaped())?;
-                        //} else {
-                            ////todo!("Error on missing varaible.");
-                        //}
-                    //}
+                //HelperValue::Json(maybe_json) => {
+                ////println!("Got maybe json {:?}", maybe_json);
+                //if let Some(value) = maybe_json {
+                //let val = json::stringify(value)?;
+                ////println!("Got a json string result {}", val);
+                //self.write_str(&val, call.is_escaped())?;
+                //} else {
+                ////todo!("Error on missing varaible.");
+                //}
+                //}
                 //}
             }
             Node::Block(ref block) => {
