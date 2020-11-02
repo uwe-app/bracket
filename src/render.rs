@@ -193,23 +193,38 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             } else {
                 None
             }
-        } else if path.is_simple() {
-            let name = path.as_str();
+        } else if path.parents() > 0 {
+            // Combine so that the root object is 
+            // treated as a scope
+            let mut all = vec![root];
+            let mut values: Vec<&'source Value> = 
+                scopes
+                .iter()
+                .map(|s| s.as_value())
+                .collect();
+            all.append(&mut values);
+
+            if all.len() > path.parents() as usize {
+                let index: usize = all.len() - (path.parents() as usize + 1);
+                if let Some(value) = all.get(index) {
+                    let parts =
+                        path.components().iter().map(|c| c.as_str()).collect();
+                    json::find_parts(parts, value)
+                } else { None }
+            } else { None }
+        } else {
+            //let name = path.as_str();
             // Lookup in the current scope
             if let Some(scope) = scopes.last() {
-                if let Some(val) = scope.local(name) {
-                    Some(val)
-                } else {
-                    None
-                }
+                let parts =
+                    path.components().iter().map(|c| c.as_str()).collect();
+                json::find_parts(parts, scope.as_value())
             // Lookup in the root scope
             } else {
                 let parts =
                     path.components().iter().map(|c| c.as_str()).collect();
                 json::find_parts(parts, root)
             }
-        } else {
-            None
         }
     }
 
