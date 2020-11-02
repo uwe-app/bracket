@@ -164,13 +164,12 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
         // Handle explicit `@root` reference
         if path.is_root() {
-            let parts = path
+            json::find_parts(
+                path
                 .components()
                 .iter()
                 .skip(1)
-                .map(|c| c.as_str())
-                .collect();
-            json::find_parts(parts, root)
+                .map(|c| c.as_str()), root)
         // Handle explicit this only
         } else if path.is_explicit() && path.components().len() == 1 {
             let this = if let Some(scope) = scopes.last() {
@@ -187,9 +186,9 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         // be resolved using the current scope
         } else if path.is_local() {
             if let Some(scope) = scopes.last() {
-                let parts =
-                    path.components().iter().map(|c| c.as_str()).collect();
-                json::find_parts(parts, scope.as_value())
+                json::find_parts(
+                    path.components().iter().map(|c| c.as_str()),
+                    scope.as_value())
             } else {
                 None
             }
@@ -207,23 +206,22 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             if all.len() > path.parents() as usize {
                 let index: usize = all.len() - (path.parents() as usize + 1);
                 if let Some(value) = all.get(index) {
-                    let parts =
-                        path.components().iter().map(|c| c.as_str()).collect();
-                    json::find_parts(parts, value)
+                    json::find_parts(
+                        path.components().iter().map(|c| c.as_str()),
+                        value)
                 } else { None }
             } else { None }
         } else {
-            //let name = path.as_str();
             // Lookup in the current scope
             if let Some(scope) = scopes.last() {
-                let parts =
-                    path.components().iter().map(|c| c.as_str()).collect();
-                json::find_parts(parts, scope.as_value())
+                json::find_parts(
+                    path.components().iter().map(|c| c.as_str()),
+                    scope.as_value())
             // Lookup in the root scope
             } else {
-                let parts =
-                    path.components().iter().map(|c| c.as_str()).collect();
-                json::find_parts(parts, root)
+                json::find_parts(
+                    path.components().iter().map(|c| c.as_str()),
+                    root)
             }
         }
     }

@@ -1,4 +1,5 @@
 use serde_json::{Error, Value};
+use std::slice::Iter;
 
 pub(crate) fn stringify(value: &Value) -> Result<String, Error> {
     match value {
@@ -8,21 +9,22 @@ pub(crate) fn stringify(value: &Value) -> Result<String, Error> {
 }
 
 // Look up path parts in an object.
-pub(crate) fn find_parts<'a, 'b>(
-    parts: Vec<&'a str>,
+pub(crate) fn find_parts<'a, 'b, I>(
+    mut it: I,
     doc: &'b Value,
-) -> Option<&'b Value> {
+) -> Option<&'b Value> where I: Iterator<Item = &'a str> {
     match doc {
-        Value::Object(ref _map) => {
+        Value::Object(_) | Value::Array(_) => {
             let mut current: Option<&Value> = Some(doc);
-            for (i, part) in parts.iter().enumerate() {
+            let mut next_part = it.next();
+            while let Some(part) = next_part {
                 if let Some(target) = current {
                     current = find_field(&part, target);
-                    if current.is_none() { break }
-                    if i == parts.len() - 1 {
-                        return current
-                    }
                 } else { break }
+                next_part = it.next();
+                if next_part.is_none() && current.is_some() {
+                    return current
+                }
             }
             None
         }
