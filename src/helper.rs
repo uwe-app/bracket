@@ -56,6 +56,10 @@ impl<'source> Context<'source> {
         &self.hash
     }
 
+    pub fn into_hash(self) -> Map<String, Value> {
+        self.hash
+    }
+
     pub fn is_truthy(&self, value: &Value) -> bool {
         json::is_truthy(value)
     }
@@ -116,11 +120,13 @@ impl BlockHelper for WithHelper {
         template: &'source Node<'source>,
     ) -> Result {
         ctx.assert_arity(1..1)?;
+
         let mut args = ctx.into_arguments();
         let target = args.swap_remove(0);
-
-        let scope = rc.push_scope(Scope::new());
-        scope.set_base_value(target.clone());
+        rc.push_scope(Scope::new());
+        if let Some(ref mut scope) = rc.scope_mut() {
+            scope.set_base_value(target);
+        }
         rc.template(template)?;
         rc.pop_scope();
         Ok(())
@@ -142,7 +148,6 @@ impl BlockHelper for EachHelper {
         let target = args.swap_remove(0);
 
         rc.push_scope(Scope::new());
-
         match target {
             Value::Object(t) => {
                 let mut it = t.into_iter().enumerate();
@@ -173,7 +178,6 @@ impl BlockHelper for EachHelper {
             }
             _ => todo!("Each only accepts iterables!")
         }
-
         rc.pop_scope();
 
         Ok(())

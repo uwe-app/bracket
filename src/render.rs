@@ -127,9 +127,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         }
     }
 
-    pub fn push_scope(&mut self, scope: Scope) -> &mut Scope {
+    pub fn push_scope(&mut self, scope: Scope) {
         self.scopes.push(scope);
-        self.scopes.last_mut().unwrap()
     }
 
     pub fn pop_scope(&mut self) -> Option<Scope> {
