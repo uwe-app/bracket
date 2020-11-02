@@ -7,7 +7,7 @@ use crate::{
     error::{HelperError, RenderError},
     escape::EscapeFn,
     helper::{
-        BlockHelper, Context, Helper, HelperRegistry, Result as HelperResult,
+        BlockHelper, Context, Helper, HelperRegistry, Result as HelperResult, BlockTemplate,
     },
     json,
     output::Output,
@@ -285,12 +285,14 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         name: &'source str,
         call: &'source Call<'source>,
         template: &'source Node<'source>,
+        inverse: Option<&'source Node<'source>>,
     ) -> RenderResult<'source, ()> {
         if let Some(helper) = self.helpers.get_block(name) {
             let args = self.arguments(call);
             let hash = Render::hash(call);
             let context = Context::new(name, args, hash);
-            helper.call(self, context, template)?;
+            let block = BlockTemplate::new(template, inverse);
+            helper.call(self, context, block)?;
         }
         Ok(())
     }
@@ -391,7 +393,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             match call.target() {
                 CallTarget::Path(ref path) => {
                     if path.is_simple() {
-                        self.invoke_block_helper(path.as_str(), call, node)?;
+                        self.invoke_block_helper(path.as_str(), call, node, None)?;
                     }
                 }
                 _ => todo!("Handle sub expressions"),

@@ -20,6 +20,33 @@ pub static INDEX: &str = "index";
 pub type ValueResult = std::result::Result<Option<Value>, Error>;
 pub type Result = std::result::Result<(), Error>;
 
+#[derive(Debug)]
+pub struct BlockTemplate<'source> {
+    template: &'source Node<'source>,
+    inverse: Option<&'source Node<'source>>,
+    // TODO: chained if else blocks - when to invoke the Call?
+}
+
+impl<'source> BlockTemplate<'source> {
+    pub fn new(
+        template: &'source Node<'source>,
+        inverse: Option<&'source Node<'source>>,
+    ) -> Self {
+        Self {
+            template,
+            inverse,
+        } 
+    }
+
+    pub fn template(&self) -> &'source Node<'source> {
+        self.template 
+    }
+
+    pub fn inverse(&self) -> &Option<&'source Node<'source>> {
+        &self.inverse
+    }
+}
+
 /// Context for the call to a helper.
 pub struct Context<'source> {
     name: &'source str,
@@ -102,7 +129,8 @@ pub trait BlockHelper: Send + Sync {
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: Context<'source>,
-        template: &'source Node<'source>,
+        block: BlockTemplate<'source>,
+        //template: &'source Node<'source>,
     ) -> Result;
 }
 
@@ -127,7 +155,8 @@ impl BlockHelper for WithHelper {
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: Context<'source>,
-        template: &'source Node<'source>,
+        //template: &'source Node<'source>,
+        block: BlockTemplate<'source>,
     ) -> Result {
         ctx.assert_arity(1..1)?;
 
@@ -137,7 +166,7 @@ impl BlockHelper for WithHelper {
         if let Some(ref mut scope) = rc.scope_mut() {
             scope.set_base_value(target);
         }
-        rc.template(template)?;
+        rc.template(block.template())?;
         rc.pop_scope();
         Ok(())
     }
@@ -150,7 +179,8 @@ impl BlockHelper for EachHelper {
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: Context<'source>,
-        template: &'source Node<'source>,
+        //template: &'source Node<'source>,
+        block: BlockTemplate<'source>,
     ) -> Result {
         ctx.assert_arity(1..1)?;
 
@@ -176,7 +206,7 @@ impl BlockHelper for EachHelper {
                         scope.set_local(KEY, Value::String(key.to_owned()));
                         scope.set_base_value(value);
                     }
-                    rc.template(template)?;
+                    rc.template(block.template())?;
                 }
             }
             Value::Array(t) => {
@@ -191,7 +221,7 @@ impl BlockHelper for EachHelper {
                         );
                         scope.set_base_value(value);
                     }
-                    rc.template(template)?;
+                    rc.template(block.template())?;
                 }
             }
             _ => return Err(Error::IterableExpected(name, 1)),
@@ -209,12 +239,13 @@ impl BlockHelper for IfHelper {
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: Context<'source>,
-        template: &'source Node<'source>,
+        //template: &'source Node<'source>,
+        block: BlockTemplate<'source>,
     ) -> Result {
         ctx.assert_arity(1..1)?;
 
         if rc.is_truthy(ctx.arguments().get(0).unwrap()) {
-            rc.template(template)?;
+            rc.template(block.template())?;
         }
         // TODO: inverse and chained statements!
         Ok(())
