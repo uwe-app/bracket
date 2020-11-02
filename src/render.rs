@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use crate::{
     error::{HelperError, RenderError},
     escape::EscapeFn,
-    helper::{BlockHelper, Context, Helper, HelperRegistry},
+    helper::{BlockHelper, Context, Helper, HelperRegistry, Result as HelperResult},
     json,
     output::Output,
     parser::ast::{Block, Call, CallTarget, Node, ParameterValue, Path},
@@ -378,7 +378,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
     /// Render an inner template.
     ///
-    /// Block helpers should call this when they want to render a block.
+    /// Block helpers should call this when they want to render an inner template.
     pub fn template(
         &mut self,
         node: &'source Node<'source>,
@@ -386,13 +386,21 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         match node {
             Node::Block(ref block) => {
                 for node in block.nodes().iter() {
-                    self.render_node(node)
-                        .map_err(|e| HelperError::Render(format!("{:?}", e)))?;
+                    self.render_helper(node)?;
                 }
             }
-            _ => {}
+            _ => return self.render_helper(node),
         }
         Ok(())
+    }
+
+    /// Render and return a helper result wrapping the underlying render error.
+    pub(crate) fn render_helper(
+        &mut self,
+        node: &'source Node<'source>,
+    ) -> HelperResult {
+        self.render_node(node)
+            .map_err(|e| HelperError::Render(format!("{:?}", e)))
     }
 
     pub(crate) fn render_node(

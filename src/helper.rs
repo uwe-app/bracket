@@ -12,8 +12,8 @@ use crate::{
 };
 
 /// The result that helper functions should return.
-pub type Result = std::result::Result<Option<Value>, Error>;
-pub type AssertResult = std::result::Result<(), Error>;
+pub type ValueResult = std::result::Result<Option<Value>, Error>;
+pub type Result = std::result::Result<(), Error>;
 
 /// Context for the call to a helper.
 pub struct Context<'source> {
@@ -51,7 +51,7 @@ impl<'source> Context<'source> {
         json::is_truthy(value)
     }
 
-    pub fn assert_arity(&self, range: Range<usize>) -> AssertResult {
+    pub fn assert_arity(&self, range: Range<usize>) -> Result {
         if range.start == range.end {
             if self.arguments.len() != range.start {
                 return Err(Error::ArityExact(
@@ -70,7 +70,7 @@ pub trait Helper: Send + Sync {
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &Context<'source>,
-    ) -> Result;
+    ) -> ValueResult;
 }
 
 /// Trait for block helpers.
@@ -117,7 +117,7 @@ impl BlockHelper for WithHelper {
         block.set_base_value(scope.clone());
         rc.template(template)?;
         rc.pop_scope();
-        Ok(None)
+        Ok(())
     }
 }
 
@@ -174,7 +174,7 @@ impl Helper for JsonHelper {
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &Context<'source>,
-    ) -> Result {
+    ) -> ValueResult {
         let target = ctx
             .arguments()
             .get(0)

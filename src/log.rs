@@ -1,7 +1,7 @@
 //! Helper to print log messages.
 use crate::{
     error::HelperError as Error,
-    helper::{Context, Helper, Result},
+    helper::{Context, Helper, ValueResult},
     render::Render,
 };
 
@@ -14,7 +14,7 @@ impl Helper for LogHelper {
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &Context<'source>,
-    ) -> Result {
+    ) -> ValueResult {
         let message = ctx
             .arguments()
             .get(0)
