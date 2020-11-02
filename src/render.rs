@@ -127,8 +127,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         }
     }
 
-    pub fn push_scope(&mut self) -> &mut Scope {
-        let scope = Scope::new();
+    pub fn push_scope(&mut self, scope: Scope) -> &mut Scope {
         self.scopes.push(scope);
         self.scopes.last_mut().unwrap()
     }
@@ -245,8 +244,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             let args = self.arguments(call);
             let hash = Render::hash(call);
             let context = Context::new(name, args, hash);
-            // FIXME: return the result from invoking the helper
-            return Ok(helper.call(self, &context)?);
+            return Ok(helper.call(self, context)?);
         }
 
         Ok(None)
@@ -262,7 +260,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             let args = self.arguments(call);
             let hash = Render::hash(call);
             let context = Context::new(name, args, hash);
-            helper.call(self, &context, template)?;
+            helper.call(self, context, template)?;
         }
         Ok(())
     }

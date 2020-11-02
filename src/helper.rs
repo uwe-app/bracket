@@ -1,5 +1,5 @@
 //! Helper trait and types for the default set of helpers.
-use serde_json::{to_string, to_string_pretty, Value, Map};
+use serde_json::{to_string, to_string_pretty, Value, Map, Number};
 use std::collections::HashMap;
 use std::ops::Range;
 
@@ -8,8 +8,13 @@ use crate::{
     json,
     log::LogHelper,
     parser::ast::Node,
-    render::Render,
+    render::{Render, Scope},
 };
+
+pub static FIRST: &str = "first";
+pub static LAST: &str = "last";
+pub static KEY: &str = "key";
+pub static INDEX: &str = "index";
 
 /// The result that helper functions should return.
 pub type ValueResult = std::result::Result<Option<Value>, Error>;
@@ -43,6 +48,10 @@ impl<'source> Context<'source> {
         &self.arguments
     }
 
+    pub fn into_arguments(self) -> Vec<Value> {
+        self.arguments
+    }
+
     pub fn hash(&self) -> &Map<String, Value> {
         &self.hash
     }
@@ -69,7 +78,7 @@ pub trait Helper: Send + Sync {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &Context<'source>,
+        ctx: Context<'source>,
     ) -> ValueResult;
 }
 
@@ -78,7 +87,7 @@ pub trait BlockHelper: Send + Sync {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &Context<'source>,
+        ctx: Context<'source>,
         template: &'source Node<'source>,
     ) -> Result;
 }
@@ -103,39 +112,73 @@ impl BlockHelper for WithHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &Context<'source>,
+        ctx: Context<'source>,
         template: &'source Node<'source>,
     ) -> Result {
         ctx.assert_arity(1..1)?;
+        let mut args = ctx.into_arguments();
+        let target = args.swap_remove(0);
 
-        let scope = ctx
-            .arguments()
-            .get(0)
-            .ok_or_else(|| Error::ArityExact(ctx.name().to_string(), 1))?;
-
-        let block = rc.push_scope();
-        block.set_base_value(scope.clone());
+        let scope = rc.push_scope(Scope::new());
+        scope.set_base_value(target.clone());
         rc.template(template)?;
         rc.pop_scope();
         Ok(())
     }
 }
 
-/*
+
 pub(crate) struct EachHelper;
 
-impl Helper for EachHelper {
+impl BlockHelper for EachHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        arguments: &mut Vec<&Value>,
-        hash: &mut HashMap<String, &'source Value>,
+        ctx: Context<'source>,
         template: &'source Node<'source>,
     ) -> Result {
-        Ok(None)
+        ctx.assert_arity(1..1)?;
+
+        let mut args = ctx.into_arguments();
+        let target = args.swap_remove(0);
+
+        rc.push_scope(Scope::new());
+
+        match target {
+            Value::Object(t) => {
+                let mut it = t.into_iter().enumerate();
+                let mut next_value = it.next();
+                while let Some((index, (key, value))) = next_value {
+                    next_value = it.next();
+                    if let Some(ref mut scope) = rc.scope_mut() {
+                        if next_value.is_none() {
+                            scope.set_local(LAST, Value::Bool(true));
+                        }
+                        scope.set_local(FIRST, Value::Bool(index == 0));
+                        scope.set_local(INDEX, Value::Number(Number::from(index)));
+                        scope.set_local(KEY, Value::String(key.to_owned()));
+
+                        scope.set_base_value(value);
+                    }
+                    rc.template(template)?;
+                }
+            }
+            Value::Array(ref t) => {
+                println!("EACH ON ARRAY");
+                //for (index, value) in t.iter() {
+                
+                //}
+            }
+            _ => todo!("Each only accepts iterables!")
+        }
+
+        rc.pop_scope();
+
+        Ok(())
     }
 }
 
+/*
 pub(crate) struct IfHelper;
 
 impl Helper for IfHelper {
@@ -173,7 +216,7 @@ impl Helper for JsonHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &Context<'source>,
+        ctx: Context<'source>,
     ) -> ValueResult {
         let target = ctx
             .arguments()
@@ -219,7 +262,7 @@ impl<'reg> HelperRegistry<'reg> {
         //self.register_helper("lookup", Box::new(LookupHelper {}));
 
         self.register_block_helper("with", Box::new(WithHelper {}));
-        //self.register_helper("each", Box::new(EachHelper {}));
+        self.register_block_helper("each", Box::new(EachHelper {}));
         //self.register_helper("if", Box::new(IfHelper {}));
         //self.register_helper("unless", Box::new(UnlessHelper {}));
     }

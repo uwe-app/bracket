@@ -13,7 +13,7 @@ impl Helper for LogHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &Context<'source>,
+        ctx: Context<'source>,
     ) -> ValueResult {
         let message = ctx
             .arguments()
