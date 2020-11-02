@@ -1,18 +1,17 @@
 //! Render a template to output using the data.
 use serde::Serialize;
 use serde_json::{Map, Value};
-use std::collections::HashMap;
 
 use crate::{
     error::{HelperError, RenderError},
     escape::EscapeFn,
     helper::{
-        BlockHelper, Context, Helper, HelperRegistry, Result as HelperResult, BlockTemplate,
+        Context, HelperRegistry, Result as HelperResult, BlockTemplate,
     },
     json,
     output::Output,
     parser::ast::{Block, Call, CallTarget, Node, ParameterValue, Path},
-    template::{Template, Templates},
+    template::Templates,
     RenderResult,
 };
 
@@ -158,6 +157,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     /// Infallible variable lookup by path.
     fn lookup(&'source self, path: &'source Path) -> Option<&'source Value> {
         //println!("Lookup path {:?}", path.as_str());
+        //println!("Lookup path {:?}", path.as_str());
+        //println!("Lookup path {:?}", path);
 
         let root: &'source Value = &self.root;
         let scopes: &'source Vec<Scope> = &self.scopes;
@@ -332,6 +333,20 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         None
     }
 
+    // Fallible version of path lookup.
+    fn resolve(
+        &mut self,
+        path: &'source Path<'source>,
+    ) -> Result<HelperValue, RenderError<'source>> {
+        if let Some(value) =
+            self.lookup(path).cloned().take()
+        {
+            return Ok(Some(value));
+        } else {
+            panic!("Missing variable with path {:?}", path);
+        }
+    }
+
     fn statement(
         &mut self,
         call: &'source Call<'source>,
@@ -354,18 +369,10 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                         if let Some(_) = self.helpers.get(path.as_str()) {
                             return self.invoke_helper(path.as_str(), call);
                         } else {
-                            if let Some(value) =
-                                self.lookup(path).cloned().take()
-                            {
-                                return Ok(Some(value));
-                            } else {
-                                panic!("Missing variable with path {:?}", path);
-                            }
-                            // TODO: helper does not exist so try to resolve a variable
-                            // TODO: otherwise fallback to missing variable handling
+                            return self.resolve(path);
                         }
                     } else {
-                        return Ok(self.lookup(path).cloned());
+                        return self.resolve(path);
                     }
                 }
                 _ => todo!("Handle sub expressions"),

@@ -4,6 +4,8 @@ This is a markdown document using handlebars for templating. The first header is
 
 > {{{@root.title}}}
 
+The number is: {{list.[1]}}
+
 ## Log
 
 To help debug our templates we can use the `log` helper: `\{{log "Message to print"}}`.

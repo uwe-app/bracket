@@ -131,6 +131,9 @@ pub enum Parameters {
     #[regex(r"[./]")]
     PathDelimiter,
 
+    #[regex(r"\[\d+\]+")]
+    ArrayAccess,
+
     #[token("(", priority = 3)]
     StartSubExpression,
 

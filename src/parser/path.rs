@@ -18,7 +18,8 @@ fn is_path_component(lex: &Parameters) -> bool {
         | Parameters::ParentRef
         | Parameters::Identifier
         | Parameters::LocalIdentifier
-        | Parameters::PathDelimiter => true,
+        | Parameters::PathDelimiter
+        | Parameters::ArrayAccess => true,
         _ => false,
     }
 }
@@ -31,6 +32,7 @@ fn component_type(lex: &Parameters) -> ComponentType {
         Parameters::Identifier => ComponentType::Identifier,
         Parameters::LocalIdentifier => ComponentType::LocalIdentifier,
         Parameters::PathDelimiter => ComponentType::Delimiter,
+        Parameters::ArrayAccess => ComponentType::ArrayAccess,
         _ => panic!("Expecting component parameter in parser"),
     }
 }
@@ -215,12 +217,13 @@ pub(crate) fn parse<'source>(
                             _ => {}
                         }
                     }
-                    //println!("Adding component for {:?}", &lex);
+                    println!("Adding path component for {:?}", &lex);
                     path.add_component(Component(
                         source,
                         component_type(&lex),
                         span,
                     ));
+                    println!("Got path value {:?}", path.as_str());
                 } else {
                     next = Some((lex, span));
                     break;

@@ -11,7 +11,6 @@ use crate::{
     helper::HelperRegistry,
     output::Output,
     parser::{ast::Node, Parser, ParserOptions},
-    registry::Registry,
     render::Render,
     RenderResult, Result,
 };

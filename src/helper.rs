@@ -4,8 +4,7 @@ use std::collections::HashMap;
 use std::ops::Range;
 
 use crate::{
-    error::{HelperError as Error, RenderError},
-    json,
+    error::{HelperError as Error},
     log::LogHelper,
     parser::ast::Node,
     render::{Render, Scope},

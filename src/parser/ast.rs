@@ -208,6 +208,7 @@ pub enum ComponentType {
     Identifier,
     LocalIdentifier,
     Delimiter,
+    ArrayAccess,
 }
 
 #[derive(Eq, PartialEq)]
