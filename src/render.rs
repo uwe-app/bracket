@@ -1,6 +1,6 @@
 //! Render a template to output using the data.
 use serde::Serialize;
-use serde_json::{Value, Map};
+use serde_json::{Map, Value};
 use std::collections::HashMap;
 
 use crate::{
@@ -44,7 +44,10 @@ impl Scope {
     }
 
     pub fn set_local(&mut self, name: &str, value: Value) {
-        self.locals.as_object_mut().unwrap().insert(format!("@{}", name), value);
+        self.locals
+            .as_object_mut()
+            .unwrap()
+            .insert(format!("@{}", name), value);
     }
 
     pub fn local(&self, name: &str) -> Option<&Value> {
@@ -180,28 +183,34 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 root
             };
             Some(this)
-        // Handle local @variable references which must 
+        // Handle local @variable references which must
         // be resolved using the current scope
         } else if path.is_local() {
             if let Some(scope) = scopes.last() {
                 let parts =
                     path.components().iter().map(|c| c.as_str()).collect();
                 json::find_parts(parts, scope.as_value())
-            } else { None }
+            } else {
+                None
+            }
         } else if path.is_simple() {
             let name = path.as_str();
             // Lookup in the current scope
             if let Some(scope) = scopes.last() {
                 if let Some(val) = scope.local(name) {
                     Some(val)
-                } else { None }
+                } else {
+                    None
+                }
             // Lookup in the root scope
             } else {
                 let parts =
                     path.components().iter().map(|c| c.as_str()).collect();
                 json::find_parts(parts, root)
             }
-        } else { None }
+        } else {
+            None
+        }
     }
 
     /// Create the context arguments list.
@@ -461,5 +470,4 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             Ok(self.writer.write_str(val).map_err(RenderError::from)?)
         }
     }
-
 }

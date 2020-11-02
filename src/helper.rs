@@ -1,5 +1,5 @@
 //! Helper trait and types for the default set of helpers.
-use serde_json::{to_string, to_string_pretty, Value, Map, Number};
+use serde_json::{to_string, to_string_pretty, Map, Number, Value};
 use std::collections::HashMap;
 use std::ops::Range;
 
@@ -70,6 +70,16 @@ impl<'source> Context<'source> {
                 return Err(Error::ArityExact(
                     self.name().to_owned(),
                     range.start,
+                ));
+            }
+        } else {
+            if self.arguments.len() < range.start
+                || self.arguments.len() > range.end
+            {
+                return Err(Error::ArityRange(
+                    self.name().to_owned(),
+                    range.start,
+                    range.end,
                 ));
             }
         }
@@ -157,8 +167,12 @@ impl BlockHelper for EachHelper {
                     next_value = it.next();
                     if let Some(ref mut scope) = rc.scope_mut() {
                         scope.set_local(FIRST, Value::Bool(index == 0));
-                        scope.set_local(LAST, Value::Bool(next_value.is_none()));
-                        scope.set_local(INDEX, Value::Number(Number::from(index)));
+                        scope
+                            .set_local(LAST, Value::Bool(next_value.is_none()));
+                        scope.set_local(
+                            INDEX,
+                            Value::Number(Number::from(index)),
+                        );
                         scope.set_local(KEY, Value::String(key.to_owned()));
                         scope.set_base_value(value);
                     }
@@ -171,7 +185,10 @@ impl BlockHelper for EachHelper {
                     if let Some(ref mut scope) = rc.scope_mut() {
                         scope.set_local(FIRST, Value::Bool(index == 0));
                         scope.set_local(LAST, Value::Bool(index == len - 1));
-                        scope.set_local(INDEX, Value::Number(Number::from(index)));
+                        scope.set_local(
+                            INDEX,
+                            Value::Number(Number::from(index)),
+                        );
                         scope.set_base_value(value);
                     }
                     rc.template(template)?;
@@ -184,7 +201,6 @@ impl BlockHelper for EachHelper {
         Ok(())
     }
 }
-
 
 pub(crate) struct IfHelper;
 
@@ -236,8 +252,7 @@ impl Helper for JsonHelper {
         let mut args = ctx.into_arguments();
         let target = args.swap_remove(0);
 
-        let compact = rc
-            .is_truthy(args.get(0).unwrap_or(&Value::Bool(false)));
+        let compact = rc.is_truthy(args.get(0).unwrap_or(&Value::Bool(false)));
 
         if compact {
             if let Ok(s) = to_string(&target) {
