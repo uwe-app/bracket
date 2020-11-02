@@ -143,12 +143,12 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         &mut self.scopes
     }
 
-    fn lookup(
-        path: &Path,
-        root: &'source Value,
-        scopes: &'source Vec<Scope>,
-    ) -> Option<&'source Value> {
-        println!("Lookup path {:?}", path.as_str());
+    /// Infallible path lookup.
+    fn lookup(&'source self, path: &'source Path) -> Option<&'source Value> {
+        //println!("Lookup path {:?}", path.as_str());
+
+        let root: &'source Value = &self.root;
+        let scopes: &'source Vec<Scope> = &self.scopes;
 
         // Handle explicit `@root` reference
         if path.is_root() {
@@ -161,13 +161,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             return json::find_parts(parts, root);
         // Handle explicit this only
         } else if path.is_explicit() && path.components().len() == 1 {
-            println!("Got explicit this!!!");
             let this = if let Some(scope) = scopes.last() {
                 if let Some(base) = scope.base_value() {
-                    println!(
-                        "Got explicit this with a scope base value!!! {:?}",
-                        base
-                    );
                     base
                 } else {
                     root
@@ -178,13 +173,13 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             return Some(this);
         } else if path.is_simple() {
             let name = path.as_str();
+            // Lookup in the current scope
             if let Some(scope) = scopes.last() {
-                println!("Look up in current scope...");
                 if let Some(val) = scope.local(name) {
                     return Some(val);
                 }
+            // Lookup in the root scope
             } else {
-                //println!("Look up in root scope...");
                 let parts =
                     path.components().iter().map(|c| c.as_str()).collect();
                 return json::find_parts(parts, root);
@@ -200,7 +195,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 match p {
                     ParameterValue::Json(val) => val.clone(),
                     ParameterValue::Path(ref path) => {
-                        Render::lookup(path, &self.root, &self.scopes)
+                        self.lookup(path)
                             .map(|v| v.clone())
                             .unwrap_or(Value::Null)
                     }
@@ -302,7 +297,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         call: &'source Call<'source>,
     ) -> Result<HelperValue, RenderError<'source>> {
 
-        println!("Statement {:?}", call.as_str());
+        //println!("Statement {:?}", call.as_str());
 
         if call.is_partial() {
             let name = self.get_partial_name(call).ok_or_else(|| {
@@ -314,18 +309,13 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 CallTarget::Path(ref path) => {
                     // Explicit paths should resolve to a lookup
                     if path.is_explicit() {
-                        return Ok(Render::lookup(
-                            path,
-                            &self.root,
-                            &self.scopes,
-                        ).cloned());
+                        return Ok(self.lookup(path).cloned());
                     // Simple paths may be helpers
                     } else if path.is_simple() {
                         if let Some(_) = self.helpers.get(path.as_str()) {
-                            self.invoke_helper(path.as_str(), call);
+                            return self.invoke_helper(path.as_str(), call)
                         } else {
-                            if let Some(value) = Render::lookup(
-                                path, &self.root, &self.scopes).cloned().take() {
+                            if let Some(value) = self.lookup(path).cloned().take() {
                                 return Ok(Some(value));
                             } else {
                                 panic!("Missing variable with path {:?}", path);
@@ -334,11 +324,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                             // TODO: otherwise fallback to missing variable handling
                         }
                     } else {
-                        return Ok(Render::lookup(
-                            path,
-                            &self.root,
-                            &self.scopes,
-                        ).cloned());
+                        return Ok(self.lookup(path).cloned());
                     }
                 }
                 _ => todo!("Handle sub expressions"),

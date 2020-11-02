@@ -53,9 +53,7 @@ impl<'source> Context<'source> {
 
     pub fn assert_arity(&self, range: Range<usize>) -> AssertResult {
         if range.start == range.end {
-            println!("Asserting on arity... {}", self.arguments.len());
             if self.arguments.len() != range.start {
-                println!("Returning arity error");
                 return Err(Error::ArityExact(
                     self.name().to_owned(),
                     range.start,
