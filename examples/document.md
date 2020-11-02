@@ -26,7 +26,7 @@ The `json` helper is useful for debugging template data, for example: `\{{json t
 
 Use sub expressions to combine logging with JSON evaluation `\{{log (json this)}}`.
 
-{{log (json this)}}
+\{{log (json this)}}
 
 ## With
 
@@ -37,5 +37,13 @@ Use the `with` helper to change the current scope:
 {{{this}}}
 ```
 {{/with}}
+
+## Each
+
+{{#each list}}
+```
+{{{this}}}
+```
+{{/each}}
 
 {{> partial message="Hello from document"}}

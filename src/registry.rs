@@ -3,13 +3,7 @@ use serde::Serialize;
 
 use crate::{
     escape::{html_escape, EscapeFn},
-    helper::{
-        BlockHelper,
-        Helper,
-        HelperRegistry,
-        JsonHelper,
-        WithHelper,
-    },
+    helper::{BlockHelper, Helper, HelperRegistry, JsonHelper, WithHelper},
     log::LogHelper,
     output::{Output, StringOutput},
     parser::ParserOptions,
@@ -24,7 +18,6 @@ pub struct Registry<'reg, 'source> {
 }
 
 impl<'reg, 'source> Registry<'reg, 'source> {
-
     /// Create an empty registry.
     pub fn new() -> Self {
         Self {
@@ -63,7 +56,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
 
     /// Registry of templates.
     ///
-    /// For partials to be located they must exist in this 
+    /// For partials to be located they must exist in this
     /// templates collection.
     pub fn templates(&self) -> &Templates<'source> {
         &self.templates

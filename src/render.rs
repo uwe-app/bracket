@@ -69,7 +69,6 @@ pub struct Render<'reg, 'source, 'render> {
     trim_end: bool,
     prev_node: Option<&'source Node<'source>>,
     next_node: Option<&'source Node<'source>>,
-    block_template_node: Option<&'source Node<'source>>,
 }
 
 impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
@@ -99,7 +98,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             trim_end: false,
             prev_node: None,
             next_node: None,
-            block_template_node: None,
         })
     }
 
@@ -236,11 +234,11 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     fn invoke_helper(
-        rc: &mut Render<'reg, 'source, 'render>,
+        &mut self,
         ctx: &Context<'source>,
         helper: &'reg Box<dyn Helper + 'reg>,
     ) -> RenderResult<'source, Option<Value>> {
-        helper.call(rc, ctx)?;
+        helper.call(self, ctx)?;
         Ok(None)
     }
 
@@ -250,8 +248,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         helper: &'reg Box<dyn BlockHelper + 'reg>,
         template: &'source Node<'source>,
     ) -> RenderResult<'source, ()> {
-        rc.block_template_node = Some(template);
-        helper.call(rc, ctx)?;
+        helper.call(rc, ctx, template)?;
         Ok(())
     }
 
@@ -337,14 +334,12 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         node: &'source Node<'source>,
         block: &'source Block<'source>,
     ) -> Result<(), RenderError<'source>> {
-
         let call = block.call();
 
         if call.is_partial() {
             // TODO: support passing block to the partial
             // TODO: as @partial-block
             println!("Got partial call for block!");
-
         } else {
             println!("Call the block...");
             //println!("Evaluating a call {:?}", call);
@@ -376,22 +371,22 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         Ok(())
     }
 
-    pub(crate) fn render_inner(&mut self) -> Result<(), HelperError> {
-        //println!("RENDER INNER BLOCK");
-
-        if let Some(node) = self.block_template_node {
-            match node {
-                Node::Block(ref block) => {
-                    for node in block.nodes().iter() {
-                        self.render_node(node).map_err(|e| {
-                            HelperError::Render(format!("{:?}", e))
-                        })?;
-                    }
+    /// Render an inner template.
+    ///
+    /// Block helpers should call this when they want to render a block.
+    pub fn template(
+        &mut self,
+        node: &'source Node<'source>,
+    ) -> Result<(), HelperError> {
+        match node {
+            Node::Block(ref block) => {
+                for node in block.nodes().iter() {
+                    self.render_node(node)
+                        .map_err(|e| HelperError::Render(format!("{:?}", e)))?;
                 }
-                _ => {}
             }
+            _ => {}
         }
-
         Ok(())
     }
 

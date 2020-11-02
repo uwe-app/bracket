@@ -4,7 +4,11 @@ use std::collections::HashMap;
 use std::ops::Range;
 
 use crate::{
-    error::HelperError as Error, json, log::LogHelper, render::Render,
+    error::{HelperError as Error, RenderError},
+    json,
+    log::LogHelper,
+    parser::ast::Node,
+    render::Render,
 };
 
 /// The result that helper functions should return.
@@ -77,6 +81,7 @@ pub trait BlockHelper: Send + Sync {
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &Context<'source>,
+        template: &'source Node<'source>,
     ) -> Result;
 }
 
@@ -101,6 +106,7 @@ impl BlockHelper for WithHelper {
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &Context<'source>,
+        template: &'source Node<'source>,
     ) -> Result {
         ctx.assert_arity(1..1)?;
 
@@ -109,13 +115,10 @@ impl BlockHelper for WithHelper {
             .get(0)
             .ok_or_else(|| Error::ArityExact(ctx.name().to_string(), 1))?;
 
-        println!("With is setting the scope {:?}", scope);
-
         let block = rc.push_scope();
         block.set_base_value(scope.clone());
-        rc.render_inner()?;
+        rc.template(template)?;
         rc.pop_scope();
-
         Ok(None)
     }
 }
