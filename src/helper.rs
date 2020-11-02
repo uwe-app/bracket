@@ -60,6 +60,10 @@ impl<'source> Context<'source> {
         self.hash
     }
 
+    pub fn into(self) -> (String, Vec<Value>, Map<String, Value>) {
+        (self.name.to_string(), self.arguments, self.hash)
+    }
+
     pub fn is_truthy(&self, value: &Value) -> bool {
         json::is_truthy(value)
     }
@@ -144,6 +148,7 @@ impl BlockHelper for EachHelper {
     ) -> Result {
         ctx.assert_arity(1..1)?;
 
+        let name = ctx.name().to_string();
         let mut args = ctx.into_arguments();
         let target = args.swap_remove(0);
 
@@ -176,7 +181,7 @@ impl BlockHelper for EachHelper {
                     rc.template(template)?;
                 }
             }
-            _ => todo!("Each only accepts iterables!")
+            _ => return Err(Error::IterableExpected(name, 1)),
         }
         rc.pop_scope();
 

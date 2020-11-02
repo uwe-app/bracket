@@ -329,7 +329,7 @@ impl fmt::Display for RenderError<'_> {
             Self::PartialNotFound(name) => {
                 write!(f, "Partial '{}' not found", name)
             }
-            Self::Helper(ref e) => fmt::Display::fmt(self, f),
+            Self::Helper(ref e) => fmt::Display::fmt(e, f),
             Self::Io(ref e) => fmt::Debug::fmt(e, f),
             Self::Json(ref e) => fmt::Debug::fmt(e, f),
         }
@@ -341,7 +341,7 @@ impl fmt::Debug for RenderError<'_> {
         match *self {
             Self::PartialNameResolve(_) => fmt::Display::fmt(self, f),
             Self::PartialNotFound(_) => fmt::Display::fmt(self, f),
-            Self::Helper(ref e) => fmt::Display::fmt(self, f),
+            Self::Helper(ref e) => fmt::Display::fmt(e, f),
             Self::Io(ref e) => fmt::Debug::fmt(e, f),
             Self::Json(ref e) => fmt::Debug::fmt(e, f),
         }
@@ -371,6 +371,8 @@ pub enum HelperError {
     ArityRange(String, usize, usize),
     /// Error when a helper expects a string argument.
     ArgumentTypeString(String, usize),
+    /// Error when a helper expects an iterable (object or array).
+    IterableExpected(String, usize),
     /// Proxy for render errors that occur via helpers; for example
     /// when rendering inner templates.
     Render(String),
@@ -397,6 +399,11 @@ impl fmt::Display for HelperError {
             Self::ArgumentTypeString(ref name, ref index) => write!(
                 f,
                 "Helper '{}' got invalid argument at index {}, string expected",
+                name, index
+            ),
+            Self::IterableExpected(ref name, ref index) => write!(
+                f,
+                "Helper '{}' got invalid argument at index {}, expected array or object",
                 name, index
             ),
             Self::Render(ref e) => fmt::Display::fmt(e, f),

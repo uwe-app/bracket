@@ -357,29 +357,12 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             // TODO: as @partial-block
             println!("Got partial call for block!");
         } else {
-            println!("Call the block...");
+            //println!("Call the block {:?}", block);
             //println!("Evaluating a call {:?}", call);
             match call.target() {
                 CallTarget::Path(ref path) => {
                     if path.is_simple() {
                         self.invoke_block_helper(path.as_str(), call, node)?;
-                        //if let Some(helper) =
-                        //self.helpers.get_block(path.as_str())
-                        //{
-                        //println!(
-                        //"Found a helper for the block path: {}",
-                        //path.as_str()
-                        //);
-
-                        //let args = self.arguments(call);
-                        //let hash = Render::hash(call);
-                        //let context =
-                        //Context::new(path.as_str(), args, hash);
-
-                        //self.invoke_block_helper(
-                        //&context, helper, node,
-                        //)?;
-                        //}
                     }
                 }
                 _ => todo!("Handle sub expressions"),
