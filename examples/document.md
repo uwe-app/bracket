@@ -18,9 +18,11 @@ To help debug our templates we can use the `log` helper: `\{{log "Message to pri
 
 The `json` helper is useful for debugging template data, for example: `\{{json this}}` yields:
 
-```
+```json
 {{json this}}
 ```
+
+If you want compact output pass a *truthy* value for the second argument: `\{{json this true}}`.
 
 ## Debugging
 
@@ -30,11 +32,11 @@ Use sub expressions to combine logging with JSON evaluation `\{{log (json this)}
 
 ## With
 
-Use the `with` helper to change the current scope:
+Use the `with` helper to change the current scope, here we select the `list` variable:
 
 {{#with list}}
-```
-{{{this}}}
+```json
+{{this}}
 ```
 {{/with}}
 

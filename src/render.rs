@@ -129,6 +129,11 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         &self.root
     }
 
+    /// Determine if a value is truthy.
+    pub fn is_truthy(&self, value: &Value) -> bool {
+        json::is_truthy(value)
+    }
+
     /// Render an inner template.
     ///
     /// Block helpers should call this when they want to render an inner template.

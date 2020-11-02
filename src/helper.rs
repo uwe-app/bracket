@@ -64,10 +64,6 @@ impl<'source> Context<'source> {
         (self.name.to_string(), self.arguments, self.hash)
     }
 
-    pub fn is_truthy(&self, value: &Value) -> bool {
-        json::is_truthy(value)
-    }
-
     pub fn assert_arity(&self, range: Range<usize>) -> Result {
         if range.start == range.end {
             if self.arguments.len() != range.start {
@@ -189,21 +185,27 @@ impl BlockHelper for EachHelper {
     }
 }
 
-/*
+
 pub(crate) struct IfHelper;
 
-impl Helper for IfHelper {
+impl BlockHelper for IfHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        arguments: &mut Vec<&Value>,
-        hash: &mut HashMap<String, &'source Value>,
+        ctx: Context<'source>,
         template: &'source Node<'source>,
     ) -> Result {
-        Ok(None)
+        ctx.assert_arity(1..1)?;
+
+        if rc.is_truthy(ctx.arguments().get(0).unwrap()) {
+            rc.template(template)?;
+        }
+        // TODO: inverse and chained statements!
+        Ok(())
     }
 }
 
+/*
 pub(crate) struct UnlessHelper;
 
 impl Helper for UnlessHelper {
@@ -229,20 +231,20 @@ impl Helper for JsonHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: Context<'source>,
     ) -> ValueResult {
-        let target = ctx
-            .arguments()
-            .get(0)
-            .ok_or_else(|| Error::ArityExact(ctx.name().to_string(), 1))?;
+        ctx.assert_arity(1..2)?;
 
-        let compact = ctx
-            .is_truthy(ctx.arguments().get(0).unwrap_or(&&Value::Bool(false)));
+        let mut args = ctx.into_arguments();
+        let target = args.swap_remove(0);
+
+        let compact = rc
+            .is_truthy(args.get(0).unwrap_or(&Value::Bool(false)));
 
         if compact {
-            if let Ok(s) = to_string(target) {
+            if let Ok(s) = to_string(&target) {
                 rc.out().write(s.as_bytes()).map_err(Error::from)?;
             }
         } else {
-            if let Ok(s) = to_string_pretty(target) {
+            if let Ok(s) = to_string_pretty(&target) {
                 rc.out().write(s.as_bytes()).map_err(Error::from)?;
             }
         }
@@ -274,8 +276,8 @@ impl<'reg> HelperRegistry<'reg> {
 
         self.register_block_helper("with", Box::new(WithHelper {}));
         self.register_block_helper("each", Box::new(EachHelper {}));
-        //self.register_helper("if", Box::new(IfHelper {}));
-        //self.register_helper("unless", Box::new(UnlessHelper {}));
+        self.register_block_helper("if", Box::new(IfHelper {}));
+        //self.register_block_helper("unless", Box::new(UnlessHelper {}));
     }
 
     pub fn register_helper(
