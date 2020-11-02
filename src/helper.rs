@@ -269,7 +269,7 @@ impl Helper for UnlessHelper {
 */
 
 // Extended, non-standard helpers
-
+#[cfg(feature = "json-helper")]
 pub(crate) struct JsonHelper;
 
 impl Helper for JsonHelper {
@@ -317,13 +317,15 @@ impl<'reg> HelperRegistry<'reg> {
 
     fn builtins(&mut self) {
         self.register_helper("log", Box::new(LogHelper {}));
-        self.register_helper("json", Box::new(JsonHelper {}));
         //self.register_helper("lookup", Box::new(LookupHelper {}));
 
         self.register_block_helper("with", Box::new(WithHelper {}));
         self.register_block_helper("each", Box::new(EachHelper {}));
         self.register_block_helper("if", Box::new(IfHelper {}));
         //self.register_block_helper("unless", Box::new(UnlessHelper {}));
+        
+        #[cfg(feature = "json-helper")]
+        self.register_helper("json", Box::new(JsonHelper {}));
     }
 
     pub fn register_helper(
