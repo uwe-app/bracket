@@ -294,22 +294,42 @@ impl fmt::Debug for SyntaxError<'_> {
     }
 }
 
-#[derive(thiserror::Error)]
 pub enum RenderError<'source> {
-    #[error("Unable to resolve partial name from '{0}'")]
     PartialNameResolve(&'source str),
+    PartialNotFound(&'source str),
+    Helper(HelperError),
+    Io(IoError),
+    Json(serde_json::Error),
+}
 
-    #[error("Partial '{0}' not found")]
-    PartialNotFound(String),
+impl From<HelperError> for RenderError<'_> {
+    fn from(err: HelperError) -> Self {
+        Self::Helper(err)
+    }
+}
 
-    #[error(transparent)]
-    Helper(#[from] HelperError),
+impl From<std::io::Error> for RenderError<'_> {
+    fn from(err: std::io::Error) -> Self {
+        Self::Io(IoError::Io(err))
+    }
+}
 
-    #[error(transparent)]
-    Io(#[from] IoError),
+impl From<serde_json::Error> for RenderError<'_> {
+    fn from(err: serde_json::Error) -> Self {
+        Self::Json(err)
+    }
+}
 
-    #[error(transparent)]
-    Json(#[from] serde_json::Error),
+impl fmt::Display for RenderError<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            Self::PartialNameResolve(name) => write!(f, "Unable to resolve partial name from '{0}'", name),
+            Self::PartialNotFound(name) => write!(f, "Partial '{0}' not found", name),
+            Self::Helper(ref e) => fmt::Display::fmt(self, f),
+            Self::Io(ref e) => fmt::Debug::fmt(e, f),
+            Self::Json(ref e) => fmt::Debug::fmt(e, f),
+        }
+    }
 }
 
 impl fmt::Debug for RenderError<'_> {
@@ -336,12 +356,6 @@ impl PartialEq for RenderError<'_> {
 }
 
 impl Eq for RenderError<'_> {}
-
-impl From<std::io::Error> for RenderError<'_> {
-    fn from(err: std::io::Error) -> Self {
-        Self::Io(IoError::Io(err))
-    }
-}
 
 #[derive(thiserror::Error, Debug)]
 pub enum HelperError {

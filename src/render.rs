@@ -261,12 +261,12 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     fn render_partial<'a>(
         rc: &'a mut Render<'reg, 'source, 'render>,
         call: &'source Call<'source>,
-        name: String,
+        name: &'source str,
     ) -> RenderResult<'source, ()> {
         let template = rc
             .templates
-            .get(&name)
-            .ok_or_else(|| RenderError::PartialNotFound(name.clone()))?;
+            .get(name)
+            .ok_or_else(|| RenderError::PartialNotFound(name))?;
 
         let node: &'source Node<'_> = template.node();
         let hash = Render::hash(call);
@@ -278,11 +278,11 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         Ok(())
     }
 
-    fn get_partial_name(&self, call: &'source Call<'source>) -> Option<String> {
+    fn get_partial_name(&self, call: &'source Call<'source>) -> Option<&'source str> {
         match call.target() {
             CallTarget::Path(ref path) => {
                 if path.is_simple() {
-                    return Some(path.as_str().to_owned());
+                    return Some(path.as_str());
                 } else {
                     panic!("Partials must be simple identifiers");
                 }
