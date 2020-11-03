@@ -263,8 +263,6 @@ pub(crate) fn parse<'source>(
                         wants_delimiter,
                     )?;
 
-                    println!("returniing path with next {:?}", next);
-
                     return Ok((Some(path), next));
                 }
             }

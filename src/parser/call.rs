@@ -6,7 +6,7 @@ use serde_json::{Value, Number};
 
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
-    lexer::{Lexer, Parameters, Token},
+    lexer::{Lexer, Parameters, Token, StringLiteral},
     parser::{
         arguments,
         ast::{Call, CallTarget, Path, ParameterValue},
@@ -14,61 +14,115 @@ use crate::{
     },
 };
 
-/// Parse a JSON literal value.
-pub(crate) fn json_literal<'source>(
+
+/// Parse a quoted string literal value.
+fn string_literal<'source>(
     source: &'source str,
     state: &mut ParseState,
     lexer: &mut Lexer<'source>,
-    current: Option<Token>,
-) -> Result<(Option<Value>, Option<Token>), SyntaxError<'source>> {
-    let mut value: Option<Value> = None;
-    if let Some(token) = current {
-        match token {
-            Token::Parameters(lex, span) => {
-                value = match lex {
-                    Parameters::Null => Some(Value::Null),
-                    Parameters::True => Some(Value::Bool(true)),
-                    Parameters::False => Some(Value::Bool(false)),
-                    Parameters::Number => {
-                        let num: Number = source[span].parse().unwrap();
-                        Some(Value::Number(num))
-                    }
-                    Parameters::StringLiteral => {
-                        let str_start = span.end;
-                        let mut str_end = span.end;
-                        /*
-                        while let Some((lex, span)) = iter.next() {
-                            match lex {
-                                Parameters::StringToken(s) => match s {
-                                    StringLiteral::End => {
-                                        break;
-                                    }
-                                    _ => {
-                                        *state.byte_mut() = span.end;
-                                        str_end = span.end;
-                                    }
-                                },
-                                _ => {
-                                    panic!("Expected string token!");
-                                }
-                            }
-                        }
-                        */
+    current: (Parameters, Span),
+) -> Result<Value, SyntaxError<'source>> {
+    let (lex, span) = current;
+    let str_start = span.end;
+    let mut str_end = span.end;
 
+    while let Some(token) = lexer.next() {
+        match token {
+            Token::StringLiteral(lex, span) => {
+                match &lex {
+                    StringLiteral::End => {
                         let str_value = &source[str_start..str_end];
-                        Some(Value::String(str_value.to_string()))
+                        return Ok(Value::String(str_value.to_string()))
                     }
                     _ => {
-                        // FIXME: how to handle this?
-                        panic!("Expecting JSON literal token.");
+                        *state.byte_mut() = span.end;
+                        str_end = span.end;
                     }
-                }
+                } 
             }
-            _ => panic!("Unexpected json literal token"),
+            _ => panic!("Expecting string literal token"),
+        } 
+    }
+    panic!("Failed to parse string literal");
+}
+
+/// Parse a JSON literal value.
+fn json_literal<'source>(
+    source: &'source str,
+    state: &mut ParseState,
+    lexer: &mut Lexer<'source>,
+    current: (Parameters, Span),
+) -> Result<Value, SyntaxError<'source>> {
+
+    let (lex, span) = current;
+    let value = match lex {
+        Parameters::Null => Value::Null,
+        Parameters::True => Value::Bool(true),
+        Parameters::False => Value::Bool(false),
+        Parameters::Number => {
+            let num: Number = source[span].parse().unwrap();
+            Value::Number(num)
         }
+        Parameters::StringLiteral => {
+            string_literal(source, state, lexer, (lex, span))?
+            //let str_start = span.end;
+            //let mut str_end = span.end;
+            //let str_value = &source[str_start..str_end];
+            //Some(Value::String(str_value.to_string()))
+        }
+        _ => {
+            // FIXME: how to handle this?
+            panic!("Expecting JSON literal token.");
+        }
+    };
+
+    Ok(value)
+}
+
+fn value<'source>(
+    source: &'source str,
+    state: &mut ParseState,
+    lexer: &mut Lexer<'source>,
+    current: (Parameters, Span),
+) -> Result<(ParameterValue<'source>, Option<Token>), SyntaxError<'source>> {
+
+    let (lex, span) = current;
+
+    match &lex {
+        // Path components
+        Parameters::ExplicitThisKeyword
+        | Parameters::ExplicitThisDotSlash
+        | Parameters::Identifier
+        | Parameters::LocalIdentifier
+        | Parameters::ParentRef
+        | Parameters::ArrayAccess => {
+            let (mut path, token) = path2::parse(
+                source,
+                state,
+                lexer,
+                (lex, span),
+            )?;
+            if let Some(path) = path.take() {
+                return Ok((ParameterValue::Path(path), token));
+            }
+        }
+        // Open a nested call
+        Parameters::StartSubExpression => {
+            todo!("Parse value as sub expression");
+        }
+        // Literal components
+        Parameters::StringLiteral
+        | Parameters::Number
+        | Parameters::True
+        | Parameters::False
+        | Parameters::Null => {
+            let value = json_literal(source, state, lexer, (lex, span))?;
+            return Ok((ParameterValue::Json(value), lexer.next()));
+        }
+        _ => panic!("Unexpected token while parsing value!"),
     }
 
-    Ok((value, lexer.next()))
+    panic!("Expecting value!");
 }
 
 fn arguments<'source>(
@@ -103,21 +157,15 @@ fn arguments<'source>(
                     | Parameters::LocalIdentifier
                     | Parameters::ParentRef
                     | Parameters::ArrayAccess => {
-                        let (mut path, token) = path2::parse(
-                            source,
-                            state,
-                            lexer,
-                            (lex, span),
-                        )?;
-
-                        if let Some(path) = path.take() {
-                            call.add_argument(ParameterValue::Path(path)) 
-                        }
-
+                        // Handle path arguments values
+                        let (mut value, token) = value(source, state, lexer, (lex, span))?;
+                        call.add_argument(value);
                         return arguments(source, state, lexer, call, token);
                     }
                     // Hash parameters
-                    Parameters::HashKey => {}
+                    Parameters::HashKey => {
+                        println!("Got hash parameters to pass...");
+                    }
                     // Open a nested call
                     Parameters::StartSubExpression => {
                         todo!("Parse argument as sub expression");
@@ -128,12 +176,9 @@ fn arguments<'source>(
                     | Parameters::True
                     | Parameters::False
                     | Parameters::Null => {
-                        println!("Parse out a json literal...");
-                        let token = Token::Parameters(lex, span);
-                        let (mut value, token) = json_literal(source, state, lexer, Some(token))?;
-                        if let Some(value) = value.take() {
-                            call.add_argument(ParameterValue::Json(value));
-                        }
+                        // Handle json literal argument values
+                        let (mut value, token) = value(source, state, lexer, (lex, span))?;
+                        call.add_argument(value);
                         return arguments(source, state, lexer, call, token);
                     }
                     Parameters::PathDelimiter => {
@@ -233,5 +278,6 @@ pub(crate) fn parse<'source>(
     let mut call = Call::new2(source, open);
     let next = lexer.next();
     let next = target(source, state, lexer, &mut call, next)?;
-    Ok(arguments(source, state, lexer, call, next)?)
+    let next = arguments(source, state, lexer, call, next)?;
+    Ok(next)
 }
