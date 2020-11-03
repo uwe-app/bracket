@@ -45,10 +45,10 @@ fn parse_statement_sub_expr() -> Result<'static, ()> {
                             assert_eq!("json", call.target().as_str());
                             assert_eq!(1, call.arguments().len());
                         }
-                        _ => panic!("Expecting sub expression call")
+                        _ => panic!("Expecting sub expression call"),
                     }
                 }
-                _ => panic!("Expecting call statement")
+                _ => panic!("Expecting call statement"),
             }
         }
         _ => panic!("Bad root node type for parser()."),

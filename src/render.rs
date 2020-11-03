@@ -5,9 +5,7 @@ use serde_json::{Map, Value};
 use crate::{
     error::{HelperError, RenderError},
     escape::EscapeFn,
-    helper::{
-        Context, HelperRegistry, Result as HelperResult, BlockTemplate,
-    },
+    helper::{BlockTemplate, Context, HelperRegistry, Result as HelperResult},
     json,
     output::Output,
     parser::ast::{Block, Call, CallTarget, Node, ParameterValue, Path},
@@ -156,7 +154,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
     /// Lookup a field of a value.
     ///
-    /// If the target value is not an object or array then this 
+    /// If the target value is not an object or array then this
     /// will yield None.
     pub fn field<'b, S: AsRef<str>>(
         &self,
@@ -178,11 +176,9 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         // Handle explicit `@root` reference
         if path.is_root() {
             json::find_parts(
-                path
-                .components()
-                .iter()
-                .skip(1)
-                .map(|c| c.as_str()), root)
+                path.components().iter().skip(1).map(|c| c.as_str()),
+                root,
+            )
         // Handle explicit this only
         } else if path.is_explicit() && path.components().len() == 1 {
             let this = if let Some(scope) = scopes.last() {
@@ -201,19 +197,17 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             if let Some(scope) = scopes.last() {
                 json::find_parts(
                     path.components().iter().map(|c| c.as_str()),
-                    scope.as_value())
+                    scope.as_value(),
+                )
             } else {
                 None
             }
         } else if path.parents() > 0 {
-            // Combine so that the root object is 
+            // Combine so that the root object is
             // treated as a scope
             let mut all = vec![root];
-            let mut values: Vec<&'source Value> = 
-                scopes
-                .iter()
-                .map(|s| s.as_value())
-                .collect();
+            let mut values: Vec<&'source Value> =
+                scopes.iter().map(|s| s.as_value()).collect();
             all.append(&mut values);
 
             if all.len() > path.parents() as usize {
@@ -221,39 +215,45 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 if let Some(value) = all.get(index) {
                     json::find_parts(
                         path.components().iter().map(|c| c.as_str()),
-                        value)
-                } else { None }
-            } else { None }
+                        value,
+                    )
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
         } else {
             // Lookup in the current scope
             if let Some(scope) = scopes.last() {
                 json::find_parts(
                     path.components().iter().map(|c| c.as_str()),
-                    scope.as_value())
+                    scope.as_value(),
+                )
             // Lookup in the root scope
             } else {
                 json::find_parts(
                     path.components().iter().map(|c| c.as_str()),
-                    root)
+                    root,
+                )
             }
         }
     }
 
     /// Create the context arguments list.
-    fn arguments(&self, call: &'source Call<'source>)
-        -> RenderResult<'source, Vec<Value>> {
-
+    fn arguments(
+        &mut self,
+        call: &'source Call<'source>,
+    ) -> RenderResult<'source, Vec<Value>> {
         let mut out: Vec<Value> = Vec::new();
         for p in call.arguments() {
             let arg = match p {
                 ParameterValue::Json(val) => val.clone(),
                 ParameterValue::Path(ref path) => {
-                    self.lookup(path)
-                        .cloned()
-                        .unwrap_or(Value::Null)
+                    self.lookup(path).cloned().unwrap_or(Value::Null)
                 }
                 ParameterValue::SubExpr(ref call) => {
-                    panic!("Evaluate sub expression in argument");
+                    self.statement(call)?.unwrap_or(Value::Null)
                 }
             };
             out.push(arg);
@@ -262,22 +262,22 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     /// Create the context hash parameters.
-    fn hash(&self, call: &'source Call<'source>)
-        -> RenderResult<'source, Map<String, Value>> {
-
+    fn hash(
+        &mut self,
+        call: &'source Call<'source>,
+    ) -> RenderResult<'source, Map<String, Value>> {
         let mut out = Map::new();
         for (k, p) in call.hash() {
             let (key, value) = match p {
                 ParameterValue::Json(val) => (k.to_string(), val.clone()),
                 ParameterValue::Path(ref path) => {
-                    let val = self.lookup(path)
-                        .cloned()
-                        .unwrap_or(Value::Null);
+                    let val = self.lookup(path).cloned().unwrap_or(Value::Null);
                     (k.to_string(), val)
                 }
-                ParameterValue::SubExpr(ref call) => {
-                    panic!("Evaluate sub expression in hash");
-                }
+                ParameterValue::SubExpr(ref call) => (
+                    k.to_string(),
+                    self.statement(call)?.unwrap_or(Value::Null),
+                ),
             };
             out.insert(key, value);
         }
@@ -359,9 +359,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         &mut self,
         path: &'source Path<'source>,
     ) -> Result<HelperValue, RenderError<'source>> {
-        if let Some(value) =
-            self.lookup(path).cloned().take()
-        {
+        if let Some(value) = self.lookup(path).cloned().take() {
             return Ok(Some(value));
         } else {
             panic!("Missing variable with path {:?}", path);
@@ -419,7 +417,12 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             match call.target() {
                 CallTarget::Path(ref path) => {
                     if path.is_simple() {
-                        self.invoke_block_helper(path.as_str(), call, node, None)?;
+                        self.invoke_block_helper(
+                            path.as_str(),
+                            call,
+                            node,
+                            None,
+                        )?;
                     }
                 }
                 _ => todo!("Handle sub expressions"),

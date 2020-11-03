@@ -40,7 +40,6 @@ pub(crate) fn parse_sub_expr<'source>(
     state: &mut ParseState,
     current: (Parameters, Span),
 ) -> Result<(Call<'source>, Option<(Parameters, Span)>), SyntaxError<'source>> {
-
     let (lex, span) = current;
     let stmt_start = span.clone();
     let (mut sub_expr, stmt_end) = sub_expr(iter);
@@ -51,14 +50,12 @@ pub(crate) fn parse_sub_expr<'source>(
             let (_, last_span) = sub_expr.pop().unwrap();
             *state.byte_mut() = last_span.end;
         }
-        return Err(SyntaxError::OpenSubExpression(
-            ErrorInfo::new_notes(
-                source,
-                state.file_name(),
-                SourcePos::from((state.line(), state.byte())),
-                vec!["requires closing parenthesis ')'".to_string()],
-            ),
-        ));
+        return Err(SyntaxError::OpenSubExpression(ErrorInfo::new_notes(
+            source,
+            state.file_name(),
+            SourcePos::from((state.line(), state.byte())),
+            vec!["requires closing parenthesis ')'".to_string()],
+        )));
     }
 
     // NOTE: must advance past the start sub expresion token!
@@ -85,7 +82,7 @@ fn parse_call_target<'source>(
     if let Some((lex, span)) = current {
         let next = match &lex {
             Parameters::StartSubExpression => {
-                let (sub_call, next) = 
+                let (sub_call, next) =
                     parse_sub_expr(source, iter, state, (lex, span))?;
                 call.set_target(CallTarget::SubExpr(Box::new(sub_call)));
                 next
@@ -152,7 +149,6 @@ pub(crate) fn call<'source>(
     stmt_start: Range<usize>,
     stmt_end: Option<Range<usize>>,
 ) -> Result<Call<'source>, SyntaxError<'source>> {
-
     let (mut call, next) = parse_call(
         source, iter, state, current, partial, stmt_start, stmt_end,
     )?;
@@ -253,7 +249,13 @@ pub(crate) fn parse<'source>(
     }
 
     let callee = call(
-        source, &mut iter, state, next, partial, stmt_start, Some(stmt_end),
+        source,
+        &mut iter,
+        state,
+        next,
+        partial,
+        stmt_start,
+        Some(stmt_end),
     )?;
 
     Ok(callee)

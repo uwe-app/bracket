@@ -3,7 +3,7 @@ use serde::Serialize;
 
 use crate::{
     escape::{html_escape, EscapeFn},
-    helper::HelperRegistry, 
+    helper::HelperRegistry,
     output::{Output, StringOutput},
     parser::ParserOptions,
     template::{Loader, Template, Templates},

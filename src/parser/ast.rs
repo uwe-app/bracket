@@ -462,7 +462,7 @@ impl<'source> Call<'source> {
 
     pub fn as_str(&self) -> &'source str {
         if let Some(ref close) = self.close {
-            return &self.source[self.open.end..close.start]
+            return &self.source[self.open.end..close.start];
         }
         &self.source[self.open.start..self.open.end]
     }
@@ -473,7 +473,7 @@ impl<'source> Call<'source> {
 
     pub fn close(&self) -> &'source str {
         if let Some(ref close) = self.close {
-            return &self.source[close.start..close.end]
+            return &self.source[close.start..close.end];
         }
         ""
     }

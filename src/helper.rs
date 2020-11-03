@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::ops::Range;
 
 use crate::{
-    error::{HelperError as Error},
+    error::HelperError as Error,
     parser::ast::Node,
     render::{Render, Scope},
 };
@@ -33,14 +33,11 @@ impl<'source> BlockTemplate<'source> {
         template: &'source Node<'source>,
         inverse: Option<&'source Node<'source>>,
     ) -> Self {
-        Self {
-            template,
-            inverse,
-        } 
+        Self { template, inverse }
     }
 
     pub fn template(&self) -> &'source Node<'source> {
-        self.template 
+        self.template
     }
 
     pub fn inverse(&self) -> &Option<&'source Node<'source>> {
@@ -273,16 +270,13 @@ impl Helper for LookupHelper {
             .get(0)
             .ok_or_else(|| Error::ArityExact(name.to_string(), 2))?
             .as_str()
-            .ok_or_else(|| {
-                Error::ArgumentTypeString(name.to_string(), 1)
-            })?;
+            .ok_or_else(|| Error::ArgumentTypeString(name.to_string(), 1))?;
 
         let result = rc.field(&target, field).cloned();
 
         Ok(result)
     }
 }
-
 
 // Extended, non-standard helpers
 #[cfg(feature = "json-helper")]
@@ -341,7 +335,7 @@ impl<'reg> HelperRegistry<'reg> {
         self.register_block_helper("each", Box::new(EachHelper {}));
         self.register_block_helper("if", Box::new(IfHelper {}));
         //self.register_block_helper("unless", Box::new(UnlessHelper {}));
-        
+
         #[cfg(feature = "json-helper")]
         self.register_helper("json", Box::new(JsonHelper {}));
     }

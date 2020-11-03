@@ -27,7 +27,7 @@ fn main() -> Result<'static, ()> {
         },
         "foo": {
             "bar": {
-                "qux": 42 
+                "qux": 42
             }
         }
     });

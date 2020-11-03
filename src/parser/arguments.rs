@@ -7,8 +7,7 @@ use crate::{
     lexer::Parameters,
     parser::{
         ast::{Call, ParameterValue},
-        json_literal, path, whitespace, ParseState,
-        statement,
+        json_literal, path, statement, whitespace, ParseState,
     },
 };
 
@@ -28,8 +27,9 @@ fn parse_value<'source>(
             Parameters::StartSubExpression => {
                 let stmt_start = span.clone();
                 let next_token = iter.next();
-                let sub_call = 
-                    statement::call(source, iter, state, next_token, false, stmt_start, None)?;
+                let sub_call = statement::call(
+                    source, iter, state, next_token, false, stmt_start, None,
+                )?;
                 value = Some(ParameterValue::SubExpr(sub_call));
                 next = iter.next();
             }

@@ -11,7 +11,10 @@ pub(crate) fn stringify(value: &Value) -> Result<String, Error> {
 pub(crate) fn find_parts<'a, 'b, I>(
     mut it: I,
     doc: &'b Value,
-) -> Option<&'b Value> where I: Iterator<Item = &'a str> {
+) -> Option<&'b Value>
+where
+    I: Iterator<Item = &'a str>,
+{
     match doc {
         Value::Object(_) | Value::Array(_) => {
             let mut current: Option<&Value> = Some(doc);
@@ -19,15 +22,17 @@ pub(crate) fn find_parts<'a, 'b, I>(
             while let Some(part) = next_part {
                 if let Some(target) = current {
                     current = find_field(target, part);
-                } else { break }
+                } else {
+                    break;
+                }
                 next_part = it.next();
                 if next_part.is_none() && current.is_some() {
-                    return current
+                    return current;
                 }
             }
             None
         }
-        _ => None
+        _ => None,
     }
 }
 
@@ -47,9 +52,11 @@ pub(crate) fn find_field<'b, S: AsRef<str>>(
             // Support for square-bracket notation, eg: `list.[1]`
             let value = if name.starts_with("[") && name.ends_with("]") {
                 &name[1..name.len() - 1]
-            } else { name };
+            } else {
+                name
+            };
             if let Ok(index) = value.parse::<usize>() {
-                return list.get(index)
+                return list.get(index);
             }
         }
         _ => {}
@@ -70,8 +77,10 @@ pub(crate) fn is_truthy(val: &Value) -> bool {
                 n.as_u64().unwrap() != 0
             } else if n.is_f64() {
                 n.as_f64().unwrap() != 0.0
-            } else { false }
+            } else {
+                false
+            }
         }
-        _ => false
+        _ => false,
     }
 }
