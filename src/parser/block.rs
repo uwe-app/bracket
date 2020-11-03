@@ -5,7 +5,7 @@ use crate::{
     lexer::{self, Lexer, Parameters, Token},
     parser::{
         ast::{Block, Node, Text, TextBlock},
-        statement, ParameterCache, ParameterContext, ParseState,
+        call, ParameterContext, ParseState,
     },
 };
 
@@ -155,77 +155,20 @@ pub(crate) fn comment<'source>(
     }
 }
 
-/// Parse block or statement parameters.
-pub(crate) fn parameters<'source>(
-    source: &'source str,
-    lexer: &mut Lexer<'source>,
-    state: &mut ParseState,
-    span: Range<usize>,
-    context: ParameterContext,
-) -> Result<Option<ParameterCache>, SyntaxError<'source>> {
-    let mut params = ParameterCache::new(context, span);
-    while let Some(t) = lexer.next() {
-        if t.is_newline() {
-            *state.line_mut() += 1;
-        }
-        match t {
-            Token::StringLiteral(lex, span) => match lex {
-                lexer::StringLiteral::Newline => {
-                    if let Some((lex, span)) = params.tokens.last() {
-                        *state.byte_mut() = span.end - 1;
-                    }
-                    return Err(SyntaxError::StringLiteralNewline(
-                        ErrorInfo::new(
-                            source,
-                            state.file_name(),
-                            SourcePos::from((state.line(), state.byte())),
-                        ),
-                    ));
-                }
-                _ => {
-                    //params.tokens.push((Parameters::StringToken(lex), span));
-                }
-            },
-            Token::Parameters(lex, span) => match lex {
-                lexer::Parameters::End => {
-                    params.end = span;
-                    return Ok(Some(params));
-                }
-                _ => {
-                    params.tokens.push((lex, span));
-                }
-            },
-            _ => {}
-        }
-    }
-    Ok(None)
-}
-
 /// Open a scoped block `{{# block}}`.
 pub(crate) fn scope<'source>(
     source: &'source str,
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-) -> Result<Option<Block<'source>>, SyntaxError<'source>> {
-    let mut parameters = parameters(
+) -> Result<Block<'source>, SyntaxError<'source>> {
+    let mut block = Block::new(source, span.clone());
+    let call = call::parse(
         source,
-        lexer,
         state,
-        span.clone(),
-        ParameterContext::Block,
+        lexer,
+        span,
     )?;
-
-    if let Some(params) = parameters.take() {
-        let mut block = Block::new(source, span);
-
-        match statement::parse(source, state, params.clone()) {
-            Ok(call) => block.set_call(call),
-            Err(e) => return Err(e),
-        }
-
-        return Ok(Some(block));
-    }
-
-    Ok(None)
+    block.set_call(call);
+    Ok(block)
 }

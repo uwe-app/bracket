@@ -8,9 +8,8 @@ use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{Lexer, Parameters, Token, StringLiteral},
     parser::{
-        arguments,
         ast::{Call, CallTarget, Path, ParameterValue},
-        path2, whitespace, ParseState,
+        path, ParseState,
     },
 };
 
@@ -92,7 +91,7 @@ fn value<'source>(
         | Parameters::LocalIdentifier
         | Parameters::ParentRef
         | Parameters::ArrayAccess => {
-            let (mut path, token) = path2::parse(
+            let (mut path, token) = path::parse(
                 source,
                 state,
                 lexer,
@@ -138,10 +137,7 @@ fn key_value<'source>(
         match token {
             Token::Parameters(lex, span) => {
                 let (mut value, token) = value(source, state, lexer, (lex, span))?;
-                println!("Reading value for the key {:?}", key);
-                println!("Reading value {:?}", &value);
                 call.add_hash(key, value);
-                println!("After value the token is {:?}", token);
                 next = token;
             }
             _ => panic!("Expecting parameter token for key/value pair!"),
@@ -150,7 +146,6 @@ fn key_value<'source>(
 
     // Read in other key/value pairs
     while let Some(token) = next {
-        println!("Parsing key value {:?}", token);
         match token {
             Token::Parameters(lex, span) => {
                 match &lex {
@@ -160,11 +155,9 @@ fn key_value<'source>(
                         }
                     }
                     Parameters::HashKey => {
-                        println!("Got another key value...");
                         return key_value(source, state, lexer, call, (lex, span));
                     }
                     Parameters::End => {
-                        println!("GOT TO THE END OF THE PARAMETERS");
                         call.exit(span);
                         return Ok(lexer.next())
                     }
@@ -287,7 +280,7 @@ fn target<'source>(
                     | Parameters::ParentRef
                     | Parameters::ArrayAccess
                     | Parameters::PathDelimiter => {
-                        let (mut path, token) = path2::parse(
+                        let (mut path, token) = path::parse(
                             source,
                             state,
                             lexer,
@@ -355,7 +348,7 @@ pub(crate) fn parse<'source>(
     lexer: &mut Lexer<'source>,
     open: Span,
 ) -> Result<Call<'source>, SyntaxError<'source>> {
-    let mut call = Call::new2(source, open);
+    let mut call = Call::new(source, open);
     let next = lexer.next();
     let next = partial(source, state, lexer, &mut call, next)?;
     let next = target(source, state, lexer, &mut call, next)?;

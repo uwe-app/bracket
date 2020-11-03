@@ -4,7 +4,7 @@ use logos::Span;
 
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
-    lexer::Parameters,
+    lexer::{Lexer, Parameters, Token},
     parser::{
         ast::{Component, ComponentType, Path},
         ParseState,
@@ -37,97 +37,42 @@ fn component_type(lex: &Parameters) -> ComponentType {
     }
 }
 
-#[deprecated]
-pub(crate) fn parse<'source>(
-    source: &'source str,
-    iter: &mut IntoIter<(Parameters, Span)>,
+fn parents<'source>(
     state: &mut ParseState,
-    current: Option<(Parameters, Span)>,
-) -> Result<
-    (Option<Path<'source>>, Option<(Parameters, Span)>),
-    SyntaxError<'source>,
-> {
-    let mut result: Option<Path> = None;
-    let mut next: Option<(Parameters, Span)> = None;
-
-    if let Some((mut lex, mut span)) = current {
-        let mut path = Path::new(source);
-        if is_path_component(&lex) {
-            *state.byte_mut() = span.end;
-
-            // Consume parent references
-            match &lex {
+    lexer: &mut Lexer<'source>,
+    path: &mut Path,
+) -> Option<Token> {
+    path.set_parents(1);
+    while let Some(token) = lexer.next() {
+        match &token {
+            Token::Parameters(lex, span) => match &lex {
                 Parameters::ParentRef => {
-                    let mut parents = 1;
-                    while let Some((next_lex, next_span)) = iter.next() {
-                        match &next_lex {
-                            Parameters::ParentRef => {
-                                parents += 1;
-                            }
-                            _ => {
-                                lex = next_lex;
-                                span = next_span;
-                                break;
-                            }
-                        }
-                    }
-                    path.set_parents(parents);
+                    path.add_parent();
                 }
-                _ => {}
-            }
+                _ => return Some(token),
+            },
+            _ => return Some(token),
+        }
+    }
+    None
+}
 
-            // Cannot start with a path delimiter!
-            match &lex {
-                Parameters::PathDelimiter => {
-                    *state.byte_mut() = span.start;
-                    return Err(SyntaxError::UnexpectedPathDelimiter(
-                        ErrorInfo::new(
-                            source,
-                            state.file_name(),
-                            SourcePos::from((state.line(), state.byte())),
-                        ),
-                    ));
+pub(crate) fn components<'source>(
+    source: &'source str,
+    state: &mut ParseState,
+    lexer: &mut Lexer<'source>,
+    path: &mut Path<'source>,
+    mut wants_delimiter: bool,
+) -> Result<Option<Token>, SyntaxError<'source>> {
+    while let Some(token) = lexer.next() {
+        match token {
+            Token::Parameters(lex, span) => {
+                *state.byte_mut() = span.start;
+
+                if lex == Parameters::End {
+                    return Ok(Some(Token::Parameters(lex, span)));
                 }
-                _ => {}
-            }
 
-            *state.byte_mut() = span.start;
-
-            let component = Component(source, component_type(&lex), span);
-            // Flag as a path that should be resolved from the root object
-            if path.is_empty() && component.is_root() {
-                path.set_root(true);
-            }
-
-            if component.is_explicit() {
-                path.set_explicit(true);
-            }
-
-            if component.is_local() && path.parents() > 0 {
-                return Err(SyntaxError::UnexpectedPathParentWithLocal(
-                    ErrorInfo::new(
-                        source,
-                        state.file_name(),
-                        SourcePos::from((state.line(), state.byte())),
-                    ),
-                ));
-            }
-
-            if component.is_explicit() && path.parents() > 0 {
-                return Err(SyntaxError::UnexpectedPathParentWithExplicit(
-                    ErrorInfo::new(
-                        source,
-                        state.file_name(),
-                        SourcePos::from((state.line(), state.byte())),
-                    ),
-                ));
-            }
-
-            let mut wants_delimiter = !component.is_explicit_dot_slash();
-
-            path.add_component(component);
-
-            while let Some((lex, span)) = iter.next() {
                 if is_path_component(&lex) {
                     match &lex {
                         Parameters::ExplicitThisKeyword
@@ -183,7 +128,6 @@ pub(crate) fn parse<'source>(
                             }
                             _ => {
                                 *state.byte_mut() = span.start;
-                                println!("Lex {:?}", &lex);
                                 return Err(
                                     SyntaxError::ExpectedPathDelimiter(
                                         ErrorInfo::new(
@@ -218,20 +162,114 @@ pub(crate) fn parse<'source>(
                             _ => {}
                         }
                     }
-                    println!("Adding path component for {:?}", &lex);
                     path.add_component(Component(
                         source,
                         component_type(&lex),
                         span,
                     ));
-                    println!("Got path value {:?}", path.as_str());
+                    wants_delimiter = true;
                 } else {
-                    next = Some((lex, span));
                     break;
                 }
             }
-            result = Some(path);
+            _ => return Ok(Some(token)),
         }
     }
-    Ok((result, next))
+
+    Ok(lexer.next())
+}
+
+pub(crate) fn parse<'source>(
+    source: &'source str,
+    state: &mut ParseState,
+    lexer: &mut Lexer<'source>,
+    current: (Parameters, Span),
+) -> Result<(Option<Path<'source>>, Option<Token>), SyntaxError<'source>> {
+    let (lex, span) = current;
+    let mut path = Path::new(source);
+
+    let mut next: Option<Token> = Some(Token::Parameters(lex, span));
+    match &lex {
+        // Cannot start with a path delimiter
+        Parameters::PathDelimiter => {
+            return Err(SyntaxError::UnexpectedPathDelimiter(ErrorInfo::new(
+                source,
+                state.file_name(),
+                SourcePos::from((state.line(), state.byte())),
+            )));
+        }
+        // Count parent references
+        Parameters::ParentRef => {
+            next = parents(state, lexer, &mut path);
+        }
+        _ => {}
+    }
+
+    while let Some(token) = next {
+        match token {
+            Token::Parameters(lex, span) => {
+                *state.byte_mut() = span.start;
+
+                if is_path_component(&lex) {
+                    let component =
+                        Component(source, component_type(&lex), span);
+                    // Flag as a path that should be resolved from the root object
+                    if path.is_empty() && component.is_root() {
+                        path.set_root(true);
+                    }
+
+                    if component.is_explicit() {
+                        path.set_explicit(true);
+                    }
+
+                    if component.is_local() && path.parents() > 0 {
+                        return Err(
+                            SyntaxError::UnexpectedPathParentWithLocal(
+                                ErrorInfo::new(
+                                    source,
+                                    state.file_name(),
+                                    SourcePos::from((
+                                        state.line(),
+                                        state.byte(),
+                                    )),
+                                ),
+                            ),
+                        );
+                    }
+
+                    if component.is_explicit() && path.parents() > 0 {
+                        return Err(
+                            SyntaxError::UnexpectedPathParentWithExplicit(
+                                ErrorInfo::new(
+                                    source,
+                                    state.file_name(),
+                                    SourcePos::from((
+                                        state.line(),
+                                        state.byte(),
+                                    )),
+                                ),
+                            ),
+                        );
+                    }
+
+                    let wants_delimiter = !component.is_explicit_dot_slash();
+                    path.add_component(component);
+
+                    let next = components(
+                        source,
+                        state,
+                        lexer,
+                        &mut path,
+                        wants_delimiter,
+                    )?;
+
+                    return Ok((Some(path), next));
+                }
+            }
+            _ => panic!("Expected parameter token"),
+        }
+        next = lexer.next();
+    }
+
+    Ok((None, next))
 }

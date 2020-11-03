@@ -10,15 +10,18 @@ use crate::{
 /// Default file name.
 static UNKNOWN: &str = "unknown";
 
-mod arguments;
 pub mod ast;
 mod block;
 mod call;
-mod json_literal;
 mod path;
-mod path2;
-mod statement;
-mod whitespace;
+
+// FIXME: use this or remove it!
+#[deprecated]
+#[derive(Clone, Debug)]
+pub(crate) enum ParameterContext {
+    Block,
+    Statement,
+}
 
 #[derive(Debug)]
 pub struct ParserOptions {
@@ -76,31 +79,6 @@ impl From<&ParserOptions> for ParseState {
             file_name: opts.file_name.clone(),
             line: opts.line_offset.clone(),
             byte: opts.byte_offset.clone(),
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub(crate) enum ParameterContext {
-    Block,
-    Statement,
-}
-
-#[derive(Debug, Clone)]
-pub(crate) struct ParameterCache {
-    context: ParameterContext,
-    tokens: Vec<(Parameters, Span)>,
-    start: Span,
-    end: Span,
-}
-
-impl ParameterCache {
-    pub fn new(context: ParameterContext, start: Span) -> Self {
-        Self {
-            context,
-            start,
-            tokens: Default::default(),
-            end: Default::default(),
         }
     }
 }
@@ -221,66 +199,61 @@ impl<'source> Parser<'source> {
                         span,
                     )?;
 
-                    if let Some(block) = block {
-                        let name = block.name().ok_or_else(|| {
-                            return SyntaxError::ExpectedIdentifier(
-                                ErrorInfo::new(
-                                    self.source,
-                                    self.state.file_name(),
-                                    SourcePos::from((
-                                        self.state.line(),
-                                        self.state.byte(),
-                                    )),
-                                ),
-                            );
-                        })?;
+                    let name = block.name().ok_or_else(|| {
+                        return SyntaxError::ExpectedIdentifier(
+                            ErrorInfo::new(
+                                self.source,
+                                self.state.file_name(),
+                                SourcePos::from((
+                                    self.state.line(),
+                                    self.state.byte(),
+                                )),
+                            ),
+                        );
+                    })?;
 
-                        match block.call().target() {
-                            CallTarget::Path(ref path) => {
-                                if !path.is_simple() {
-                                    return Err(
-                                        SyntaxError::ExpectedSimpleIdentifier(
-                                            ErrorInfo::new(
-                                                self.source,
-                                                self.state.file_name(),
-                                                SourcePos::from((
-                                                    self.state.line(),
-                                                    self.state.byte(),
-                                                )),
-                                            ),
+                    match block.call().target() {
+                        CallTarget::Path(ref path) => {
+                            if !path.is_simple() {
+                                return Err(
+                                    SyntaxError::ExpectedSimpleIdentifier(
+                                        ErrorInfo::new(
+                                            self.source,
+                                            self.state.file_name(),
+                                            SourcePos::from((
+                                                self.state.line(),
+                                                self.state.byte(),
+                                            )),
                                         ),
-                                    );
-                                }
-                            }
-                            CallTarget::SubExpr(_) => {
-                                if !block.call().is_partial() {
-                                    panic!("Sub expression block targets are only evaluated for partials");
-                                }
+                                    ),
+                                );
                             }
                         }
-
-                        //println!("Adding block to the stack...");
-                        self.stack.push((name, block));
-
-                        while let Some(t) = self.token() {
-                            //println!("Stack is consuming the token {:?}", t);
-                            match self.advance(t) {
-                                Ok(node) => {
-                                    //println!("Got a node to add {:?}", node);
-                                    if node.is_none() || self.stack.is_empty() {
-                                        return Ok(node);
-                                    } else {
-                                        let (_, current) =
-                                            self.stack.last_mut().unwrap();
-                                        current.push(node.unwrap());
-                                    }
-                                }
-                                Err(e) => return Err(e),
+                        CallTarget::SubExpr(_) => {
+                            if !block.call().is_partial() {
+                                panic!("Sub expression block targets are only evaluated for partials");
                             }
                         }
-                    } else {
-                        // FIXME: use SyntaxError
-                        panic!("Block open statement not terminated!");
+                    }
+
+                    //println!("Adding block to the stack...");
+                    self.stack.push((name, block));
+
+                    while let Some(t) = self.token() {
+                        //println!("Stack is consuming the token {:?}", t);
+                        match self.advance(t) {
+                            Ok(node) => {
+                                //println!("Got a node to add {:?}", node);
+                                if node.is_none() || self.stack.is_empty() {
+                                    return Ok(node);
+                                } else {
+                                    let (_, current) =
+                                        self.stack.last_mut().unwrap();
+                                    current.push(node.unwrap());
+                                }
+                            }
+                            Err(e) => return Err(e),
+                        }
                     }
                 }
                 lexer::Block::EndBlockScope => {
@@ -294,13 +267,7 @@ impl<'source> Parser<'source> {
                     )?;
 
                     if self.stack.is_empty() {
-                        let close_name = if let Some(close) = temp {
-                            close.name()
-                        } else {
-                            None
-                        };
-
-                        let notes = if let Some(close) = close_name {
+                        let notes = if let Some(close) = temp.name() {
                             vec![format!("perhaps open the block '{}'", close)]
                         } else {
                             vec![]
@@ -324,45 +291,39 @@ impl<'source> Parser<'source> {
 
                     let (open_name, mut block) = self.stack.pop().unwrap();
 
-                    if let Some(close) = temp {
-                        if let Some(close_name) = close.name() {
-                            if open_name != close_name {
-                                return Err(SyntaxError::TagNameMismatch(
-                                    ErrorInfo::new_notes(
-                                        self.source,
-                                        self.state.file_name(),
-                                        SourcePos::from((
-                                            self.state.line(),
-                                            self.state.byte(),
-                                        )),
-                                        vec![format!(
-                                            "opening name is '{}'",
-                                            open_name
-                                        )],
-                                    ),
-                                ));
-                            }
-
-                            // TODO: update span for entire close tag: `{{/name}}`!
-                            block.exit(span);
-
-                            return Ok(Some(Node::Block(block)));
-                        } else {
-                            return Err(SyntaxError::ExpectedIdentifier(
-                                ErrorInfo::new(
+                    if let Some(close_name) = temp.name() {
+                        if open_name != close_name {
+                            return Err(SyntaxError::TagNameMismatch(
+                                ErrorInfo::new_notes(
                                     self.source,
                                     self.state.file_name(),
                                     SourcePos::from((
                                         self.state.line(),
                                         self.state.byte(),
                                     )),
+                                    vec![format!(
+                                        "opening name is '{}'",
+                                        open_name
+                                    )],
                                 ),
                             ));
                         }
+
+                        // TODO: update span for entire close tag: `{{/name}}`!
+                        block.exit(span);
+
+                        return Ok(Some(Node::Block(block)));
                     } else {
-                        panic!(
-                            "Unable to parse call parameters for close block"
-                        );
+                        return Err(SyntaxError::ExpectedIdentifier(
+                            ErrorInfo::new(
+                                self.source,
+                                self.state.file_name(),
+                                SourcePos::from((
+                                    self.state.line(),
+                                    self.state.byte(),
+                                )),
+                            ),
+                        ));
                     }
                 }
                 lexer::Block::StartStatement => {
@@ -373,35 +334,6 @@ impl<'source> Parser<'source> {
                         span,
                     )?;
                     return Ok(Some(Node::Statement(call)));
-
-                    /*
-                    match block::parameters(
-                        self.source,
-                        &mut self.lexer,
-                        &mut self.state,
-                        span,
-                        ParameterContext::Statement,
-                    ) {
-                        Ok(mut parameters) => {
-                            if let Some(params) = parameters.take() {
-                                match statement::parse(
-                                    self.source,
-                                    &mut self.state,
-                                    params,
-                                ) {
-                                    Ok(call) => {
-                                        return Ok(Some(Node::Statement(call)))
-                                    }
-                                    Err(e) => return Err(e),
-                                }
-                            } else {
-                                // FIXME: use SyntaxError
-                                panic!("Statement not terminated");
-                            }
-                        }
-                        Err(e) => return Err(e),
-                    }
-                    */
                 }
                 _ => {}
             },

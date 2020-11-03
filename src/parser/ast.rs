@@ -409,24 +409,7 @@ pub struct Call<'source> {
 }
 
 impl<'source> Call<'source> {
-    #[deprecated]
-    pub fn new(
-        source: &'source str,
-        partial: bool,
-        open: Range<usize>,
-    ) -> Self {
-        Self {
-            source,
-            partial,
-            open,
-            close: None,
-            target: CallTarget::Path(Path::new(source)),
-            arguments: Vec::new(),
-            hash: HashMap::new(),
-        }
-    }
-
-    pub fn new2(source: &'source str, open: Range<usize>) -> Self {
+    pub fn new(source: &'source str, open: Range<usize>) -> Self {
         Self {
             source,
             partial: false,
@@ -570,7 +553,7 @@ impl fmt::Display for Document<'_> {
 
 impl fmt::Debug for Document<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Block").field("nodes", &self.1).finish()
+        f.debug_struct("Document").field("nodes", &self.1).finish()
     }
 }
 
