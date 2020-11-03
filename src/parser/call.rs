@@ -115,7 +115,7 @@ fn parse_call<'source>(
 ) -> Result<(Call<'source>, Option<(Parameters, Span)>), SyntaxError<'source>> {
     let mut call = Call::new(source, partial, stmt_start);
     let next = parse_call_target(source, iter, state, current, &mut call)?;
-    call.exit(stmt_end);
+    call.exit(stmt_end.unwrap());
     Ok((call, next))
 }
 
@@ -306,6 +306,7 @@ fn advance<'source>(
                         panic!("Unexpected token");
                     }
                     Parameters::End => {
+                        call.exit(span);
                         return Ok(Some(call))
                     }
                 }

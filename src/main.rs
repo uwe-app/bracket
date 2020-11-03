@@ -11,6 +11,8 @@ fn main() {
     let data = json!({});
     let template = registry.compile(value, Default::default()).unwrap();
 
+    println!("{:?}", template);
+
     //match registry.once(name, &template, &data) {
         //Ok(result) => {
             //println!("{}", result);

@@ -478,8 +478,8 @@ impl<'source> Call<'source> {
         &self.hash
     }
 
-    pub fn exit(&mut self, close: Option<Range<usize>>) {
-        self.close = close;
+    pub fn exit(&mut self, close: Range<usize>) {
+        self.close = Some(close);
     }
 
     //pub fn as_str(&self) -> &'source str {
