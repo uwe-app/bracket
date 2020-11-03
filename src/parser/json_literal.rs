@@ -49,7 +49,6 @@ pub(crate) fn parse<'source>(
                         _ => {
                             panic!("Expected string token!");
                         }
-                    
                     }
                 }
 

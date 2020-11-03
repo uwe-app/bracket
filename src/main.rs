@@ -11,10 +11,10 @@ fn main() {
     let data = json!({});
     let template = registry.compile(value, Default::default()).unwrap();
 
-    match registry.once(name, &template, &data) {
-        Ok(result) => {
-            println!("{}", result);
-        }
-        Err(e) => log::error!("{:?}", e),
-    }
+    //match registry.once(name, &template, &data) {
+        //Ok(result) => {
+            //println!("{}", result);
+        //}
+        //Err(e) => log::error!("{:?}", e),
+    //}
 }

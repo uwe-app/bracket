@@ -426,10 +426,7 @@ impl<'source> Call<'source> {
         }
     }
 
-    pub fn new2(
-        source: &'source str,
-        open: Range<usize>,
-    ) -> Self {
+    pub fn new2(source: &'source str, open: Range<usize>) -> Self {
         Self {
             source,
             partial: false,
@@ -450,11 +447,11 @@ impl<'source> Call<'source> {
     }
 
     pub fn has_target(&self) -> bool {
-        self.target.as_str() != "" 
+        self.target.as_str() != ""
     }
 
     pub fn set_partial(&mut self, partial: bool) {
-        self.partial = partial; 
+        self.partial = partial;
     }
 
     pub fn set_target(&mut self, target: CallTarget<'source>) {

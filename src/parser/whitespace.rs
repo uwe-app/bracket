@@ -1,7 +1,7 @@
 use logos::Span;
 use std::vec::IntoIter;
 
-use crate::lexer::{Lexer, Token, Parameters};
+use crate::lexer::{Lexer, Parameters, Token};
 use crate::parser::ParseState;
 
 /// Consume whitespace tokens.

@@ -238,22 +238,21 @@ pub(crate) fn parse_path<'source>(
 }
 */
 
-pub(crate) fn parse<'source>(
+fn advance<'source>(
     source: &'source str,
     state: &mut ParseState,
     lexer: &mut Lexer<'source>,
-    open: Span,
-) -> Result<Call<'source>, SyntaxError<'source>> {
+    mut call: Call<'source>,
+    next: Option<Token>,
+) -> Result<Option<Call<'source>>, SyntaxError<'source>> {
 
-    let mut call = Call::new2(source, open);
-
-    while let Some(token) = lexer.next() {
+    if let Some(token) = next {
         match token {
             Token::Parameters(lex, span) => {
                 match &lex {
                     Parameters::WhiteSpace => {
                         *state.byte_mut() = span.end;
-                    },
+                    }
                     Parameters::Newline => {
                         *state.byte_mut() = span.end;
                         *state.line_mut() += 1;
@@ -263,42 +262,40 @@ pub(crate) fn parse<'source>(
                         // TODO: any call target/args/hash etc
                         call.set_partial(true);
                     }
-                    Parameters::ElseKeyword => {},
+                    Parameters::ElseKeyword => {}
                     // Path components
                     Parameters::ExplicitThisKeyword
-                        | Parameters::ExplicitThisDotSlash
-                        | Parameters::Identifier
-                        | Parameters::LocalIdentifier
-                        | Parameters::ParentRef
-                        | Parameters::ArrayAccess
-                        | Parameters::PathDelimiter => {
-                       if !call.has_target() {
-                            let path = path2::parse(
+                    | Parameters::ExplicitThisDotSlash
+                    | Parameters::Identifier
+                    | Parameters::LocalIdentifier
+                    | Parameters::ParentRef
+                    | Parameters::ArrayAccess
+                    | Parameters::PathDelimiter => {
+                        if !call.has_target() {
+                            let (mut path, token) = path2::parse(
                                 source,
                                 state,
                                 lexer,
-                                (lex, span))?;
+                                (lex, span),
+                            )?;
 
-                            call.set_target(CallTarget::Path(path));
-                       }
+                            if let Some(path) = path.take() {
+                                call.set_target(CallTarget::Path(path));
+                            }
+
+                            return advance(source, state, lexer, call, token)
+                        }
                     }
                     // Hash parameters
-                    Parameters::HashKey => {
-                    
-                    }
+                    Parameters::HashKey => {}
                     // Open a nested call
-                    Parameters::StartSubExpression => {
-                    
-                    }
+                    Parameters::StartSubExpression => {}
                     // Literal components
                     Parameters::StringLiteral
-                        | Parameters::Number
-                        | Parameters::True
-                        | Parameters::False
-                        | Parameters::Null
-                        => {
-                        
-                    }
+                    | Parameters::Number
+                    | Parameters::True
+                    | Parameters::False
+                    | Parameters::Null => {}
                     Parameters::PathDelimiter => {
                         panic!("Unexpected path delimiter");
                     }
@@ -309,10 +306,9 @@ pub(crate) fn parse<'source>(
                         panic!("Unexpected token");
                     }
                     Parameters::End => {
-                        println!("Got completed parameters!");
-                        todo!("Create and return the Call()");
+                        return Ok(Some(call))
                     }
-                }    
+                }
             }
             _ => {
                 panic!("Expecting parameter token");
@@ -320,49 +316,16 @@ pub(crate) fn parse<'source>(
         }
     }
 
-    Ok(call)
+    Ok(None)
+}
 
-    /*
-    let context = statement.context.clone();
-    let stmt_start = statement.start.clone();
-    let stmt_end = statement.end.clone();
-
-    let mut iter = statement.tokens.into_iter();
-
-    // Position as byte offset for syntax errors
-    *state.byte_mut() = stmt_start.end;
-
-    let next = whitespace::parse(&mut iter, state);
-
-    //println!("Next {:?}", next);
-
-    if next.is_none() {
-        return Err(SyntaxError::EmptyStatement(ErrorInfo::new(
-            source,
-            state.file_name(),
-            SourcePos::from((state.line(), state.byte())),
-        )));
-    }
-
-    let (partial, next) = partial(source, &mut iter, state, next);
-    if partial && next.is_none() {
-        return Err(SyntaxError::PartialIdentifier(ErrorInfo::new(
-            source,
-            state.file_name(),
-            SourcePos::from((state.line(), state.byte())),
-        )));
-    }
-
-    let callee = call(
-        source,
-        &mut iter,
-        state,
-        next,
-        partial,
-        stmt_start,
-        Some(stmt_end),
-    )?;
-
-    Ok(callee)
-    */
+pub(crate) fn parse<'source>(
+    source: &'source str,
+    state: &mut ParseState,
+    lexer: &mut Lexer<'source>,
+    open: Span,
+) -> Result<Option<Call<'source>>, SyntaxError<'source>> {
+    let mut call = Call::new2(source, open);
+    let next = lexer.next();
+    Ok(advance(source, state, lexer, call, next)?)
 }

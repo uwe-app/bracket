@@ -366,8 +366,17 @@ impl<'source> Parser<'source> {
                     }
                 }
                 lexer::Block::StartStatement => {
-                    let call = call::parse(self.source, &mut self.state, &mut self.lexer, span)?;
-                    return Ok(Some(Node::Statement(call)))
+                    let mut call = call::parse(
+                        self.source,
+                        &mut self.state,
+                        &mut self.lexer,
+                        span,
+                    )?;
+                    if let Some(call) = call.take() {
+                        return Ok(Some(Node::Statement(call)));
+                    } else {
+                        panic!("Unable to parse call node");
+                    }
 
                     /*
                     match block::parameters(
