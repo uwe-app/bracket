@@ -293,19 +293,14 @@ impl Helper for JsonHelper {
         let mut args = ctx.into_arguments();
         let target = args.swap_remove(0);
 
-        let compact = rc.is_truthy(args.get(0).unwrap_or(&Value::Bool(false)));
-
-        if compact {
-            if let Ok(s) = to_string(&target) {
-                rc.out().write(s.as_bytes()).map_err(Error::from)?;
-            }
+        let pretty = rc.is_truthy(args.get(0).unwrap_or(&Value::Bool(false)));
+        let value = if pretty {
+            Value::String(to_string_pretty(&target).map_err(Error::from)?)
         } else {
-            if let Ok(s) = to_string_pretty(&target) {
-                rc.out().write(s.as_bytes()).map_err(Error::from)?;
-            }
-        }
+            Value::String(to_string(&target).map_err(Error::from)?)
+        };
 
-        Ok(None)
+        Ok(Some(value))
     }
 }
 

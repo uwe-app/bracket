@@ -22,10 +22,10 @@ To help debug our templates we can use the `log` helper: `\{{log "Message to pri
 The `json` helper is useful for debugging template data, for example: `\{{json this}}` yields:
 
 ```json
-{{json this}}
+{{{json this true}}}
 ```
 
-If you want compact output pass a *truthy* value for the second argument: `\{{json this true}}`.
+If you want pretty output pass a *truthy* value for the second argument: `\{{json this true}}`.
 
 ## Debugging
 
