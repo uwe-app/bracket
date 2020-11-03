@@ -148,7 +148,7 @@ pub enum Parameters {
 
     // The parser creates these types when StringLiteral tokens
     // are encountered so they can be included in the parameters cache
-    StringToken(StringLiteral),
+    //StringToken(StringLiteral),
 
     // NOTE: Must have higher priority than identifier
     // NOTE: otherwise numbers become identifiers

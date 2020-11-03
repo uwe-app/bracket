@@ -183,7 +183,7 @@ pub(crate) fn parameters<'source>(
                     ));
                 }
                 _ => {
-                    params.tokens.push((Parameters::StringToken(lex), span));
+                    //params.tokens.push((Parameters::StringToken(lex), span));
                 }
             },
             Token::Parameters(lex, span) => match lex {

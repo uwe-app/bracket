@@ -1,10 +1,11 @@
 use logos::Span;
 use std::vec::IntoIter;
 
-use crate::lexer::Parameters;
+use crate::lexer::{Lexer, Token, Parameters};
 use crate::parser::ParseState;
 
 /// Consume whitespace tokens.
+#[deprecated]
 pub(crate) fn parse(
     iter: &mut IntoIter<(Parameters, Span)>,
     state: &mut ParseState,

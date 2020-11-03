@@ -13,8 +13,10 @@ static UNKNOWN: &str = "unknown";
 mod arguments;
 pub mod ast;
 mod block;
+mod call;
 mod json_literal;
 mod path;
+mod path2;
 mod statement;
 mod whitespace;
 
@@ -364,6 +366,10 @@ impl<'source> Parser<'source> {
                     }
                 }
                 lexer::Block::StartStatement => {
+                    let call = call::parse(self.source, &mut self.state, &mut self.lexer, span)?;
+                    return Ok(Some(Node::Statement(call)))
+
+                    /*
                     match block::parameters(
                         self.source,
                         &mut self.lexer,
@@ -390,6 +396,7 @@ impl<'source> Parser<'source> {
                         }
                         Err(e) => return Err(e),
                     }
+                    */
                 }
                 _ => {}
             },

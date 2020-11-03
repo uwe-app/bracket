@@ -35,6 +35,7 @@ pub(crate) fn parse<'source>(
                 let mut str_end = span.end;
                 while let Some((lex, span)) = iter.next() {
                     match lex {
+                        /*
                         Parameters::StringToken(s) => match s {
                             StringLiteral::End => {
                                 break;
@@ -44,9 +45,11 @@ pub(crate) fn parse<'source>(
                                 str_end = span.end;
                             }
                         },
+                        */
                         _ => {
                             panic!("Expected string token!");
                         }
+                    
                     }
                 }
 

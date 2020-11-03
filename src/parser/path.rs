@@ -37,6 +37,7 @@ fn component_type(lex: &Parameters) -> ComponentType {
     }
 }
 
+#[deprecated]
 pub(crate) fn parse<'source>(
     source: &'source str,
     iter: &mut IntoIter<(Parameters, Span)>,

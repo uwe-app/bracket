@@ -305,8 +305,13 @@ impl<'source> Path<'source> {
         self.parents
     }
 
+    #[deprecated]
     pub fn set_parents(&mut self, parents: u8) {
         self.parents = parents;
+    }
+
+    pub fn add_parent(&mut self) {
+        self.parents += 1;
     }
 
     pub fn set_root(&mut self, root: bool) {
@@ -404,6 +409,7 @@ pub struct Call<'source> {
 }
 
 impl<'source> Call<'source> {
+    #[deprecated]
     pub fn new(
         source: &'source str,
         partial: bool,
@@ -420,12 +426,35 @@ impl<'source> Call<'source> {
         }
     }
 
+    pub fn new2(
+        source: &'source str,
+        open: Range<usize>,
+    ) -> Self {
+        Self {
+            source,
+            partial: false,
+            open,
+            close: None,
+            target: CallTarget::Path(Path::new(source)),
+            arguments: Vec::new(),
+            hash: HashMap::new(),
+        }
+    }
+
     pub fn is_empty(&self) -> bool {
         self.target.is_empty()
     }
 
     pub fn target(&self) -> &CallTarget<'source> {
         &self.target
+    }
+
+    pub fn has_target(&self) -> bool {
+        self.target.as_str() != "" 
+    }
+
+    pub fn set_partial(&mut self, partial: bool) {
+        self.partial = partial; 
     }
 
     pub fn set_target(&mut self, target: CallTarget<'source>) {
