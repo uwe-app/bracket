@@ -10,7 +10,7 @@ readme = "README.md"
 
 [dependencies]
 logos = "0.11.4"
-log = "^0.4"
+log = { version = "^0.4", optional = true }
 serde = "^1.0"
 serde_json = "^1.0"
 unicode-width = "^0.1"
@@ -19,5 +19,6 @@ unicode-width = "^0.1"
 pretty_env_logger = "0.4"
 
 [features]
-default = ["json-helper"]
+default = ["log-helper", "json-helper"]
+log-helper = ["log"]
 json-helper = []

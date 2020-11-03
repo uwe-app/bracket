@@ -5,10 +5,12 @@ use std::ops::Range;
 
 use crate::{
     error::{HelperError as Error},
-    log::LogHelper,
     parser::ast::Node,
     render::{Render, Scope},
 };
+
+#[cfg(feature = "log-helper")]
+use crate::log::LogHelper;
 
 pub static FIRST: &str = "first";
 pub static LAST: &str = "last";
@@ -330,7 +332,9 @@ impl<'reg> HelperRegistry<'reg> {
     }
 
     fn builtins(&mut self) {
+        #[cfg(feature = "log-helper")]
         self.register_helper("log", Box::new(LogHelper {}));
+
         self.register_helper("lookup", Box::new(LookupHelper {}));
 
         self.register_block_helper("with", Box::new(WithHelper {}));
