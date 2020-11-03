@@ -176,7 +176,7 @@ pub(crate) fn components<'source>(
         }
     }
 
-    Ok(None)
+    Ok(lexer.next())
 }
 
 pub(crate) fn parse<'source>(
@@ -262,6 +262,9 @@ pub(crate) fn parse<'source>(
                         &mut path,
                         wants_delimiter,
                     )?;
+
+                    println!("returniing path with next {:?}", next);
+
                     return Ok((Some(path), next));
                 }
             }
