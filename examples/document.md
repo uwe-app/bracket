@@ -5,6 +5,7 @@ This is a markdown document using handlebars for templating. The first header is
 > {{{@root.title}}}
 
 The number is: {{list.[1]}}
+The lookup value is: {{lookup foo.bar "qux"}}
 
 ## Log
 

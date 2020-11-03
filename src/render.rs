@@ -154,6 +154,18 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         Ok(())
     }
 
+    /// Lookup a field of a value.
+    ///
+    /// If the target value is not an object or array then this 
+    /// will yield None.
+    pub fn field<'b, S: AsRef<str>>(
+        &self,
+        target: &'b Value,
+        field: S,
+    ) -> Option<&'b Value> {
+        json::find_field(target, field)
+    }
+
     /// Infallible variable lookup by path.
     fn lookup(&'source self, path: &'source Path) -> Option<&'source Value> {
         //println!("Lookup path {:?}", path.as_str());

@@ -24,6 +24,11 @@ fn main() -> Result<'static, ()> {
             "apples": 1,
             "oranges": 2,
             "pears": 3,
+        },
+        "foo": {
+            "bar": {
+                "qux": 42 
+            }
         }
     });
 

@@ -18,7 +18,7 @@ pub(crate) fn find_parts<'a, 'b, I>(
             let mut next_part = it.next();
             while let Some(part) = next_part {
                 if let Some(target) = current {
-                    current = find_field(&part, target);
+                    current = find_field(target, part);
                 } else { break }
                 next_part = it.next();
                 if next_part.is_none() && current.is_some() {
@@ -33,10 +33,10 @@ pub(crate) fn find_parts<'a, 'b, I>(
 
 // Look up a field in an array or object.
 pub(crate) fn find_field<'b, S: AsRef<str>>(
+    target: &'b Value,
     field: S,
-    parent: &'b Value,
 ) -> Option<&'b Value> {
-    match parent {
+    match target {
         Value::Object(ref map) => {
             if let Some(val) = map.get(field.as_ref()) {
                 return Some(val);
