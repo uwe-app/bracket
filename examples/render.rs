@@ -29,11 +29,13 @@ fn main() -> Result<'static, ()> {
             "bar": {
                 "qux": 42
             }
-        }
+        },
+        "partial-name": "dynamic-partial"
     });
 
     let mut loader = Loader::new();
     loader.add("partial", PathBuf::from("examples/partial.md"))?;
+    loader.add("dynamic-partial", PathBuf::from("examples/dynamic-partial.md"))?;
     loader.insert(name, content);
 
     let mut templates = Templates::new();

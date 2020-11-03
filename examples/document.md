@@ -57,4 +57,11 @@ When we iterate objects we can also access the `@key` field:
 * {{@key}} = {{this}}, Index: {{@index}}, First: {{@first}}, Last: {{@last}}
 {{/each}}
 
-{{> partial message="Hello from document"}}
+## Dynamic Partial
+
+{{> (partial-name) message="Hello dynamic partial!"}}
+
+## Partial
+
+{{> partial message="Hello partial!"}}
+

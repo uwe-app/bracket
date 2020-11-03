@@ -320,11 +320,11 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     fn render_partial<'a>(
         &mut self,
         call: &'source Call<'source>,
-        name: &'source str,
+        name: String,
     ) -> RenderResult<'source, ()> {
         let template = self
             .templates
-            .get(name)
+            .get(&name)
             .ok_or_else(|| RenderError::PartialNotFound(name))?;
 
         let node: &'source Node<'_> = template.node();
@@ -338,20 +338,26 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     fn get_partial_name(
-        &self,
+        &mut self,
         call: &'source Call<'source>,
-    ) -> Option<&'source str> {
+    ) -> Result<String, RenderError<'source>> {
         match call.target() {
             CallTarget::Path(ref path) => {
                 if path.is_simple() {
-                    return Some(path.as_str());
+                    return Ok(path.as_str().to_string());
                 } else {
                     panic!("Partials must be simple identifiers");
                 }
             }
-            _ => todo!("Handle sub expressions"),
+            CallTarget::SubExpr(ref call) => {
+                /*
+                let result = self.statement(call)?.unwrap_or(Value::Null);
+                println!("Got sub expression result {:?}", result);
+                return Ok(json::stringify(&result));
+                */
+            }
         }
-        None
+        Err(RenderError::PartialNameResolve(call.as_str()))
     }
 
     // Fallible version of path lookup.
@@ -373,9 +379,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         //println!("Statement {:?}", call.as_str());
 
         if call.is_partial() {
-            let name = self.get_partial_name(call).ok_or_else(|| {
-                RenderError::PartialNameResolve(call.as_str())
-            })?;
+            let name = self.get_partial_name(call)?;
             self.render_partial(call, name)?;
         } else {
             match call.target() {
@@ -483,7 +487,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             }
             Node::Statement(ref call) => {
                 if let Some(ref value) = self.statement(call)? {
-                    let val = json::stringify(value)?;
+                    let val = json::stringify(value);
                     self.write_str(&val, call.is_escaped())?;
                 }
             }

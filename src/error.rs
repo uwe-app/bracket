@@ -296,7 +296,7 @@ impl fmt::Debug for SyntaxError<'_> {
 
 pub enum RenderError<'source> {
     PartialNameResolve(&'source str),
-    PartialNotFound(&'source str),
+    PartialNotFound(String),
     Helper(HelperError),
     Io(IoError),
     Json(serde_json::Error),
@@ -326,7 +326,7 @@ impl fmt::Display for RenderError<'_> {
             Self::PartialNameResolve(name) => {
                 write!(f, "Unable to resolve partial name from '{}'", name)
             }
-            Self::PartialNotFound(name) => {
+            Self::PartialNotFound(ref name) => {
                 write!(f, "Partial '{}' not found", name)
             }
             Self::Helper(ref e) => fmt::Display::fmt(e, f),
