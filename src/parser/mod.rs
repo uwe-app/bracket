@@ -1,9 +1,7 @@
 //! Convert the lexer token stream to AST nodes.
-use logos::Span;
-
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
-    lexer::{self, lex, Lexer, Parameters, Token},
+    lexer::{self, lex, Lexer, Token},
     parser::ast::{Block, CallTarget, Document, Node, Text},
 };
 

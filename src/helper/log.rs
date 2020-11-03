@@ -1,6 +1,5 @@
 //! Helper to print log messages.
 use crate::{
-    error::HelperError as Error,
     helper::{Context, Helper, ValueResult},
     render::Render,
 };

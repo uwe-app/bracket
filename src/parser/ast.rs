@@ -305,13 +305,8 @@ impl<'source> Path<'source> {
         self.parents
     }
 
-    #[deprecated]
     pub fn set_parents(&mut self, parents: u8) {
         self.parents = parents;
-    }
-
-    pub fn add_parent(&mut self) {
-        self.parents += 1;
     }
 
     pub fn set_root(&mut self, root: bool) {

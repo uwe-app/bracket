@@ -1,11 +1,11 @@
 use std::ops::Range;
 
 use crate::{
-    error::{ErrorInfo, SourcePos, SyntaxError},
-    lexer::{self, Lexer, Parameters, Token},
+    error::SyntaxError,
+    lexer::{self, Lexer, Token},
     parser::{
         ast::{Block, Node, Text, TextBlock},
-        call, ParameterContext, ParseState,
+        call, ParseState,
     },
 };
 

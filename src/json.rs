@@ -1,4 +1,5 @@
-use serde_json::{Error, Value};
+//! Helper functions for working with JSON values.
+use serde_json::Value;
 
 pub(crate) fn stringify(value: &Value) -> String {
     match value {

@@ -3,8 +3,6 @@ pub mod escape;
 pub mod helper;
 pub(crate) mod json;
 pub mod lexer;
-#[cfg(feature = "log-helper")]
-pub mod log;
 pub mod output;
 pub mod parser;
 pub mod registry;

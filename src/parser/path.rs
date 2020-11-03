@@ -1,5 +1,3 @@
-use std::vec::IntoIter;
-
 use logos::Span;
 
 use crate::{
@@ -47,7 +45,7 @@ fn parents<'source>(
         match &token {
             Token::Parameters(lex, span) => match &lex {
                 Parameters::ParentRef => {
-                    path.add_parent();
+                    path.set_parents(path.parents() + 1);
                 }
                 _ => return Some(token),
             },

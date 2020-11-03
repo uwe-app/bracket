@@ -1,14 +1,11 @@
-use std::ops::Range;
-use std::vec::IntoIter;
-
 use logos::Span;
 use serde_json::{Value, Number};
 
 use crate::{
-    error::{ErrorInfo, SourcePos, SyntaxError},
+    error::SyntaxError,
     lexer::{Lexer, Parameters, Token, StringLiteral},
     parser::{
-        ast::{Call, CallTarget, Path, ParameterValue},
+        ast::{Call, CallTarget, ParameterValue},
         path, ParseState,
     },
 };

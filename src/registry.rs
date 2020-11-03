@@ -6,7 +6,7 @@ use crate::{
     helper::HelperRegistry,
     output::{Output, StringOutput},
     parser::ParserOptions,
-    template::{Loader, Template, Templates},
+    template::{Template, Templates},
     Error, Result,
 };
 
