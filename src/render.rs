@@ -240,40 +240,49 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     /// Create the context arguments list.
-    fn arguments(&mut self, call: &'source Call<'source>) -> Vec<Value> {
-        call.arguments()
-            .iter()
-            .map(|p| {
-                match p {
-                    ParameterValue::Json(val) => val.clone(),
-                    ParameterValue::Path(ref path) => self
-                        .lookup(path)
-                        .map(|v| v.clone())
-                        .unwrap_or(Value::Null),
-                    _ => {
-                        // TODO: evaluate sub-expressions
-                        panic!("Evaluate sub expression in argument");
-                        //Value::Null
-                    }
+    fn arguments(&self, call: &'source Call<'source>)
+        -> RenderResult<'source, Vec<Value>> {
+
+        let mut out: Vec<Value> = Vec::new();
+        for p in call.arguments() {
+            let arg = match p {
+                ParameterValue::Json(val) => val.clone(),
+                ParameterValue::Path(ref path) => {
+                    self.lookup(path)
+                        .cloned()
+                        .unwrap_or(Value::Null)
                 }
-            })
-            .collect()
+                ParameterValue::SubExpr(ref call) => {
+                    panic!("Evaluate sub expression in argument");
+                }
+            };
+            out.push(arg);
+        }
+        Ok(out)
     }
 
     /// Create the context hash parameters.
-    fn hash(call: &'source Call<'source>) -> Map<String, Value> {
-        call.hash()
-            .iter()
-            .map(|(k, p)| {
-                match p {
-                    ParameterValue::Json(val) => (k.to_string(), val.clone()),
-                    _ => {
-                        // TODO: evaluate sub-expressions
-                        (k.to_string(), Value::Null)
-                    }
+    fn hash(&self, call: &'source Call<'source>)
+        -> RenderResult<'source, Map<String, Value>> {
+
+        let mut out = Map::new();
+        for (k, p) in call.hash() {
+            let (key, value) = match p {
+                ParameterValue::Json(val) => (k.to_string(), val.clone()),
+                ParameterValue::Path(ref path) => {
+                    let val = self.lookup(path)
+                        .cloned()
+                        .unwrap_or(Value::Null);
+                    (k.to_string(), val)
                 }
-            })
-            .collect::<Map<_, _>>()
+                ParameterValue::SubExpr(ref call) => {
+                    panic!("Evaluate sub expression in hash");
+                }
+            };
+            out.insert(key, value);
+        }
+
+        Ok(out)
     }
 
     fn invoke_helper(
@@ -282,8 +291,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         call: &'source Call<'source>,
     ) -> RenderResult<'source, HelperValue> {
         if let Some(helper) = self.helpers.get(name) {
-            let args = self.arguments(call);
-            let hash = Render::hash(call);
+            let args = self.arguments(call)?;
+            let hash = self.hash(call)?;
             let context = Context::new(name, args, hash);
             return Ok(helper.call(self, context)?);
         }
@@ -299,8 +308,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         inverse: Option<&'source Node<'source>>,
     ) -> RenderResult<'source, ()> {
         if let Some(helper) = self.helpers.get_block(name) {
-            let args = self.arguments(call);
-            let hash = Render::hash(call);
+            let args = self.arguments(call)?;
+            let hash = self.hash(call)?;
             let context = Context::new(name, args, hash);
             let block = BlockTemplate::new(template, inverse);
             helper.call(self, context, block)?;
@@ -309,21 +318,21 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     fn render_partial<'a>(
-        rc: &'a mut Render<'reg, 'source, 'render>,
+        &mut self,
         call: &'source Call<'source>,
         name: &'source str,
     ) -> RenderResult<'source, ()> {
-        let template = rc
+        let template = self
             .templates
             .get(name)
             .ok_or_else(|| RenderError::PartialNotFound(name))?;
 
         let node: &'source Node<'_> = template.node();
-        let hash = Render::hash(call);
+        let hash = self.hash(call)?;
         let scope = Scope::new_locals(hash);
-        rc.scopes.push(scope);
-        rc.render_node(node)?;
-        rc.scopes.pop();
+        self.scopes.push(scope);
+        self.render_node(node)?;
+        self.scopes.pop();
 
         Ok(())
     }
@@ -369,7 +378,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             let name = self.get_partial_name(call).ok_or_else(|| {
                 RenderError::PartialNameResolve(call.as_str())
             })?;
-            Render::render_partial(self, call, name)?;
+            self.render_partial(call, name)?;
         } else {
             match call.target() {
                 CallTarget::Path(ref path) => {

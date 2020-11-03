@@ -31,7 +31,7 @@ If you want compact output pass a *truthy* value for the second argument: `\{{js
 
 Use sub expressions to combine logging with JSON evaluation `\{{log (json this)}}`.
 
-\{{log (json this)}}
+{{log (json this)}}
 
 ## With
 

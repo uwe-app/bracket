@@ -50,9 +50,6 @@ fn parse_statement_sub_expr() -> Result<'static, ()> {
                 }
                 _ => panic!("Expecting call statement")
             }
-
-            //assert_eq!(false, node.trim_before());
-            //assert_eq!(false, node.trim_after());
         }
         _ => panic!("Bad root node type for parser()."),
     }
