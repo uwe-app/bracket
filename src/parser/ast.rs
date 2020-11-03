@@ -482,6 +482,10 @@ impl<'source> Call<'source> {
         self.close = Some(close);
     }
 
+    pub fn is_closed(&self) -> bool {
+        self.close.is_some()
+    }
+
     //pub fn as_str(&self) -> &'source str {
     //&self.source[self.open.start..self.close.end]
     //}

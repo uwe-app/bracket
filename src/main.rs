@@ -7,11 +7,11 @@ use serde_json::json;
 fn main() {
     let mut registry = Registry::new();
     let name = "main.rs";
-    let value = r#"{{foo.bar.qux true false null 3.14  "blah" key=value}}"#;
+    let value = r#"{{foo.bar.qux true false null 3.14  "blah" key=value alt="foo"}}"#;
     let data = json!({});
     let template = registry.compile(value, Default::default()).unwrap();
 
-    println!("{:?}", template);
+    println!("{:#?}", template);
 
     //match registry.once(name, &template, &data) {
         //Ok(result) => {

@@ -65,10 +65,6 @@ fn json_literal<'source>(
         }
         Parameters::StringLiteral => {
             string_literal(source, state, lexer, (lex, span))?
-            //let str_start = span.end;
-            //let mut str_end = span.end;
-            //let str_value = &source[str_start..str_end];
-            //Some(Value::String(str_value.to_string()))
         }
         _ => {
             // FIXME: how to handle this?
@@ -119,21 +115,78 @@ fn value<'source>(
             let value = json_literal(source, state, lexer, (lex, span))?;
             return Ok((ParameterValue::Json(value), lexer.next()));
         }
-        _ => panic!("Unexpected token while parsing value!"),
+        _ => panic!("Unexpected token while parsing value! {:?}", lex),
     }
 
     panic!("Expecting value!");
+}
+
+fn key_value<'source>(
+    source: &'source str,
+    state: &mut ParseState,
+    lexer: &mut Lexer<'source>,
+    call: &mut Call<'source>,
+    current: (Parameters, Span),
+) -> Result<Option<Token>, SyntaxError<'source>> {
+
+    let (lex, span) = current;
+    let key = &source[span.start..span.end - 1];
+    let mut next: Option<Token> = None;
+
+    // Consume the first value
+    if let Some(token) = lexer.next() {
+        match token {
+            Token::Parameters(lex, span) => {
+                let (mut value, token) = value(source, state, lexer, (lex, span))?;
+                println!("Reading value for the key {:?}", key);
+                println!("Reading value {:?}", &value);
+                call.add_hash(key, value);
+                println!("After value the token is {:?}", token);
+                next = token;
+            }
+            _ => panic!("Expecting parameter token for key/value pair!"),
+        }
+    }
+
+    // Read in other key/value pairs
+    while let Some(token) = next {
+        println!("Parsing key value {:?}", token);
+        match token {
+            Token::Parameters(lex, span) => {
+                match &lex {
+                    Parameters::WhiteSpace | Parameters::Newline => {
+                        if lex == Parameters::Newline {
+                            *state.line_mut() += 1;
+                        }
+                    }
+                    Parameters::HashKey => {
+                        println!("Got another key value...");
+                        return key_value(source, state, lexer, call, (lex, span));
+                    }
+                    Parameters::End => {
+                        println!("GOT TO THE END OF THE PARAMETERS");
+                        call.exit(span);
+                        return Ok(lexer.next())
+                    }
+                    _ => panic!("Unexpected parameter token parsing hash parameters"),
+                }
+            }
+            _ => panic!("Unexpected token whilst parsing hash parameters"),
+        } 
+        next = lexer.next();
+    }
+    Ok(None)
 }
 
 fn arguments<'source>(
     source: &'source str,
     state: &mut ParseState,
     lexer: &mut Lexer<'source>,
-    mut call: Call<'source>,
+    call: &mut Call<'source>,
     next: Option<Token>,
-) -> Result<Option<Call<'source>>, SyntaxError<'source>> {
+) -> Result<Option<Token>, SyntaxError<'source>> {
 
-    println!("Arguments {:?}", next);
+    //println!("Arguments {:?}", next);
 
     if let Some(token) = next {
         match token {
@@ -164,7 +217,7 @@ fn arguments<'source>(
                     }
                     // Hash parameters
                     Parameters::HashKey => {
-                        println!("Got hash parameters to pass...");
+                        return key_value(source, state, lexer, call, (lex, span));
                     }
                     // Open a nested call
                     Parameters::StartSubExpression => {
@@ -192,7 +245,7 @@ fn arguments<'source>(
                     }
                     Parameters::End => {
                         call.exit(span);
-                        return Ok(Some(call))
+                        return Ok(lexer.next())
                     }
                 }
             }
@@ -205,30 +258,23 @@ fn arguments<'source>(
     Ok(None)
 }
 
-/// Parse the call target and handle partial flag.
+/// Parse the call target.
 fn target<'source>(
     source: &'source str,
     state: &mut ParseState,
     lexer: &mut Lexer<'source>,
     call: &mut Call<'source>,
-    next: Option<Token>,
+    mut next: Option<Token>,
 ) -> Result<Option<Token>, SyntaxError<'source>> {
 
-    if let Some(token) = next {
+    while let Some(token) = next {
         match token {
             Token::Parameters(lex, span) => {
                 match &lex {
-                    Parameters::WhiteSpace => {
-                        *state.byte_mut() = span.end;
-                    }
-                    Parameters::Newline => {
-                        *state.byte_mut() = span.end;
-                        *state.line_mut() += 1;
-                    }
-                    Parameters::Partial => {
-                        // TODO: ensure partial is set before
-                        // TODO: any call target/args/hash etc
-                        call.set_partial(true);
+                    Parameters::WhiteSpace | Parameters::Newline => {
+                        if lex == Parameters::Newline {
+                            *state.line_mut() += 1;
+                        }
                     }
                     Parameters::ElseKeyword => {
                         todo!("Got else keyword parsing call target");
@@ -250,8 +296,9 @@ fn target<'source>(
 
                         if let Some(path) = path.take() {
                             call.set_target(CallTarget::Path(path));
-                            return Ok(token)
                         }
+
+                        return Ok(token)
                     }
                     Parameters::StartSubExpression => {
                         todo!("Parse sub expression for call target");
@@ -265,6 +312,39 @@ fn target<'source>(
                 panic!("Expecting parameter token");
             }
         }
+
+        next = lexer.next();
+    }
+    Ok(None)
+}
+
+/// Parse the partial flag.
+fn partial<'source>(
+    source: &'source str,
+    state: &mut ParseState,
+    lexer: &mut Lexer<'source>,
+    call: &mut Call<'source>,
+    mut next: Option<Token>,
+) -> Result<Option<Token>, SyntaxError<'source>> {
+    while let Some(token) = next {
+        match token {
+            Token::Parameters(lex, span) => {
+                match &lex {
+                    Parameters::WhiteSpace | Parameters::Newline => {
+                        if lex == Parameters::Newline {
+                            *state.line_mut() += 1;
+                        }
+                    }
+                    Parameters::Partial => {
+                        call.set_partial(true);
+                        return Ok(lexer.next());
+                    }
+                    _ => return Ok(Some(Token::Parameters(lex, span))),
+                }
+            }
+            _ => return Ok(Some(token))
+        }
+        next = lexer.next();
     }
     Ok(None)
 }
@@ -274,10 +354,14 @@ pub(crate) fn parse<'source>(
     state: &mut ParseState,
     lexer: &mut Lexer<'source>,
     open: Span,
-) -> Result<Option<Call<'source>>, SyntaxError<'source>> {
+) -> Result<Call<'source>, SyntaxError<'source>> {
     let mut call = Call::new2(source, open);
     let next = lexer.next();
+    let next = partial(source, state, lexer, &mut call, next)?;
     let next = target(source, state, lexer, &mut call, next)?;
-    let next = arguments(source, state, lexer, call, next)?;
-    Ok(next)
+    let next = arguments(source, state, lexer, &mut call, next)?;
+    if !call.is_closed() {
+        panic!("Call statement was not terminated");
+    }
+    Ok(call)
 }

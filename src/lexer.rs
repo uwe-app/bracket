@@ -146,10 +146,6 @@ pub enum Parameters {
     #[token("\"")]
     StringLiteral,
 
-    // The parser creates these types when StringLiteral tokens
-    // are encountered so they can be included in the parameters cache
-    //StringToken(StringLiteral),
-
     // NOTE: Must have higher priority than identifier
     // NOTE: otherwise numbers become identifiers
     #[regex(r"-?([0-9]+\.)?[0-9]+((e|E)[+-]?[0-9]+)?", priority = 3)]

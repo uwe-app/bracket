@@ -372,11 +372,7 @@ impl<'source> Parser<'source> {
                         &mut self.lexer,
                         span,
                     )?;
-                    if let Some(call) = call.take() {
-                        return Ok(Some(Node::Statement(call)));
-                    } else {
-                        panic!("Unable to parse call node");
-                    }
+                    return Ok(Some(Node::Statement(call)));
 
                     /*
                     match block::parameters(
