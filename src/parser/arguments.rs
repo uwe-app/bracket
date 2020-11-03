@@ -8,6 +8,7 @@ use crate::{
     parser::{
         ast::{Call, ParameterValue},
         json_literal, path, whitespace, ParseState,
+        statement,
     },
 };
 
@@ -24,6 +25,14 @@ fn parse_value<'source>(
     let mut next: Option<(Parameters, Span)> = None;
     if let Some((lex, span)) = current {
         match &lex {
+            Parameters::StartSubExpression => {
+                let stmt_start = span.clone();
+                let next_token = iter.next();
+                let sub_call = 
+                    statement::call(source, iter, state, next_token, false, stmt_start, None)?;
+                value = Some(ParameterValue::SubExpr(sub_call));
+                next = iter.next();
+            }
             Parameters::Null
             | Parameters::True
             | Parameters::False

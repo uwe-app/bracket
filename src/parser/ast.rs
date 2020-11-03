@@ -366,6 +366,13 @@ pub enum CallTarget<'source> {
 }
 
 impl<'source> CallTarget<'source> {
+    pub fn as_str(&self) -> &'source str {
+        match *self {
+            Self::Path(ref path) => path.as_str(),
+            Self::SubExpr(ref call) => call.as_str(),
+        }
+    }
+
     // FIXME!
     pub fn is_empty(&self) -> bool {
         match *self {
@@ -390,7 +397,7 @@ pub struct Call<'source> {
     source: &'source str,
     partial: bool,
     open: Range<usize>,
-    close: Range<usize>,
+    close: Option<Range<usize>>,
     target: CallTarget<'source>,
     arguments: Vec<ParameterValue<'source>>,
     hash: HashMap<&'source str, ParameterValue<'source>>,
@@ -401,13 +408,12 @@ impl<'source> Call<'source> {
         source: &'source str,
         partial: bool,
         open: Range<usize>,
-        close: Range<usize>,
     ) -> Self {
         Self {
             source,
             partial,
             open,
-            close,
+            close: None,
             target: CallTarget::Path(Path::new(source)),
             arguments: Vec::new(),
             hash: HashMap::new(),
@@ -446,12 +452,19 @@ impl<'source> Call<'source> {
         &self.hash
     }
 
+    pub fn exit(&mut self, close: Option<Range<usize>>) {
+        self.close = close;
+    }
+
     //pub fn as_str(&self) -> &'source str {
     //&self.source[self.open.start..self.close.end]
     //}
 
     pub fn as_str(&self) -> &'source str {
-        &self.source[self.open.end..self.close.start]
+        if let Some(ref close) = self.close {
+            return &self.source[self.open.end..close.start]
+        }
+        &self.source[self.open.start..self.open.end]
     }
 
     pub fn open(&self) -> &'source str {
@@ -459,7 +472,10 @@ impl<'source> Call<'source> {
     }
 
     pub fn close(&self) -> &'source str {
-        &self.source[self.close.start..self.close.end]
+        if let Some(ref close) = self.close {
+            return &self.source[close.start..close.end]
+        }
+        ""
     }
 
     pub fn trim_before(&self) -> bool {

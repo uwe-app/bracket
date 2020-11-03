@@ -13,12 +13,12 @@ use crate::{
     },
 };
 
+type SubExpression = Vec<(Parameters, Span)>;
+
 /// Collect sub expression tokens.
 fn sub_expr(
     iter: &mut IntoIter<(Parameters, Span)>,
-) -> (Vec<(Parameters, Span)>, Option<Range<usize>>) {
-    //let stmt_end: Option<Range<usize>> = None;
-
+) -> (SubExpression, Option<Span>) {
     let mut sub_expr: Vec<(Parameters, Span)> = Vec::new();
     while let Some((lex, span)) = iter.next() {
         match &lex {
@@ -33,6 +33,48 @@ fn sub_expr(
     (sub_expr, None)
 }
 
+/// Parse a sub expression.
+pub(crate) fn parse_sub_expr<'source>(
+    source: &'source str,
+    iter: &mut IntoIter<(Parameters, Span)>,
+    state: &mut ParseState,
+    current: (Parameters, Span),
+) -> Result<(Call<'source>, Option<(Parameters, Span)>), SyntaxError<'source>> {
+
+    let (lex, span) = current;
+    let stmt_start = span.clone();
+    let (mut sub_expr, stmt_end) = sub_expr(iter);
+
+    if stmt_end.is_none() {
+        *state.byte_mut() = stmt_start.end;
+        if !sub_expr.is_empty() {
+            let (_, last_span) = sub_expr.pop().unwrap();
+            *state.byte_mut() = last_span.end;
+        }
+        return Err(SyntaxError::OpenSubExpression(
+            ErrorInfo::new_notes(
+                source,
+                state.file_name(),
+                SourcePos::from((state.line(), state.byte())),
+                vec!["requires closing parenthesis ')'".to_string()],
+            ),
+        ));
+    }
+
+    // NOTE: must advance past the start sub expresion token!
+    //Ok((iter.next(), stmt_start, sub_expr, stmt_end))
+    let next = iter.next();
+    parse_call(
+        source,
+        &mut sub_expr.into_iter(),
+        state,
+        next,
+        false,
+        stmt_start,
+        stmt_end,
+    )
+}
+
 fn parse_call_target<'source>(
     source: &'source str,
     iter: &mut IntoIter<(Parameters, Span)>,
@@ -43,39 +85,8 @@ fn parse_call_target<'source>(
     if let Some((lex, span)) = current {
         let next = match &lex {
             Parameters::StartSubExpression => {
-                let stmt_start = span.clone();
-
-                let (mut sub_expr, stmt_end) = sub_expr(iter);
-
-                if stmt_end.is_none() {
-                    *state.byte_mut() = stmt_start.end;
-                    if !sub_expr.is_empty() {
-                        let (_, last_span) = sub_expr.pop().unwrap();
-                        *state.byte_mut() = last_span.end;
-                    }
-                    return Err(SyntaxError::OpenSubExpression(
-                        ErrorInfo::new_notes(
-                            source,
-                            state.file_name(),
-                            SourcePos::from((state.line(), state.byte())),
-                            vec!["requires closing parenthesis ')'".to_string()],
-                        ),
-                    ));
-                }
-
-                // NOTE: must advance past the start sub expresion token!
-                let next = iter.next();
-
-                let (sub_call, next) = parse_call(
-                    source,
-                    &mut sub_expr.into_iter(),
-                    state,
-                    next,
-                    false,
-                    stmt_start,
-                    stmt_end.unwrap(),
-                )?;
-
+                let (sub_call, next) = 
+                    parse_sub_expr(source, iter, state, (lex, span))?;
                 call.set_target(CallTarget::SubExpr(Box::new(sub_call)));
                 next
             }
@@ -103,11 +114,11 @@ fn parse_call<'source>(
     current: Option<(Parameters, Span)>,
     partial: bool,
     stmt_start: Range<usize>,
-    stmt_end: Range<usize>,
+    stmt_end: Option<Range<usize>>,
 ) -> Result<(Call<'source>, Option<(Parameters, Span)>), SyntaxError<'source>> {
-    let mut call = Call::new(source, partial, stmt_start, stmt_end);
+    let mut call = Call::new(source, partial, stmt_start);
     let next = parse_call_target(source, iter, state, current, &mut call)?;
-
+    call.exit(stmt_end);
     Ok((call, next))
 }
 
@@ -132,48 +143,18 @@ fn partial<'source>(
     (false, None)
 }
 
-pub(crate) fn parse<'source>(
+pub(crate) fn call<'source>(
     source: &'source str,
+    iter: &mut IntoIter<(Parameters, Span)>,
     state: &mut ParseState,
-    //file_name: &str,
-    //line: &mut usize,
-    //byte_offset: &mut usize,
-    statement: ParameterCache,
+    current: Option<(Parameters, Span)>,
+    partial: bool,
+    stmt_start: Range<usize>,
+    stmt_end: Option<Range<usize>>,
 ) -> Result<Call<'source>, SyntaxError<'source>> {
-    let context = statement.context.clone();
-    let stmt_start = statement.start.clone();
-    let stmt_end = statement.end.clone();
-
-    let mut iter = statement.tokens.into_iter();
-
-    // Position as byte offset for syntax errors
-    *state.byte_mut() = stmt_start.end;
-
-    let next = whitespace::parse(&mut iter, state);
-
-    //println!("Next {:?}", next);
-
-    if next.is_none() {
-        return Err(SyntaxError::EmptyStatement(ErrorInfo::new(
-            source,
-            state.file_name(),
-            SourcePos::from((state.line(), state.byte())),
-        )));
-    }
-
-    //println!("After leading whitespce {:?}", next);
-    let (partial, next) = partial(source, &mut iter, state, next);
-    //println!("After partial parse {:?} {:?}", partial, &next);
-    if partial && next.is_none() {
-        return Err(SyntaxError::PartialIdentifier(ErrorInfo::new(
-            source,
-            state.file_name(),
-            SourcePos::from((state.line(), state.byte())),
-        )));
-    }
 
     let (mut call, next) = parse_call(
-        source, &mut iter, state, next, partial, stmt_start, stmt_end,
+        source, iter, state, current, partial, stmt_start, stmt_end,
     )?;
 
     // Partials must be simple identifiers or sub expressions.
@@ -230,8 +211,50 @@ pub(crate) fn parse<'source>(
     }
     */
 
-    arguments::parse(source, &mut iter, state, &mut call)?;
+    arguments::parse(source, iter, state, &mut call)?;
     //println!("Arguments {:?}", call.arguments());
 
     Ok(call)
+}
+
+pub(crate) fn parse<'source>(
+    source: &'source str,
+    state: &mut ParseState,
+    statement: ParameterCache,
+) -> Result<Call<'source>, SyntaxError<'source>> {
+    let context = statement.context.clone();
+    let stmt_start = statement.start.clone();
+    let stmt_end = statement.end.clone();
+
+    let mut iter = statement.tokens.into_iter();
+
+    // Position as byte offset for syntax errors
+    *state.byte_mut() = stmt_start.end;
+
+    let next = whitespace::parse(&mut iter, state);
+
+    //println!("Next {:?}", next);
+
+    if next.is_none() {
+        return Err(SyntaxError::EmptyStatement(ErrorInfo::new(
+            source,
+            state.file_name(),
+            SourcePos::from((state.line(), state.byte())),
+        )));
+    }
+
+    let (partial, next) = partial(source, &mut iter, state, next);
+    if partial && next.is_none() {
+        return Err(SyntaxError::PartialIdentifier(ErrorInfo::new(
+            source,
+            state.file_name(),
+            SourcePos::from((state.line(), state.byte())),
+        )));
+    }
+
+    let callee = call(
+        source, &mut iter, state, next, partial, stmt_start, Some(stmt_end),
+    )?;
+
+    Ok(callee)
 }
