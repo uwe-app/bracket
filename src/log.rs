@@ -15,18 +15,16 @@ impl Helper for LogHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: Context<'source>,
     ) -> ValueResult {
-        let message = ctx
-            .arguments()
-            .get(0)
-            .ok_or_else(|| Error::ArityExact(ctx.name().to_string(), 1))?
-            .as_str()
-            .ok_or_else(|| {
-                Error::ArgumentTypeString(ctx.name().to_string(), 1)
-            })?
-            .to_string();
+        ctx.assert_arity(1..usize::MAX)?;
 
-        let level = ctx
-            .hash()
+        let (name, args, hash) = ctx.into();
+        let message = args
+            .iter()
+            .map(|v| v.to_string())
+            .collect::<Vec<String>>()
+            .join(" ");
+
+        let level = hash
             .get("level")
             .map(|v| v.as_str())
             .unwrap_or(Some("info"))
