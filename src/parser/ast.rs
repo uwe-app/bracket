@@ -15,6 +15,7 @@ pub enum Node<'source> {
     Text(Text<'source>),
     Statement(Call<'source>),
     Block(Block<'source>),
+    Condition(Condition<'source>),
     RawBlock(TextBlock<'source>),
     RawStatement(TextBlock<'source>),
     RawComment(TextBlock<'source>),
@@ -28,6 +29,7 @@ impl<'source> Node<'source> {
             Self::Text(ref n) => n.as_str(),
             Self::Statement(ref n) => n.as_str(),
             Self::Block(ref n) => n.as_str(),
+            Self::Condition(ref n) => n.as_str(),
             Self::RawBlock(ref n)
             | Self::RawStatement(ref n)
             | Self::RawComment(ref n)
@@ -45,6 +47,7 @@ impl<'source> Node<'source> {
             | Self::Comment(_) => false,
             Self::Statement(ref n) => n.trim_before(),
             Self::Block(ref n) => n.trim_before(),
+            Self::Condition(ref n) => todo!("trim before on condition"),
         }
     }
 
@@ -58,6 +61,7 @@ impl<'source> Node<'source> {
             | Self::Comment(_) => false,
             Self::Statement(ref n) => n.trim_after(),
             Self::Block(ref n) => n.trim_after(),
+            Self::Condition(ref n) => todo!("trim after on condition"),
         }
     }
 
@@ -105,6 +109,7 @@ impl fmt::Display for Node<'_> {
             Self::Text(ref n) => n.fmt(f),
             Self::Statement(ref n) => n.fmt(f),
             Self::Block(ref n) => n.fmt(f),
+            Self::Condition(ref n) => n.fmt(f),
             Self::RawBlock(ref n)
             | Self::RawStatement(ref n)
             | Self::RawComment(ref n)
@@ -119,6 +124,7 @@ impl fmt::Debug for Node<'_> {
             Self::Document(ref n) => fmt::Debug::fmt(n, f),
             Self::Text(ref n) => fmt::Debug::fmt(n, f),
             Self::Block(ref n) => fmt::Debug::fmt(n, f),
+            Self::Condition(ref n) => fmt::Debug::fmt(n, f),
             Self::Statement(ref n) => fmt::Debug::fmt(n, f),
             Self::RawBlock(ref n)
             | Self::RawStatement(ref n)
@@ -559,20 +565,51 @@ impl fmt::Debug for Document<'_> {
 }
 
 #[derive(Eq, PartialEq)]
-pub struct Conditional<'source> {
+pub struct Condition<'source> {
     // Raw source input.
     source: &'source str,
     call: Call<'source>,
     nodes: Vec<Node<'source>>,
+    close: Option<Range<usize>>,
 }
 
-impl<'source> Conditional<'source> {
+impl<'source> Condition<'source> {
     pub fn new(source: &'source str, call: Call<'source>) -> Self {
         Self {
             source,
             call,
             nodes: Vec::new(),
+            close: None,
         } 
+    }
+
+    pub fn call(&self) -> &Call<'source> {
+        &self.call
+    }
+
+    pub fn nodes(&self) -> &Vec<Node<'source>> {
+        &self.nodes 
+    }
+
+    pub fn as_str(&self) -> &'source str {
+        let open = &self.call.open;
+        let close = self.close.as_ref().unwrap_or(open);
+        &self.source[open.start..close.end]
+    }
+}
+
+impl fmt::Display for Condition<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+impl fmt::Debug for Condition<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Condition")
+            .field("call", &self.call)
+            .field("nodes", &self.nodes)
+            .finish()
     }
 }
 
@@ -584,7 +621,7 @@ pub struct Block<'source> {
     open: Range<usize>,
     close: Option<Range<usize>>,
     call: Call<'source>,
-    conditionals: Vec<Conditional<'source>>,
+    conditionals: Vec<Node<'source>>,
 }
 
 impl<'source> Block<'source> {
@@ -623,6 +660,7 @@ impl<'source> Block<'source> {
     }
 
     pub(crate) fn exit(&mut self, span: Range<usize>) {
+        self.close_condition(span.clone());
         self.close = Some(span);
     }
 
@@ -643,14 +681,39 @@ impl<'source> Block<'source> {
         }
     }
 
-    pub fn add_condition(&mut self, condition: Conditional<'source>) {
-        self.conditionals.push(condition);
+    fn close_condition(&mut self, span: Range<usize>) {
+        if !self.conditionals.is_empty()  {
+            if span.start > 0 {
+                let close = span.start - 1..span.start;
+                let mut last = self.conditionals.last_mut().unwrap();
+                match &mut last {
+                    Node::Condition(ref mut condition) => {
+                        condition.close = Some(close); 
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    pub fn add_condition(&mut self, condition: Condition<'source>) {
+        self.close_condition(condition.call.open.clone());
+        self.conditionals.push(Node::Condition(condition));
+    }
+
+    pub fn conditions(&self) -> &Vec<Node<'source>> {
+        &self.conditionals 
     }
 
     pub fn push(&mut self, node: Node<'source>) {
         if !self.conditionals.is_empty() {
-            let last = self.conditionals.last_mut().unwrap();
-            last.nodes.push(node);
+            let mut last = self.conditionals.last_mut().unwrap();
+            match &mut last {
+                Node::Condition(ref mut condition) => {
+                    condition.nodes.push(node);
+                }
+                _ => {}
+            }
         } else {
             self.nodes.push(node);
         }

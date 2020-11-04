@@ -7,7 +7,7 @@ This is a markdown document using handlebars for templating. The first header is
 > {{{@root.title}}}
 
 {{# if title}}
-Got a title
+Got a title :: {{title}}
 {{else}}
 No title available
 {{/if}}

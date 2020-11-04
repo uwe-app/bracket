@@ -27,7 +27,6 @@ pub trait BlockHelper: Send + Sync {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: Context<'source>,
         block: BlockTemplate<'source>,
-        //template: &'source Node<'source>,
     ) -> Result;
 }
 
@@ -44,24 +43,43 @@ mod with;
 #[derive(Debug)]
 pub struct BlockTemplate<'source> {
     template: &'source Node<'source>,
-    inverse: Option<&'source Node<'source>>,
-    // TODO: chained if else blocks - when to invoke the Call?
 }
 
 impl<'source> BlockTemplate<'source> {
-    pub fn new(
-        template: &'source Node<'source>,
-        inverse: Option<&'source Node<'source>>,
-    ) -> Self {
-        Self { template, inverse }
+    pub fn new(template: &'source Node<'source>) -> Self {
+        Self { template }
     }
 
+    /// Get the primary template node for the block.
     pub fn template(&self) -> &'source Node<'source> {
         self.template
     }
 
-    pub fn inverse(&self) -> &Option<&'source Node<'source>> {
-        &self.inverse
+    /// Evaluate the block conditionals and find 
+    /// the first node that should be rendered.
+    pub fn inverse(&self) -> Option<&'source Node<'source>> {
+        match &self.template {
+            Node::Block(ref block) => {
+                if !block.conditions().is_empty() {
+                    for node in block.conditions().iter() {
+                        println!("Got block condition {:?}", node);
+                        match node {
+                            Node::Condition(clause) => {
+                                // Got an else clause
+                                if clause.call().is_empty() {
+                                    return Some(node)
+                                } else {
+                                    todo!("Evaluate and return 'else if' clauses!");
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                None
+            }
+            _ => None
+        }
     }
 }
 

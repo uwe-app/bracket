@@ -305,13 +305,12 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         name: &'source str,
         call: &'source Call<'source>,
         template: &'source Node<'source>,
-        inverse: Option<&'source Node<'source>>,
     ) -> RenderResult<()> {
         if let Some(helper) = self.helpers.get_block(name) {
             let args = self.arguments(call)?;
             let hash = self.hash(call)?;
             let context = Context::new(name, args, hash);
-            let block = BlockTemplate::new(template, inverse);
+            let block = BlockTemplate::new(template);
             helper.call(self, context, block)?;
         }
         Ok(())
@@ -430,7 +429,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                             path.as_str(),
                             call,
                             node,
-                            None,
                         )?;
                     }
                 }
@@ -500,6 +498,11 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             }
             Node::Block(ref block) => {
                 self.block(node, block)?;
+            }
+            Node::Condition(ref condition) => {
+                for node in condition.nodes().iter() {
+                    self.render_node(node)?;
+                }
             }
             _ => todo!("Render other node types"),
         }

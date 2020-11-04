@@ -16,8 +16,12 @@ impl BlockHelper for IfHelper {
 
         if rc.is_truthy(ctx.arguments().get(0).unwrap()) {
             rc.template(block.template())?;
+        } else {
+            let inverse = block.inverse();
+            if let Some(node) = inverse {
+                rc.template(node)?;
+            }
         }
-        // TODO: inverse and chained statements!
         Ok(())
     }
 }
