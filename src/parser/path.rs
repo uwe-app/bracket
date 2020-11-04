@@ -61,7 +61,7 @@ pub(crate) fn components<'source>(
     lexer: &mut Lexer<'source>,
     path: &mut Path<'source>,
     mut wants_delimiter: bool,
-) -> Result<Option<Token>, SyntaxError<'source>> {
+) -> Result<Option<Token>, SyntaxError> {
     while let Some(token) = lexer.next() {
         match token {
             Token::Parameters(lex, span) => {
@@ -85,7 +85,7 @@ pub(crate) fn components<'source>(
                                             state.line(),
                                             state.byte(),
                                         )),
-                                    ),
+                                    ).into(),
                                 ),
                             );
                         }
@@ -99,7 +99,7 @@ pub(crate) fn components<'source>(
                                         state.line(),
                                         state.byte(),
                                     )),
-                                ),
+                                ).into(),
                             ));
                         }
                         Parameters::LocalIdentifier => {
@@ -112,7 +112,7 @@ pub(crate) fn components<'source>(
                                         state.line(),
                                         state.byte(),
                                     )),
-                                ),
+                                ).into(),
                             ));
                         }
                         _ => {}
@@ -135,7 +135,7 @@ pub(crate) fn components<'source>(
                                                 state.line(),
                                                 state.byte(),
                                             )),
-                                        ),
+                                        ).into(),
                                     ),
                                 );
                             }
@@ -153,7 +153,7 @@ pub(crate) fn components<'source>(
                                                 state.line(),
                                                 state.byte(),
                                             )),
-                                        ),
+                                        ).into(),
                                     ),
                                 );
                             }
@@ -182,7 +182,7 @@ pub(crate) fn parse<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     current: (Parameters, Span),
-) -> Result<(Option<Path<'source>>, Option<Token>), SyntaxError<'source>> {
+) -> Result<(Option<Path<'source>>, Option<Token>), SyntaxError> {
     let (lex, span) = current;
     let mut path = Path::new(source);
 
@@ -194,7 +194,7 @@ pub(crate) fn parse<'source>(
                 source,
                 state.file_name(),
                 SourcePos::from((state.line(), state.byte())),
-            )));
+            ).into()));
         }
         // Count parent references
         Parameters::ParentRef => {
@@ -230,7 +230,7 @@ pub(crate) fn parse<'source>(
                                         state.line(),
                                         state.byte(),
                                     )),
-                                ),
+                                ).into(),
                             ),
                         );
                     }
@@ -245,7 +245,7 @@ pub(crate) fn parse<'source>(
                                         state.line(),
                                         state.byte(),
                                     )),
-                                ),
+                                ).into(),
                             ),
                         );
                     }

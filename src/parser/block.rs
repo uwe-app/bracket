@@ -62,7 +62,7 @@ pub(crate) fn raw<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-) -> Result<Node<'source>, SyntaxError<'source>> {
+) -> Result<Node<'source>, SyntaxError> {
     let end = |t: &Token| match t {
         Token::RawBlock(lex, span) => match lex {
             lexer::RawBlock::End => true,
@@ -87,7 +87,7 @@ pub(crate) fn raw_comment<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-) -> Result<Node<'source>, SyntaxError<'source>> {
+) -> Result<Node<'source>, SyntaxError> {
     let end = |t: &Token| match t {
         Token::RawComment(lex, span) => match lex {
             lexer::RawComment::End => true,
@@ -112,7 +112,7 @@ pub(crate) fn raw_statement<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-) -> Result<Node<'source>, SyntaxError<'source>> {
+) -> Result<Node<'source>, SyntaxError> {
     let end = |t: &Token| match t {
         Token::RawStatement(lex, span) => match lex {
             lexer::RawStatement::End => true,
@@ -137,7 +137,7 @@ pub(crate) fn comment<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-) -> Result<Node<'source>, SyntaxError<'source>> {
+) -> Result<Node<'source>, SyntaxError> {
     let end = |t: &Token| match t {
         Token::Comment(lex, span) => match lex {
             lexer::Comment::End => true,
@@ -162,7 +162,7 @@ pub(crate) fn scope<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-) -> Result<Block<'source>, SyntaxError<'source>> {
+) -> Result<Block<'source>, SyntaxError> {
     let mut block = Block::new(source, span.clone());
     let call =
         call::parse(source, lexer, state, span, CallParseContext::Block)?;

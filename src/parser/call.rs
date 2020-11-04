@@ -42,7 +42,7 @@ fn string_literal<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     current: (Parameters, Span),
-) -> Result<Value, SyntaxError<'source>> {
+) -> Result<Value, SyntaxError> {
     let (lex, span) = current;
     let str_start = span.end;
     let mut str_end = span.end;
@@ -71,7 +71,7 @@ fn json_literal<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     current: (Parameters, Span),
-) -> Result<Value, SyntaxError<'source>> {
+) -> Result<Value, SyntaxError> {
     let (lex, span) = current;
     let value = match lex {
         Parameters::Null => Value::Null,
@@ -98,7 +98,7 @@ fn value<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     current: (Parameters, Span),
-) -> Result<(ParameterValue<'source>, Option<Token>), SyntaxError<'source>> {
+) -> Result<(ParameterValue<'source>, Option<Token>), SyntaxError> {
     let (lex, span) = current;
 
     match &lex {
@@ -145,7 +145,7 @@ fn key_value<'source>(
     state: &mut ParseState,
     call: &mut Call<'source>,
     current: (Parameters, Span),
-) -> Result<Option<Token>, SyntaxError<'source>> {
+) -> Result<Option<Token>, SyntaxError> {
     let (lex, span) = current;
     let key = &source[span.start..span.end - 1];
     let mut next: Option<Token> = None;
@@ -197,7 +197,7 @@ fn arguments<'source>(
     call: &mut Call<'source>,
     next: Option<Token>,
     context: CallContext,
-) -> Result<Option<Token>, SyntaxError<'source>> {
+) -> Result<Option<Token>, SyntaxError> {
     //println!("Arguments {:?}", next);
 
     if let Some(token) = next {
@@ -302,7 +302,7 @@ fn target<'source>(
     call: &mut Call<'source>,
     mut next: Option<Token>,
     context: CallContext,
-) -> Result<Option<Token>, SyntaxError<'source>> {
+) -> Result<Option<Token>, SyntaxError> {
     while let Some(token) = next {
         match token {
             Token::Parameters(lex, span) => {
@@ -355,7 +355,7 @@ fn target<'source>(
                                         state.line(),
                                         state.byte(),
                                     )),
-                                ),
+                                ).into(),
                             ));
                         }
                         call.exit(span);
@@ -386,7 +386,7 @@ fn flags<'source>(
     state: &mut ParseState,
     call: &mut Call<'source>,
     mut next: Option<Token>,
-) -> Result<Option<Token>, SyntaxError<'source>> {
+) -> Result<Option<Token>, SyntaxError> {
     while let Some(token) = next {
         match token {
             Token::Parameters(lex, span) => match &lex {
@@ -418,7 +418,7 @@ pub(crate) fn sub_expr<'source>(
     state: &mut ParseState,
     open: Span,
     //parse_context: CallParseContext,
-) -> Result<(Call<'source>, Option<Token>), SyntaxError<'source>> {
+) -> Result<(Call<'source>, Option<Token>), SyntaxError> {
     *state.byte_mut() = open.end;
 
     let mut call = Call::new(source, open);
@@ -439,7 +439,7 @@ pub(crate) fn parse<'source>(
     state: &mut ParseState,
     open: Span,
     parse_context: CallParseContext,
-) -> Result<Call<'source>, SyntaxError<'source>> {
+) -> Result<Call<'source>, SyntaxError> {
     *state.byte_mut() = open.end;
 
     let mut call = Call::new(source, open);

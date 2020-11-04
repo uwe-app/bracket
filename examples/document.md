@@ -1,5 +1,7 @@
 # {{title}}
 
+\{{}}
+
 This is a markdown document using handlebars for templating. The first header is a basic variable substitution but we can also use explicit `@root` references too, here is a block quote that shows the page title with escaping disabled:
 
 > {{{@root.title}}}

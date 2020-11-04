@@ -2,79 +2,20 @@
 use std::fmt;
 
 pub mod helper;
+pub mod source;
 pub mod render;
 pub mod syntax;
 
 pub use helper::HelperError;
 pub use render::RenderError;
+pub use source::{SourcePos, ErrorInfo};
 pub use syntax::SyntaxError;
-
-/// Map a position for syntax errors.
-#[derive(Debug, Eq, PartialEq)]
-pub struct SourcePos(pub usize, pub usize);
-
-impl SourcePos {
-    pub fn line(&self) -> &usize {
-        &self.0
-    }
-
-    pub fn byte_offset(&self) -> &usize {
-        &self.1
-    }
-}
-
-impl From<(&usize, &usize)> for SourcePos {
-    fn from(pos: (&usize, &usize)) -> Self {
-        SourcePos(pos.0.clone(), pos.1.clone())
-    }
-}
-
-#[derive(Debug, Eq, PartialEq)]
-pub struct ErrorInfo<'source> {
-    source: &'source str,
-    file_name: String,
-    source_pos: SourcePos,
-    notes: Vec<String>,
-}
-
-impl<'source> ErrorInfo<'source> {
-    pub fn new(
-        source: &'source str,
-        file_name: &str,
-        source_pos: SourcePos,
-    ) -> Self {
-        Self {
-            source,
-            file_name: file_name.to_string(),
-            source_pos,
-            notes: vec![],
-        }
-    }
-
-    pub fn new_notes(
-        source: &'source str,
-        file_name: &str,
-        source_pos: SourcePos,
-        notes: Vec<String>,
-    ) -> Self {
-        let mut info = ErrorInfo::new(source, file_name, source_pos);
-        info.notes = notes;
-        info
-    }
-
-    pub fn source(&self) -> &'source str {
-        self.source
-    }
-    pub fn position(&self) -> &SourcePos {
-        &self.source_pos
-    }
-}
 
 /// Generic error type that wraps more specific types and is 
 /// returned when using the `Registry`.
 #[derive(Eq, PartialEq)]
 pub enum Error<'source> {
-    Syntax(SyntaxError<'source>),
+    Syntax(SyntaxError),
     Render(RenderError<'source>),
     TemplateNotFound(String),
     Io(IoError),
@@ -116,8 +57,8 @@ impl<'source> From<RenderError<'source>> for Error<'source> {
     }
 }
 
-impl<'source> From<SyntaxError<'source>> for Error<'source> {
-    fn from(err: SyntaxError<'source>) -> Self {
+impl<'source> From<SyntaxError> for Error<'source> {
+    fn from(err: SyntaxError) -> Self {
         Self::Syntax(err)
     }
 }

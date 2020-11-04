@@ -110,7 +110,7 @@ impl<'source> Parser<'source> {
     }
 
     /// Parse the entire document into a node tree.
-    pub fn parse(&mut self) -> Result<Node<'source>, SyntaxError<'source>> {
+    pub fn parse(&mut self) -> Result<Node<'source>, SyntaxError> {
         let mut doc = Document(&self.source, vec![]);
         for node in self {
             let node = node?;
@@ -137,7 +137,7 @@ impl<'source> Parser<'source> {
     fn advance(
         &mut self,
         next: Token,
-    ) -> Result<Option<Node<'source>>, SyntaxError<'source>> {
+    ) -> Result<Option<Node<'source>>, SyntaxError> {
         if next.is_newline() {
             *self.state.line_mut() += 1;
         }
@@ -211,7 +211,7 @@ impl<'source> Parser<'source> {
                                     self.state.line(),
                                     self.state.byte(),
                                 )),
-                            ),
+                            ).into(),
                         );
                     })?;
 
@@ -227,7 +227,7 @@ impl<'source> Parser<'source> {
                                                 self.state.line(),
                                                 self.state.byte(),
                                             )),
-                                        ),
+                                        ).into(),
                                     ),
                                 );
                             }
@@ -287,7 +287,7 @@ impl<'source> Parser<'source> {
                                     self.state.byte(),
                                 )),
                                 notes,
-                            ),
+                            ).into(),
                         ));
                         //panic!("Got close block with no open block!");
                     }
@@ -308,7 +308,7 @@ impl<'source> Parser<'source> {
                                         "opening name is '{}'",
                                         open_name
                                     )],
-                                ),
+                                ).into(),
                             ));
                         }
 
@@ -325,7 +325,7 @@ impl<'source> Parser<'source> {
                                     self.state.line(),
                                     self.state.byte(),
                                 )),
-                            ),
+                            ).into(),
                         ));
                     }
                 }
@@ -359,7 +359,7 @@ impl<'source> Parser<'source> {
 }
 
 impl<'source> Iterator for Parser<'source> {
-    type Item = Result<Node<'source>, SyntaxError<'source>>;
+    type Item = Result<Node<'source>, SyntaxError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(t) = self.token() {

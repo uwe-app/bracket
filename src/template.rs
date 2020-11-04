@@ -146,7 +146,7 @@ impl<'reg, 'source> Template<'source> {
     pub fn compile(
         source: &'source str,
         options: ParserOptions,
-    ) -> std::result::Result<Template, SyntaxError<'source>> {
+    ) -> std::result::Result<Template, SyntaxError> {
         let mut parser = Parser::new(source, options);
         let node = parser.parse()?;
         Ok(Template::new(source, node))
