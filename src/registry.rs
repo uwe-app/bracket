@@ -142,6 +142,8 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         let mut parser = Parser::new(source, options);
         for node in parser {
             let node = node?;
+            // FIXME: implement this, currently not working as we store the 
+            // FIXME: next and previous nodes in the renderer!
             //rc.render_node(&node)?;
         }
         Ok(())
