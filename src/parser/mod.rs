@@ -3,7 +3,7 @@ use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{self, lex, Lexer, Token},
     parser::{
-        ast::{Block, CallTarget, Document, Node, Text},
+        ast::{Block, CallTarget, Conditional, Document, Node, Text},
         call::CallParseContext,
     },
     SyntaxResult,
@@ -240,20 +240,35 @@ impl<'source> Parser<'source> {
                         }
                     }
 
-                    //println!("Adding block to the stack...");
                     self.stack.push((name, block));
 
                     while let Some(t) = self.token() {
-                        //println!("Stack is consuming the token {:?}", t);
                         match self.advance(t) {
-                            Ok(node) => {
-                                //println!("Got a node to add {:?}", node);
+                            Ok(mut node) => {
                                 if node.is_none() || self.stack.is_empty() {
                                     return Ok(node);
                                 } else {
                                     let (_, current) =
                                         self.stack.last_mut().unwrap();
-                                    current.push(node.unwrap());
+
+                                    if let Some(node) = node.take() {
+                                        match node {
+                                            // NOTE: The push() implementation on Block
+                                            // NOTE: will add to the last conditional if 
+                                            // NOTE: any conditions are present.
+                                            Node::Statement(call) => {
+                                                if call.is_conditional() {
+                                                    let condition = Conditional::new(self.source, call);
+                                                    current.add_condition(condition);
+                                                } else {
+                                                    current.push(Node::Statement(call));
+                                                }
+                                            }
+                                            _ => {
+                                                current.push(node);
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             Err(e) => return Err(e),

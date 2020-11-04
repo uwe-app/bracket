@@ -559,6 +559,24 @@ impl fmt::Debug for Document<'_> {
 }
 
 #[derive(Eq, PartialEq)]
+pub struct Conditional<'source> {
+    // Raw source input.
+    source: &'source str,
+    call: Call<'source>,
+    nodes: Vec<Node<'source>>,
+}
+
+impl<'source> Conditional<'source> {
+    pub fn new(source: &'source str, call: Call<'source>) -> Self {
+        Self {
+            source,
+            call,
+            nodes: Vec::new(),
+        } 
+    }
+}
+
+#[derive(Eq, PartialEq)]
 pub struct Block<'source> {
     // Raw source input.
     source: &'source str,
@@ -566,6 +584,7 @@ pub struct Block<'source> {
     open: Range<usize>,
     close: Option<Range<usize>>,
     call: Call<'source>,
+    conditionals: Vec<Conditional<'source>>,
 }
 
 impl<'source> Block<'source> {
@@ -576,6 +595,7 @@ impl<'source> Block<'source> {
             open,
             close: None,
             call: Default::default(),
+            conditionals: Vec::new(),
         }
     }
 
@@ -623,8 +643,17 @@ impl<'source> Block<'source> {
         }
     }
 
+    pub fn add_condition(&mut self, condition: Conditional<'source>) {
+        self.conditionals.push(condition);
+    }
+
     pub fn push(&mut self, node: Node<'source>) {
-        self.nodes.push(node);
+        if !self.conditionals.is_empty() {
+            let last = self.conditionals.last_mut().unwrap();
+            last.nodes.push(node);
+        } else {
+            self.nodes.push(node);
+        }
     }
 
     pub fn nodes(&self) -> &'source Vec<Node> {

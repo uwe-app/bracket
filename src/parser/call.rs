@@ -346,7 +346,7 @@ fn target<'source>(
                         return Ok(token);
                     }
                     Parameters::End => {
-                        if !call.has_target() {
+                        if !call.has_target() && !call.is_conditional() {
                             //panic!("Got end of statement with no call target...");
                             return Err(SyntaxError::EmptyStatement(
                                 ErrorInfo::new(

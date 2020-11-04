@@ -6,6 +6,12 @@ This is a markdown document using handlebars for templating. The first header is
 
 > {{{@root.title}}}
 
+{{# if title}}
+Got a title
+{{else}}
+No title available
+{{/if}}
+
 The number is: {{list.[1]}}
 The lookup value is: {{lookup foo.bar "qux"}}
 
