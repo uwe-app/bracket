@@ -14,7 +14,7 @@ impl Helper for LookupHelper {
         ctx.assert_arity(2..2)?;
 
         let name = ctx.name();
-        let mut args = ctx.into_arguments();
+        let (name, mut args, _) = ctx.into();
         let target = args.swap_remove(0);
 
         let field = args
@@ -24,9 +24,11 @@ impl Helper for LookupHelper {
             .ok_or_else(|| Error::ArgumentTypeString(name.to_string(), 1))?;
 
         let result = rc.field(&target, field).cloned();
-
-        // TODO: error if no field was found!
-
-        Ok(result)
+        if result.is_none() {
+            Err(Error::Message(
+                format!("Helper '{}' failed to resolve field '{}'", name, field)))
+        } else {
+            Ok(result)
+        }
     }
 }
