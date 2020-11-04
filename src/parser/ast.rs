@@ -396,6 +396,7 @@ pub struct Call<'source> {
     // Raw source input.
     source: &'source str,
     partial: bool,
+    conditional: bool,
     open: Range<usize>,
     close: Option<Range<usize>>,
     target: CallTarget<'source>,
@@ -408,6 +409,7 @@ impl<'source> Call<'source> {
         Self {
             source,
             partial: false,
+            conditional: false,
             open,
             close: None,
             target: CallTarget::Path(Path::new(source)),
@@ -426,10 +428,6 @@ impl<'source> Call<'source> {
 
     pub fn has_target(&self) -> bool {
         self.target.as_str() != ""
-    }
-
-    pub fn set_partial(&mut self, partial: bool) {
-        self.partial = partial;
     }
 
     pub fn set_target(&mut self, target: CallTarget<'source>) {
@@ -464,10 +462,6 @@ impl<'source> Call<'source> {
         self.close.is_some()
     }
 
-    //pub fn as_str(&self) -> &'source str {
-    //&self.source[self.open.start..self.close.end]
-    //}
-
     pub fn as_str(&self) -> &'source str {
         if let Some(ref close) = self.close {
             return &self.source[self.open.end..close.start];
@@ -496,6 +490,18 @@ impl<'source> Call<'source> {
 
     pub fn is_partial(&self) -> bool {
         self.partial
+    }
+
+    pub fn set_partial(&mut self, partial: bool) {
+        self.partial = partial;
+    }
+
+    pub fn is_conditional(&self) -> bool {
+        self.conditional
+    }
+
+    pub fn set_conditional(&mut self, conditional: bool) {
+        self.conditional = conditional;
     }
 
     pub fn is_escaped(&self) -> bool {

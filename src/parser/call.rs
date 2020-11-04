@@ -306,7 +306,7 @@ fn target<'source>(
                         }
                     }
                     Parameters::ElseKeyword => {
-                        todo!("Got else keyword parsing call target");
+                        panic!("Got else keyword parsing call target");
                     }
                     // Path components
                     Parameters::ExplicitThisKeyword
@@ -372,8 +372,8 @@ fn target<'source>(
     Ok(None)
 }
 
-/// Parse the partial flag.
-fn partial<'source>(
+/// Parse the partial and conditional flags.
+fn flags<'source>(
     source: &'source str,
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
@@ -391,6 +391,10 @@ fn partial<'source>(
                     }
                     Parameters::Partial => {
                         call.set_partial(true);
+                        return Ok(lexer.next());
+                    }
+                    Parameters::ElseKeyword => {
+                        call.set_conditional(true);
                         return Ok(lexer.next());
                     }
                     _ => return Ok(Some(Token::Parameters(lex, span))),
@@ -433,7 +437,12 @@ pub(crate) fn parse<'source>(
 
     let mut call = Call::new(source, open);
     let next = lexer.next();
-    let next = partial(source, lexer, state, &mut call, next)?;
+    let next = flags(source, lexer, state, &mut call, next)?;
+
+    if call.is_partial() && call.is_conditional() {
+        panic!("Partials and conditionals may not be combined.");
+    }
+
     let next = target(source, lexer, state, &mut call, next, CallContext::Call)?;
     let next = arguments(source, lexer, state, &mut call, next, CallContext::Call)?;
     // FIXME: we should return the next token here so it is consumed ???
