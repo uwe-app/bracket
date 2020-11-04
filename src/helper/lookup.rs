@@ -14,7 +14,7 @@ impl Helper for LookupHelper {
         ctx.assert_arity(2..2)?;
 
         let name = ctx.name();
-        let (name, mut args, _) = ctx.into();
+        let (name, mut args) = ctx.into();
         let target = args.swap_remove(0);
 
         let field = args

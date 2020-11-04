@@ -42,8 +42,10 @@ impl StringOutput {
             value: String::new(),
         }
     }
+}
 
-    pub fn into(self) -> String {
+impl Into<String> for StringOutput {
+    fn into(self) -> String {
         self.value
     }
 }

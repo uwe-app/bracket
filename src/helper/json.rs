@@ -15,7 +15,7 @@ impl Helper for JsonHelper {
     ) -> ValueResult {
         ctx.assert_arity(1..2)?;
 
-        let (_, mut args, _) = ctx.into();
+        let mut args: Vec<Value> = ctx.into();
         let target = args.swap_remove(0);
 
         let pretty = rc.is_truthy(args.get(0).unwrap_or(&Value::Bool(false)));

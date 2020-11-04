@@ -22,7 +22,7 @@ impl BlockHelper for EachHelper {
         ctx.assert_arity(1..1)?;
 
         //let name = ctx.name().to_string();
-        let (name, mut args, _) = ctx.into();
+        let (name, mut args) = ctx.into();
         let target = args.swap_remove(0);
 
         rc.push_scope(Scope::new());

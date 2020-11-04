@@ -115,10 +115,6 @@ impl<'source> Context<'source> {
         &self.hash
     }
 
-    pub fn into(self) -> (String, Vec<Value>, Map<String, Value>) {
-        (self.name.to_string(), self.arguments, self.hash)
-    }
-
     // TODO: move out of Context
     pub fn assert_arity(&self, range: Range<usize>) -> Result {
         if range.start == range.end {
@@ -140,6 +136,30 @@ impl<'source> Context<'source> {
             }
         }
         Ok(())
+    }
+}
+
+impl Into<Vec<Value>> for Context<'_> {
+    fn into(self) -> Vec<Value> {
+        self.arguments    
+    }
+}
+
+impl Into<String> for Context<'_> {
+    fn into(self) -> String {
+        self.name.to_string()
+    }
+}
+
+impl Into<(String, Vec<Value>)> for Context<'_> {
+    fn into(self) -> (String, Vec<Value>) {
+        (self.name.to_string(), self.arguments)
+    }
+}
+
+impl Into<(String, Vec<Value>, Map<String, Value>)> for Context<'_> {
+    fn into(self) -> (String, Vec<Value>, Map<String, Value>) {
+        (self.name.to_string(), self.arguments, self.hash)
     }
 }
 
