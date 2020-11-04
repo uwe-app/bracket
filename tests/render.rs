@@ -1,45 +1,45 @@
 use bracket::{
     error::{Error, SyntaxError},
-    Registry,
+    Registry, Result,
 };
 use serde_json::json;
 
 #[test]
-fn render_text() {
+fn render_text() -> Result<()> {
     let mut registry = Registry::new();
     let name = "mock-template";
     let value = r"Some text";
     let data = json!({});
-    let template = registry.compile(value, Default::default()).unwrap();
-    let result = registry.once(name, &template, &data).unwrap();
+    let result = registry.once(name, value, &data)?;
     assert_eq!(value, result);
+    Ok(())
 }
 
 #[test]
-fn render_html_comment() {
+fn render_html_comment() -> Result<()> {
     let mut registry = Registry::new();
     let name = "mock-template";
     let value = r"<!-- foo -->";
     let data = json!({});
-    let template = registry.compile(value, Default::default()).unwrap();
-    let result = registry.once(name, &template, &data).unwrap();
+    let result = registry.once(name, value, &data)?;
     assert_eq!(value, result);
+    Ok(())
 }
 
 #[test]
-fn render_raw_block() {
+fn render_raw_block() -> Result<()> {
     let mut registry = Registry::new();
     let name = "mock-template";
     let value = r"{{{{raw}}}}foo {{bar}} baz{{{{/raw}}}}";
     let expected = r"foo {{bar}} baz";
     let data = json!({});
-    let template = registry.compile(value, Default::default()).unwrap();
-    let result = registry.once(name, &template, &data).unwrap();
+    let result = registry.once(name, value, &data)?;
     assert_eq!(expected, result);
+    Ok(())
 }
 
 #[test]
-fn render_raw_multiline() {
+fn render_raw_multiline() -> Result<()> {
     let mut registry = Registry::new();
     let name = "mock-template";
     let value = r"some{{{{raw}}}}
@@ -53,55 +53,55 @@ foo
 baz
 text";
     let data = json!({});
-    let template = registry.compile(value, Default::default()).unwrap();
-    let result = registry.once(name, &template, &data).unwrap();
+    let result = registry.once(name, value, &data)?;
     assert_eq!(expected, result);
+    Ok(())
 }
 
 #[test]
-fn render_comment() {
+fn render_comment() -> Result<()> {
     let mut registry = Registry::new();
     let name = "mock-template";
     let value = r"{{! simple comment }}";
     let expected = r"";
     let data = json!({});
-    let template = registry.compile(value, Default::default()).unwrap();
-    let result = registry.once(name, &template, &data).unwrap();
+    let result = registry.once(name, value, &data)?;
     assert_eq!(expected, result);
+    Ok(())
 }
 
 #[test]
-fn render_raw_comment() {
+fn render_raw_comment() -> Result<()> {
     let mut registry = Registry::new();
     let name = "mock-template";
     let value = r"{{!-- foo {{bar}} baz --}}";
     let expected = r"";
     let data = json!({});
-    let template = registry.compile(value, Default::default()).unwrap();
-    let result = registry.once(name, &template, &data).unwrap();
+    let result = registry.once(name, value, &data)?;
     assert_eq!(expected, result);
+    Ok(())
 }
 
 #[test]
-fn render_raw_statement() {
+fn render_raw_statement() -> Result<()> {
     let mut registry = Registry::new();
     let name = "mock-template";
     let value = r"\{{expr}}";
     let expected = r"{{expr}}";
     let data = json!({});
-    let template = registry.compile(value, Default::default()).unwrap();
-    let result = registry.once(name, &template, &data).unwrap();
+    let result = registry.once(name, value, &data)?;
     assert_eq!(expected, result);
+    Ok(())
 }
 
 #[test]
-fn render_statement() {
+fn render_statement() -> Result<()> {
     let mut registry = Registry::new();
     let name = "mock-template";
     let value = r"{{foo}}";
     let expected = r"bar";
     let data = json!({"foo": "bar"});
-    let template = registry.compile(value, Default::default()).unwrap();
-    let result = registry.once(name, &template, &data).unwrap();
+    let result = registry.once(name, value, &data)?;
     println!("Render statement result: {}", result);
+    Ok(())
 }

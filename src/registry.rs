@@ -11,6 +11,9 @@ use crate::{
     Error, Result,
 };
 
+/// Registry is the entry point for compiling and rendering templates.
+///
+/// A template name is always required for error messages.
 pub struct Registry<'reg, 'source> {
     helpers: HelperRegistry<'reg>,
     templates: Templates<'source>,
@@ -45,7 +48,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         &self.escape
     }
 
-    /// Registry of helpers.
+    /// Helper registry.
     pub fn helpers(&self) -> &HelperRegistry<'reg> {
         &self.helpers
     }
@@ -55,7 +58,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         &mut self.helpers
     }
 
-    /// Registry of templates.
+    /// Template registry.
     ///
     /// For partials to be located they must exist in this
     /// templates collection.
@@ -77,20 +80,22 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         Templates::compile(template, options)
     }
 
-    /// Render a template without registering it and return the result.
+    /// Render a template without registering it and return 
+    /// the result as a string.
     ///
     /// This function buffers the template nodes before rendering; if low 
     /// latency is required use the stream functions.
     pub fn once<T>(
         &self,
         name: &str,
-        template: &Template<'source>,
+        source: &str,
         data: &T,
     ) -> Result<String>
     where
         T: Serialize,
     {
         let mut writer = StringOutput::new();
+        let template = self.compile(source, ParserOptions::new(name.to_string()))?;
         template.render(
             self.escape(),
             self.helpers(),
@@ -152,6 +157,8 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     }
 
     /// Render a named template and buffer the result to a string.
+    ///
+    /// The named template must exist in the templates collection.
     pub fn render<T>(&self, name: &str, data: &T) -> Result<String>
     where
         T: Serialize,
@@ -161,7 +168,33 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         Ok(writer.into())
     }
 
+    /// Render a compiled template without registering it and return 
+    /// the result as a string.
+    pub fn render_template<T>(
+        &self,
+        name: &str,
+        template: &Template<'source>,
+        data: &T,
+    ) -> Result<String>
+    where
+        T: Serialize,
+    {
+        let mut writer = StringOutput::new();
+        template.render(
+            self.escape(),
+            self.helpers(),
+            self.templates(),
+            name,
+            data,
+            &mut writer,
+        )?;
+        Ok(writer.into())
+    }
+
+
     /// Render a named template to a writer.
+    ///
+    /// The named template must exist in the templates collection.
     pub fn render_to_write<T>(
         &self,
         name: &str,
