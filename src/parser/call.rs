@@ -186,7 +186,7 @@ fn key_value<'source>(
                     }
                     Parameters::End => {
                         call.exit(span);
-                        return Ok(lexer.next())
+                        return Ok(None)
                     }
                     _ => panic!("Unexpected parameter token parsing hash parameters"),
                 }
@@ -355,7 +355,7 @@ fn target<'source>(
                             );
                         }
                         call.exit(span);
-                        //return Ok()
+                        return Ok(None);
                     }
                     _ => {
                         panic!("Unexpected token parsing call target {:?}", lex);
