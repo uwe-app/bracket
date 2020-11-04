@@ -46,7 +46,7 @@ fn main() -> Result<'static, ()> {
         .build(&loader)
         .expect("Failed to compile templates");
 
-    let mut registry = Registry::new_templates(templates);
+    let registry = Registry::new_templates(templates);
 
     //let child = std::thread::spawn(move || {
     match registry.render(name, &data) {

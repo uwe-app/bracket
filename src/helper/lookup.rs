@@ -23,7 +23,11 @@ impl Helper for LookupHelper {
             .as_str()
             .ok_or_else(|| Error::ArgumentTypeString(name.to_string(), 1))?;
 
-        Ok(rc.field(&target, field).cloned())
+        let result = rc.field(&target, field).cloned();
+
+        // TODO: error if no field was found!
+
+        Ok(result)
     }
 }
 

@@ -2,7 +2,10 @@
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{self, lex, Lexer, Token},
-    parser::ast::{Block, CallTarget, Document, Node, Text},
+    parser::{
+        call::CallParseContext,
+        ast::{Block, CallTarget, Document, Node, Text},
+    }
 };
 
 /// Default file name.
@@ -12,14 +15,6 @@ pub mod ast;
 mod block;
 mod call;
 mod path;
-
-// FIXME: use this or remove it!
-#[deprecated]
-#[derive(Clone, Debug)]
-pub(crate) enum ParameterContext {
-    Block,
-    Statement,
-}
 
 #[derive(Debug)]
 pub struct ParserOptions {
@@ -325,11 +320,17 @@ impl<'source> Parser<'source> {
                     }
                 }
                 lexer::Block::StartStatement => {
+                    let context = if self.stack.is_empty() {
+                        CallParseContext::Statement
+                    } else {
+                        CallParseContext::ScopeStatement
+                    };
                     let mut call = call::parse(
                         self.source,
-                        &mut self.state,
                         &mut self.lexer,
+                        &mut self.state,
                         span,
+                        context,
                     )?;
                     return Ok(Some(Node::Statement(call)));
                 }

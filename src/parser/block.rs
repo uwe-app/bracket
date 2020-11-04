@@ -5,7 +5,7 @@ use crate::{
     lexer::{self, Lexer, Token},
     parser::{
         ast::{Block, Node, Text, TextBlock},
-        call, ParseState,
+        call::{self, CallParseContext}, ParseState,
     },
 };
 
@@ -165,9 +165,10 @@ pub(crate) fn scope<'source>(
     let mut block = Block::new(source, span.clone());
     let call = call::parse(
         source,
-        state,
         lexer,
+        state,
         span,
+        CallParseContext::Block,
     )?;
     block.set_call(call);
     Ok(block)

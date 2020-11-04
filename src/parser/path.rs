@@ -167,20 +167,20 @@ pub(crate) fn components<'source>(
                     ));
                     wants_delimiter = true;
                 } else {
-                    break;
+                    return Ok(Some(Token::Parameters(lex, span)))
                 }
             }
             _ => return Ok(Some(token)),
         }
     }
 
-    Ok(lexer.next())
+    Ok(None)
 }
 
 pub(crate) fn parse<'source>(
     source: &'source str,
-    state: &mut ParseState,
     lexer: &mut Lexer<'source>,
+    state: &mut ParseState,
     current: (Parameters, Span),
 ) -> Result<(Option<Path<'source>>, Option<Token>), SyntaxError<'source>> {
     let (lex, span) = current;
@@ -266,6 +266,7 @@ pub(crate) fn parse<'source>(
             }
             _ => panic!("Expected parameter token"),
         }
+
         next = lexer.next();
     }
 

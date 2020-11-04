@@ -2,7 +2,7 @@ use logos::Span;
 use serde_json::{Value, Number};
 
 use crate::{
-    error::SyntaxError,
+    error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{Lexer, Parameters, Token, StringLiteral},
     parser::{
         ast::{Call, CallTarget, ParameterValue},
@@ -10,12 +10,37 @@ use crate::{
     },
 };
 
+/// Indicate if this call statement is being parsed 
+/// in the context of a statement or block which is used 
+/// to determine if the `else` keyword is allowed.
+#[derive(Eq, PartialEq)]
+pub(crate) enum CallParseContext {
+    /// Parsing as an open block.
+    Block,
+    /// Parsing as a statement out side a block
+    Statement,
+    /// Parsing as a statement inside a block scope
+    /// in which case the `else` keyword should be parsed.
+    ScopeStatement,
+}
+
+/// Repesents the types of calls that can be parsed.
+///
+/// Either a top-level call or a sub-expression.
+///
+/// Sub expressions do not parse partial information and must 
+/// use a path for the call target.
+#[derive(Eq, PartialEq)]
+enum CallContext {
+    Call,
+    SubExpr,
+}
 
 /// Parse a quoted string literal value.
 fn string_literal<'source>(
     source: &'source str,
-    state: &mut ParseState,
     lexer: &mut Lexer<'source>,
+    state: &mut ParseState,
     current: (Parameters, Span),
 ) -> Result<Value, SyntaxError<'source>> {
     let (lex, span) = current;
@@ -45,8 +70,8 @@ fn string_literal<'source>(
 /// Parse a JSON literal value.
 fn json_literal<'source>(
     source: &'source str,
-    state: &mut ParseState,
     lexer: &mut Lexer<'source>,
+    state: &mut ParseState,
     current: (Parameters, Span),
 ) -> Result<Value, SyntaxError<'source>> {
 
@@ -60,7 +85,7 @@ fn json_literal<'source>(
             Value::Number(num)
         }
         Parameters::StringLiteral => {
-            string_literal(source, state, lexer, (lex, span))?
+            string_literal(source, lexer, state, (lex, span))?
         }
         _ => {
             // FIXME: how to handle this?
@@ -73,8 +98,8 @@ fn json_literal<'source>(
 
 fn value<'source>(
     source: &'source str,
-    state: &mut ParseState,
     lexer: &mut Lexer<'source>,
+    state: &mut ParseState,
     current: (Parameters, Span),
 ) -> Result<(ParameterValue<'source>, Option<Token>), SyntaxError<'source>> {
 
@@ -90,8 +115,8 @@ fn value<'source>(
         | Parameters::ArrayAccess => {
             let (mut path, token) = path::parse(
                 source,
-                state,
                 lexer,
+                state,
                 (lex, span),
             )?;
             if let Some(path) = path.take() {
@@ -100,7 +125,12 @@ fn value<'source>(
         }
         // Open a nested call
         Parameters::StartSubExpression => {
-            todo!("Parse value as sub expression");
+            let (call, token) = sub_expr(source, lexer, state, span)?;
+            if !call.is_closed() {
+                panic!("Sub expression was not terminated");
+            }
+
+            return Ok((ParameterValue::SubExpr(call), token));
         }
         // Literal components
         Parameters::StringLiteral
@@ -108,7 +138,7 @@ fn value<'source>(
         | Parameters::True
         | Parameters::False
         | Parameters::Null => {
-            let value = json_literal(source, state, lexer, (lex, span))?;
+            let value = json_literal(source, lexer, state, (lex, span))?;
             return Ok((ParameterValue::Json(value), lexer.next()));
         }
         _ => panic!("Unexpected token while parsing value! {:?}", lex),
@@ -119,8 +149,8 @@ fn value<'source>(
 
 fn key_value<'source>(
     source: &'source str,
-    state: &mut ParseState,
     lexer: &mut Lexer<'source>,
+    state: &mut ParseState,
     call: &mut Call<'source>,
     current: (Parameters, Span),
 ) -> Result<Option<Token>, SyntaxError<'source>> {
@@ -133,7 +163,7 @@ fn key_value<'source>(
     if let Some(token) = lexer.next() {
         match token {
             Token::Parameters(lex, span) => {
-                let (mut value, token) = value(source, state, lexer, (lex, span))?;
+                let (mut value, token) = value(source, lexer, state, (lex, span))?;
                 call.add_hash(key, value);
                 next = token;
             }
@@ -152,7 +182,7 @@ fn key_value<'source>(
                         }
                     }
                     Parameters::HashKey => {
-                        return key_value(source, state, lexer, call, (lex, span));
+                        return key_value(source, lexer, state, call, (lex, span));
                     }
                     Parameters::End => {
                         call.exit(span);
@@ -170,10 +200,11 @@ fn key_value<'source>(
 
 fn arguments<'source>(
     source: &'source str,
-    state: &mut ParseState,
     lexer: &mut Lexer<'source>,
+    state: &mut ParseState,
     call: &mut Call<'source>,
     next: Option<Token>,
+    context: CallContext,
 ) -> Result<Option<Token>, SyntaxError<'source>> {
 
     //println!("Arguments {:?}", next);
@@ -187,7 +218,7 @@ fn arguments<'source>(
                             *state.line_mut() += 1;
                         }
                         let next = lexer.next();
-                        return arguments(source, state, lexer, call, next);
+                        return arguments(source, lexer, state, call, next, context);
                     }
                     Parameters::Partial => {
                         panic!("Partial indicator (>) must be the first part of a call statement");
@@ -201,17 +232,19 @@ fn arguments<'source>(
                     | Parameters::ParentRef
                     | Parameters::ArrayAccess => {
                         // Handle path arguments values
-                        let (mut value, token) = value(source, state, lexer, (lex, span))?;
+                        let (value, token) = value(source, lexer, state, (lex, span))?;
                         call.add_argument(value);
-                        return arguments(source, state, lexer, call, token);
+                        return arguments(source, lexer, state, call, token, context);
                     }
                     // Hash parameters
                     Parameters::HashKey => {
-                        return key_value(source, state, lexer, call, (lex, span));
+                        return key_value(source, lexer, state, call, (lex, span));
                     }
                     // Open a nested call
                     Parameters::StartSubExpression => {
-                        todo!("Parse argument as sub expression");
+                        let (mut value, token) = value(source, lexer, state, (lex, span))?;
+                        call.add_argument(value);
+                        return arguments(source, lexer, state, call, token, context);
                     }
                     // Literal components
                     Parameters::StringLiteral
@@ -220,22 +253,27 @@ fn arguments<'source>(
                     | Parameters::False
                     | Parameters::Null => {
                         // Handle json literal argument values
-                        let (mut value, token) = value(source, state, lexer, (lex, span))?;
+                        let (value, token) = value(source, lexer, state, (lex, span))?;
                         call.add_argument(value);
-                        return arguments(source, state, lexer, call, token);
+                        return arguments(source, lexer, state, call, token, context);
                     }
                     Parameters::PathDelimiter => {
                         panic!("Unexpected path delimiter");
                     }
                     Parameters::EndSubExpression => {
-                        panic!("Unexpected end of sub expression");
+                        if context == CallContext::SubExpr {
+                            call.exit(span);
+                            return Ok(lexer.next())
+                        } else {
+                            panic!("Unexpected end of sub expression");
+                        }
                     }
                     Parameters::Error => {
                         panic!("Unexpected token");
                     }
                     Parameters::End => {
                         call.exit(span);
-                        return Ok(lexer.next())
+                        return Ok(None)
                     }
                 }
             }
@@ -251,10 +289,11 @@ fn arguments<'source>(
 /// Parse the call target.
 fn target<'source>(
     source: &'source str,
-    state: &mut ParseState,
     lexer: &mut Lexer<'source>,
+    state: &mut ParseState,
     call: &mut Call<'source>,
     mut next: Option<Token>,
+    context: CallContext,
 ) -> Result<Option<Token>, SyntaxError<'source>> {
 
     while let Some(token) = next {
@@ -279,8 +318,8 @@ fn target<'source>(
                     | Parameters::PathDelimiter => {
                         let (mut path, token) = path::parse(
                             source,
-                            state,
                             lexer,
+                            state,
                             (lex, span),
                         )?;
 
@@ -291,10 +330,35 @@ fn target<'source>(
                         return Ok(token)
                     }
                     Parameters::StartSubExpression => {
-                        todo!("Parse sub expression for call target");
+                        if context == CallContext::SubExpr {
+                            panic!("Sub expressions must use a path or identifier for the target");
+                        }
+
+                        let (sub_call, token) = sub_expr(source, lexer, state, span)?;
+                        call.set_target(CallTarget::SubExpr(Box::new(sub_call)));
+                        return Ok(token)
+                    }
+                    Parameters::End => {
+                        if !call.has_target() {
+                            //panic!("Got end of statement with no call target...");
+                            return Err(
+                                SyntaxError::EmptyStatement(
+                                    ErrorInfo::new(
+                                        source,
+                                        state.file_name(),
+                                        SourcePos::from((
+                                            state.line(),
+                                            state.byte(),
+                                        )),
+                                    ),
+                                ),
+                            );
+                        }
+                        call.exit(span);
+                        //return Ok()
                     }
                     _ => {
-                        panic!("Unexpected token parsing call target!");
+                        panic!("Unexpected token parsing call target {:?}", lex);
                     }
                 }
             }
@@ -311,8 +375,8 @@ fn target<'source>(
 /// Parse the partial flag.
 fn partial<'source>(
     source: &'source str,
-    state: &mut ParseState,
     lexer: &mut Lexer<'source>,
+    state: &mut ParseState,
     call: &mut Call<'source>,
     mut next: Option<Token>,
 ) -> Result<Option<Token>, SyntaxError<'source>> {
@@ -339,18 +403,42 @@ fn partial<'source>(
     Ok(None)
 }
 
-pub(crate) fn parse<'source>(
+pub(crate) fn sub_expr<'source>(
     source: &'source str,
-    state: &mut ParseState,
     lexer: &mut Lexer<'source>,
+    state: &mut ParseState,
     open: Span,
-) -> Result<Call<'source>, SyntaxError<'source>> {
+    //parse_context: CallParseContext,
+) -> Result<(Call<'source>, Option<Token>), SyntaxError<'source>> {
+    *state.byte_mut() = open.end;
+
     let mut call = Call::new(source, open);
     let next = lexer.next();
-    let next = partial(source, state, lexer, &mut call, next)?;
-    let next = target(source, state, lexer, &mut call, next)?;
-    let next = arguments(source, state, lexer, &mut call, next)?;
+    let next = target(source, lexer, state, &mut call, next, CallContext::SubExpr)?;
+    let next = arguments(source, lexer, state, &mut call, next, CallContext::SubExpr)?;
     if !call.is_closed() {
+        panic!("Sub expression statement was not terminated");
+    }
+    Ok((call, next))
+}
+
+pub(crate) fn parse<'source>(
+    source: &'source str,
+    lexer: &mut Lexer<'source>,
+    state: &mut ParseState,
+    open: Span,
+    parse_context: CallParseContext,
+) -> Result<Call<'source>, SyntaxError<'source>> {
+    *state.byte_mut() = open.end;
+
+    let mut call = Call::new(source, open);
+    let next = lexer.next();
+    let next = partial(source, lexer, state, &mut call, next)?;
+    let next = target(source, lexer, state, &mut call, next, CallContext::Call)?;
+    let next = arguments(source, lexer, state, &mut call, next, CallContext::Call)?;
+    // FIXME: we should return the next token here so it is consumed ???
+    if !call.is_closed() {
+        //println!("{:?}", call);
         panic!("Call statement was not terminated");
     }
     Ok(call)
