@@ -331,7 +331,17 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         let hash = self.hash(call)?;
         let scope = Scope::new_locals(hash);
         self.scopes.push(scope);
-        self.render_node(node)?;
+        // WARN: We must iterate the document child nodes
+        // WARN: when rendering partials otherwise the 
+        // WARN: rendering process will halt after the first partial!
+        match node {
+            Node::Document(ref doc) => {
+                for node in doc.nodes().iter() {
+                    self.render_node(node)?;
+                }
+            }
+            _ => panic!("Invalid partial node encountered, must be a document"),
+        }
         self.scopes.pop();
 
         Ok(())
@@ -350,11 +360,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 }
             }
             CallTarget::SubExpr(ref call) => {
-                /*
                 let result = self.statement(call)?.unwrap_or(Value::Null);
-                println!("Got sub expression result {:?}", result);
                 return Ok(json::stringify(&result));
-                */
             }
         }
         Err(RenderError::PartialNameResolve(call.as_str()))
@@ -416,8 +423,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             // TODO: as @partial-block
             println!("Got partial call for block!");
         } else {
-            //println!("Call the block {:?}", block);
-            //println!("Evaluating a call {:?}", call);
             match call.target() {
                 CallTarget::Path(ref path) => {
                     if path.is_simple() {
@@ -459,6 +464,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         } else {
             false
         };
+
+        //println!("Render node {:?}", node);
 
         //let trim_after = node.trim_after();
         //println!("Has trim before {}", trim_before);

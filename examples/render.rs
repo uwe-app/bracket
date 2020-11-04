@@ -46,17 +46,21 @@ fn main() -> Result<'static, ()> {
         .build(&loader)
         .expect("Failed to compile templates");
 
+    //println!("{:#?}", templates.get(name));
+
+    //let template = templates.get(name).unwrap();
+    //for node in template.node() {
+        //println!("{:?}", node);
+    //}
+
     let registry = Registry::new_templates(templates);
 
-    //let child = std::thread::spawn(move || {
     match registry.render(name, &data) {
         Ok(result) => {
             println!("{}", result);
         }
         Err(e) => log::error!("{:?}", e),
     }
-    //});
-    //let res = child.join();
 
     Ok(())
 }

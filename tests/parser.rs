@@ -159,14 +159,13 @@ fn parse_statement_path_explicit_dot() -> Result<'static, ()> {
 
 #[test]
 fn parse_statement_partial() -> Result<'static, ()> {
-    let value = "{{ > foo}}";
+    let value = "foo {{ > bar }} baz";
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
-
     match node {
         Node::Document(doc) => {
-            assert_eq!(1, doc.nodes().len());
-            let node = doc.nodes().first().unwrap();
+            assert_eq!(3, doc.nodes().len());
+            let node = doc.nodes().get(1).unwrap();
             match node {
                 Node::Statement(ref call) => {
                     assert_eq!(true, call.is_partial());
