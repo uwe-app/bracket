@@ -2,7 +2,7 @@
 use serde::Serialize;
 
 use crate::{
-    escape::{html_escape, EscapeFn},
+    escape::{escape_html, EscapeFn},
     helper::HelperRegistry,
     output::{Output, StringOutput},
     parser::{Parser, ParserOptions},
@@ -24,7 +24,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         Self {
             helpers: HelperRegistry::new(),
             templates: Default::default(),
-            escape: Box::new(html_escape),
+            escape: Box::new(escape_html),
         }
     }
 

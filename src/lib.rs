@@ -9,8 +9,13 @@ pub mod registry;
 pub mod render;
 pub mod template;
 
+/// Result type returned by the registry.
 pub type Result<T> = std::result::Result<T, error::Error>;
+
+/// Result type returned when rendering templates.
 pub type RenderResult<T> = std::result::Result<T, error::RenderError>;
+
+/// Result type returned when compiling templates.
 pub type SyntaxResult<T> = std::result::Result<T, error::SyntaxError>;
 
 pub use error::Error;

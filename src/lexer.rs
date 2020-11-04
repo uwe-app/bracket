@@ -1,6 +1,7 @@
 //! Iterator for grammar tokens.
 use logos::{Lexer as Lex, Logos, Span};
 
+/// Identity type for the lexer modes.
 #[derive(Clone, Default)]
 pub struct Extras;
 
@@ -210,6 +211,7 @@ pub enum StringLiteral {
     Error,
 }
 
+/// Type emitted by the iterator.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Token {
     Block(Block, Span),
@@ -277,7 +279,6 @@ enum Modes<'source> {
     RawComment(Lex<'source, RawComment>),
     RawStatement(Lex<'source, RawStatement>),
     Comment(Lex<'source, Comment>),
-    //BlockScope(Lex<'source, BlockScope>),
     Parameters(Lex<'source, Parameters>),
     StringLiteral(Lex<'source, StringLiteral>),
 }
@@ -288,6 +289,7 @@ impl<'source> Modes<'source> {
     }
 }
 
+/// Iterator for a stream of grammar tokens.
 pub struct Lexer<'source> {
     mode: Modes<'source>,
 }
@@ -436,7 +438,9 @@ fn normalize(tokens: Vec<Token>) -> Vec<Token> {
     normalized
 }
 
-/// Iterator for the grammar tokens.
+/// Get a token iterator for the given source template.
+///
+/// The returned iterator will emit tokens of type `Token`.
 pub fn lex(s: &str) -> Lexer {
     Lexer {
         mode: Modes::new(s),

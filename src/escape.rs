@@ -1,12 +1,12 @@
 //! Escape function trait and default functions.
 //!
-//! The default is to escape for HTML content using `html_escape`.
+//! The default is to escape for HTML content using `escape_html`.
 
 /// Type for escape functions.
 pub type EscapeFn = Box<dyn Fn(&str) -> String + Send + Sync>;
 
 /// Escape for HTML output.
-pub fn html_escape(s: &str) -> String {
+pub fn escape_html(s: &str) -> String {
     let mut output = String::new();
     for c in s.chars() {
         match c {
@@ -24,6 +24,6 @@ pub fn html_escape(s: &str) -> String {
 }
 
 /// Do not escape output.
-pub fn no_escape(s: &str) -> String {
+pub fn escape_noop(s: &str) -> String {
     s.to_owned()
 }
