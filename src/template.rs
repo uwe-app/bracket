@@ -6,13 +6,13 @@ use serde::Serialize;
 use std::fmt;
 
 use crate::{
-    error::{Error, SyntaxError},
+    error::Error,
     escape::EscapeFn,
     helper::HelperRegistry,
     output::Output,
     parser::{ast::Node, Parser, ParserOptions},
     render::Render,
-    RenderResult, Result,
+    SyntaxResult, RenderResult, Result,
 };
 
 #[derive(Default)]
@@ -83,9 +83,9 @@ impl<'source> Templates<'source> {
         }
     }
 
-    pub fn build(&mut self, loader: &'source Loader) -> Result<'source, ()> {
+    pub fn build(&mut self, loader: &'source Loader) -> Result<()> {
         for (k, v) in loader.sources() {
-            let template = Templates::compile(v, Default::default()).unwrap();
+            let template = Templates::compile(v, Default::default())?;
             self.register(k.as_str(), template);
         }
         Ok(())
@@ -146,7 +146,7 @@ impl<'reg, 'source> Template<'source> {
     pub fn compile(
         source: &'source str,
         options: ParserOptions,
-    ) -> std::result::Result<Template, SyntaxError> {
+    ) -> SyntaxResult<Template> {
         let mut parser = Parser::new(source, options);
         let node = parser.parse()?;
         Ok(Template::new(source, node))
@@ -161,7 +161,7 @@ impl<'reg, 'source> Template<'source> {
         name: &str,
         data: &T,
         writer: &mut impl Output,
-    ) -> RenderResult<'_, ()>
+    ) -> RenderResult<()>
     where
         T: Serialize,
     {

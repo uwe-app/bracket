@@ -11,7 +11,7 @@ use bracket::{
 
 use serde_json::json;
 
-fn main() -> Result<'static, ()> {
+fn main() -> Result<()> {
     std::env::set_var("RUST_LOG", "trace");
     pretty_env_logger::init();
 
@@ -48,7 +48,7 @@ fn main() -> Result<'static, ()> {
 
     //println!("{:#?}", templates.get(name));
 
-    //let template = templates.get(name).unwrap();
+    //let template = templates.get(name)?;
     //for node in template.node() {
     //println!("{:?}", node);
     //}

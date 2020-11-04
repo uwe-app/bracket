@@ -14,14 +14,14 @@ pub use syntax::SyntaxError;
 /// Generic error type that wraps more specific types and is 
 /// returned when using the `Registry`.
 #[derive(Eq, PartialEq)]
-pub enum Error<'source> {
+pub enum Error {
     Syntax(SyntaxError),
-    Render(RenderError<'source>),
+    Render(RenderError),
     TemplateNotFound(String),
     Io(IoError),
 }
 
-impl fmt::Display for Error<'_> {
+impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Self::Syntax(ref e) => fmt::Display::fmt(e, f),
@@ -34,7 +34,7 @@ impl fmt::Display for Error<'_> {
     }
 }
 
-impl fmt::Debug for Error<'_> {
+impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Self::Syntax(ref e) => fmt::Debug::fmt(e, f),
@@ -45,19 +45,19 @@ impl fmt::Debug for Error<'_> {
     }
 }
 
-impl From<std::io::Error> for Error<'_> {
+impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Self {
         Self::Io(IoError::Io(err))
     }
 }
 
-impl<'source> From<RenderError<'source>> for Error<'source> {
-    fn from(err: RenderError<'source>) -> Self {
+impl From<RenderError> for Error {
+    fn from(err: RenderError) -> Self {
         Self::Render(err)
     }
 }
 
-impl<'source> From<SyntaxError> for Error<'source> {
+impl From<SyntaxError> for Error {
     fn from(err: SyntaxError) -> Self {
         Self::Syntax(err)
     }

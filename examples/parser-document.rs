@@ -4,7 +4,7 @@ use bracket::{
 };
 
 /// Demonstrates how to get a document tree of nodes.
-fn main() -> Result<'static, ()> {
+fn main() -> Result<()> {
     let content = include_str!("document.md");
     let options = ParserOptions {
         file_name: String::from("document.md"),

@@ -6,6 +6,7 @@ use crate::{
         ast::{Block, CallTarget, Document, Node, Text},
         call::CallParseContext,
     },
+    SyntaxResult,
 };
 
 /// Default file name.
@@ -110,7 +111,7 @@ impl<'source> Parser<'source> {
     }
 
     /// Parse the entire document into a node tree.
-    pub fn parse(&mut self) -> Result<Node<'source>, SyntaxError> {
+    pub fn parse(&mut self) -> SyntaxResult<Node<'source>> {
         let mut doc = Document(&self.source, vec![]);
         for node in self {
             let node = node?;
@@ -137,7 +138,7 @@ impl<'source> Parser<'source> {
     fn advance(
         &mut self,
         next: Token,
-    ) -> Result<Option<Node<'source>>, SyntaxError> {
+    ) -> SyntaxResult<Option<Node<'source>>> {
         if next.is_newline() {
             *self.state.line_mut() += 1;
         }
@@ -359,7 +360,7 @@ impl<'source> Parser<'source> {
 }
 
 impl<'source> Iterator for Parser<'source> {
-    type Item = Result<Node<'source>, SyntaxError>;
+    type Item = SyntaxResult<Node<'source>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(t) = self.token() {

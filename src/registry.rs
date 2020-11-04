@@ -69,11 +69,11 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     }
 
     /// Compile a string to a template.
-    pub fn compile<'a>(
-        &'a self,
-        template: &'a str,
+    pub fn compile(
+        &self,
+        template: &'source str,
         options: ParserOptions,
-    ) -> Result<'a, Template<'a>> {
+    ) -> Result<Template<'source>> {
         Templates::compile(template, options)
     }
 
@@ -81,12 +81,12 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     ///
     /// This function buffers the template nodes before rendering; if low 
     /// latency is required use the stream functions.
-    pub fn once<'a, T>(
-        &'a self,
+    pub fn once<T>(
+        &self,
         name: &str,
-        template: &'a Template<'source>,
+        template: &Template<'source>,
         data: &T,
-    ) -> Result<'a, String>
+    ) -> Result<String>
     where
         T: Serialize,
     {
@@ -103,12 +103,12 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     }
 
     /// Stream a dynamic template and buffer the result to a string.
-    pub fn stream<'a, T>(
-        &'a self,
+    pub fn stream<T>(
+        &self,
         name: &str,
-        source: &'a str,
+        source: &str,
         data: &T,
-    ) -> Result<'a, String>
+    ) -> Result<String>
     where
         T: Serialize,
     {
@@ -119,14 +119,14 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     }
 
     /// Stream a dynamic template to a writer.
-    pub fn stream_to_write<'a, T>(
-        &'a self,
+    pub fn stream_to_write<T>(
+        &self,
         name: &str,
-        source: &'a str,
+        source: &str,
         data: &T,
         writer: &mut impl Output,
         options: ParserOptions,
-    ) -> Result<'a, ()>
+    ) -> Result<()>
     where
         T: Serialize,
     {
@@ -142,14 +142,13 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         let mut parser = Parser::new(source, options);
         for node in parser {
             let node = node?;
-            // FIXME: restore this once errors do not use lifetimes!
             //rc.render_node(&node)?;
         }
         Ok(())
     }
 
     /// Render a named template and buffer the result to a string.
-    pub fn render<'a, T>(&'a self, name: &str, data: &T) -> Result<'a, String>
+    pub fn render<T>(&self, name: &str, data: &T) -> Result<String>
     where
         T: Serialize,
     {
@@ -159,12 +158,12 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     }
 
     /// Render a named template to a writer.
-    pub fn render_to_write<'a, T>(
-        &'a self,
+    pub fn render_to_write<T>(
+        &self,
         name: &str,
         data: &T,
         writer: &mut impl Output,
-    ) -> Result<'a, ()>
+    ) -> Result<()>
     where
         T: Serialize,
     {

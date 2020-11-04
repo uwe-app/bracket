@@ -6,7 +6,7 @@ use bracket::{
 use serde_json::{Number, Value};
 
 #[test]
-fn parse_statement() -> Result<'static, ()> {
+fn parse_statement() -> Result<()> {
     let value = "{{foo}}";
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
@@ -25,7 +25,7 @@ fn parse_statement() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_statement_sub_expr() -> Result<'static, ()> {
+fn parse_statement_sub_expr() -> Result<()> {
     let value = "{{log (json this)}}";
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
@@ -58,7 +58,7 @@ fn parse_statement_sub_expr() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_statement_path_root() -> Result<'static, ()> {
+fn parse_statement_path_root() -> Result<()> {
     let value = "{{@root.foo}}";
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
@@ -83,7 +83,7 @@ fn parse_statement_path_root() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_statement_path_parents() -> Result<'static, ()> {
+fn parse_statement_path_parents() -> Result<()> {
     let value = "{{../../../foo}}";
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
@@ -108,7 +108,7 @@ fn parse_statement_path_parents() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_statement_path_explicit_this() -> Result<'static, ()> {
+fn parse_statement_path_explicit_this() -> Result<()> {
     let value = "{{this.foo}}";
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
@@ -133,7 +133,7 @@ fn parse_statement_path_explicit_this() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_statement_path_explicit_dot() -> Result<'static, ()> {
+fn parse_statement_path_explicit_dot() -> Result<()> {
     let value = "{{./foo}}";
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
@@ -158,7 +158,7 @@ fn parse_statement_path_explicit_dot() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_statement_partial() -> Result<'static, ()> {
+fn parse_statement_partial() -> Result<()> {
     let value = "foo {{ > bar }} baz";
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
@@ -180,7 +180,7 @@ fn parse_statement_partial() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_arg_path() -> Result<'static, ()> {
+fn parse_arg_path() -> Result<()> {
     let value = r#"{{foo ../../bar}}"#;
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
@@ -217,7 +217,7 @@ fn parse_arg_path() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_arg_string() -> Result<'static, ()> {
+fn parse_arg_string() -> Result<()> {
     let value = r#"{{foo "bar\nbaz"}}"#;
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
@@ -247,7 +247,7 @@ fn parse_arg_string() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_hash_string() -> Result<'static, ()> {
+fn parse_hash_string() -> Result<()> {
     let value = r#"{{foo bar="baz"}}"#;
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
@@ -277,7 +277,7 @@ fn parse_hash_string() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_arg_bool_true() -> Result<'static, ()> {
+fn parse_arg_bool_true() -> Result<()> {
     let value = r#"{{foo true}}"#;
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
@@ -305,7 +305,7 @@ fn parse_arg_bool_true() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_arg_bool_false() -> Result<'static, ()> {
+fn parse_arg_bool_false() -> Result<()> {
     let value = r#"{{foo false}}"#;
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
@@ -333,7 +333,7 @@ fn parse_arg_bool_false() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_arg_null() -> Result<'static, ()> {
+fn parse_arg_null() -> Result<()> {
     let value = r#"{{foo null}}"#;
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
@@ -361,7 +361,7 @@ fn parse_arg_null() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_arg_num_int() -> Result<'static, ()> {
+fn parse_arg_num_int() -> Result<()> {
     let value = r#"{{foo 10}}"#;
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
@@ -390,7 +390,7 @@ fn parse_arg_num_int() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_arg_num_int_signed() -> Result<'static, ()> {
+fn parse_arg_num_int_signed() -> Result<()> {
     let value = r#"{{foo -10}}"#;
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
@@ -419,7 +419,7 @@ fn parse_arg_num_int_signed() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_arg_num_int_signed_exponent() -> Result<'static, ()> {
+fn parse_arg_num_int_signed_exponent() -> Result<()> {
     let value = r#"{{foo -2e+2}}"#;
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
@@ -448,7 +448,7 @@ fn parse_arg_num_int_signed_exponent() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_arg_num_float() -> Result<'static, ()> {
+fn parse_arg_num_float() -> Result<()> {
     let value = r#"{{foo 3.14}}"#;
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
@@ -477,7 +477,7 @@ fn parse_arg_num_float() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_arg_num_float_signed() -> Result<'static, ()> {
+fn parse_arg_num_float_signed() -> Result<()> {
     let value = r#"{{foo -0.5}}"#;
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
@@ -505,7 +505,7 @@ fn parse_arg_num_float_signed() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_arg_num_float_signed_exponent() -> Result<'static, ()> {
+fn parse_arg_num_float_signed_exponent() -> Result<()> {
     let value = r#"{{foo -0.5E-2}}"#;
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
@@ -533,7 +533,7 @@ fn parse_arg_num_float_signed_exponent() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_statement_trim() -> Result<'static, ()> {
+fn parse_statement_trim() -> Result<()> {
     let value = "{{~foo~}}";
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
@@ -552,7 +552,7 @@ fn parse_statement_trim() -> Result<'static, ()> {
 }
 
 #[test]
-fn parse_block_trim() -> Result<'static, ()> {
+fn parse_block_trim() -> Result<()> {
     let value = "{{~#foo~}}bar{{~/foo~}}";
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;

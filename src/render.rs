@@ -82,7 +82,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         source: &'source str,
         data: &T,
         writer: Box<&'render mut dyn Output>,
-    ) -> Result<Self, RenderError<'source>>
+    ) -> RenderResult<Self>
     where
         T: Serialize,
     {
@@ -244,7 +244,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     fn arguments(
         &mut self,
         call: &'source Call<'source>,
-    ) -> RenderResult<'source, Vec<Value>> {
+    ) -> RenderResult<Vec<Value>> {
         let mut out: Vec<Value> = Vec::new();
         for p in call.arguments() {
             let arg = match p {
@@ -265,7 +265,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     fn hash(
         &mut self,
         call: &'source Call<'source>,
-    ) -> RenderResult<'source, Map<String, Value>> {
+    ) -> RenderResult<Map<String, Value>> {
         let mut out = Map::new();
         for (k, p) in call.hash() {
             let (key, value) = match p {
@@ -289,7 +289,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         &mut self,
         name: &'source str,
         call: &'source Call<'source>,
-    ) -> RenderResult<'source, HelperValue> {
+    ) -> RenderResult<HelperValue> {
         if let Some(helper) = self.helpers.get(name) {
             let args = self.arguments(call)?;
             let hash = self.hash(call)?;
@@ -306,7 +306,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         call: &'source Call<'source>,
         template: &'source Node<'source>,
         inverse: Option<&'source Node<'source>>,
-    ) -> RenderResult<'source, ()> {
+    ) -> RenderResult<()> {
         if let Some(helper) = self.helpers.get_block(name) {
             let args = self.arguments(call)?;
             let hash = self.hash(call)?;
@@ -321,7 +321,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         &mut self,
         call: &'source Call<'source>,
         name: String,
-    ) -> RenderResult<'source, ()> {
+    ) -> RenderResult<()> {
         let template = self
             .templates
             .get(&name)
@@ -350,7 +350,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     fn get_partial_name(
         &mut self,
         call: &'source Call<'source>,
-    ) -> Result<String, RenderError<'source>> {
+    ) -> RenderResult<String> {
         match call.target() {
             CallTarget::Path(ref path) => {
                 if path.is_simple() {
@@ -364,14 +364,14 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 return Ok(json::stringify(&result));
             }
         }
-        Err(RenderError::PartialNameResolve(call.as_str()))
+        Err(RenderError::PartialNameResolve(call.as_str().to_string()))
     }
 
     // Fallible version of path lookup.
     fn resolve(
         &mut self,
         path: &'source Path<'source>,
-    ) -> Result<HelperValue, RenderError<'source>> {
+    ) -> RenderResult<HelperValue> {
         if let Some(value) = self.lookup(path).cloned().take() {
             return Ok(Some(value));
         } else {
@@ -382,7 +382,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     fn statement(
         &mut self,
         call: &'source Call<'source>,
-    ) -> Result<HelperValue, RenderError<'source>> {
+    ) -> RenderResult<HelperValue> {
         //println!("Statement {:?}", call.as_str());
 
         if call.is_partial() {
@@ -415,7 +415,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         &mut self,
         node: &'source Node<'source>,
         block: &'source Block<'source>,
-    ) -> Result<(), RenderError<'source>> {
+    ) -> RenderResult<()> {
         let call = block.call();
 
         if call.is_partial() {
@@ -452,7 +452,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     pub(crate) fn render_node(
         &mut self,
         node: &'source Node<'source>,
-    ) -> RenderResult<'source, ()> {
+    ) -> RenderResult<()> {
         self.trim_start = if let Some(node) = self.prev_node {
             node.trim_after()
         } else {
@@ -513,7 +513,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         &mut self,
         s: &str,
         escape: bool,
-    ) -> Result<usize, RenderError<'source>> {
+    ) -> RenderResult<usize> {
         let val = if self.trim_start { s.trim_start() } else { s };
         let val = if self.trim_end { val.trim_end() } else { val };
         if val.is_empty() {

@@ -4,7 +4,7 @@ use bracket::{
 };
 
 /// Demonstrates how to get nodes by iterating a parser.
-fn main() -> Result<'static, ()> {
+fn main() -> Result<()> {
     let content = include_str!("document.md");
     let options = ParserOptions {
         file_name: String::from("document.md"),

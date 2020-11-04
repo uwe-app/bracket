@@ -2,36 +2,36 @@
 use std::fmt;
 use crate::error::{HelperError, IoError};
 
-pub enum RenderError<'source> {
-    PartialNameResolve(&'source str),
+pub enum RenderError {
+    PartialNameResolve(String),
     PartialNotFound(String),
     Helper(HelperError),
     Io(IoError),
     Json(serde_json::Error),
 }
 
-impl From<HelperError> for RenderError<'_> {
+impl From<HelperError> for RenderError {
     fn from(err: HelperError) -> Self {
         Self::Helper(err)
     }
 }
 
-impl From<std::io::Error> for RenderError<'_> {
+impl From<std::io::Error> for RenderError {
     fn from(err: std::io::Error) -> Self {
         Self::Io(IoError::Io(err))
     }
 }
 
-impl From<serde_json::Error> for RenderError<'_> {
+impl From<serde_json::Error> for RenderError {
     fn from(err: serde_json::Error) -> Self {
         Self::Json(err)
     }
 }
 
-impl fmt::Display for RenderError<'_> {
+impl fmt::Display for RenderError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            Self::PartialNameResolve(name) => {
+            Self::PartialNameResolve(ref name) => {
                 write!(f, "Unable to resolve partial name from '{}'", name)
             }
             Self::PartialNotFound(ref name) => {
@@ -44,7 +44,7 @@ impl fmt::Display for RenderError<'_> {
     }
 }
 
-impl fmt::Debug for RenderError<'_> {
+impl fmt::Debug for RenderError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Self::PartialNameResolve(_) => fmt::Display::fmt(self, f),
@@ -56,7 +56,7 @@ impl fmt::Debug for RenderError<'_> {
     }
 }
 
-impl PartialEq for RenderError<'_> {
+impl PartialEq for RenderError {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::PartialNotFound(ref s), Self::PartialNotFound(ref o)) => {
@@ -67,5 +67,4 @@ impl PartialEq for RenderError<'_> {
     }
 }
 
-impl Eq for RenderError<'_> {}
-
+impl Eq for RenderError {}

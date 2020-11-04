@@ -1,13 +1,13 @@
 use std::ops::Range;
 
 use crate::{
-    error::SyntaxError,
     lexer::{self, Lexer, Token},
     parser::{
         ast::{Block, Node, Text, TextBlock},
         call::{self, CallParseContext},
         ParseState,
     },
+    SyntaxResult,
 };
 
 /// Consume consecutive tokens into a single span.
@@ -62,7 +62,7 @@ pub(crate) fn raw<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-) -> Result<Node<'source>, SyntaxError> {
+) -> SyntaxResult<Node<'source>> {
     let end = |t: &Token| match t {
         Token::RawBlock(lex, span) => match lex {
             lexer::RawBlock::End => true,
@@ -87,7 +87,7 @@ pub(crate) fn raw_comment<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-) -> Result<Node<'source>, SyntaxError> {
+) -> SyntaxResult<Node<'source>> {
     let end = |t: &Token| match t {
         Token::RawComment(lex, span) => match lex {
             lexer::RawComment::End => true,
@@ -112,7 +112,7 @@ pub(crate) fn raw_statement<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-) -> Result<Node<'source>, SyntaxError> {
+) -> SyntaxResult<Node<'source>> {
     let end = |t: &Token| match t {
         Token::RawStatement(lex, span) => match lex {
             lexer::RawStatement::End => true,
@@ -137,7 +137,7 @@ pub(crate) fn comment<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-) -> Result<Node<'source>, SyntaxError> {
+) -> SyntaxResult<Node<'source>> {
     let end = |t: &Token| match t {
         Token::Comment(lex, span) => match lex {
             lexer::Comment::End => true,
@@ -162,7 +162,7 @@ pub(crate) fn scope<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     span: Range<usize>,
-) -> Result<Block<'source>, SyntaxError> {
+) -> SyntaxResult<Block<'source>> {
     let mut block = Block::new(source, span.clone());
     let call =
         call::parse(source, lexer, state, span, CallParseContext::Block)?;

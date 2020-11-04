@@ -9,10 +9,11 @@ pub mod registry;
 pub mod render;
 pub mod template;
 
-pub type Result<'a, T> = std::result::Result<T, error::Error<'a>>;
-pub type RenderResult<'a, T> = std::result::Result<T, error::RenderError<'a>>;
+pub type Result<T> = std::result::Result<T, error::Error>;
+pub type RenderResult<T> = std::result::Result<T, error::RenderError>;
+pub type SyntaxResult<T> = std::result::Result<T, error::SyntaxError>;
 
-pub(crate) use error::Error;
+pub use error::Error;
 pub use registry::Registry;
 pub use template::Template;
 
