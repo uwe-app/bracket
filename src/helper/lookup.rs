@@ -1,6 +1,6 @@
 use crate::{
+    helper::{Context, Error, Helper, ValueResult},
     render::Render,
-    helper::{Helper, Context, Error, ValueResult},
 };
 
 pub(crate) struct LookupHelper;
@@ -30,4 +30,3 @@ impl Helper for LookupHelper {
         Ok(result)
     }
 }
-

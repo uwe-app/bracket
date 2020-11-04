@@ -1,6 +1,6 @@
 use crate::{
-    render::Render,
     helper::{BlockHelper, BlockTemplate, Context, Result},
+    render::Render,
 };
 
 pub(crate) struct IfHelper;
@@ -21,4 +21,3 @@ impl BlockHelper for IfHelper {
         Ok(())
     }
 }
-

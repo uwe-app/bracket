@@ -332,7 +332,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         let scope = Scope::new_locals(hash);
         self.scopes.push(scope);
         // WARN: We must iterate the document child nodes
-        // WARN: when rendering partials otherwise the 
+        // WARN: when rendering partials otherwise the
         // WARN: rendering process will halt after the first partial!
         match node {
             Node::Document(ref doc) => {

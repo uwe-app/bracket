@@ -5,7 +5,8 @@ use crate::{
     lexer::{self, Lexer, Token},
     parser::{
         ast::{Block, Node, Text, TextBlock},
-        call::{self, CallParseContext}, ParseState,
+        call::{self, CallParseContext},
+        ParseState,
     },
 };
 
@@ -163,13 +164,8 @@ pub(crate) fn scope<'source>(
     span: Range<usize>,
 ) -> Result<Block<'source>, SyntaxError<'source>> {
     let mut block = Block::new(source, span.clone());
-    let call = call::parse(
-        source,
-        lexer,
-        state,
-        span,
-        CallParseContext::Block,
-    )?;
+    let call =
+        call::parse(source, lexer, state, span, CallParseContext::Block)?;
     block.set_call(call);
     Ok(block)
 }

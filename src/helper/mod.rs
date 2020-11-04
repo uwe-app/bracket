@@ -3,11 +3,7 @@ use serde_json::{Map, Value};
 use std::collections::HashMap;
 use std::ops::Range;
 
-use crate::{
-    error::HelperError as Error,
-    parser::ast::Node,
-    render::{Render},
-};
+use crate::{error::HelperError as Error, parser::ast::Node, render::Render};
 
 /// The result type that helpers should return.
 pub type ValueResult = std::result::Result<Option<Value>, Error>;
@@ -35,14 +31,14 @@ pub trait BlockHelper: Send + Sync {
     ) -> Result;
 }
 
-mod r#if;
 mod each;
-mod with;
+mod r#if;
 #[cfg(feature = "json-helper")]
 mod json;
 #[cfg(feature = "log-helper")]
 mod log;
 mod lookup;
+mod with;
 
 /// Encapsulates the templates passed to a block helper.
 #[derive(Debug)]

@@ -3,9 +3,9 @@ use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{self, lex, Lexer, Token},
     parser::{
-        call::CallParseContext,
         ast::{Block, CallTarget, Document, Node, Text},
-    }
+        call::CallParseContext,
+    },
 };
 
 /// Default file name.
@@ -25,6 +25,16 @@ pub struct ParserOptions {
     pub line_offset: usize,
     /// Byte offset into the source file.
     pub byte_offset: usize,
+}
+
+impl ParserOptions {
+    pub fn new(file_name: String) -> Self {
+        Self {
+            file_name,
+            line_offset: 0,
+            byte_offset: 0,
+        } 
+    }
 }
 
 impl Default for ParserOptions {

@@ -50,7 +50,7 @@ fn main() -> Result<'static, ()> {
 
     //let template = templates.get(name).unwrap();
     //for node in template.node() {
-        //println!("{:?}", node);
+    //println!("{:?}", node);
     //}
 
     let registry = Registry::new_templates(templates);

@@ -1,6 +1,6 @@
 use crate::{
-    render::{Render, Scope},
     helper::{BlockHelper, BlockTemplate, Context, Result},
+    render::{Render, Scope},
 };
 
 pub(crate) struct WithHelper;
@@ -25,4 +25,3 @@ impl BlockHelper for WithHelper {
         Ok(())
     }
 }
-

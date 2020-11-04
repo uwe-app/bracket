@@ -167,7 +167,7 @@ pub(crate) fn components<'source>(
                     ));
                     wants_delimiter = true;
                 } else {
-                    return Ok(Some(Token::Parameters(lex, span)))
+                    return Ok(Some(Token::Parameters(lex, span)));
                 }
             }
             _ => return Ok(Some(token)),

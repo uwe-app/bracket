@@ -1,6 +1,6 @@
 use crate::{
-    render::{Render, Scope},
     helper::{BlockHelper, BlockTemplate, Context, Error, Result},
+    render::{Render, Scope},
 };
 
 use serde_json::{Number, Value};
@@ -68,4 +68,3 @@ impl BlockHelper for EachHelper {
         Ok(())
     }
 }
-
