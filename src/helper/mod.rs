@@ -93,18 +93,8 @@ impl<'source> Context<'source> {
         &self.arguments
     }
 
-    #[deprecated(note = "Use into() instead.")]
-    pub fn into_arguments(self) -> Vec<Value> {
-        self.arguments
-    }
-
     pub fn hash(&self) -> &Map<String, Value> {
         &self.hash
-    }
-
-    #[deprecated(note = "Use into() instead.")]
-    pub fn into_hash(self) -> Map<String, Value> {
-        self.hash
     }
 
     pub fn into(self) -> (String, Vec<Value>, Map<String, Value>) {

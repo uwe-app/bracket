@@ -14,7 +14,7 @@ impl BlockHelper for WithHelper {
     ) -> Result {
         ctx.assert_arity(1..1)?;
 
-        let mut args = ctx.into_arguments();
+        let (_, mut args, _) = ctx.into();
         let target = args.swap_remove(0);
         rc.push_scope(Scope::new());
         if let Some(ref mut scope) = rc.scope_mut() {
