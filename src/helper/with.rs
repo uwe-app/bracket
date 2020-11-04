@@ -1,11 +1,12 @@
+//! Block helper that sets the block scope to the value of the first argument.
 use crate::{
-    helper::{BlockHelper, BlockTemplate, Context, Result},
+    helper::{Assertion, BlockHelper, BlockTemplate, Context, Result},
     render::{Render, Scope},
 };
 
 use serde_json::Value;
 
-pub(crate) struct WithHelper;
+pub struct WithHelper;
 
 impl BlockHelper for WithHelper {
     fn call<'reg, 'source, 'render>(
@@ -14,7 +15,7 @@ impl BlockHelper for WithHelper {
         ctx: Context<'source>,
         block: BlockTemplate<'source>,
     ) -> Result {
-        ctx.assert_arity(1..1)?;
+        rc.arity(&ctx, 1..1)?;
 
         let mut args: Vec<Value> = ctx.into();
         let target = args.swap_remove(0);

@@ -1,11 +1,15 @@
 //! Render a template to output using the data.
 use serde::Serialize;
 use serde_json::{Map, Value};
+use std::ops::Range;
 
 use crate::{
     error::{HelperError, RenderError},
     escape::EscapeFn,
-    helper::{BlockTemplate, Context, HelperRegistry, Result as HelperResult},
+    helper::{
+        Assertion, BlockTemplate, Context, HelperRegistry,
+        Result as HelperResult,
+    },
     json,
     output::Output,
     parser::ast::{Block, Call, CallTarget, Node, ParameterValue, Path},
@@ -425,11 +429,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             match call.target() {
                 CallTarget::Path(ref path) => {
                     if path.is_simple() {
-                        self.invoke_block_helper(
-                            path.as_str(),
-                            call,
-                            node,
-                        )?;
+                        self.invoke_block_helper(path.as_str(), call, node)?;
                     }
                 }
                 _ => todo!("Handle sub expressions"),
@@ -512,11 +512,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         Ok(())
     }
 
-    fn write_str(
-        &mut self,
-        s: &str,
-        escape: bool,
-    ) -> RenderResult<usize> {
+    fn write_str(&mut self, s: &str, escape: bool) -> RenderResult<usize> {
         let val = if self.trim_start { s.trim_start() } else { s };
         let val = if self.trim_end { val.trim_end() } else { val };
         if val.is_empty() {
@@ -529,5 +525,29 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         } else {
             Ok(self.writer.write_str(val).map_err(RenderError::from)?)
         }
+    }
+}
+
+impl Assertion for Render<'_, '_, '_> {
+    fn arity(&self, ctx: &Context<'_>, range: Range<usize>) -> HelperResult {
+        if range.start == range.end {
+            if ctx.arguments().len() != range.start {
+                return Err(HelperError::ArityExact(
+                    ctx.name().to_owned(),
+                    range.start,
+                ));
+            }
+        } else {
+            if ctx.arguments().len() < range.start
+                || ctx.arguments().len() > range.end
+            {
+                return Err(HelperError::ArityRange(
+                    ctx.name().to_owned(),
+                    range.start,
+                    range.end,
+                ));
+            }
+        }
+        Ok(())
     }
 }

@@ -34,7 +34,7 @@ impl ParserOptions {
             file_name,
             line_offset: 0,
             byte_offset: 0,
-        } 
+        }
     }
 }
 
@@ -135,10 +135,7 @@ impl<'source> Parser<'source> {
     ///
     /// Decoupled from the iterator `next()` implementation as it needs to
     /// greedily consume tokens and advance again when entering block scopes.
-    fn advance(
-        &mut self,
-        next: Token,
-    ) -> SyntaxResult<Option<Node<'source>>> {
+    fn advance(&mut self, next: Token) -> SyntaxResult<Option<Node<'source>>> {
         if next.is_newline() {
             *self.state.line_mut() += 1;
         }
@@ -212,7 +209,8 @@ impl<'source> Parser<'source> {
                                     self.state.line(),
                                     self.state.byte(),
                                 )),
-                            ).into(),
+                            )
+                            .into(),
                         );
                     })?;
 
@@ -228,7 +226,8 @@ impl<'source> Parser<'source> {
                                                 self.state.line(),
                                                 self.state.byte(),
                                             )),
-                                        ).into(),
+                                        )
+                                        .into(),
                                     ),
                                 );
                             }
@@ -254,14 +253,22 @@ impl<'source> Parser<'source> {
                                     if let Some(node) = node.take() {
                                         match node {
                                             // NOTE: The push() implementation on Block
-                                            // NOTE: will add to the last conditional if 
+                                            // NOTE: will add to the last conditional if
                                             // NOTE: any conditions are present.
                                             Node::Statement(call) => {
                                                 if call.is_conditional() {
-                                                    let condition = Condition::new(self.source, call);
-                                                    current.add_condition(condition);
+                                                    let condition =
+                                                        Condition::new(
+                                                            self.source,
+                                                            call,
+                                                        );
+                                                    current.add_condition(
+                                                        condition,
+                                                    );
                                                 } else {
-                                                    current.push(Node::Statement(call));
+                                                    current.push(
+                                                        Node::Statement(call),
+                                                    );
                                                 }
                                             }
                                             _ => {
@@ -303,7 +310,8 @@ impl<'source> Parser<'source> {
                                     self.state.byte(),
                                 )),
                                 notes,
-                            ).into(),
+                            )
+                            .into(),
                         ));
                         //panic!("Got close block with no open block!");
                     }
@@ -324,7 +332,8 @@ impl<'source> Parser<'source> {
                                         "opening name is '{}'",
                                         open_name
                                     )],
-                                ).into(),
+                                )
+                                .into(),
                             ));
                         }
 
@@ -341,7 +350,8 @@ impl<'source> Parser<'source> {
                                     self.state.line(),
                                     self.state.byte(),
                                 )),
-                            ).into(),
+                            )
+                            .into(),
                         ));
                     }
                 }

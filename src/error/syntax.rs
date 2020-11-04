@@ -1,6 +1,5 @@
 //! Errors generated when compiling templates.
 use std::fmt;
-use crate::error::{ErrorInfo, SourcePos};
 
 static SYNTAX_PREFIX: &str = "Syntax error";
 

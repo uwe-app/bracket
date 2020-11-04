@@ -30,14 +30,14 @@ pub trait BlockHelper: Send + Sync {
     ) -> Result;
 }
 
-mod each;
-mod r#if;
+pub mod each;
+pub mod r#if;
 #[cfg(feature = "json-helper")]
-mod json;
+pub mod json;
 #[cfg(feature = "log-helper")]
-mod log;
-mod lookup;
-mod with;
+pub mod log;
+pub mod lookup;
+pub mod with;
 
 /// Encapsulates the templates passed to a block helper.
 #[derive(Debug)]
@@ -55,7 +55,7 @@ impl<'source> BlockTemplate<'source> {
         self.template
     }
 
-    /// Evaluate the block conditionals and find 
+    /// Evaluate the block conditionals and find
     /// the first node that should be rendered.
     pub fn inverse(&self) -> Option<&'source Node<'source>> {
         match &self.template {
@@ -67,7 +67,7 @@ impl<'source> BlockTemplate<'source> {
                             Node::Condition(clause) => {
                                 // Got an else clause
                                 if clause.call().is_empty() {
-                                    return Some(node)
+                                    return Some(node);
                                 } else {
                                     todo!("Evaluate and return 'else if' clauses!");
                                 }
@@ -78,7 +78,7 @@ impl<'source> BlockTemplate<'source> {
                 }
                 None
             }
-            _ => None
+            _ => None,
         }
     }
 }
@@ -114,34 +114,11 @@ impl<'source> Context<'source> {
     pub fn hash(&self) -> &Map<String, Value> {
         &self.hash
     }
-
-    // TODO: move out of Context
-    pub fn assert_arity(&self, range: Range<usize>) -> Result {
-        if range.start == range.end {
-            if self.arguments.len() != range.start {
-                return Err(Error::ArityExact(
-                    self.name().to_owned(),
-                    range.start,
-                ));
-            }
-        } else {
-            if self.arguments.len() < range.start
-                || self.arguments.len() > range.end
-            {
-                return Err(Error::ArityRange(
-                    self.name().to_owned(),
-                    range.start,
-                    range.end,
-                ));
-            }
-        }
-        Ok(())
-    }
 }
 
 impl Into<Vec<Value>> for Context<'_> {
     fn into(self) -> Vec<Value> {
-        self.arguments    
+        self.arguments
     }
 }
 
@@ -161,6 +138,12 @@ impl Into<(String, Vec<Value>, Map<String, Value>)> for Context<'_> {
     fn into(self) -> (String, Vec<Value>, Map<String, Value>) {
         (self.name.to_string(), self.arguments, self.hash)
     }
+}
+
+/// Trait for types that provide helper assertions.
+pub trait Assertion {
+    /// Assert that the context arguments are in the given arity range.
+    fn arity(&self, context: &Context<'_>, range: Range<usize>) -> Result;
 }
 
 /// Registry of helpers.

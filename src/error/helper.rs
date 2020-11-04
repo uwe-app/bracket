@@ -1,9 +1,9 @@
 //! Errors generated when calling helpers.
 //!
-//! The renderer will wrap these in `RenderError` so you only 
+//! The renderer will wrap these in `RenderError` so you only
 //! need to use this type when implementing helpers.
-use std::fmt;
 use crate::error::IoError;
+use std::fmt;
 
 #[derive(Debug)]
 pub enum HelperError {
@@ -68,4 +68,3 @@ impl From<serde_json::Error> for HelperError {
         Self::Json(err)
     }
 }
-

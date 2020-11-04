@@ -580,7 +580,7 @@ impl<'source> Condition<'source> {
             call,
             nodes: Vec::new(),
             close: None,
-        } 
+        }
     }
 
     pub fn call(&self) -> &Call<'source> {
@@ -588,7 +588,7 @@ impl<'source> Condition<'source> {
     }
 
     pub fn nodes(&self) -> &Vec<Node<'source>> {
-        &self.nodes 
+        &self.nodes
     }
 
     pub fn as_str(&self) -> &'source str {
@@ -682,13 +682,13 @@ impl<'source> Block<'source> {
     }
 
     fn close_condition(&mut self, span: Range<usize>) {
-        if !self.conditionals.is_empty()  {
+        if !self.conditionals.is_empty() {
             if span.start > 0 {
                 let close = span.start - 1..span.start;
                 let mut last = self.conditionals.last_mut().unwrap();
                 match &mut last {
                     Node::Condition(ref mut condition) => {
-                        condition.close = Some(close); 
+                        condition.close = Some(close);
                     }
                     _ => {}
                 }
@@ -702,7 +702,7 @@ impl<'source> Block<'source> {
     }
 
     pub fn conditions(&self) -> &Vec<Node<'source>> {
-        &self.conditionals 
+        &self.conditionals
     }
 
     pub fn push(&mut self, node: Node<'source>) {

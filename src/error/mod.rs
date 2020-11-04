@@ -2,16 +2,16 @@
 use std::fmt;
 
 pub mod helper;
-pub mod source;
 pub mod render;
+pub mod source;
 pub mod syntax;
 
 pub use helper::HelperError;
 pub use render::RenderError;
-pub use source::{SourcePos, ErrorInfo};
+pub use source::{ErrorInfo, SourcePos};
 pub use syntax::SyntaxError;
 
-/// Generic error type that wraps more specific types and is 
+/// Generic error type that wraps more specific types and is
 /// returned when using the `Registry`.
 #[derive(Eq, PartialEq)]
 pub enum Error {

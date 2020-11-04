@@ -1,12 +1,22 @@
 //! Helper to print log messages.
 use crate::{
-    helper::{Context, Helper, ValueResult},
+    helper::{Assertion, Context, Helper, ValueResult},
     render::Render,
 };
 
 use log::*;
 
-pub(crate) struct LogHelper;
+/// Helper that prints a log message.
+///
+/// Use the `level` hash parameter to set the log level to one of:
+///
+/// * trace
+/// * debug
+/// * info
+/// * warn
+/// * error
+///
+pub struct LogHelper;
 
 impl Helper for LogHelper {
     fn call<'reg, 'source, 'render>(
@@ -14,7 +24,7 @@ impl Helper for LogHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: Context<'source>,
     ) -> ValueResult {
-        ctx.assert_arity(1..usize::MAX)?;
+        rc.arity(&ctx, 1..usize::MAX)?;
 
         let (name, args, hash) = ctx.into();
         let message = args

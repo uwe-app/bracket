@@ -1,5 +1,6 @@
+//! Block helper that iterates arrays and objects.
 use crate::{
-    helper::{BlockHelper, BlockTemplate, Context, Error, Result},
+    helper::{Assertion, BlockHelper, BlockTemplate, Context, Error, Result},
     render::{Render, Scope},
 };
 
@@ -10,7 +11,7 @@ static LAST: &str = "last";
 static KEY: &str = "key";
 static INDEX: &str = "index";
 
-pub(crate) struct EachHelper;
+pub struct EachHelper;
 
 impl BlockHelper for EachHelper {
     fn call<'reg, 'source, 'render>(
@@ -19,7 +20,7 @@ impl BlockHelper for EachHelper {
         ctx: Context<'source>,
         block: BlockTemplate<'source>,
     ) -> Result {
-        ctx.assert_arity(1..1)?;
+        rc.arity(&ctx, 1..1)?;
 
         //let name = ctx.name().to_string();
         let (name, mut args) = ctx.into();

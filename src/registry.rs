@@ -21,7 +21,6 @@ pub struct Registry<'reg, 'source> {
 }
 
 impl<'reg, 'source> Registry<'reg, 'source> {
-
     /// Create an empty registry.
     pub fn new() -> Self {
         Self {
@@ -80,22 +79,18 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         Templates::compile(template, options)
     }
 
-    /// Render a template without registering it and return 
+    /// Render a template without registering it and return
     /// the result as a string.
     ///
-    /// This function buffers the template nodes before rendering; if low 
+    /// This function buffers the template nodes before rendering; if low
     /// latency is required use the stream functions.
-    pub fn once<T>(
-        &self,
-        name: &str,
-        source: &str,
-        data: &T,
-    ) -> Result<String>
+    pub fn once<T>(&self, name: &str, source: &str, data: &T) -> Result<String>
     where
         T: Serialize,
     {
         let mut writer = StringOutput::new();
-        let template = self.compile(source, ParserOptions::new(name.to_string()))?;
+        let template =
+            self.compile(source, ParserOptions::new(name.to_string()))?;
         template.render(
             self.escape(),
             self.helpers(),
@@ -147,9 +142,9 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         let mut parser = Parser::new(source, options);
         for node in parser {
             let node = node?;
-            // FIXME: implement this, currently not working as we store the 
-            // FIXME: next and previous nodes in the renderer which means 
-            // FIXME: node is not living long enough for the renderer to 
+            // FIXME: implement this, currently not working as we store the
+            // FIXME: next and previous nodes in the renderer which means
+            // FIXME: node is not living long enough for the renderer to
             // FIXME: do it's job.
             //rc.render_node(&node)?;
         }
@@ -168,7 +163,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         Ok(writer.into())
     }
 
-    /// Render a compiled template without registering it and return 
+    /// Render a compiled template without registering it and return
     /// the result as a string.
     pub fn render_template<T>(
         &self,
@@ -190,7 +185,6 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         )?;
         Ok(writer.into())
     }
-
 
     /// Render a named template to a writer.
     ///

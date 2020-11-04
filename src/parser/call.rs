@@ -356,7 +356,8 @@ fn target<'source>(
                                         state.line(),
                                         state.byte(),
                                     )),
-                                ).into(),
+                                )
+                                .into(),
                             ));
                         }
                         call.exit(span);

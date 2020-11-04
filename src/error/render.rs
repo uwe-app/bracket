@@ -1,6 +1,6 @@
 //! Errors generated when rendering templates.
-use std::fmt;
 use crate::error::{HelperError, IoError};
+use std::fmt;
 
 pub enum RenderError {
     PartialNameResolve(String),

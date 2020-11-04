@@ -1,9 +1,10 @@
+//! Helper to lookup a field of an array or object.
 use crate::{
-    helper::{Context, Error, Helper, ValueResult},
+    helper::{Assertion, Context, Error, Helper, ValueResult},
     render::Render,
 };
 
-pub(crate) struct LookupHelper;
+pub struct LookupHelper;
 
 impl Helper for LookupHelper {
     fn call<'reg, 'source, 'render>(
@@ -11,7 +12,7 @@ impl Helper for LookupHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: Context<'source>,
     ) -> ValueResult {
-        ctx.assert_arity(2..2)?;
+        rc.arity(&ctx, 2..2)?;
 
         let name = ctx.name();
         let (name, mut args) = ctx.into();
@@ -25,8 +26,10 @@ impl Helper for LookupHelper {
 
         let result = rc.field(&target, field).cloned();
         if result.is_none() {
-            Err(Error::Message(
-                format!("Helper '{}' failed to resolve field '{}'", name, field)))
+            Err(Error::Message(format!(
+                "Helper '{}' failed to resolve field '{}'",
+                name, field
+            )))
         } else {
             Ok(result)
         }

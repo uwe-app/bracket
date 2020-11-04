@@ -12,7 +12,7 @@ use crate::{
     output::Output,
     parser::{ast::Node, Parser, ParserOptions},
     render::Render,
-    SyntaxResult, RenderResult, Result,
+    RenderResult, Result, SyntaxResult,
 };
 
 #[derive(Default)]

@@ -1,9 +1,10 @@
+//! Block helper for conditionals.
 use crate::{
-    helper::{BlockHelper, BlockTemplate, Context, Result},
+    helper::{Assertion, BlockHelper, BlockTemplate, Context, Result},
     render::Render,
 };
 
-pub(crate) struct IfHelper;
+pub struct IfHelper;
 
 impl BlockHelper for IfHelper {
     fn call<'reg, 'source, 'render>(
@@ -12,7 +13,7 @@ impl BlockHelper for IfHelper {
         ctx: Context<'source>,
         block: BlockTemplate<'source>,
     ) -> Result {
-        ctx.assert_arity(1..1)?;
+        rc.arity(&ctx, 1..1)?;
 
         if rc.is_truthy(ctx.arguments().get(0).unwrap()) {
             rc.template(block.template())?;

@@ -17,7 +17,10 @@ fn err_empty_statement() -> Result<()> {
             println!("{:?}", e);
             let pos = SourcePos(0, 2);
             let info = ErrorInfo::new(value, "unknown", pos);
-            assert_eq!(Error::Syntax(SyntaxError::EmptyStatement(info.into())), e);
+            assert_eq!(
+                Error::Syntax(SyntaxError::EmptyStatement(info.into())),
+                e
+            );
         }
     }
     Ok(())

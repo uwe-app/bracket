@@ -1,11 +1,16 @@
+//! Helper that returns a JSON string.
 use crate::{
-    helper::{Context, Error, Helper, ValueResult},
+    helper::{Assertion, Context, Error, Helper, ValueResult},
     render::Render,
 };
 
 use serde_json::{to_string, to_string_pretty, Value};
 
-pub(crate) struct JsonHelper;
+/// The first argument is converted to a JSON string and returned.
+///
+/// Accepts an optional second argument which when *truthy* will
+/// pretty print the value.
+pub struct JsonHelper;
 
 impl Helper for JsonHelper {
     fn call<'reg, 'source, 'render>(
@@ -13,7 +18,7 @@ impl Helper for JsonHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: Context<'source>,
     ) -> ValueResult {
-        ctx.assert_arity(1..2)?;
+        rc.arity(&ctx, 1..2)?;
 
         let mut args: Vec<Value> = ctx.into();
         let target = args.swap_remove(0);

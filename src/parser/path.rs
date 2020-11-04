@@ -85,7 +85,8 @@ pub(crate) fn components<'source>(
                                             state.line(),
                                             state.byte(),
                                         )),
-                                    ).into(),
+                                    )
+                                    .into(),
                                 ),
                             );
                         }
@@ -99,7 +100,8 @@ pub(crate) fn components<'source>(
                                         state.line(),
                                         state.byte(),
                                     )),
-                                ).into(),
+                                )
+                                .into(),
                             ));
                         }
                         Parameters::LocalIdentifier => {
@@ -112,7 +114,8 @@ pub(crate) fn components<'source>(
                                         state.line(),
                                         state.byte(),
                                     )),
-                                ).into(),
+                                )
+                                .into(),
                             ));
                         }
                         _ => {}
@@ -135,7 +138,8 @@ pub(crate) fn components<'source>(
                                                 state.line(),
                                                 state.byte(),
                                             )),
-                                        ).into(),
+                                        )
+                                        .into(),
                                     ),
                                 );
                             }
@@ -153,7 +157,8 @@ pub(crate) fn components<'source>(
                                                 state.line(),
                                                 state.byte(),
                                             )),
-                                        ).into(),
+                                        )
+                                        .into(),
                                     ),
                                 );
                             }
@@ -190,11 +195,14 @@ pub(crate) fn parse<'source>(
     match &lex {
         // Cannot start with a path delimiter
         Parameters::PathDelimiter => {
-            return Err(SyntaxError::UnexpectedPathDelimiter(ErrorInfo::new(
-                source,
-                state.file_name(),
-                SourcePos::from((state.line(), state.byte())),
-            ).into()));
+            return Err(SyntaxError::UnexpectedPathDelimiter(
+                ErrorInfo::new(
+                    source,
+                    state.file_name(),
+                    SourcePos::from((state.line(), state.byte())),
+                )
+                .into(),
+            ));
         }
         // Count parent references
         Parameters::ParentRef => {
@@ -230,7 +238,8 @@ pub(crate) fn parse<'source>(
                                         state.line(),
                                         state.byte(),
                                     )),
-                                ).into(),
+                                )
+                                .into(),
                             ),
                         );
                     }
@@ -245,7 +254,8 @@ pub(crate) fn parse<'source>(
                                         state.line(),
                                         state.byte(),
                                     )),
-                                ).into(),
+                                )
+                                .into(),
                             ),
                         );
                     }
