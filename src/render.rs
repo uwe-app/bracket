@@ -326,36 +326,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         Ok(())
     }
 
-    fn render_partial<'a>(
-        &mut self,
-        call: &'source Call<'source>,
-        name: String,
-    ) -> RenderResult<()> {
-        let template = self
-            .templates
-            .get(&name)
-            .ok_or_else(|| RenderError::PartialNotFound(name))?;
-
-        let node: &'source Node<'_> = template.node();
-        let hash = self.hash(call)?;
-        let scope = Scope::new_locals(hash);
-        self.scopes.push(scope);
-        // WARN: We must iterate the document child nodes
-        // WARN: when rendering partials otherwise the
-        // WARN: rendering process will halt after the first partial!
-        match node {
-            Node::Document(ref doc) => {
-                for node in doc.nodes().iter() {
-                    self.render_node(node)?;
-                }
-            }
-            _ => panic!("Invalid partial node encountered, must be a document"),
-        }
-        self.scopes.pop();
-
-        Ok(())
-    }
-
     fn get_partial_name(
         &mut self,
         call: &'source Call<'source>,
@@ -420,12 +390,51 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         //println!("Statement {:?}", call.as_str());
 
         if call.is_partial() {
-            let name = self.get_partial_name(call)?;
-            self.render_partial(call, name)?;
+            self.render_partial(call)?;
             Ok(None)
         } else {
             Ok(self.call(call)?)
         }
+    }
+
+    fn render_partial<'a>(
+        &mut self,
+        call: &'source Call<'source>,
+    ) -> RenderResult<()> {
+        let name = self.get_partial_name(call)?;
+        let template = self
+            .templates
+            .get(&name)
+            .ok_or_else(|| RenderError::PartialNotFound(name))?;
+
+        let node: &'source Node<'_> = template.node();
+        let hash = self.hash(call)?;
+        let scope = Scope::new_locals(hash);
+        self.scopes.push(scope);
+        // WARN: We must iterate the document child nodes
+        // WARN: when rendering partials otherwise the
+        // WARN: rendering process will halt after the first partial!
+        match node {
+            Node::Document(ref doc) => {
+                for node in doc.nodes().iter() {
+                    self.render_node(node)?;
+                }
+            }
+            _ => panic!("Invalid partial node encountered, must be a document"),
+        }
+        self.scopes.pop();
+        Ok(())
+    }
+
+    fn render_partial_block(
+        &mut self,
+        call: &'source Call<'source>,
+        node: &'source Node<'source>,
+        block: &'source Block<'source>,
+    ) -> RenderResult<()> {
+        //let name = self.get_partial_name(call)?;
+        self.render_partial(call)?;
+        Ok(())
     }
 
     fn block(
@@ -436,9 +445,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         let call = block.call();
 
         if call.is_partial() {
-            // TODO: support passing block to the partial
-            // TODO: as @partial-block
-            println!("Got partial call for block!");
+            self.render_partial_block(call, node, block)?;
         } else {
             match call.target() {
                 CallTarget::Path(ref path) => {

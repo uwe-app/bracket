@@ -1,4 +1,4 @@
-//! Block helper that sets the block scope to the value of the first argument.
+//! Block helper that sets the scope.
 use crate::{
     helper::{Assertion, BlockHelper, BlockResult, BlockTemplate, Context},
     render::{Render, Scope},
