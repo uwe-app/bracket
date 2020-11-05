@@ -25,9 +25,15 @@ helpers = [
   "log-helper",
   "json-helper",
   "logical-helper",
-  "lookup-helper"
+  "lookup-helper",
+  "each-helper",
+  "with-helper",
+  "conditional-helper",
 ]
 log-helper = ["log"]
 json-helper = []
 logical-helper = []
 lookup-helper = []
+each-helper = []
+with-helper = []
+conditional-helper = []

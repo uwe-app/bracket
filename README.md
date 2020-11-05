@@ -12,8 +12,11 @@ The default features are batteries included but you can set `default-features = 
 
 * `helpers`: Include all helpers.
 * `log-helper`: Enable the `log` helper.
+* `each-helper`: Enable the `each` helper.
+* `with-helper`: Enable the `with` helper.
 * `lookup-helper`: Enable the `lookup` helper.
 * `json-helper`: Enable the `json` helper.
+* `conditional-helper`: Enable the `if` and `unless` helpers.
 * `logical-helper`: Enable the `and`, `or` and `not` helpers.
 
 ## Lifetimes

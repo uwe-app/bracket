@@ -30,7 +30,9 @@ pub trait BlockHelper: Send + Sync {
     ) -> BlockResult;
 }
 
+#[cfg(feature = "each-helper")]
 pub mod each;
+#[cfg(feature = "conditional-helper")]
 pub mod r#if;
 #[cfg(feature = "json-helper")]
 pub mod json;
@@ -40,7 +42,9 @@ pub mod log;
 pub mod logical;
 #[cfg(feature = "lookup-helper")]
 pub mod lookup;
+#[cfg(feature = "conditional-helper")]
 pub mod unless;
+#[cfg(feature = "with-helper")]
 pub mod with;
 
 /// Encapsulates the templates passed to a block helper.
@@ -180,12 +184,18 @@ impl<'reg> HelperRegistry<'reg> {
     }
 
     fn builtins(&mut self) {
+
+        #[cfg(feature = "conditional-helper")]
+        self.register_helper("if", Box::new(r#if::IfHelper {}));
+        #[cfg(feature = "conditional-helper")]
+        self.register_block_helper("if", Box::new(r#if::IfBlockHelper {}));
+        #[cfg(feature = "conditional-helper")]
+        self.register_block_helper("unless", Box::new(unless::UnlessHelper {}));
+
         #[cfg(feature = "log-helper")]
         self.register_helper("log", Box::new(log::LogHelper {}));
         #[cfg(feature = "lookup-helper")]
         self.register_helper("lookup", Box::new(lookup::LookupHelper {}));
-
-        self.register_helper("if", Box::new(r#if::IfHelper {}));
 
         #[cfg(feature = "logical-helper")]
         self.register_helper("and", Box::new(logical::AndHelper {}));
@@ -194,10 +204,10 @@ impl<'reg> HelperRegistry<'reg> {
         #[cfg(feature = "logical-helper")]
         self.register_helper("not", Box::new(logical::NotHelper {}));
 
+        #[cfg(feature = "with-helper")]
         self.register_block_helper("with", Box::new(with::WithHelper {}));
+        #[cfg(feature = "each-helper")]
         self.register_block_helper("each", Box::new(each::EachHelper {}));
-        self.register_block_helper("if", Box::new(r#if::IfBlockHelper {}));
-        self.register_block_helper("unless", Box::new(unless::UnlessHelper {}));
 
         #[cfg(feature = "json-helper")]
         self.register_helper("json", Box::new(json::JsonHelper {}));

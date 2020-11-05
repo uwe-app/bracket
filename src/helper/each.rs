@@ -24,7 +24,6 @@ impl BlockHelper for EachHelper {
     ) -> BlockResult {
         rc.arity(&ctx, 1..1)?;
 
-        //let name = ctx.name().to_string();
         let (name, mut args) = ctx.into();
         let target = args.swap_remove(0);
 
