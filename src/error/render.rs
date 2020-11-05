@@ -1,58 +1,24 @@
 //! Errors generated when rendering templates.
 use crate::error::{HelperError, IoError};
-use std::fmt;
+use thiserror::Error;
 
+#[derive(Error, Debug)]
 pub enum RenderError {
+    #[error("Unable to resolve partial name from '{0}'")]
     PartialNameResolve(String),
+    #[error("Partial '{0}' not found")]
     PartialNotFound(String),
-    Helper(HelperError),
-    Io(IoError),
-    Json(serde_json::Error),
-}
-
-impl From<HelperError> for RenderError {
-    fn from(err: HelperError) -> Self {
-        Self::Helper(err)
-    }
+    #[error(transparent)]
+    Helper(#[from] HelperError),
+    #[error(transparent)]
+    Io(#[from] IoError),
+    #[error(transparent)]
+    Json(#[from] serde_json::Error),
 }
 
 impl From<std::io::Error> for RenderError {
     fn from(err: std::io::Error) -> Self {
         Self::Io(IoError::Io(err))
-    }
-}
-
-impl From<serde_json::Error> for RenderError {
-    fn from(err: serde_json::Error) -> Self {
-        Self::Json(err)
-    }
-}
-
-impl fmt::Display for RenderError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match *self {
-            Self::PartialNameResolve(ref name) => {
-                write!(f, "Unable to resolve partial name from '{}'", name)
-            }
-            Self::PartialNotFound(ref name) => {
-                write!(f, "Partial '{}' not found", name)
-            }
-            Self::Helper(ref e) => fmt::Display::fmt(e, f),
-            Self::Io(ref e) => fmt::Debug::fmt(e, f),
-            Self::Json(ref e) => fmt::Debug::fmt(e, f),
-        }
-    }
-}
-
-impl fmt::Debug for RenderError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match *self {
-            Self::PartialNameResolve(_) => fmt::Display::fmt(self, f),
-            Self::PartialNotFound(_) => fmt::Display::fmt(self, f),
-            Self::Helper(ref e) => fmt::Display::fmt(e, f),
-            Self::Io(ref e) => fmt::Debug::fmt(e, f),
-            Self::Json(ref e) => fmt::Debug::fmt(e, f),
-        }
     }
 }
 

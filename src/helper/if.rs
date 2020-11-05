@@ -1,6 +1,6 @@
 //! Block helper for conditionals.
 use crate::{
-    helper::{Assertion, BlockHelper, BlockTemplate, Context, BlockResult},
+    helper::{Assertion, BlockHelper, BlockResult, BlockTemplate, Context},
     render::Render,
 };
 

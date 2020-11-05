@@ -57,9 +57,10 @@ impl<'source> BlockTemplate<'source> {
 
     /// Evaluate the block conditionals and find
     /// the first node that should be rendered.
-    pub fn inverse<'reg, 'render>(&self,
+    pub fn inverse<'reg, 'render>(
+        &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ) -> std::result::Result<Option<&'source Node<'source>>, Error> {
+    ) -> Result<Option<&'source Node<'source>>, Error> {
         let mut alt: Option<&'source Node<'source>> = None;
         let mut branch: Option<&'source Node<'source>> = None;
         match &self.template {
@@ -80,7 +81,7 @@ impl<'source> BlockTemplate<'source> {
                     }
                 }
             }
-            _ => {},
+            _ => {}
         }
 
         Ok(branch.or(alt))

@@ -1,6 +1,8 @@
 //! Block helper that iterates arrays and objects.
 use crate::{
-    helper::{Assertion, BlockHelper, BlockTemplate, Context, Error, BlockResult},
+    helper::{
+        Assertion, BlockHelper, BlockResult, BlockTemplate, Context, Error,
+    },
     render::{Render, Scope},
 };
 

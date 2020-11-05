@@ -6,10 +6,7 @@ use std::ops::Range;
 use crate::{
     error::{HelperError, RenderError},
     escape::EscapeFn,
-    helper::{
-        Assertion, BlockTemplate, Context, HelperRegistry,
-        BlockResult,
-    },
+    helper::{Assertion, BlockResult, BlockTemplate, Context, HelperRegistry},
     json,
     output::Output,
     parser::ast::{Block, Call, CallTarget, Node, ParameterValue, Path},
@@ -382,7 +379,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         }
     }
 
-
     /// Invoke a call and return the result.
     pub fn call(
         &mut self,
@@ -404,9 +400,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                     self.resolve(path)
                 }
             }
-            CallTarget::SubExpr(ref sub) => {
-                self.call(sub)
-            }
+            CallTarget::SubExpr(ref sub) => self.call(sub),
         }
     }
 
@@ -455,7 +449,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         node: &'source Node<'source>,
     ) -> BlockResult {
         self.render_node(node)
-            .map_err(|e| HelperError::Render(format!("{:?}", e)))
+            .map_err(|e| HelperError::Render(Box::new(e)))
     }
 
     pub(crate) fn render_node(
