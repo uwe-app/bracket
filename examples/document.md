@@ -75,3 +75,8 @@ When we iterate objects we can also access the `@key` field:
 
 {{> (partial-name) message="Hello dynamic partial!"}}
 
+## Partial Block
+
+{{# > partial-block message="Hello partial block!"}}
+This is some content for the `@partial-block` variable.
+{{/partial-block}}

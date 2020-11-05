@@ -1,0 +1,5 @@
+This is a partial block it includes some content passed via the block content and rendered using `@partial-block`.
+
+{{@partial-block}}
+
+Like any other partial it also handles hash parameters: `{{message}}`.

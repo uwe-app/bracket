@@ -14,16 +14,18 @@ use crate::{
     RenderResult,
 };
 
+static PARTIAL_BLOCK: &str = "@partial-block";
+
 type HelperValue = Option<Value>;
 
 #[derive(Debug)]
-pub struct Scope<'render, 'source> {
+pub struct Scope<'source> {
     value: Option<Value>,
     locals: Value,
-    partial_block: Option<&'render Node<'source>>,
+    partial_block: Option<&'source Node<'source>>,
 }
 
-impl<'render, 'source> Scope<'render, 'source> {
+impl<'source> Scope<'source> {
     pub fn new() -> Self {
         Self {
             locals: Value::Object(Map::new()),
@@ -63,11 +65,11 @@ impl<'render, 'source> Scope<'render, 'source> {
         &self.value
     }
 
-    pub fn set_partial_block(&mut self, block: Option<&'render Node<'source>>) {
+    pub fn set_partial_block(&mut self, block: Option<&'source Node<'source>>) {
         self.partial_block = block;
     }
 
-    pub fn partial_block_mut(&mut self) -> &mut Option<&'render Node<'source>> {
+    pub fn partial_block_mut(&mut self) -> &mut Option<&'source Node<'source>> {
         &mut self.partial_block
     }
 }
@@ -79,7 +81,7 @@ pub struct Render<'reg, 'source, 'render> {
     source: &'source str,
     root: Value,
     writer: Box<&'render mut dyn Output>,
-    scopes: Vec<Scope<'render, 'source>>,
+    scopes: Vec<Scope<'source>>,
     trim_start: bool,
     trim_end: bool,
     prev_node: Option<&'source Node<'source>>,
@@ -122,17 +124,17 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     /// Push a scope onto the stack.
-    pub fn push_scope(&mut self, scope: Scope<'render, 'source>) {
+    pub fn push_scope(&mut self, scope: Scope<'source>) {
         self.scopes.push(scope);
     }
 
     /// Remove a scope from the stack.
-    pub fn pop_scope(&mut self) -> Option<Scope<'render, 'source>> {
+    pub fn pop_scope(&mut self) -> Option<Scope<'source>> {
         self.scopes.pop()
     }
 
     /// Get a mutable reference to the current scope.
-    pub fn scope_mut(&mut self) -> Option<&mut Scope<'render, 'source>> {
+    pub fn scope_mut(&mut self) -> Option<&mut Scope<'source>> {
         self.scopes.last_mut()
     }
 
@@ -181,25 +183,22 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         //println!("Lookup path {:?}", path.as_str());
         //println!("Lookup path {:?}", path);
 
-        let root = &self.root;
-        let scopes = &self.scopes;
-
         // Handle explicit `@root` reference
         if path.is_root() {
             json::find_parts(
                 path.components().iter().skip(1).map(|c| c.as_str()),
-                root,
+                &self.root,
             )
         // Handle explicit this
         } else if path.is_explicit() {
-            let value = if let Some(scope) = scopes.last() {
+            let value = if let Some(scope) = self.scopes.last() {
                 if let Some(base) = scope.base_value() {
                     base
                 } else {
-                    root
+                    &self.root
                 }
             } else {
-                root
+                &self.root
             };
 
             // Handle explicit this only
@@ -215,7 +214,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         // Handle local @variable references which must
         // be resolved using the current scope
         } else if path.is_local() {
-            if let Some(scope) = scopes.last() {
+            if let Some(scope) = self.scopes.last() {
                 json::find_parts(
                     path.components().iter().map(|c| c.as_str()),
                     scope.as_value(),
@@ -226,9 +225,9 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         } else if path.parents() > 0 {
             // Combine so that the root object is
             // treated as a scope
-            let mut all = vec![root];
+            let mut all = vec![&self.root];
             let mut values: Vec<&'a Value> =
-                scopes.iter().map(|s| s.as_value()).collect();
+                self.scopes.iter().map(|s| s.as_value()).collect();
             all.append(&mut values);
 
             if all.len() > path.parents() as usize {
@@ -246,7 +245,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             }
         } else {
             // Lookup in the current scope
-            if let Some(scope) = scopes.last() {
+            if let Some(scope) = self.scopes.last() {
                 json::find_parts(
                     path.components().iter().map(|c| c.as_str()),
                     scope.as_value(),
@@ -255,7 +254,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             } else {
                 json::find_parts(
                     path.components().iter().map(|c| c.as_str()),
-                    root,
+                    &self.root,
                 )
             }
         }
@@ -359,6 +358,20 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 // Explicit paths should resolve to a lookup
                 if path.is_explicit() {
                     Ok(self.lookup(path).cloned())
+
+                // Handle @partial-block variables!
+                } else if path.components().len() == 1 
+                    && path.components().get(0).unwrap().as_str() == PARTIAL_BLOCK {
+                    if let Some(scope) = self.scopes.last_mut() {
+                        if let Some(node) = scope.partial_block_mut().take() {
+                            //println!("RENDER FROM PARTIAL BLOCK VARIABLE {:?}", node);
+                            self.template(node)?;
+                        }
+                        Ok(None)
+                    } else {
+                        Ok(None)
+                    }
+
                 // Simple paths may be helpers
                 } else if path.is_simple() {
                     if let Some(_) = self.helpers.get(path.as_str()) {
