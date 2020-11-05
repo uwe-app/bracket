@@ -1,6 +1,9 @@
 //! Helpers for conditional statements.
 use crate::{
-    helper::{Assertion, BlockHelper, BlockResult, BlockTemplate, Context, Helper, ValueResult},
+    helper::{
+        Assertion, BlockHelper, BlockResult, BlockTemplate, Context, Helper,
+        ValueResult,
+    },
     render::Render,
 };
 
@@ -20,7 +23,7 @@ impl Helper for IfHelper {
         let mut result = Value::Bool(true);
         for val in args {
             if !rc.is_truthy(&val) {
-                result = Value::Bool(false); 
+                result = Value::Bool(false);
                 break;
             }
         }
@@ -47,3 +50,4 @@ impl BlockHelper for IfBlockHelper {
         Ok(())
     }
 }
+

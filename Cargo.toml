@@ -20,6 +20,7 @@ unicode-width = "^0.1"
 pretty_env_logger = "0.4"
 
 [features]
-default = ["log-helper", "json-helper"]
+default = ["log-helper", "json-helper", "logical-helper"]
 log-helper = ["log"]
 json-helper = []
+logical-helper = []

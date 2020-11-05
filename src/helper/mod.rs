@@ -36,6 +36,8 @@ pub mod r#if;
 pub mod json;
 #[cfg(feature = "log-helper")]
 pub mod log;
+#[cfg(feature = "logical-helper")]
+pub mod logical;
 pub mod lookup;
 pub mod unless;
 pub mod with;
@@ -74,7 +76,10 @@ impl<'source> BlockTemplate<'source> {
                                 if clause.call().is_empty() {
                                     alt = Some(node);
                                 } else {
-                                    if let Some(value) = rc.call(clause.call()).map_err(Box::new)? {
+                                    if let Some(value) = rc
+                                        .call(clause.call())
+                                        .map_err(Box::new)?
+                                    {
                                         if rc.is_truthy(&value) {
                                             branch = Some(node);
                                             break;
@@ -176,8 +181,15 @@ impl<'reg> HelperRegistry<'reg> {
     fn builtins(&mut self) {
         #[cfg(feature = "log-helper")]
         self.register_helper("log", Box::new(log::LogHelper {}));
-        self.register_helper("if", Box::new(r#if::IfHelper {}));
         self.register_helper("lookup", Box::new(lookup::LookupHelper {}));
+        self.register_helper("if", Box::new(r#if::IfHelper {}));
+
+        #[cfg(feature = "logical-helper")]
+        self.register_helper("and", Box::new(logical::AndHelper {}));
+        #[cfg(feature = "logical-helper")]
+        self.register_helper("or", Box::new(logical::OrHelper {}));
+        #[cfg(feature = "logical-helper")]
+        self.register_helper("not", Box::new(logical::NotHelper {}));
 
         self.register_block_helper("with", Box::new(with::WithHelper {}));
         self.register_block_helper("each", Box::new(each::EachHelper {}));

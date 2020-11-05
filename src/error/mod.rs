@@ -72,11 +72,11 @@ pub enum IoError {
 }
 
 //impl fmt::Display for IoError {
-    //fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        //match *self {
-            //Self::Io(ref e) => fmt::Debug::fmt(e, f),
-        //}
-    //}
+//fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//match *self {
+//Self::Io(ref e) => fmt::Debug::fmt(e, f),
+//}
+//}
 //}
 
 impl PartialEq for IoError {
