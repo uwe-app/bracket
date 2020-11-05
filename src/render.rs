@@ -157,21 +157,21 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     ///
     /// If the target value is not an object or array then this
     /// will yield None.
-    pub fn field<'b, S: AsRef<str>>(
+    pub fn field<'a, S: AsRef<str>>(
         &self,
-        target: &'b Value,
+        target: &'a Value,
         field: S,
-    ) -> Option<&'b Value> {
+    ) -> Option<&'a Value> {
         json::find_field(target, field)
     }
 
     /// Infallible variable lookup by path.
-    fn lookup(&'source self, path: &'source Path) -> Option<&'source Value> {
+    fn lookup<'a>(&'a self, path: &'source Path) -> Option<&'a Value> {
         //println!("Lookup path {:?}", path.as_str());
         //println!("Lookup path {:?}", path);
 
-        let root: &'source Value = &self.root;
-        let scopes: &'source Vec<Scope> = &self.scopes;
+        let root = &self.root;
+        let scopes = &self.scopes;
 
         // Handle explicit `@root` reference
         if path.is_root() {
@@ -216,7 +216,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             // Combine so that the root object is
             // treated as a scope
             let mut all = vec![root];
-            let mut values: Vec<&'source Value> =
+            let mut values: Vec<&'a Value> =
                 scopes.iter().map(|s| s.as_value()).collect();
             all.append(&mut values);
 
