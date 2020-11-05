@@ -57,17 +57,20 @@ impl<'source> BlockTemplate<'source> {
 
     /// Evaluate the block conditionals and find
     /// the first node that should be rendered.
-    pub fn inverse(&self) -> Option<&'source Node<'source>> {
+    pub fn inverse<'reg, 'render>(&self,
+        rc: &mut Render<'reg, 'source, 'render>,
+        ) -> std::result::Result<Option<&'source Node<'source>>, Error> {
+        let mut alt: Option<&'source Node<'source>> = None;
+        let mut branch: Option<&'source Node<'source>> = None;
         match &self.template {
             Node::Block(ref block) => {
                 if !block.conditions().is_empty() {
                     for node in block.conditions().iter() {
-                        println!("Got block condition {:?}", node);
                         match node {
                             Node::Condition(clause) => {
-                                // Got an else clause
+                                // Got an else clause, last oone wins!
                                 if clause.call().is_empty() {
-                                    return Some(node);
+                                    alt = Some(node);
                                 } else {
                                     todo!("Evaluate and return 'else if' clauses!");
                                 }
@@ -76,10 +79,11 @@ impl<'source> BlockTemplate<'source> {
                         }
                     }
                 }
-                None
             }
-            _ => None,
+            _ => {},
         }
+
+        Ok(branch.or(alt))
     }
 }
 

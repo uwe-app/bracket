@@ -18,7 +18,7 @@ impl BlockHelper for IfHelper {
         if rc.is_truthy(ctx.arguments().get(0).unwrap()) {
             rc.template(block.template())?;
         } else {
-            let inverse = block.inverse();
+            let inverse = block.inverse(rc)?;
             if let Some(node) = inverse {
                 rc.template(node)?;
             }

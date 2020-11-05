@@ -382,6 +382,34 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         }
     }
 
+
+    /// Invoke a call and return the result.
+    pub fn call(
+        &mut self,
+        call: &'source Call<'source>,
+    ) -> RenderResult<HelperValue> {
+        match call.target() {
+            CallTarget::Path(ref path) => {
+                // Explicit paths should resolve to a lookup
+                if path.is_explicit() {
+                    Ok(self.lookup(path).cloned())
+                // Simple paths may be helpers
+                } else if path.is_simple() {
+                    if let Some(_) = self.helpers.get(path.as_str()) {
+                        self.invoke_helper(path.as_str(), call)
+                    } else {
+                        self.resolve(path)
+                    }
+                } else {
+                    self.resolve(path)
+                }
+            }
+            CallTarget::SubExpr(ref sub) => {
+                self.call(sub)
+            }
+        }
+    }
+
     fn statement(
         &mut self,
         call: &'source Call<'source>,
@@ -391,27 +419,10 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         if call.is_partial() {
             let name = self.get_partial_name(call)?;
             self.render_partial(call, name)?;
+            Ok(None)
         } else {
-            match call.target() {
-                CallTarget::Path(ref path) => {
-                    // Explicit paths should resolve to a lookup
-                    if path.is_explicit() {
-                        return Ok(self.lookup(path).cloned());
-                    // Simple paths may be helpers
-                    } else if path.is_simple() {
-                        if let Some(_) = self.helpers.get(path.as_str()) {
-                            return self.invoke_helper(path.as_str(), call);
-                        } else {
-                            return self.resolve(path);
-                        }
-                    } else {
-                        return self.resolve(path);
-                    }
-                }
-                _ => todo!("Handle sub expressions"),
-            }
+            Ok(self.call(call)?)
         }
-        Ok(None)
     }
 
     fn block(
