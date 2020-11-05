@@ -57,6 +57,16 @@ fn vars_this_dot_slash() -> Result<()> {
 }
 
 #[test]
+fn vars_explicit_this_path() -> Result<()> {
+    let mut registry = Registry::new();
+    let value = r"{{this.foo}}";
+    let data = json!({"foo": "bar"});
+    let result = registry.once(NAME, value, &data)?;
+    assert_eq!("bar", &result);
+    Ok(())
+}
+
+#[test]
 fn vars_root() -> Result<()> {
     let mut registry = Registry::new();
     let value = r"{{@root.foo}}";

@@ -168,7 +168,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     /// Infallible variable lookup by path.
     fn lookup(&'source self, path: &'source Path) -> Option<&'source Value> {
         //println!("Lookup path {:?}", path.as_str());
-        //println!("Lookup path {:?}", path.as_str());
         //println!("Lookup path {:?}", path);
 
         let root: &'source Value = &self.root;
@@ -180,9 +179,9 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 path.components().iter().skip(1).map(|c| c.as_str()),
                 root,
             )
-        // Handle explicit this only
-        } else if path.is_explicit() && path.components().len() == 1 {
-            let this = if let Some(scope) = scopes.last() {
+        // Handle explicit this
+        } else if path.is_explicit() {
+            let value = if let Some(scope) = scopes.last() {
                 if let Some(base) = scope.base_value() {
                     base
                 } else {
@@ -191,7 +190,17 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             } else {
                 root
             };
-            Some(this)
+
+            // Handle explicit this only
+            if path.components().len() == 1 {
+                Some(value)
+            // Otherwise lookup in this context
+            } else {
+                json::find_parts(
+                    path.components().iter().skip(1).map(|c| c.as_str()),
+                    value,
+                )
+            }
         // Handle local @variable references which must
         // be resolved using the current scope
         } else if path.is_local() {
