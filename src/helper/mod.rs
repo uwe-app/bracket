@@ -38,6 +38,7 @@ pub mod json;
 pub mod log;
 #[cfg(feature = "logical-helper")]
 pub mod logical;
+#[cfg(feature = "lookup-helper")]
 pub mod lookup;
 pub mod unless;
 pub mod with;
@@ -181,7 +182,9 @@ impl<'reg> HelperRegistry<'reg> {
     fn builtins(&mut self) {
         #[cfg(feature = "log-helper")]
         self.register_helper("log", Box::new(log::LogHelper {}));
+        #[cfg(feature = "lookup-helper")]
         self.register_helper("lookup", Box::new(lookup::LookupHelper {}));
+
         self.register_helper("if", Box::new(r#if::IfHelper {}));
 
         #[cfg(feature = "logical-helper")]
