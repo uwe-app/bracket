@@ -1,12 +1,36 @@
 //! Block helper for conditionals.
 use crate::{
-    helper::{Assertion, BlockHelper, BlockResult, BlockTemplate, Context},
+    helper::{Assertion, BlockHelper, BlockResult, BlockTemplate, Context, Helper, ValueResult},
     render::Render,
 };
 
+use serde_json::Value;
+
 pub struct IfHelper;
 
-impl BlockHelper for IfHelper {
+impl Helper for IfHelper {
+    fn call<'reg, 'source, 'render>(
+        &self,
+        rc: &mut Render<'reg, 'source, 'render>,
+        ctx: Context<'source>,
+    ) -> ValueResult {
+        rc.arity(&ctx, 1..usize::MAX)?;
+
+        let args: Vec<Value> = ctx.into();
+        let mut result = Value::Bool(true);
+        for val in args {
+            if !rc.is_truthy(&val) {
+                result = Value::Bool(false); 
+                break;
+            }
+        }
+        Ok(Some(result))
+    }
+}
+
+pub struct IfBlockHelper;
+
+impl BlockHelper for IfBlockHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,

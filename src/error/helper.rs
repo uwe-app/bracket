@@ -26,7 +26,7 @@ pub enum HelperError {
     /// Proxy for render errors that occur via helpers; for example
     /// when rendering inner templates.
     #[error(transparent)]
-    Render(Box<RenderError>),
+    Render(#[from] Box<RenderError>),
 
     /// Proxy I/O errors.
     #[error(transparent)]

@@ -69,11 +69,16 @@ impl<'source> BlockTemplate<'source> {
                     for node in block.conditions().iter() {
                         match node {
                             Node::Condition(clause) => {
-                                // Got an else clause, last oone wins!
+                                // Got an else clause, last one wins!
                                 if clause.call().is_empty() {
                                     alt = Some(node);
                                 } else {
-                                    todo!("Evaluate and return 'else if' clauses!");
+                                    if let Some(value) = rc.call(clause.call()).map_err(Box::new)? {
+                                        if rc.is_truthy(&value) {
+                                            branch = Some(node);
+                                            break;
+                                        }
+                                    }
                                 }
                             }
                             _ => {}
@@ -170,12 +175,12 @@ impl<'reg> HelperRegistry<'reg> {
     fn builtins(&mut self) {
         #[cfg(feature = "log-helper")]
         self.register_helper("log", Box::new(log::LogHelper {}));
-
+        self.register_helper("if", Box::new(r#if::IfHelper {}));
         self.register_helper("lookup", Box::new(lookup::LookupHelper {}));
 
         self.register_block_helper("with", Box::new(with::WithHelper {}));
         self.register_block_helper("each", Box::new(each::EachHelper {}));
-        self.register_block_helper("if", Box::new(r#if::IfHelper {}));
+        self.register_block_helper("if", Box::new(r#if::IfBlockHelper {}));
         //self.register_block_helper("unless", Box::new(UnlessHelper {}));
 
         #[cfg(feature = "json-helper")]
