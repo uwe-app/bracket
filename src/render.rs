@@ -8,7 +8,7 @@ use crate::{
     escape::EscapeFn,
     helper::{
         Assertion, BlockTemplate, Context, HelperRegistry,
-        Result as HelperResult,
+        BlockResult,
     },
     json,
     output::Output,
@@ -453,7 +453,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     pub(crate) fn render_helper(
         &mut self,
         node: &'source Node<'source>,
-    ) -> HelperResult {
+    ) -> BlockResult {
         self.render_node(node)
             .map_err(|e| HelperError::Render(format!("{:?}", e)))
     }
@@ -540,7 +540,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 }
 
 impl Assertion for Render<'_, '_, '_> {
-    fn arity(&self, ctx: &Context<'_>, range: Range<usize>) -> HelperResult {
+    fn arity(&self, ctx: &Context<'_>, range: Range<usize>) -> BlockResult {
         if range.start == range.end {
             if ctx.arguments().len() != range.start {
                 return Err(HelperError::ArityExact(

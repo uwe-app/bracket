@@ -1,6 +1,6 @@
 //! Block helper that sets the block scope to the value of the first argument.
 use crate::{
-    helper::{Assertion, BlockHelper, BlockTemplate, Context, Result},
+    helper::{Assertion, BlockHelper, BlockTemplate, Context, BlockResult},
     render::{Render, Scope},
 };
 
@@ -14,7 +14,7 @@ impl BlockHelper for WithHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: Context<'source>,
         block: BlockTemplate<'source>,
-    ) -> Result {
+    ) -> BlockResult {
         rc.arity(&ctx, 1..1)?;
 
         let mut args: Vec<Value> = ctx.into();

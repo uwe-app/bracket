@@ -9,7 +9,7 @@ use crate::{error::HelperError as Error, parser::ast::Node, render::Render};
 pub type ValueResult = std::result::Result<Option<Value>, Error>;
 
 /// The result type that block helpers should return.
-pub type Result = std::result::Result<(), Error>;
+pub type BlockResult = std::result::Result<(), Error>;
 
 /// Trait for helpers.
 pub trait Helper: Send + Sync {
@@ -27,7 +27,7 @@ pub trait BlockHelper: Send + Sync {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: Context<'source>,
         block: BlockTemplate<'source>,
-    ) -> Result;
+    ) -> BlockResult;
 }
 
 pub mod each;
@@ -147,7 +147,7 @@ impl Into<(String, Vec<Value>, Map<String, Value>)> for Context<'_> {
 /// Trait for types that provide helper assertions.
 pub trait Assertion {
     /// Assert that the context arguments are in the given arity range.
-    fn arity(&self, context: &Context<'_>, range: Range<usize>) -> Result;
+    fn arity(&self, context: &Context<'_>, range: Range<usize>) -> BlockResult;
 }
 
 /// Registry of helpers.
