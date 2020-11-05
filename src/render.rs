@@ -17,16 +17,18 @@ use crate::{
 type HelperValue = Option<Value>;
 
 #[derive(Debug)]
-pub struct Scope {
+pub struct Scope<'render, 'source> {
     value: Option<Value>,
     locals: Value,
+    partial_block: Option<&'render Node<'source>>,
 }
 
-impl Scope {
+impl<'render, 'source> Scope<'render, 'source> {
     pub fn new() -> Self {
         Self {
             locals: Value::Object(Map::new()),
             value: None,
+            partial_block: None,
         }
     }
 
@@ -34,6 +36,7 @@ impl Scope {
         Self {
             locals: Value::Object(locals),
             value: None,
+            partial_block: None,
         }
     }
 
@@ -59,6 +62,14 @@ impl Scope {
     pub fn base_value(&self) -> &Option<Value> {
         &self.value
     }
+
+    pub fn set_partial_block(&mut self, block: Option<&'render Node<'source>>) {
+        self.partial_block = block;
+    }
+
+    pub fn partial_block_mut(&mut self) -> &mut Option<&'render Node<'source>> {
+        &mut self.partial_block
+    }
 }
 
 pub struct Render<'reg, 'source, 'render> {
@@ -68,7 +79,7 @@ pub struct Render<'reg, 'source, 'render> {
     source: &'source str,
     root: Value,
     writer: Box<&'render mut dyn Output>,
-    scopes: Vec<Scope>,
+    scopes: Vec<Scope<'render, 'source>>,
     trim_start: bool,
     trim_end: bool,
     prev_node: Option<&'source Node<'source>>,
@@ -111,17 +122,17 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     /// Push a scope onto the stack.
-    pub fn push_scope(&mut self, scope: Scope) {
+    pub fn push_scope(&mut self, scope: Scope<'render, 'source>) {
         self.scopes.push(scope);
     }
 
     /// Remove a scope from the stack.
-    pub fn pop_scope(&mut self) -> Option<Scope> {
+    pub fn pop_scope(&mut self) -> Option<Scope<'render, 'source>> {
         self.scopes.pop()
     }
 
     /// Get a mutable reference to the current scope.
-    pub fn scope_mut(&mut self) -> Option<&mut Scope> {
+    pub fn scope_mut(&mut self) -> Option<&mut Scope<'render, 'source>> {
         self.scopes.last_mut()
     }
 
@@ -326,26 +337,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         Ok(())
     }
 
-    fn get_partial_name(
-        &mut self,
-        call: &'source Call<'source>,
-    ) -> RenderResult<String> {
-        match call.target() {
-            CallTarget::Path(ref path) => {
-                if path.is_simple() {
-                    return Ok(path.as_str().to_string());
-                } else {
-                    panic!("Partials must be simple identifiers");
-                }
-            }
-            CallTarget::SubExpr(ref call) => {
-                let result = self.statement(call)?.unwrap_or(Value::Null);
-                return Ok(json::stringify(&result));
-            }
-        }
-        Err(RenderError::PartialNameResolve(call.as_str().to_string()))
-    }
-
     // Fallible version of path lookup.
     fn resolve(
         &mut self,
@@ -390,16 +381,38 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         //println!("Statement {:?}", call.as_str());
 
         if call.is_partial() {
-            self.render_partial(call)?;
+            self.render_partial(call, None)?;
             Ok(None)
         } else {
             Ok(self.call(call)?)
         }
     }
 
-    fn render_partial<'a>(
+    fn get_partial_name<'a>(
         &mut self,
         call: &'source Call<'source>,
+    ) -> RenderResult<String> {
+        match call.target() {
+            CallTarget::Path(ref path) => {
+                if path.is_simple() {
+                    return Ok(path.as_str().to_string());
+                } else {
+                    panic!("Partials must be simple identifiers");
+                }
+            }
+            CallTarget::SubExpr(ref call) => {
+                let result = self.statement(call)?.unwrap_or(Value::Null);
+                return Ok(json::stringify(&result));
+            }
+        }
+        Err(RenderError::PartialNameResolve(call.as_str().to_string()))
+    }
+
+
+    fn render_partial(
+        &mut self,
+        call: &'source Call<'source>,
+        partial_block: Option<&'source Node<'source>>,
     ) -> RenderResult<()> {
         let name = self.get_partial_name(call)?;
         let template = self
@@ -407,9 +420,10 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             .get(&name)
             .ok_or_else(|| RenderError::PartialNotFound(name))?;
 
-        let node: &'source Node<'_> = template.node();
+        let node = template.node();
         let hash = self.hash(call)?;
-        let scope = Scope::new_locals(hash);
+        let mut scope = Scope::new_locals(hash);
+        scope.set_partial_block(partial_block);
         self.scopes.push(scope);
         // WARN: We must iterate the document child nodes
         // WARN: when rendering partials otherwise the
@@ -426,17 +440,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         Ok(())
     }
 
-    fn render_partial_block(
-        &mut self,
-        call: &'source Call<'source>,
-        node: &'source Node<'source>,
-        block: &'source Block<'source>,
-    ) -> RenderResult<()> {
-        //let name = self.get_partial_name(call)?;
-        self.render_partial(call)?;
-        Ok(())
-    }
-
     fn block(
         &mut self,
         node: &'source Node<'source>,
@@ -445,7 +448,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         let call = block.call();
 
         if call.is_partial() {
-            self.render_partial_block(call, node, block)?;
+            self.render_partial(call, Some(node))?;
         } else {
             match call.target() {
                 CallTarget::Path(ref path) => {
@@ -453,7 +456,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                         self.invoke_block_helper(path.as_str(), call, node)?;
                     }
                 }
-                _ => todo!("Handle sub expressions"),
+                //CallTarget::SubExpr(ref sub) => self.call(sub),
+                _ => todo!("Handle block sub expression for cal target"),
             }
         }
         Ok(())
