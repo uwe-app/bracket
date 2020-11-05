@@ -6,11 +6,11 @@ This is a markdown document using handlebars for templating. The first header is
 
 > {{{@root.title}}}
 
-{{# if title}}
+{{# if title }}
 Got a title :: {{title}}
 {{ else if true }}
 Got chained conditional 
-{{else}}
+{{ else }}
 No title available
 {{/if}}
 

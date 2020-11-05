@@ -37,6 +37,7 @@ pub mod json;
 #[cfg(feature = "log-helper")]
 pub mod log;
 pub mod lookup;
+pub mod unless;
 pub mod with;
 
 /// Encapsulates the templates passed to a block helper.
@@ -181,7 +182,7 @@ impl<'reg> HelperRegistry<'reg> {
         self.register_block_helper("with", Box::new(with::WithHelper {}));
         self.register_block_helper("each", Box::new(each::EachHelper {}));
         self.register_block_helper("if", Box::new(r#if::IfBlockHelper {}));
-        //self.register_block_helper("unless", Box::new(UnlessHelper {}));
+        self.register_block_helper("unless", Box::new(unless::UnlessHelper {}));
 
         #[cfg(feature = "json-helper")]
         self.register_helper("json", Box::new(json::JsonHelper {}));

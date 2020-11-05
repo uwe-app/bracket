@@ -1,4 +1,4 @@
-//! Block helper for conditionals.
+//! Helpers for conditional statements.
 use crate::{
     helper::{Assertion, BlockHelper, BlockResult, BlockTemplate, Context, Helper, ValueResult},
     render::Render,
@@ -41,11 +41,8 @@ impl BlockHelper for IfBlockHelper {
 
         if rc.is_truthy(ctx.arguments().get(0).unwrap()) {
             rc.template(block.template())?;
-        } else {
-            let inverse = block.inverse(rc)?;
-            if let Some(node) = inverse {
-                rc.template(node)?;
-            }
+        } else if let Some(node) = block.inverse(rc)? {
+            rc.template(node)?;
         }
         Ok(())
     }
