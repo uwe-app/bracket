@@ -1,9 +1,13 @@
 use crate::{
+    parser::{
+        ast::Node,
+        trim::{TrimHint, TrimState},
+        Parser,
+    },
     SyntaxResult,
-    parser::{Parser, ast::Node, trim::{TrimState, TrimHint}},
 };
 
-/// Event for node iterators that also 
+/// Event for node iterators that also
 /// encapsulates the whitespace trim state.
 #[derive(Debug)]
 pub struct NodeEvent<'a> {
@@ -13,7 +17,7 @@ pub struct NodeEvent<'a> {
 
 impl<'a> NodeEvent<'a> {
     pub fn new(node: &'a Node, trim: TrimState) -> Self {
-        Self { node, trim } 
+        Self { node, trim }
     }
 }
 
@@ -21,26 +25,20 @@ impl<'a> NodeEvent<'a> {
 /// not descend into block nodes.
 pub struct NodeIter<'source> {
     node: &'source Node<'source>,
-    complete: bool,
-    children: Option<std::slice::Iter<'source, Node<'source>>>,
 }
 
 impl<'source> NodeIter<'source> {
-    pub fn new(node: &'source Node, trim: TrimState) -> Self {
-        Self {
-            node,
-            complete: false,
-            children: None,
-        } 
+    pub fn new(node: &'source Node) -> Self {
+        Self { node }
     }
 
-    /// Create an iterator that adds trim state information 
-    /// to each node. 
+    /// Create an iterator that adds trim state information
+    /// to each node.
     ///
-    /// The hint can be used to determine the start trim information 
+    /// The hint can be used to determine the start trim information
     /// for the first node.
     pub fn trim(self, hint: Option<TrimHint>) -> TrimIter<'source> {
-        TrimIter::new(self, hint) 
+        TrimIter::new(Box::new(self), hint)
     }
 }
 
@@ -48,45 +46,94 @@ impl<'source> Iterator for NodeIter<'source> {
     type Item = &'source Node<'source>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.complete {
-            return None
+        match *self.node {
+            Node::Document(_) => Some(self.node),
+            Node::Block(_) => Some(self.node),
+            Node::Text(_) => Some(self.node),
+            Node::Statement(_) => Some(self.node),
+            Node::RawBlock(_)
+            | Node::RawStatement(_)
+            | Node::RawComment(_)
+            | Node::Comment(_) => Some(self.node),
+            Node::Condition(_) => None,
         }
+    }
+}
 
-        let (node, completed) = match *self.node {
+/// Iterate documents and blocks.
+pub struct BlockIter<'source> {
+    node: &'source Node<'source>,
+    children: Option<std::slice::Iter<'source, Node<'source>>>,
+}
+
+impl<'source> BlockIter<'source> {
+    pub fn new(node: &'source Node) -> Self {
+        Self {
+            node,
+            children: None,
+        }
+    }
+
+    /// Create an iterator that adds trim state information
+    /// to each node.
+    ///
+    /// The hint can be used to determine the start trim information
+    /// for the first node.
+    pub fn trim(self, hint: Option<TrimHint>) -> TrimIter<'source> {
+        TrimIter::new(Box::new(self), hint)
+    }
+}
+
+impl<'source> Iterator for BlockIter<'source> {
+    type Item = &'source Node<'source>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let node = match *self.node {
             Node::Document(ref doc) => {
                 let it = self.children.get_or_insert(doc.nodes().iter());
                 let child = it.next();
                 if child.is_none() {
                     self.children.take();
                 }
-                (child, child.is_none())
+                child
             }
-            Node::Block(_) => (Some(self.node), true),
-            Node::Text(_) => (Some(self.node), true),
-            Node::Statement(_) => (Some(self.node), true),
+            Node::Block(ref block) => {
+                let it = self.children.get_or_insert(block.nodes().iter());
+                let child = it.next();
+                if child.is_none() {
+                    self.children.take();
+                }
+                child
+            }
+            Node::Text(_) => None,
+            Node::Statement(_) => None,
             Node::RawBlock(_)
             | Node::RawStatement(_)
             | Node::RawComment(_)
-            | Node::Comment(_) => (Some(self.node), true),
-            Node::Condition(_) => (None, true),
+            | Node::Comment(_) => None,
+            Node::Condition(_) => None,
         };
 
-        self.complete = completed;
         node
     }
 }
 
-/// Iterator that yields nodes with trim flags that indicate 
-/// whether the current node should have leading and trailing 
+/// Iterator that yields nodes with trim flags that indicate
+/// whether the current node should have leading and trailing
 /// whitespace removed.
 pub struct TrimIter<'source> {
-    iter: std::iter::Peekable<NodeIter<'source>>,
+    iter: std::iter::Peekable<
+        Box<dyn Iterator<Item = &'source Node<'source>> + 'source>,
+    >,
     prev_trim_after: Option<bool>,
     hint: Option<TrimHint>,
 }
 
 impl<'source> TrimIter<'source> {
-    pub fn new(nodes: NodeIter<'source>, hint: Option<TrimHint>) -> Self {
+    pub fn new(
+        nodes: Box<dyn Iterator<Item = &'source Node<'source>> + 'source>,
+        hint: Option<TrimHint>,
+    ) -> Self {
         let iter = nodes.peekable();
         Self {
             iter,
@@ -108,8 +155,10 @@ impl<'source> Iterator for TrimIter<'source> {
             trim_after
         } else {
             if let Some(hint) = self.hint.take() {
-                hint.after 
-            } else { false }
+                hint.after
+            } else {
+                false
+            }
         };
 
         // Trim the end of the current node.
@@ -129,4 +178,3 @@ impl<'source> Iterator for TrimIter<'source> {
         node.map(|n| NodeEvent::new(n, state))
     }
 }
-

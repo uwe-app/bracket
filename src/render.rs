@@ -11,7 +11,7 @@ use crate::{
     output::Output,
     parser::{
         ast::{Block, Call, CallTarget, Node, ParameterValue, Path},
-        trim::{TrimState, TrimHint},
+        trim::{TrimHint, TrimState},
     },
     template::Templates,
     RenderResult,
@@ -154,6 +154,12 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         &mut self,
         node: &'source Node<'source>,
     ) -> Result<(), HelperError> {
+
+        for event in node.block_iter().trim(Some(self.hint)) {
+            self.render_from_helper(event.node, event.trim)?;
+        }
+
+        /*
         match node {
             Node::Block(ref block) => {
                 for node in block.nodes().iter() {
@@ -162,6 +168,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             }
             _ => return self.render_from_helper(node),
         }
+        */
+
         Ok(())
     }
 
@@ -478,8 +486,9 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     pub(crate) fn render_from_helper(
         &mut self,
         node: &'source Node<'source>,
+        trim: TrimState,
     ) -> BlockResult {
-        self.render_node(node, Default::default())
+        self.render_node(node, trim)
             .map_err(|e| HelperError::Render(Box::new(e)))
     }
 
@@ -488,7 +497,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         node: &'source Node<'source>,
         trim: TrimState,
     ) -> RenderResult<()> {
-
         self.trim = trim;
         self.hint = node.trim();
 

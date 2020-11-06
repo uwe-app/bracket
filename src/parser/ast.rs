@@ -4,7 +4,7 @@ use std::ops::Range;
 
 use serde_json::Value;
 
-use crate::parser::{iter::NodeIter, trim::TrimHint};
+use crate::parser::{iter::{BlockIter, NodeIter}, trim::TrimHint};
 
 static WHITESPACE: &str = "~";
 
@@ -76,8 +76,14 @@ impl<'source> Node<'source> {
         }
     }
 
+    /// Iterate leaf nodes.
     pub fn iter<'a>(&'a self) -> NodeIter<'a> {
-        NodeIter::new(self, Default::default())
+        NodeIter::new(self)
+    }
+
+    /// Iterate descendants of documents and blocks.
+    pub fn block_iter<'a>(&'a self) -> BlockIter<'a> {
+        BlockIter::new(self)
     }
 }
 

@@ -1,14 +1,11 @@
 extern crate log;
 extern crate pretty_env_logger;
 
-use bracket::{
-    registry::Registry,
-    Result,
-};
+use bracket::{registry::Registry, Result};
 
 use serde_json::json;
 
-/// Demonstrates how to iterate a template nodes and include 
+/// Demonstrates how to iterate a template nodes and include
 /// trim state information.
 fn main() -> Result<()> {
     std::env::set_var("RUST_LOG", "trace");

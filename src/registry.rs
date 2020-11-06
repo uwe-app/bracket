@@ -5,7 +5,7 @@ use crate::{
     escape::{escape_html, EscapeFn},
     helper::HelperRegistry,
     output::{Output, StringOutput},
-    parser::{Parser, ParserOptions, trim::TrimHint},
+    parser::{trim::TrimHint, Parser, ParserOptions},
     render::Render,
     template::{Template, Templates},
     Error, Result,

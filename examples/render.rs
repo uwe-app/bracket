@@ -39,7 +39,10 @@ fn main() -> Result<()> {
         "dynamic-partial",
         PathBuf::from("examples/files/dynamic-partial.md"),
     )?;
-    loader.add("partial-block", PathBuf::from("examples/files/partial-block.md"))?;
+    loader.add(
+        "partial-block",
+        PathBuf::from("examples/files/partial-block.md"),
+    )?;
     loader.insert(name, content);
 
     let mut templates = Templates::new();
