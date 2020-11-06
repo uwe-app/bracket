@@ -155,3 +155,13 @@ fn vars_map_local_first() -> Result<()> {
     assert_eq!("true", &result);
     Ok(())
 }
+
+#[test]
+fn vars_array_access() -> Result<()> {
+    let mut registry = Registry::new();
+    let value = r"{{this.[1]}}";
+    let data = json!(["foo", "bar", "baz"]);
+    let result = registry.once(NAME, value, &data)?;
+    assert_eq!("bar", &result);
+    Ok(())
+}
