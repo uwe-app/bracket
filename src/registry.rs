@@ -112,6 +112,9 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     }
 
     /// Stream a dynamic template and buffer the result to a string.
+    ///
+    /// Requires the `stream` feature.
+    #[cfg(feature = "stream")]
     pub fn stream<T>(
         &self,
         name: &str,
@@ -128,6 +131,9 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     }
 
     /// Stream a dynamic template to a writer.
+    ///
+    /// Requires the `stream` feature.
+    #[cfg(feature = "stream")]
     pub fn stream_to_write<T>(
         &self,
         name: &str,
