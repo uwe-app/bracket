@@ -360,8 +360,10 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                     Ok(self.lookup(path).cloned())
 
                 // Handle @partial-block variables!
-                } else if path.components().len() == 1 
-                    && path.components().get(0).unwrap().as_str() == PARTIAL_BLOCK {
+                } else if path.components().len() == 1
+                    && path.components().get(0).unwrap().as_str()
+                        == PARTIAL_BLOCK
+                {
                     if let Some(scope) = self.scopes.last_mut() {
                         if let Some(node) = scope.partial_block_mut().take() {
                             //println!("RENDER FROM PARTIAL BLOCK VARIABLE {:?}", node);
@@ -420,7 +422,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         }
         Err(RenderError::PartialNameResolve(call.as_str().to_string()))
     }
-
 
     fn render_partial(
         &mut self,

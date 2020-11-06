@@ -184,7 +184,6 @@ impl<'reg> HelperRegistry<'reg> {
     }
 
     fn builtins(&mut self) {
-
         #[cfg(feature = "conditional-helper")]
         self.register_helper("if", Box::new(r#if::IfHelper {}));
         #[cfg(feature = "conditional-helper")]
