@@ -1,5 +1,7 @@
 //! Templates add rendering capability to nodes.
 use std::collections::HashMap;
+
+#[cfg(feature = "fs")]
 use std::path::Path;
 
 use serde::Serialize;
@@ -15,6 +17,7 @@ use crate::{
     RenderResult, Result, SyntaxResult,
 };
 
+/// Storage for template sources.
 #[derive(Default)]
 pub struct Loader {
     sources: HashMap<String, String>,
@@ -43,6 +46,9 @@ impl Loader {
     }
 
     /// Add a named template from a file.
+    ///
+    /// Requires the `fs` feature.
+    #[cfg(feature = "fs")]
     pub fn add<N, P>(&mut self, name: N, file: P) -> std::io::Result<()>
     where
         N: AsRef<str>,
@@ -54,12 +60,16 @@ impl Loader {
     }
 
     /// Load a file and use the file path as the template name.
+    ///
+    /// Requires the `fs` feature.
+    #[cfg(feature = "fs")]
     pub fn load<P: AsRef<Path>>(&mut self, file: P) -> std::io::Result<()> {
         let (name, content) = self.read(file)?;
         self.insert(name, &content);
         Ok(())
     }
 
+    #[cfg(feature = "fs")]
     fn read<P: AsRef<Path>>(
         &mut self,
         file: P,
