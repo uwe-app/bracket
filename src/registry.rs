@@ -142,6 +142,11 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         let mut parser = Parser::new(source, options);
         for node in parser {
             let node = node?;
+            //println!("Node {:?}", node);
+
+            for node in node.iter().trim() {
+                println!("{:#?}", node);
+            }
             // FIXME: implement this, currently not working as we store the
             // FIXME: next and previous nodes in the renderer which means
             // FIXME: node is not living long enough for the renderer to

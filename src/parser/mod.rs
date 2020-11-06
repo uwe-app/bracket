@@ -15,6 +15,7 @@ static UNKNOWN: &str = "unknown";
 pub mod ast;
 mod block;
 mod call;
+mod iter;
 mod path;
 
 #[derive(Debug)]
@@ -382,10 +383,6 @@ impl<'source> Parser<'source> {
 
         Ok(None)
     }
-
-    pub fn trim(self) -> TrimIterator<'source> {
-        TrimIterator::new(self)
-    }
 }
 
 impl<'source> Iterator for Parser<'source> {
@@ -400,61 +397,5 @@ impl<'source> Iterator for Parser<'source> {
         }
 
         None
-    }
-}
-
-/// Iterator that yields nodes with trim flags that indicate 
-/// whether the current node should have leading and trailing 
-/// whitespace removed.
-pub struct TrimIterator<'source> {
-    iter: std::iter::Peekable<Parser<'source>>,
-    prev_trim_after: Option<bool>,
-}
-
-impl<'source> TrimIterator<'source> {
-    pub fn new(parser: Parser<'source>) -> Self {
-        let iter = parser.peekable();
-        Self {
-            iter,
-            prev_trim_after: None,
-        }
-    }
-}
-
-impl<'source> Iterator for TrimIterator<'source> {
-    type Item = SyntaxResult<(Node<'source>, bool, bool)>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let node = self.iter.next();
-        let peek = self.iter.peek();
-
-        // Trim the start of the current node.
-        let trim_start = self.prev_trim_after.is_some()
-            && self.prev_trim_after.take().unwrap();
-
-        // Trim the end of the current node.
-        let mut trim_end = false;
-
-        if let Some(next) = peek {
-            match next {
-                Ok(node) => {
-                    if node.trim_before() {
-                        trim_end = true;
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        if let Some(ref current) = node {
-            match current {
-                Ok(node) => {
-                    self.prev_trim_after = Some(node.trim_after());
-                }
-                _ => {}
-            }
-        }
-
-        node.map(|o| o.map(|n| (n, trim_start, trim_end)))
     }
 }
