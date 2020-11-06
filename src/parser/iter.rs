@@ -13,16 +13,20 @@ use crate::{
 pub struct NodeEvent<'a> {
     pub node: &'a Node<'a>,
     pub trim: TrimState,
+    pub last: bool,
 }
 
 impl<'a> NodeEvent<'a> {
-    pub fn new(node: &'a Node, trim: TrimState) -> Self {
-        Self { node, trim }
+    pub fn new(node: &'a Node, trim: TrimState, last: bool) -> Self {
+        Self { node, trim, last }
     }
 }
 
-/// Iterate nodes yielding children for documents but does
-/// not descend into block nodes.
+/// Iterator for leaf nodes.
+///
+/// Document and block nodes are yielded but child nodes 
+/// are not iterated; to iterate child nodes use the block 
+/// iterator.
 pub struct NodeIter<'source> {
     node: &'source Node<'source>,
 }
@@ -49,18 +53,18 @@ impl<'source> Iterator for NodeIter<'source> {
         match *self.node {
             Node::Document(_) => Some(self.node),
             Node::Block(_) => Some(self.node),
+            Node::Condition(_) => Some(self.node),
             Node::Text(_) => Some(self.node),
             Node::Statement(_) => Some(self.node),
             Node::RawBlock(_)
             | Node::RawStatement(_)
             | Node::RawComment(_)
             | Node::Comment(_) => Some(self.node),
-            Node::Condition(_) => None,
         }
     }
 }
 
-/// Iterate documents and blocks.
+/// Iterator for branch nodes; documents, blocks and conditionals.
 pub struct BlockIter<'source> {
     node: &'source Node<'source>,
     children: Option<std::slice::Iter<'source, Node<'source>>>,
@@ -88,22 +92,15 @@ impl<'source> Iterator for BlockIter<'source> {
     type Item = &'source Node<'source>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let node = match *self.node {
-            Node::Document(ref doc) => {
-                let it = self.children.get_or_insert(doc.nodes().iter());
-                let child = it.next();
-                if child.is_none() {
-                    self.children.take();
-                }
-                child
+        let iter = match *self.node {
+            Node::Document(ref node) => {
+                Some(self.children.get_or_insert(node.nodes().iter()))
             }
-            Node::Block(ref block) => {
-                let it = self.children.get_or_insert(block.nodes().iter());
-                let child = it.next();
-                if child.is_none() {
-                    self.children.take();
-                }
-                child
+            Node::Block(ref node) => {
+                Some(self.children.get_or_insert(node.nodes().iter()))
+            }
+            Node::Condition(ref node) => {
+                Some(self.children.get_or_insert(node.nodes().iter()))
             }
             Node::Text(_) => None,
             Node::Statement(_) => None,
@@ -111,10 +108,15 @@ impl<'source> Iterator for BlockIter<'source> {
             | Node::RawStatement(_)
             | Node::RawComment(_)
             | Node::Comment(_) => None,
-            Node::Condition(_) => None,
         };
 
-        node
+        if let Some(it) = iter {
+            let child = it.next();
+            if child.is_none() {
+                self.children.take();
+            }
+            child
+        } else { None }
     }
 }
 
@@ -175,6 +177,6 @@ impl<'source> Iterator for TrimIter<'source> {
 
         let state = TrimState::from((start, end));
 
-        node.map(|n| NodeEvent::new(n, state))
+        node.map(|n| NodeEvent::new(n, state, peek.is_none()))
     }
 }

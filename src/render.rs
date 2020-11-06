@@ -86,7 +86,7 @@ pub struct Render<'reg, 'source, 'render> {
     writer: Box<&'render mut dyn Output>,
     scopes: Vec<Scope<'source>>,
     trim: TrimState,
-    hint: TrimHint,
+    hint: Option<TrimHint>,
 }
 
 impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
@@ -155,20 +155,20 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         node: &'source Node<'source>,
     ) -> Result<(), HelperError> {
 
-        for event in node.block_iter().trim(Some(self.hint)) {
-            self.render_from_helper(event.node, event.trim)?;
-        }
-
-        /*
-        match node {
-            Node::Block(ref block) => {
-                for node in block.nodes().iter() {
-                    self.render_from_helper(node)?;
+        for event in node.block_iter().trim(self.hint) {
+            let mut trim = event.trim;
+            if event.last {
+                match node {
+                    Node::Block(ref block) => {
+                        if block.trim_before_close() {
+                            trim.end = true; 
+                        }
+                    }
+                    _ => {}
                 }
             }
-            _ => return self.render_from_helper(node),
+            self.render_from_helper(event.node, trim)?;
         }
-        */
 
         Ok(())
     }
@@ -373,7 +373,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 {
                     if let Some(scope) = self.scopes.last_mut() {
                         if let Some(node) = scope.partial_block_mut().take() {
-                            //println!("RENDER FROM PARTIAL BLOCK VARIABLE {:?}", node);
                             self.template(node)?;
                         }
                         Ok(None)
@@ -447,13 +446,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         // WARN: We must iterate the document child nodes
         // WARN: when rendering partials otherwise the
         // WARN: rendering process will halt after the first partial!
-        match node {
-            Node::Document(ref doc) => {
-                for node in doc.nodes().iter() {
-                    self.render_node(node, Default::default())?;
-                }
-            }
-            _ => panic!("Invalid partial node encountered, must be a document"),
+        for event in node.block_iter().trim(self.hint) {
+            self.render_node(event.node, event.trim)?;
         }
         self.scopes.pop();
         Ok(())
@@ -498,7 +492,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         trim: TrimState,
     ) -> RenderResult<()> {
         self.trim = trim;
-        self.hint = node.trim();
+        self.hint = Some(node.trim());
 
         match node {
             Node::Text(ref n) => {
@@ -513,11 +507,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             }
             Node::RawComment(_) => {}
             Node::Comment(_) => {}
-            Node::Document(ref doc) => {
-                for node in doc.nodes().iter() {
-                    self.render_node(node, Default::default())?;
-                }
-            }
+            Node::Document(_) => {}
+            Node::Condition(_) => {}
             Node::Statement(ref call) => {
                 if let Some(ref value) = self.statement(call)? {
                     let val = json::stringify(value);
@@ -526,11 +517,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             }
             Node::Block(ref block) => {
                 self.block(node, block)?;
-            }
-            Node::Condition(ref condition) => {
-                for node in condition.nodes().iter() {
-                    self.render_node(node, Default::default())?;
-                }
             }
             _ => todo!("Render other node types"),
         }
