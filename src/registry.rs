@@ -79,6 +79,15 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         Templates::compile(template, options)
     }
 
+    /// Compile a string to a template using the given name.
+    pub fn parse(
+        &self,
+        name: &str,
+        template: &'source str,
+    ) -> Result<Template<'source>> {
+        self.compile(template, ParserOptions::new(name.to_string()))
+    }
+
     /// Render a template without registering it and return
     /// the result as a string.
     ///

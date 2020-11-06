@@ -105,8 +105,6 @@ impl<'source> Iterator for TrimIter<'source> {
         // Trim the end of the current node.
         let mut end = false;
 
-        //peek.foo();
-
         if let Some(next) = peek {
             if next.trim().before {
                 end = true;

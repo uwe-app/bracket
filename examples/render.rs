@@ -15,7 +15,7 @@ fn main() -> Result<()> {
     std::env::set_var("RUST_LOG", "trace");
     pretty_env_logger::init();
 
-    let content = include_str!("document.md");
+    let content = include_str!("files/document.md");
     let name = "document";
     let data = json!({
         "title": "Handlebars Test Document & Information",
@@ -34,12 +34,12 @@ fn main() -> Result<()> {
     });
 
     let mut loader = Loader::new();
-    loader.add("partial", PathBuf::from("examples/partial.md"))?;
+    loader.add("partial", PathBuf::from("examples/files/partial.md"))?;
     loader.add(
         "dynamic-partial",
-        PathBuf::from("examples/dynamic-partial.md"),
+        PathBuf::from("examples/files/dynamic-partial.md"),
     )?;
-    loader.add("partial-block", PathBuf::from("examples/partial-block.md"))?;
+    loader.add("partial-block", PathBuf::from("examples/files/partial-block.md"))?;
     loader.insert(name, content);
 
     let mut templates = Templates::new();

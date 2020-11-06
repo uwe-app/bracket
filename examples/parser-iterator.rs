@@ -5,7 +5,7 @@ use bracket::{
 
 /// Demonstrates how to get nodes by iterating a parser.
 fn main() -> Result<()> {
-    let content = include_str!("document.md");
+    let content = include_str!("files/document.md");
     let options = ParserOptions {
         file_name: String::from("document.md"),
         line_offset: 0,
