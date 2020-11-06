@@ -4,7 +4,7 @@ use std::ops::Range;
 
 use serde_json::Value;
 
-use crate::parser::iter::NodeIter;
+use crate::parser::{iter::NodeIter, trim::TrimHint};
 
 static WHITESPACE: &str = "~";
 
@@ -39,6 +39,14 @@ impl<'source> Node<'source> {
         }
     }
 
+    pub fn trim(&self) -> TrimHint {
+        TrimHint {
+            before: self.trim_before(),
+            after: self.trim_after(),
+        }
+    }
+
+    #[deprecated(note = "Use trim()")]
     pub fn trim_before(&self) -> bool {
         match *self {
             Self::Document(_)
@@ -53,6 +61,7 @@ impl<'source> Node<'source> {
         }
     }
 
+    #[deprecated(note = "Use trim()")]
     pub fn trim_after(&self) -> bool {
         match *self {
             Self::Document(_)

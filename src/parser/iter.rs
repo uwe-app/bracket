@@ -1,14 +1,7 @@
 use crate::{
     SyntaxResult,
-    parser::{Parser, ast::Node},
+    parser::{Parser, ast::Node, trim::TrimState},
 };
-
-/// State for whitespace trim.
-#[derive(Default, Debug)]
-pub struct TrimState {
-    pub start: bool,
-    pub end: bool,
-}
 
 /// Event for node iterators that also 
 /// encapsulates the whitespace trim state.
@@ -112,18 +105,19 @@ impl<'source> Iterator for TrimIter<'source> {
         // Trim the end of the current node.
         let mut end = false;
 
+        //peek.foo();
+
         if let Some(next) = peek {
-            //println!("Got next node in the iterator...");
-            if next.trim_before() {
+            if next.trim().before {
                 end = true;
             }
         }
 
         if let Some(ref current) = node {
-            self.prev_trim_after = Some(current.trim_after());
+            self.prev_trim_after = Some(current.trim().after);
         }
 
-        let state = TrimState {start, end};
+        let state = TrimState::from((start, end));
 
         node.map(|n| NodeEvent::new(n, state))
     }

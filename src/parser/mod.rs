@@ -17,6 +17,7 @@ mod block;
 mod call;
 mod iter;
 mod path;
+pub mod trim;
 
 #[derive(Debug)]
 pub struct ParserOptions {
