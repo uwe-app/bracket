@@ -4,7 +4,7 @@ use bracket::{
 };
 use serde_json::json;
 
-static NAME: &str = "vars.rs";
+static NAME: &str = "trim.rs";
 
 #[test]
 fn trim_statement() -> Result<()> {
