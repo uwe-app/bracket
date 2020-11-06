@@ -22,7 +22,7 @@ fn main() -> Result<()> {
     let registry = Registry::new();
     let template = registry.parse("trim.rs", content)?;
 
-    for node in template.node().iter().trim() {
+    for node in template.node().iter().trim(Default::default()) {
         println!("{:#?}", node);
     }
 

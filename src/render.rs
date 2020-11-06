@@ -11,7 +11,7 @@ use crate::{
     output::Output,
     parser::{
         ast::{Block, Call, CallTarget, Node, ParameterValue, Path},
-        trim::TrimState,
+        trim::{TrimState, TrimHint},
     },
     template::Templates,
     RenderResult,
@@ -86,6 +86,7 @@ pub struct Render<'reg, 'source, 'render> {
     writer: Box<&'render mut dyn Output>,
     scopes: Vec<Scope<'source>>,
     trim: TrimState,
+    hint: TrimHint,
 }
 
 impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
@@ -112,6 +113,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             writer,
             scopes,
             trim: Default::default(),
+            hint: Default::default(),
         })
     }
 
@@ -155,10 +157,10 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         match node {
             Node::Block(ref block) => {
                 for node in block.nodes().iter() {
-                    self.render_helper(node)?;
+                    self.render_from_helper(node)?;
                 }
             }
-            _ => return self.render_helper(node),
+            _ => return self.render_from_helper(node),
         }
         Ok(())
     }
@@ -473,7 +475,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     /// Render and return a helper result wrapping the underlying render error.
-    pub(crate) fn render_helper(
+    pub(crate) fn render_from_helper(
         &mut self,
         node: &'source Node<'source>,
     ) -> BlockResult {
@@ -488,6 +490,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     ) -> RenderResult<()> {
 
         self.trim = trim;
+        self.hint = node.trim();
 
         match node {
             Node::Text(ref n) => {

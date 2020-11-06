@@ -174,8 +174,8 @@ impl<'reg, 'source> Template<'source> {
             Box::new(writer),
         )?;
 
-        for event in self.node.iter().trim() {
-            rc.render_node(event.0, event.1)?;
+        for event in self.node.iter().trim(Default::default()) {
+            rc.render_node(event.node, event.trim)?;
         }
 
         Ok(())

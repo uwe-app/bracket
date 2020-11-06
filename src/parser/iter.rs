@@ -1,12 +1,21 @@
 use crate::{
     SyntaxResult,
-    parser::{Parser, ast::Node, trim::TrimState},
+    parser::{Parser, ast::Node, trim::{TrimState, TrimHint}},
 };
 
 /// Event for node iterators that also 
 /// encapsulates the whitespace trim state.
 #[derive(Debug)]
-pub struct NodeEvent<'a>(pub &'a Node<'a>, pub TrimState);
+pub struct NodeEvent<'a> {
+    pub node: &'a Node<'a>,
+    pub trim: TrimState,
+}
+
+impl<'a> NodeEvent<'a> {
+    pub fn new(node: &'a Node, trim: TrimState) -> Self {
+        Self { node, trim } 
+    }
+}
 
 /// Iterate nodes yielding children for documents but does
 /// not descend into block nodes.
@@ -25,8 +34,13 @@ impl<'source> NodeIter<'source> {
         } 
     }
 
-    pub fn trim(self) -> TrimIter<'source> {
-        TrimIter::new(self, Default::default()) 
+    /// Create an iterator that adds trim state information 
+    /// to each node. 
+    ///
+    /// The hint can be used to determine the start trim information 
+    /// for the first node.
+    pub fn trim(self, hint: Option<TrimHint>) -> TrimIter<'source> {
+        TrimIter::new(self, hint) 
     }
 }
 
@@ -68,15 +82,15 @@ impl<'source> Iterator for NodeIter<'source> {
 pub struct TrimIter<'source> {
     iter: std::iter::Peekable<NodeIter<'source>>,
     prev_trim_after: Option<bool>,
-    trim: TrimState,
+    hint: Option<TrimHint>,
 }
 
 impl<'source> TrimIter<'source> {
-    pub fn new(nodes: NodeIter<'source>, trim: TrimState) -> Self {
+    pub fn new(nodes: NodeIter<'source>, hint: Option<TrimHint>) -> Self {
         let iter = nodes.peekable();
         Self {
             iter,
-            trim,
+            hint,
             prev_trim_after: None,
         }
     }
@@ -90,12 +104,16 @@ impl<'source> Iterator for TrimIter<'source> {
         let peek = self.iter.peek();
 
         // Trim the start of the current node.
-        let start = self.prev_trim_after.is_some()
-            && self.prev_trim_after.take().unwrap();
+        let start = if let Some(trim_after) = self.prev_trim_after.take() {
+            trim_after
+        } else {
+            if let Some(hint) = self.hint.take() {
+                hint.after 
+            } else { false }
+        };
 
         // Trim the end of the current node.
         let mut end = false;
-
         if let Some(next) = peek {
             if next.trim().before {
                 end = true;
@@ -108,7 +126,7 @@ impl<'source> Iterator for TrimIter<'source> {
 
         let state = TrimState::from((start, end));
 
-        node.map(|n| NodeEvent(n, state))
+        node.map(|n| NodeEvent::new(n, state))
     }
 }
 

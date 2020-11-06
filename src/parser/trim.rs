@@ -27,7 +27,7 @@ impl From<(bool, bool)> for TrimState {
 
 /// Hint that indicates how whitespace should be trimmed 
 /// for nodes before and after the current node.
-#[derive(Default, Debug)]
+#[derive(Clone, Copy, Default, Debug)]
 pub struct TrimHint {
     pub before: bool,
     pub after: bool,

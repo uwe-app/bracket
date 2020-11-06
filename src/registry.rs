@@ -5,7 +5,7 @@ use crate::{
     escape::{escape_html, EscapeFn},
     helper::HelperRegistry,
     output::{Output, StringOutput},
-    parser::{Parser, ParserOptions},
+    parser::{Parser, ParserOptions, trim::TrimHint},
     render::Render,
     template::{Template, Templates},
     Error, Result,
@@ -149,11 +149,10 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         )?;
 
         let mut parser = Parser::new(source, options);
+        let mut hint: Option<TrimHint> = Default::default();
         for node in parser {
             let node = node?;
-            //println!("Node {:?}", node);
-
-            for node in node.iter().trim() {
+            for node in node.iter().trim(hint) {
                 println!("{:#?}", node);
             }
             // FIXME: implement this, currently not working as we store the
