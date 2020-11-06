@@ -6,16 +6,7 @@ use crate::{
 /// Event for node iterators that also 
 /// encapsulates the whitespace trim state.
 #[derive(Debug)]
-pub struct NodeEvent<'a> {
-    node: &'a Node<'a>,
-    trim: TrimState,
-}
-
-impl<'a> NodeEvent<'a> {
-    pub fn new(node: &'a Node, trim: TrimState) -> Self {
-        Self { node, trim } 
-    }
-}
+pub struct NodeEvent<'a>(pub &'a Node<'a>, pub TrimState);
 
 /// Iterate nodes yielding children for documents but does
 /// not descend into block nodes.
@@ -117,7 +108,7 @@ impl<'source> Iterator for TrimIter<'source> {
 
         let state = TrimState::from((start, end));
 
-        node.map(|n| NodeEvent::new(n, state))
+        node.map(|n| NodeEvent(n, state))
     }
 }
 

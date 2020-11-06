@@ -3,7 +3,7 @@ use crate::parser::ast::Node;
 
 /// State for whitespace trim that should be applied 
 /// to a current node being rendered.
-#[derive(Default, Debug)]
+#[derive(Clone, Copy, Default, Debug)]
 pub struct TrimState {
     pub start: bool,
     pub end: bool,

@@ -9,7 +9,10 @@ use crate::{
     helper::{Assertion, BlockResult, BlockTemplate, Context, HelperRegistry},
     json,
     output::Output,
-    parser::ast::{Block, Call, CallTarget, Node, ParameterValue, Path},
+    parser::{
+        ast::{Block, Call, CallTarget, Node, ParameterValue, Path},
+        trim::TrimState,
+    },
     template::Templates,
     RenderResult,
 };
@@ -82,10 +85,7 @@ pub struct Render<'reg, 'source, 'render> {
     root: Value,
     writer: Box<&'render mut dyn Output>,
     scopes: Vec<Scope<'source>>,
-    trim_start: bool,
-    trim_end: bool,
-    prev_node: Option<&'source Node<'source>>,
-    next_node: Option<&'source Node<'source>>,
+    trim: TrimState,
 }
 
 impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
@@ -111,10 +111,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             root,
             writer,
             scopes,
-            trim_start: false,
-            trim_end: false,
-            prev_node: None,
-            next_node: None,
+            trim: Default::default(),
         })
     }
 
@@ -393,8 +390,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         &mut self,
         call: &'source Call<'source>,
     ) -> RenderResult<HelperValue> {
-        //println!("Statement {:?}", call.as_str());
-
         if call.is_partial() {
             self.render_partial(call, None)?;
             Ok(None)
@@ -445,7 +440,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         match node {
             Node::Document(ref doc) => {
                 for node in doc.nodes().iter() {
-                    self.render_node(node)?;
+                    self.render_node(node, Default::default())?;
                 }
             }
             _ => panic!("Invalid partial node encountered, must be a document"),
@@ -482,31 +477,17 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         &mut self,
         node: &'source Node<'source>,
     ) -> BlockResult {
-        self.render_node(node)
+        self.render_node(node, Default::default())
             .map_err(|e| HelperError::Render(Box::new(e)))
     }
 
     pub(crate) fn render_node(
         &mut self,
         node: &'source Node<'source>,
+        trim: TrimState,
     ) -> RenderResult<()> {
-        self.trim_start = if let Some(node) = self.prev_node {
-            node.trim_after()
-        } else {
-            false
-        };
 
-        self.trim_end = if let Some(node) = self.next_node {
-            node.trim_before()
-        } else {
-            false
-        };
-
-        //println!("Render node {:?}", node);
-
-        //let trim_after = node.trim_after();
-        //println!("Has trim before {}", trim_before);
-        //println!("Has trim after {}", trim_after);
+        self.trim = trim;
 
         match node {
             Node::Text(ref n) => {
@@ -522,11 +503,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             Node::RawComment(_) => {}
             Node::Comment(_) => {}
             Node::Document(ref doc) => {
-                let mut it = doc.nodes().iter();
-                self.next_node = it.next();
-                while let Some(node) = self.next_node {
-                    self.next_node = it.next();
-                    self.render_node(node)?;
+                for node in doc.nodes().iter() {
+                    self.render_node(node, Default::default())?;
                 }
             }
             Node::Statement(ref call) => {
@@ -540,20 +518,18 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             }
             Node::Condition(ref condition) => {
                 for node in condition.nodes().iter() {
-                    self.render_node(node)?;
+                    self.render_node(node, Default::default())?;
                 }
             }
             _ => todo!("Render other node types"),
         }
 
-        self.prev_node = Some(node);
-
         Ok(())
     }
 
     fn write_str(&mut self, s: &str, escape: bool) -> RenderResult<usize> {
-        let val = if self.trim_start { s.trim_start() } else { s };
-        let val = if self.trim_end { val.trim_end() } else { val };
+        let val = if self.trim.start { s.trim_start() } else { s };
+        let val = if self.trim.end { val.trim_end() } else { val };
         if val.is_empty() {
             return Ok(0);
         }
