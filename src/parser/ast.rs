@@ -592,12 +592,38 @@ impl<'source> Condition<'source> {
         &self.source[open.start..close.end]
     }
 
+    pub fn close(&self) -> &'source str {
+        if let Some(ref close) = self.close {
+            &self.source[close.start..close.end]
+        } else {
+            ""
+        }
+    }
+
     pub fn trim_before(&self) -> bool {
         self.call.trim_before()
     }
 
     pub fn trim_after(&self) -> bool {
         self.call.trim_after()
+    }
+
+    pub fn trim_before_close(&self) -> bool {
+        let close = self.close();
+        close.len() > 2 && WHITESPACE == &close[2..3]
+    }
+
+    pub fn trim_after_close(&self) -> bool {
+        let close = self.close();
+        let index = close.len() - 3;
+        close.len() > 2 && WHITESPACE == &close[index..index + 1]
+    }
+
+    pub fn trim_close(&self) -> TrimHint {
+        TrimHint {
+            before: self.trim_before_close(),
+            after: self.trim_after_close(),
+        }
     }
 }
 
@@ -610,6 +636,7 @@ impl fmt::Display for Condition<'_> {
 impl fmt::Debug for Condition<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Condition")
+            .field("close", &self.close)
             .field("call", &self.call)
             .field("nodes", &self.nodes)
             .finish()
@@ -662,10 +689,24 @@ impl<'source> Block<'source> {
         }
     }
 
-    pub(crate) fn exit(&mut self, span: Range<usize>/*, end: Call<'source>*/) {
-        self.close_condition(span.clone());
-        self.close = Some(span);
+    pub(crate) fn exit(&mut self, span: Range<usize>) {
 
+        // NOTE: close_condition() sets the span up until the next
+        // NOTE: block but when we exit a block node the last conditional
+        // NOTE: needs a close matching the end tag so that whitespace
+        // NOTE: trim logic is correct.
+        if !self.conditionals.is_empty() {
+            let mut last = self.conditionals.last_mut().unwrap();
+            match &mut last {
+                Node::Condition(ref mut condition) => {
+                    condition.close = Some(span.clone());
+                }
+                _ => {}
+            }
+        }
+        
+
+        self.close = Some(span);
     }
 
     pub fn as_str(&self) -> &'source str {

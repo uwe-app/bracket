@@ -168,10 +168,20 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
         let mut hint: Option<TrimHint> = None;
 
+        println!("Rendering template {:#?}", self.hint);
+
         for event in node.block_iter().trim(self.hint) {
             let mut trim = event.trim;
+            println!("Got trim event {:?}", trim);
             if event.last {
                 match node {
+                    Node::Condition(ref block) => {
+                        let last_hint = block.trim_close();
+                        if last_hint.before {
+                            trim.end = true; 
+                        }
+                        hint = Some(last_hint);
+                    }
                     Node::Block(ref block) => {
                         let last_hint = block.trim_close();
                         if last_hint.before {
