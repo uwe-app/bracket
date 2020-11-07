@@ -61,3 +61,15 @@ fn trim_after_block_end() -> Result<()> {
     assert_eq!("bar", &result);
     Ok(())
 }
+
+#[test]
+fn trim_condition_after() -> Result<()> {
+    let mut registry = Registry::new();
+    let value = r"{{#if false}}WRONG{{else~}}
+{{foo}}{{/if~}}
+";
+    let data = json!({"foo": "bar"});
+    let result = registry.once(NAME, value, &data)?;
+    assert_eq!("bar", &result);
+    Ok(())
+}
