@@ -146,7 +146,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     where
         T: Serialize,
     {
-        let mut rc = Render::new(
+        let rc = Render::new(
             self.escape(),
             self.helpers(),
             self.templates(),
@@ -159,12 +159,12 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         // FIXME: next and previous nodes in the renderer which means
         // FIXME: node is not living long enough for the renderer to
         // FIXME: do it's job.
-        let mut parser = Parser::new(source, options);
+        let parser = Parser::new(source, options);
         let mut hint: Option<TrimHint> = Default::default();
         for node in parser {
             let node = node?;
             for event in node.iter().trim(hint) {
-                println!("{:#?}", node);
+                println!("{:#?}", event.node);
                 //rc.render_node(event.node, event.trim)?;
             }
         }
