@@ -155,18 +155,18 @@ impl<'reg, 'source> Registry<'reg, 'source> {
             Box::new(writer),
         )?;
 
+        // FIXME: implement this, currently not working as we store the
+        // FIXME: next and previous nodes in the renderer which means
+        // FIXME: node is not living long enough for the renderer to
+        // FIXME: do it's job.
         let mut parser = Parser::new(source, options);
         let mut hint: Option<TrimHint> = Default::default();
         for node in parser {
             let node = node?;
-            for node in node.iter().trim(hint) {
+            for event in node.iter().trim(hint) {
                 println!("{:#?}", node);
+                //rc.render_node(event.node, event.trim)?;
             }
-            // FIXME: implement this, currently not working as we store the
-            // FIXME: next and previous nodes in the renderer which means
-            // FIXME: node is not living long enough for the renderer to
-            // FIXME: do it's job.
-            //rc.render_node(&node)?;
         }
         Ok(())
     }

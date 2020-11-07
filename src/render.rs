@@ -29,13 +29,13 @@ enum HelperType {
 }
 
 #[derive(Debug)]
-pub struct Scope<'source> {
+pub struct Scope<'scope> {
     value: Option<Value>,
     locals: Value,
-    partial_block: Option<&'source Node<'source>>,
+    partial_block: Option<&'scope Node<'scope>>,
 }
 
-impl<'source> Scope<'source> {
+impl<'scope> Scope<'scope> {
     pub fn new() -> Self {
         Self {
             locals: Value::Object(Map::new()),
@@ -75,11 +75,11 @@ impl<'source> Scope<'source> {
         &self.value
     }
 
-    pub fn set_partial_block(&mut self, block: Option<&'source Node<'source>>) {
+    pub fn set_partial_block(&mut self, block: Option<&'scope Node<'scope>>) {
         self.partial_block = block;
     }
 
-    pub fn partial_block_mut(&mut self) -> &mut Option<&'source Node<'source>> {
+    pub fn partial_block_mut(&mut self) -> &mut Option<&'scope Node<'scope>> {
         &mut self.partial_block
     }
 }
@@ -163,16 +163,16 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     /// Block helpers should call this when they want to render an inner template.
     pub fn template(
         &mut self,
-        node: &'source Node<'source>,
+        node: &'source Node<'_>,
     ) -> Result<(), HelperError> {
 
         let mut hint: Option<TrimHint> = None;
 
-        println!("Rendering template {:#?}", self.hint);
+        //println!("Rendering template {:#?}", self.hint);
 
         for event in node.block_iter().trim(self.hint) {
             let mut trim = event.trim;
-            println!("Got trim event {:?}", trim);
+            //println!("Got trim event {:?}", trim);
             if event.last {
                 match node {
                     Node::Condition(ref block) => {
@@ -304,7 +304,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     /// Create the context arguments list.
     fn arguments(
         &mut self,
-        call: &'source Call<'source>,
+        call: &'source Call<'_>,
     ) -> RenderResult<Vec<Value>> {
         let mut out: Vec<Value> = Vec::new();
         for p in call.arguments() {
@@ -325,7 +325,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     /// Create the context hash parameters.
     fn hash(
         &mut self,
-        call: &'source Call<'source>,
+        call: &'source Call<'_>,
     ) -> RenderResult<Map<String, Value>> {
         let mut out = Map::new();
         for (k, p) in call.hash() {
@@ -356,7 +356,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         &mut self,
         kind: HelperType,
         name: &'source str,
-        call: &'source Call<'source>,
+        call: &'source Call<'_>,
         mut content: Option<&'source Node<'source>>,
         ) -> RenderResult<HelperValue> {
 
@@ -402,7 +402,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     // Fallible version of path lookup.
     fn resolve(
         &mut self,
-        path: &'source Path<'source>,
+        path: &'source Path<'_>,
     ) -> RenderResult<HelperValue> {
         if let Some(value) = self.lookup(path).cloned().take() {
             return Ok(Some(value));
@@ -414,7 +414,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     /// Invoke a call and return the result.
     pub fn call(
         &mut self,
-        call: &'source Call<'source>,
+        call: &'source Call<'_>,
     ) -> RenderResult<HelperValue> {
         match call.target() {
             CallTarget::Path(ref path) => {
@@ -453,7 +453,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
     fn statement(
         &mut self,
-        call: &'source Call<'source>,
+        call: &'source Call<'_>,
     ) -> RenderResult<HelperValue> {
         if call.is_partial() {
             self.render_partial(call, None)?;
@@ -465,7 +465,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
     fn get_partial_name<'a>(
         &mut self,
-        call: &'source Call<'source>,
+        call: &'source Call<'_>,
     ) -> RenderResult<String> {
         match call.target() {
             CallTarget::Path(ref path) => {
@@ -485,7 +485,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
     fn render_partial(
         &mut self,
-        call: &'source Call<'source>,
+        call: &'source Call<'_>,
         partial_block: Option<&'source Node<'source>>,
     ) -> RenderResult<()> {
         let name = self.get_partial_name(call)?;
@@ -511,8 +511,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
     fn block(
         &mut self,
-        node: &'source Node<'source>,
-        block: &'source Block<'source>,
+        node: &'source Node<'_>,
+        block: &'source Block<'_>,
     ) -> RenderResult<()> {
         let call = block.call();
 
@@ -536,7 +536,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     /// Render and return a helper result wrapping the underlying render error.
     pub(crate) fn render_from_helper(
         &mut self,
-        node: &'source Node<'source>,
+        node: &'source Node<'_>,
         trim: TrimState,
     ) -> BlockResult {
         self.render_node(node, trim)
@@ -545,7 +545,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
     pub(crate) fn render_node(
         &mut self,
-        node: &'source Node<'source>,
+        node: &'source Node<'_>,
         trim: TrimState,
     ) -> RenderResult<()> {
         self.trim = trim;
