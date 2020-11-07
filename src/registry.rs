@@ -30,12 +30,13 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         }
     }
 
-    /// Create a registry using a collection of templates.
+    /*
     pub fn new_templates(templates: Templates<'source>) -> Self {
         let mut reg = Registry::new();
         reg.templates = templates;
         reg
     }
+    */
 
     /// Set the escape function for rendering.
     pub fn set_escape(&mut self, escape: EscapeFn) {
@@ -230,5 +231,14 @@ impl<'reg, 'source> Registry<'reg, 'source> {
             writer,
         )?;
         Ok(())
+    }
+}
+
+/// Create a registry using a collection of templates.
+impl<'reg, 'source> From<Templates<'source>> for Registry<'reg, 'source> {
+    fn from(templates: Templates<'source>) -> Self {
+        let mut reg = Registry::new();
+        reg.templates = templates;
+        reg
     }
 }

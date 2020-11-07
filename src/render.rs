@@ -6,7 +6,7 @@ use std::ops::Range;
 use crate::{
     error::{HelperError, RenderError},
     escape::EscapeFn,
-    helper::{Assertion, BlockResult, BlockTemplate, Context, HelperRegistry},
+    helper::{Assertion, BlockHelper, BlockResult, BlockTemplate, Context, Helper, HelperRegistry},
     json,
     output::Output,
     parser::{
@@ -20,6 +20,13 @@ use crate::{
 static PARTIAL_BLOCK: &str = "@partial-block";
 
 type HelperValue = Option<Value>;
+
+// Used to determine how to find and invoke helpers.
+enum HelperType {
+    Value,
+    Block,
+    Raw,
+}
 
 #[derive(Debug)]
 pub struct Scope<'source> {
@@ -85,6 +92,7 @@ pub struct Render<'reg, 'source, 'render> {
     root: Value,
     writer: Box<&'render mut dyn Output>,
     scopes: Vec<Scope<'source>>,
+    local_helpers: Option<&'render HelperRegistry<'render>>,
     trim: TrimState,
     hint: Option<TrimHint>,
     end_tag_hint: Option<TrimHint>,
@@ -113,6 +121,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             root,
             writer,
             scopes,
+            local_helpers: None,
             trim: Default::default(),
             hint: None,
             end_tag_hint: None,
@@ -266,6 +275,11 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 json::find_parts(
                     path.components().iter().map(|c| c.as_str()),
                     scope.as_value(),
+                ).or(
+                    json::find_parts(
+                        path.components().iter().map(|c| c.as_str()),
+                        &self.root,
+                    )
                 )
             // Lookup in the root scope
             } else {
@@ -322,35 +336,57 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         Ok(out)
     }
 
-    fn invoke_helper(
-        &mut self,
-        name: &'source str,
-        call: &'source Call<'source>,
-    ) -> RenderResult<HelperValue> {
-        if let Some(helper) = self.helpers.get(name) {
-            let args = self.arguments(call)?;
-            let hash = self.hash(call)?;
-            let context = Context::new(name, args, hash);
-            return Ok(helper.call(self, context)?);
-        }
-
-        Ok(None)
+    /// Local helpers can be used by global helpers to define 
+    /// helpers for a render.
+    pub fn local_helpers(&self) -> &Option<&'render HelperRegistry<'render>> {
+        &self.local_helpers 
     }
 
-    fn invoke_block_helper(
+    fn invoke(
         &mut self,
+        kind: HelperType,
         name: &'source str,
         call: &'source Call<'source>,
-        template: &'source Node<'source>,
-    ) -> RenderResult<()> {
-        if let Some(helper) = self.helpers.get_block(name) {
-            let args = self.arguments(call)?;
-            let hash = self.hash(call)?;
-            let context = Context::new(name, args, hash);
-            let block = BlockTemplate::new(template);
-            helper.call(self, context, block)?;
-        }
-        Ok(())
+        mut content: Option<&'source Node<'source>>,
+        ) -> RenderResult<HelperValue> {
+
+        let args = self.arguments(call)?;
+        let hash = self.hash(call)?;
+        let context = Context::new(name, args, hash);
+
+        let value: Option<Value> = match kind {
+            HelperType::Value => {
+                if let Some(local_helpers) = self.local_helpers {
+                    if let Some(helper) = local_helpers.get(name) {
+                        helper.call(self, context)?
+                    } else { None }
+                } else {
+                    if let Some(helper) = self.helpers.get(name) {
+                        helper.call(self, context)?
+                    } else { None }
+                }
+            } 
+            HelperType::Block => {
+                let template = content.take().unwrap();    
+
+                if let Some(local_helpers) = self.local_helpers {
+                    if let Some(helper) = local_helpers.get_block(name) {
+                        let block = BlockTemplate::new(template);
+                        helper.call(self, context, block).map(|_| None)?
+                    } else { None }
+                } else {
+                    if let Some(helper) = self.helpers.get_block(name) {
+                        let block = BlockTemplate::new(template);
+                        helper.call(self, context, block).map(|_| None)?
+                    } else { None }
+                }
+            }
+            HelperType::Raw => {
+                todo!("Resolve raw helpers");
+            }
+        };
+
+        Ok(value)
     }
 
     // Fallible version of path lookup.
@@ -393,7 +429,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 // Simple paths may be helpers
                 } else if path.is_simple() {
                     if let Some(_) = self.helpers.get(path.as_str()) {
-                        self.invoke_helper(path.as_str(), call)
+                        self.invoke(HelperType::Value, path.as_str(), call, None)
                     } else {
                         self.resolve(path)
                     }
@@ -476,7 +512,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             match call.target() {
                 CallTarget::Path(ref path) => {
                     if path.is_simple() {
-                        self.invoke_block_helper(path.as_str(), call, node)?;
+                        self.invoke(
+                            HelperType::Block, path.as_str(), call, Some(node))?;
                     }
                 }
                 //CallTarget::SubExpr(ref sub) => self.call(sub),

@@ -2,6 +2,7 @@ extern crate log;
 extern crate pretty_env_logger;
 
 use std::path::PathBuf;
+use std::convert::TryFrom;
 
 use bracket::{
     registry::Registry,
@@ -45,10 +46,7 @@ fn main() -> Result<()> {
     )?;
     loader.insert(name, content);
 
-    let mut templates = Templates::new();
-    templates
-        .build(&loader)
-        .expect("Failed to compile templates");
+    let mut templates = Templates::try_from(&loader)?;
 
     //println!("{:#?}", templates.get(name));
 
@@ -57,7 +55,7 @@ fn main() -> Result<()> {
     //println!("{:?}", node);
     //}
 
-    let registry = Registry::new_templates(templates);
+    let registry = Registry::from(templates);
 
     match registry.render(name, &data) {
         Ok(result) => {

@@ -1,5 +1,6 @@
 //! Templates add rendering capability to nodes.
 use std::collections::HashMap;
+use std::convert::TryFrom;
 
 #[cfg(feature = "fs")]
 use std::path::Path;
@@ -93,7 +94,7 @@ impl<'source> Templates<'source> {
         }
     }
 
-    pub fn build(&mut self, loader: &'source Loader) -> Result<()> {
+    fn build(&mut self, loader: &'source Loader) -> Result<()> {
         for (k, v) in loader.sources() {
             let template = Templates::compile(v, Default::default())?;
             self.register(k.as_str(), template);
@@ -122,6 +123,15 @@ impl<'source> Templates<'source> {
 
     pub fn compile(s: &str, options: ParserOptions) -> Result<Template<'_>> {
         Ok(Template::compile(s, options).map_err(Error::from)?)
+    }
+}
+
+impl<'source> TryFrom<&'source Loader> for Templates<'source> {
+    type Error = crate::error::Error;
+    fn try_from(loader: &'source Loader) -> std::result::Result<Self, Self::Error> {
+        let mut tpl = Templates::new();
+        tpl.build(loader)?;
+        Ok(tpl)
     }
 }
 

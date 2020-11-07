@@ -24,7 +24,7 @@ pub enum Block {
     #[regex(r"\{\{\{?~?[\t ]*")]
     StartStatement,
 
-    #[regex(r"\{\{\~?#[\t ]*")]
+    #[regex(r"\{\{\~?[\t ]*#[\t ]*")]
     StartBlockScope,
 
     #[regex(r"\{\{\~?[\t ]*/")]
