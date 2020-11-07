@@ -87,12 +87,12 @@ impl<'scope> Scope<'scope> {
 pub struct Render<'reg, 'source, 'render> {
     escape: &'reg EscapeFn,
     helpers: &'reg HelperRegistry<'reg>,
+    //local_helpers: &'render mut HelperRegistry<'render>,
     templates: &'source Templates<'source>,
     source: &'source str,
     root: Value,
     writer: Box<&'render mut dyn Output>,
     scopes: Vec<Scope<'source>>,
-    local_helpers: HelperRegistry<'render>,
     trim: TrimState,
     hint: Option<TrimHint>,
     end_tag_hint: Option<TrimHint>,
@@ -102,6 +102,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     pub fn new<T>(
         escape: &'reg EscapeFn,
         helpers: &'reg HelperRegistry<'reg>,
+        //local_helpers: &'render mut HelperRegistry<'render>,
         templates: &'source Templates<'source>,
         source: &'source str,
         data: &T,
@@ -116,12 +117,12 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         Ok(Self {
             escape,
             helpers,
+            //local_helpers,
             templates,
             source,
             root,
             writer,
             scopes,
-            local_helpers: Default::default(),
             trim: Default::default(),
             hint: None,
             end_tag_hint: None,
@@ -364,12 +365,14 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
         let value: Option<Value> = match kind {
             HelperType::Value => {
+                //if let Some(helper) = self.local_helpers.get(name).or(self.helpers.get(name)) {
                 if let Some(helper) = self.helpers.get(name) {
                     helper.call(self, context)?
                 } else { None }
             } 
             HelperType::Block => {
                 let template = content.take().unwrap();    
+                //if let Some(helper) = self.local_helpers.get_block(name).or(self.helpers.get_block(name)) {
                 if let Some(helper) = self.helpers.get_block(name) {
                     let block = BlockTemplate::new(template);
                     helper.call(self, context, block).map(|_| None)?

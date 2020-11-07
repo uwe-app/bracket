@@ -24,8 +24,10 @@ impl BlockHelper for EachHelper {
     ) -> BlockResult {
         rc.arity(&ctx, 1..1)?;
 
-        let (name, mut args) = ctx.into();
-        let target = args.swap_remove(0);
+        //let (name, mut args) = ctx.into();
+        let name = ctx.name();
+        let args = ctx.arguments();
+        let target = args.get(0).unwrap();
 
         rc.push_scope(Scope::new());
         match target {
@@ -43,7 +45,7 @@ impl BlockHelper for EachHelper {
                             Value::Number(Number::from(index)),
                         );
                         scope.set_local(KEY, Value::String(key.to_owned()));
-                        scope.set_base_value(value);
+                        scope.set_base_value(value.clone());
                     }
                     rc.template(block.template())?;
                 }
@@ -58,12 +60,12 @@ impl BlockHelper for EachHelper {
                             INDEX,
                             Value::Number(Number::from(index)),
                         );
-                        scope.set_base_value(value);
+                        scope.set_base_value(value.clone());
                     }
                     rc.template(block.template())?;
                 }
             }
-            _ => return Err(Error::IterableExpected(name, 1)),
+            _ => return Err(Error::IterableExpected(name.to_string(), 1)),
         }
         rc.pop_scope();
 

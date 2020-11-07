@@ -173,14 +173,15 @@ impl<'reg, 'source> Template<'source> {
     }
 
     /// Render this template to the given writer.
-    pub fn render<T>(
+    pub fn render<'a, T>(
         &self,
         escape: &EscapeFn,
         helpers: &'reg HelperRegistry<'reg>,
+        //local_helpers: &'a mut HelperRegistry<'a>,
         templates: &'source Templates<'source>,
         name: &str,
         data: &T,
-        writer: &mut impl Output,
+        writer: &'a mut impl Output,
     ) -> RenderResult<()>
     where
         T: Serialize,
@@ -188,6 +189,7 @@ impl<'reg, 'source> Template<'source> {
         let mut rc = Render::new(
             escape,
             helpers,
+            //local_helpers,
             templates,
             self.source,
             data,

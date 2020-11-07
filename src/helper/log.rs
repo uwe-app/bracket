@@ -26,7 +26,9 @@ impl Helper for LogHelper {
     ) -> ValueResult {
         rc.arity(&ctx, 1..usize::MAX)?;
 
-        let (name, args, hash) = ctx.into();
+        let args = ctx.arguments();
+        let hash = ctx.hash();
+
         let message = args
             .iter()
             .map(|v| v.to_string())

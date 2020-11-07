@@ -19,7 +19,8 @@ impl Helper for IfHelper {
     ) -> ValueResult {
         rc.arity(&ctx, 1..usize::MAX)?;
 
-        let args: Vec<Value> = ctx.into();
+        let args = ctx.arguments();
+
         let mut result = Value::Bool(true);
         for val in args {
             if !rc.is_truthy(&val) {

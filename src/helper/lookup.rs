@@ -15,8 +15,8 @@ impl Helper for LookupHelper {
         rc.arity(&ctx, 2..2)?;
 
         let name = ctx.name();
-        let (name, mut args) = ctx.into();
-        let target = args.swap_remove(0);
+        let args = ctx.arguments();
+        let target = args.get(0).unwrap();
 
         let field = args
             .get(0)

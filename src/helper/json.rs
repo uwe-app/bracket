@@ -20,8 +20,8 @@ impl Helper for JsonHelper {
     ) -> ValueResult {
         rc.arity(&ctx, 1..2)?;
 
-        let mut args: Vec<Value> = ctx.into();
-        let target = args.swap_remove(0);
+        let args = ctx.arguments();
+        let target = args.get(0).unwrap();
 
         let pretty = rc.is_truthy(args.get(0).unwrap_or(&Value::Bool(false)));
         let value = if pretty {

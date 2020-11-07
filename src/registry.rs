@@ -98,12 +98,15 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     where
         T: Serialize,
     {
+
         let mut writer = StringOutput::new();
+        //let mut local_helpers = HelperRegistry::new();
         let template =
             self.compile(source, ParserOptions::new(name.to_string()))?;
         template.render(
             self.escape(),
             self.helpers(),
+            //&mut local_helpers,
             self.templates(),
             name,
             data,
@@ -146,9 +149,12 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     where
         T: Serialize,
     {
+        /*
+        let mut local_helpers = HelperRegistry::new();
         let rc = Render::new(
             self.escape(),
             self.helpers(),
+            &mut local_helpers,
             self.templates(),
             source,
             data,
@@ -168,6 +174,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
                 //rc.render_node(event.node, event.trim)?;
             }
         }
+        */
         Ok(())
     }
 
@@ -194,10 +201,13 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     where
         T: Serialize,
     {
+
+        //let mut local_helpers = HelperRegistry::new();
         let mut writer = StringOutput::new();
         template.render(
             self.escape(),
             self.helpers(),
+            //&mut local_helpers,
             self.templates(),
             name,
             data,
@@ -218,6 +228,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     where
         T: Serialize,
     {
+        //let mut local_helpers = HelperRegistry::new();
         let tpl = self
             .templates
             .get(name)
@@ -225,6 +236,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         tpl.render(
             self.escape(),
             self.helpers(),
+            //&mut local_helpers,
             self.templates(),
             name,
             data,

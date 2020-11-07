@@ -105,15 +105,14 @@ impl<'source> BlockTemplate<'source> {
 }
 
 /// Context for the call to a helper.
-pub struct Context<'source> {
+pub struct Context<'ctx> {
     name: String,
     arguments: Vec<Value>,
     hash: Map<String, Value>,
-    // FIXME: remove this and the lifetime?
-    phantom: std::marker::PhantomData<&'source str>,
+    helpers: HelperRegistry<'ctx>,
 }
 
-impl<'source> Context<'source> {
+impl<'ctx> Context<'ctx> {
     pub fn new(
         name: String,
         arguments: Vec<Value>,
@@ -123,7 +122,7 @@ impl<'source> Context<'source> {
             name,
             arguments,
             hash,
-            phantom: std::marker::PhantomData,
+            helpers: Default::default(),
         }
     }
 
@@ -140,6 +139,7 @@ impl<'source> Context<'source> {
     }
 }
 
+/*
 impl Into<Vec<Value>> for Context<'_> {
     fn into(self) -> Vec<Value> {
         self.arguments
@@ -163,6 +163,7 @@ impl Into<(String, Vec<Value>, Map<String, Value>)> for Context<'_> {
         (self.name, self.arguments, self.hash)
     }
 }
+*/
 
 /// Trait for types that provide helper assertions.
 pub trait Assertion {
@@ -231,10 +232,6 @@ impl<'reg> HelperRegistry<'reg> {
     ) {
         self.block_helpers.insert(name, helper);
     }
-
-    //pub fn helpers(&self) -> &HashMap<&'reg str, Box<dyn Helper + 'reg>> {
-    //&self.helpers
-    //}
 
     pub fn get(&self, name: &str) -> Option<&Box<dyn Helper + 'reg>> {
         self.helpers.get(name)

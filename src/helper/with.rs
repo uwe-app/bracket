@@ -17,11 +17,11 @@ impl BlockHelper for WithHelper {
     ) -> BlockResult {
         rc.arity(&ctx, 1..1)?;
 
-        let mut args: Vec<Value> = ctx.into();
-        let target = args.swap_remove(0);
+        let args = ctx.arguments();
+        let target = args.get(0).unwrap();
         rc.push_scope(Scope::new());
         if let Some(ref mut scope) = rc.scope_mut() {
-            scope.set_base_value(target);
+            scope.set_base_value(target.clone());
         }
         rc.template(block.template())?;
         rc.pop_scope();
