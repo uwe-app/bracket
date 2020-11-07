@@ -73,3 +73,33 @@ fn trim_condition_after() -> Result<()> {
     assert_eq!("bar", &result);
     Ok(())
 }
+
+#[test]
+fn trim_condition_if() -> Result<()> {
+    let mut registry = Registry::new();
+    let value = r"{{#if true ~}}
+{{foo}}
+{{~else~}}
+{{foo}}
+{{~/if~}}
+";
+    let data = json!({"foo": "bar"});
+    let result = registry.once(NAME, value, &data)?;
+    assert_eq!("bar", &result);
+    Ok(())
+}
+
+#[test]
+fn trim_condition_else() -> Result<()> {
+    let mut registry = Registry::new();
+    let value = r"{{#if false ~}}
+{{foo}}
+{{~else~}}
+{{foo}}
+{{~/if~}}
+";
+    let data = json!({"foo": "bar"});
+    let result = registry.once(NAME, value, &data)?;
+    assert_eq!("bar", &result);
+    Ok(())
+}
