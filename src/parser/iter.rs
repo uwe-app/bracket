@@ -13,12 +13,13 @@ use crate::{
 pub struct NodeEvent<'a> {
     pub node: &'a Node<'a>,
     pub trim: TrimState,
+    pub first: bool,
     pub last: bool,
 }
 
 impl<'a> NodeEvent<'a> {
-    pub fn new(node: &'a Node, trim: TrimState, last: bool) -> Self {
-        Self { node, trim, last }
+    pub fn new(node: &'a Node, trim: TrimState, first: bool, last: bool) -> Self {
+        Self { node, trim, first, last }
     }
 }
 
@@ -152,6 +153,8 @@ impl<'source> Iterator for TrimIter<'source> {
         let node = self.iter.next();
         let peek = self.iter.peek();
 
+        let first = self.prev_trim_after.is_none();
+
         // Trim the start of the current node.
         let start = if let Some(trim_after) = self.prev_trim_after.take() {
             trim_after
@@ -177,6 +180,6 @@ impl<'source> Iterator for TrimIter<'source> {
 
         let state = TrimState::from((start, end));
 
-        node.map(|n| NodeEvent::new(n, state, peek.is_none()))
+        node.map(|n| NodeEvent::new(n, state, first, peek.is_none()))
     }
 }

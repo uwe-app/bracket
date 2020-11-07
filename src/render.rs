@@ -167,12 +167,16 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     ) -> Result<(), HelperError> {
 
         let mut hint: Option<TrimHint> = None;
-
-        //println!("Rendering template {:#?}", self.hint);
-
         for event in node.block_iter().trim(self.hint) {
             let mut trim = event.trim;
-            //println!("Got trim event {:?}", trim);
+
+            if event.first {
+                let hint = node.trim();
+                if hint.after {
+                    trim.start = true;
+                }
+            }
+
             if event.last {
                 match node {
                     Node::Condition(ref block) => {
