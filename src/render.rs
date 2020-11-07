@@ -87,6 +87,7 @@ pub struct Render<'reg, 'source, 'render> {
     scopes: Vec<Scope<'source>>,
     trim: TrimState,
     hint: Option<TrimHint>,
+    end_tag_hint: Option<TrimHint>,
 }
 
 impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
@@ -113,7 +114,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             writer,
             scopes,
             trim: Default::default(),
-            hint: Default::default(),
+            hint: None,
+            end_tag_hint: None,
         })
     }
 
@@ -155,20 +157,28 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         node: &'source Node<'source>,
     ) -> Result<(), HelperError> {
 
+        let mut hint: Option<TrimHint> = None;
+
         for event in node.block_iter().trim(self.hint) {
             let mut trim = event.trim;
             if event.last {
                 match node {
                     Node::Block(ref block) => {
-                        if block.trim_before_close() {
+                        let last_hint = block.trim_close();
+                        if last_hint.before {
                             trim.end = true; 
                         }
+                        hint = Some(last_hint);
                     }
                     _ => {}
                 }
             }
             self.render_from_helper(event.node, trim)?;
         }
+
+        // Store the hint so we can remove leading whitespace
+        // after a block end tag
+        self.end_tag_hint = hint;
 
         Ok(())
     }
@@ -494,6 +504,12 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         self.trim = trim;
         self.hint = Some(node.trim());
 
+        if let Some(hint) = self.end_tag_hint.take() {
+            if hint.after {
+                self.trim.start = true;
+            }        
+        }
+
         match node {
             Node::Text(ref n) => {
                 self.write_str(n.as_str(), false)?;
@@ -525,6 +541,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     fn write_str(&mut self, s: &str, escape: bool) -> RenderResult<usize> {
+
         let val = if self.trim.start { s.trim_start() } else { s };
         let val = if self.trim.end { val.trim_end() } else { val };
         if val.is_empty() {

@@ -157,7 +157,7 @@ impl<'source> Parser<'source> {
         //println!("Advance token {:?}", &next);
 
         match next {
-            Token::Block(lex, span) => match lex {
+            Token::Block(lex, mut span) => match lex {
                 lexer::Block::StartRawBlock => {
                     return block::raw(
                         self.source,
@@ -339,7 +339,11 @@ impl<'source> Parser<'source> {
                             ));
                         }
 
-                        // TODO: update span for entire close tag: `{{/name}}`!
+                        // Update span for entire close tag: `{{/name}}`!
+                        if temp.call().is_closed() {
+                            let end_tag_close = temp.call().span();
+                            span.end = end_tag_close.end;
+                        }
                         block.exit(span);
 
                         return Ok(Some(Node::Block(block)));

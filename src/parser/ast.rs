@@ -57,7 +57,7 @@ impl<'source> Node<'source> {
             | Self::Comment(_) => false,
             Self::Statement(ref n) => n.trim_before(),
             Self::Block(ref n) => n.trim_before(),
-            Self::Condition(ref n) => todo!("trim before on condition"),
+            Self::Condition(ref n) => n.trim_before(),
         }
     }
 
@@ -72,7 +72,7 @@ impl<'source> Node<'source> {
             | Self::Comment(_) => false,
             Self::Statement(ref n) => n.trim_after(),
             Self::Block(ref n) => n.trim_after(),
-            Self::Condition(ref n) => todo!("trim after on condition"),
+            Self::Condition(ref n) => n.trim_after(),
         }
     }
 
@@ -369,7 +369,7 @@ impl<'source> CallTarget<'source> {
         match *self {
             Self::Path(ref path) => path.is_empty(),
             Self::SubExpr(ref call) => {
-                println!("Checking empty on sub expression...");
+                //println!("Checking empty on sub expression...");
                 call.is_empty()
             }
         }
@@ -451,6 +451,16 @@ impl<'source> Call<'source> {
 
     pub fn is_closed(&self) -> bool {
         self.close.is_some()
+    }
+
+    /// The full range for this call; if the call is not closed
+    /// only the open span is returned.
+    pub fn span(&self) -> Range<usize> {
+        if let Some(ref close) = self.close {
+            self.open.start..close.end
+        } else {
+            self.open.clone()
+        }
     }
 
     pub fn as_str(&self) -> &'source str {
@@ -581,6 +591,14 @@ impl<'source> Condition<'source> {
         let close = self.close.as_ref().unwrap_or(open);
         &self.source[open.start..close.end]
     }
+
+    pub fn trim_before(&self) -> bool {
+        self.call.trim_before()
+    }
+
+    pub fn trim_after(&self) -> bool {
+        self.call.trim_after()
+    }
 }
 
 impl fmt::Display for Condition<'_> {
@@ -644,9 +662,10 @@ impl<'source> Block<'source> {
         }
     }
 
-    pub(crate) fn exit(&mut self, span: Range<usize>) {
+    pub(crate) fn exit(&mut self, span: Range<usize>/*, end: Call<'source>*/) {
         self.close_condition(span.clone());
         self.close = Some(span);
+
     }
 
     pub fn as_str(&self) -> &'source str {
@@ -723,8 +742,16 @@ impl<'source> Block<'source> {
     }
 
     pub fn trim_after_close(&self) -> bool {
-        let close = self.call.close();
-        close.len() > 2 && WHITESPACE == &close[0..1]
+        let close = self.close();
+        let index = close.len() - 3;
+        close.len() > 2 && WHITESPACE == &close[index..index + 1]
+    }
+
+    pub fn trim_close(&self) -> TrimHint {
+        TrimHint {
+            before: self.trim_before_close(),
+            after: self.trim_after_close(),
+        }
     }
 }
 
