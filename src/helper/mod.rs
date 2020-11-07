@@ -106,14 +106,16 @@ impl<'source> BlockTemplate<'source> {
 
 /// Context for the call to a helper.
 pub struct Context<'source> {
-    name: &'source str,
+    name: String,
     arguments: Vec<Value>,
     hash: Map<String, Value>,
+    // FIXME: remove this and the lifetime?
+    phantom: std::marker::PhantomData<&'source str>,
 }
 
 impl<'source> Context<'source> {
     pub fn new(
-        name: &'source str,
+        name: String,
         arguments: Vec<Value>,
         hash: Map<String, Value>,
     ) -> Self {
@@ -121,11 +123,12 @@ impl<'source> Context<'source> {
             name,
             arguments,
             hash,
+            phantom: std::marker::PhantomData,
         }
     }
 
-    pub fn name(&self) -> &'source str {
-        self.name
+    pub fn name(&self) -> &str {
+        &self.name
     }
 
     pub fn arguments(&self) -> &Vec<Value> {
@@ -145,19 +148,19 @@ impl Into<Vec<Value>> for Context<'_> {
 
 impl Into<String> for Context<'_> {
     fn into(self) -> String {
-        self.name.to_string()
+        self.name
     }
 }
 
 impl Into<(String, Vec<Value>)> for Context<'_> {
     fn into(self) -> (String, Vec<Value>) {
-        (self.name.to_string(), self.arguments)
+        (self.name, self.arguments)
     }
 }
 
 impl Into<(String, Vec<Value>, Map<String, Value>)> for Context<'_> {
     fn into(self) -> (String, Vec<Value>, Map<String, Value>) {
-        (self.name.to_string(), self.arguments, self.hash)
+        (self.name, self.arguments, self.hash)
     }
 }
 

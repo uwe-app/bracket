@@ -308,7 +308,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     /// Create the context arguments list.
     fn arguments(
         &mut self,
-        call: &'source Call<'_>,
+        call: &Call<'_>,
     ) -> RenderResult<Vec<Value>> {
         let mut out: Vec<Value> = Vec::new();
         for p in call.arguments() {
@@ -329,7 +329,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     /// Create the context hash parameters.
     fn hash(
         &mut self,
-        call: &'source Call<'_>,
+        call: &Call<'_>,
     ) -> RenderResult<Map<String, Value>> {
         let mut out = Map::new();
         for (k, p) in call.hash() {
@@ -359,14 +359,14 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     fn invoke(
         &mut self,
         kind: HelperType,
-        name: &'source str,
-        call: &'source Call<'_>,
+        name: &str,
+        call: &Call<'_>,
         mut content: Option<&'source Node<'source>>,
         ) -> RenderResult<HelperValue> {
 
         let args = self.arguments(call)?;
         let hash = self.hash(call)?;
-        let context = Context::new(name, args, hash);
+        let context = Context::new(name.to_owned(), args, hash);
 
         let value: Option<Value> = match kind {
             HelperType::Value => {
@@ -406,7 +406,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     // Fallible version of path lookup.
     fn resolve(
         &mut self,
-        path: &'source Path<'_>,
+        path: &Path<'_>,
     ) -> RenderResult<HelperValue> {
         if let Some(value) = self.lookup(path).cloned().take() {
             return Ok(Some(value));
@@ -418,7 +418,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     /// Invoke a call and return the result.
     pub fn call(
         &mut self,
-        call: &'source Call<'_>,
+        call: &Call<'_>,
     ) -> RenderResult<HelperValue> {
         match call.target() {
             CallTarget::Path(ref path) => {
@@ -457,7 +457,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
     fn statement(
         &mut self,
-        call: &'source Call<'_>,
+        call: &Call<'_>,
     ) -> RenderResult<HelperValue> {
         if call.is_partial() {
             self.render_partial(call, None)?;
@@ -469,7 +469,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
     fn get_partial_name<'a>(
         &mut self,
-        call: &'source Call<'_>,
+        call: &Call<'_>,
     ) -> RenderResult<String> {
         match call.target() {
             CallTarget::Path(ref path) => {
@@ -489,7 +489,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
     fn render_partial(
         &mut self,
-        call: &'source Call<'_>,
+        call: &Call<'_>,
         partial_block: Option<&'source Node<'source>>,
     ) -> RenderResult<()> {
         let name = self.get_partial_name(call)?;
