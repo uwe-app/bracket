@@ -92,7 +92,7 @@ pub struct Render<'reg, 'source, 'render> {
     root: Value,
     writer: Box<&'render mut dyn Output>,
     scopes: Vec<Scope<'source>>,
-    local_helpers: Option<&'render HelperRegistry<'render>>,
+    local_helpers: HelperRegistry<'render>,
     trim: TrimState,
     hint: Option<TrimHint>,
     end_tag_hint: Option<TrimHint>,
@@ -121,7 +121,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             root,
             writer,
             scopes,
-            local_helpers: None,
+            local_helpers: Default::default(),
             trim: Default::default(),
             hint: None,
             end_tag_hint: None,
@@ -350,18 +350,12 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         Ok(out)
     }
 
-    /// Local helpers can be used by global helpers to define 
-    /// helpers for a render.
-    pub fn local_helpers(&self) -> &Option<&'render HelperRegistry<'render>> {
-        &self.local_helpers 
-    }
-
     fn invoke(
         &mut self,
         kind: HelperType,
         name: &str,
         call: &Call<'_>,
-        mut content: Option<&'source Node<'source>>,
+        mut content: Option<&'source Node<'_>>,
         ) -> RenderResult<HelperValue> {
 
         let args = self.arguments(call)?;
@@ -370,30 +364,16 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
         let value: Option<Value> = match kind {
             HelperType::Value => {
-                if let Some(local_helpers) = self.local_helpers {
-                    if let Some(helper) = local_helpers.get(name) {
-                        helper.call(self, context)?
-                    } else { None }
-                } else {
-                    if let Some(helper) = self.helpers.get(name) {
-                        helper.call(self, context)?
-                    } else { None }
-                }
+                if let Some(helper) = self.helpers.get(name) {
+                    helper.call(self, context)?
+                } else { None }
             } 
             HelperType::Block => {
                 let template = content.take().unwrap();    
-
-                if let Some(local_helpers) = self.local_helpers {
-                    if let Some(helper) = local_helpers.get_block(name) {
-                        let block = BlockTemplate::new(template);
-                        helper.call(self, context, block).map(|_| None)?
-                    } else { None }
-                } else {
-                    if let Some(helper) = self.helpers.get_block(name) {
-                        let block = BlockTemplate::new(template);
-                        helper.call(self, context, block).map(|_| None)?
-                    } else { None }
-                }
+                if let Some(helper) = self.helpers.get_block(name) {
+                    let block = BlockTemplate::new(template);
+                    helper.call(self, context, block).map(|_| None)?
+                } else { None }
             }
             HelperType::Raw => {
                 todo!("Resolve raw helpers");

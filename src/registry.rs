@@ -160,7 +160,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         // FIXME: node is not living long enough for the renderer to
         // FIXME: do it's job.
         let parser = Parser::new(source, options);
-        let mut hint: Option<TrimHint> = Default::default();
+        let hint: Option<TrimHint> = Default::default();
         for node in parser {
             let node = node?;
             for event in node.iter().trim(hint) {

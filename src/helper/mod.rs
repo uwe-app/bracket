@@ -171,6 +171,7 @@ pub trait Assertion {
 }
 
 /// Registry of helpers.
+#[derive(Default)]
 pub struct HelperRegistry<'reg> {
     helpers: HashMap<&'reg str, Box<dyn Helper + 'reg>>,
     block_helpers: HashMap<&'reg str, Box<dyn BlockHelper + 'reg>>,

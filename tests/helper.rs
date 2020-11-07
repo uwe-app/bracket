@@ -23,6 +23,19 @@ impl Helper for FooHelper {
     }
 }
 
+pub struct FooBlockHelper;
+
+impl BlockHelper for FooBlockHelper {
+    fn call<'reg, 'source, 'render>(
+        &self,
+        rc: &mut Render<'reg, 'source, 'render>,
+        ctx: Context<'source>,
+        block: BlockTemplate<'source>,
+    ) -> BlockResult {
+        Ok(())
+    }
+}
+
 #[test]
 fn helper_value() -> Result<()> {
     let mut registry = Registry::new();
@@ -59,6 +72,19 @@ fn helper_explicit_this_dot_slash() -> Result<()> {
     let data = json!({"foo": "qux"});
     let result = registry.once(NAME, value, &data)?;
     assert_eq!("qux", &result);
+    Ok(())
+}
+
+#[test]
+fn helper_block() -> Result<()> {
+    let mut registry = Registry::new();
+    registry.helpers_mut()
+        .register_block_helper("block", Box::new(FooBlockHelper{}));
+    let value = r"{{#block}}{{foo}}{{/block}}";
+    // NOTE: the helper takes precedence over the variable
+    let data = json!({"foo": "qux"});
+    let result = registry.once(NAME, value, &data)?;
+    assert_eq!("bar", &result);
     Ok(())
 }
 
