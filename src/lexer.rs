@@ -9,7 +9,7 @@ pub struct Extras;
 #[logos(extras = Extras)]
 #[logos(subpattern identifier = r#"[^\s"!#%&'()*+,./;<=>@\[/\]^`{|}~]"#)]
 pub enum Block {
-    #[regex(r"\{\{\{\{\s*raw\s*\}\}\}\}")]
+    #[regex(r"\{\{\{\{[\t ]*raw[\t ]*\}\}\}\}")]
     StartRawBlock,
 
     #[regex(r"\{\{!--")]
@@ -21,13 +21,13 @@ pub enum Block {
     #[regex(r"\{\{!")]
     StartComment,
 
-    #[regex(r"\{\{\{?~?\s*")]
+    #[regex(r"\{\{\{?~?[\t ]*")]
     StartStatement,
 
-    #[regex(r"\{\{\~?#\s*")]
+    #[regex(r"\{\{\~?#[\t ]*")]
     StartBlockScope,
 
-    #[regex(r"\{\{\~?\s*/")]
+    #[regex(r"\{\{\~?[\t ]*/")]
     EndBlockScope,
 
     #[regex(r".")]
