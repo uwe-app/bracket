@@ -12,7 +12,7 @@ Got a title :: {{title}}
 Got chained conditional 
 {{ else }}
 No title available
-{{/if}}
+{{ /if}}
 
 The number is: {{list.[1]}}
 The lookup value is: {{lookup foo.bar "qux"}}

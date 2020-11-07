@@ -27,7 +27,7 @@ pub enum Block {
     #[regex(r"\{\{\~?#\s*")]
     StartBlockScope,
 
-    #[regex(r"\{\{\~?s*/")]
+    #[regex(r"\{\{\~?\s*/")]
     EndBlockScope,
 
     #[regex(r".")]
