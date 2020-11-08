@@ -32,6 +32,11 @@ impl BlockHelper for FooBlockHelper {
         ctx: Context<'source>,
         block: BlockTemplate<'source>,
     ) -> BlockResult {
+
+        rc.register_helper("foo", Box::new(FooHelper {}));
+
+        rc.template(block.template())?;
+
         Ok(())
     }
 }
