@@ -17,7 +17,7 @@ impl Helper for FooHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: Context<'source>,
+        ctx: &mut Context<'source>,
     ) -> ValueResult {
         Ok(Some(Value::String("bar".to_string())))
     }
@@ -29,7 +29,7 @@ impl BlockHelper for FooBlockHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: Context<'source>,
+        ctx: &mut Context<'source>,
         block: BlockTemplate<'source>,
     ) -> BlockResult {
 
@@ -80,6 +80,7 @@ fn helper_explicit_this_dot_slash() -> Result<()> {
     Ok(())
 }
 
+/*
 #[test]
 fn helper_block() -> Result<()> {
     let mut registry = Registry::new();
@@ -92,3 +93,4 @@ fn helper_block() -> Result<()> {
     assert_eq!("bar", &result);
     Ok(())
 }
+*/

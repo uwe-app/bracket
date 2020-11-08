@@ -15,7 +15,7 @@ impl Helper for IfHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: Context<'source>,
+        ctx: &mut Context<'source>,
     ) -> ValueResult {
         rc.arity(&ctx, 1..usize::MAX)?;
 
@@ -38,7 +38,7 @@ impl BlockHelper for IfBlockHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: Context<'source>,
+        ctx: &mut Context<'source>,
         block: BlockTemplate<'source>,
     ) -> BlockResult {
         rc.arity(&ctx, 1..1)?;

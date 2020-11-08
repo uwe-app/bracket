@@ -16,7 +16,7 @@ pub trait Helper: Send + Sync {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: Context<'source>,
+        ctx: &mut Context<'source>,
     ) -> ValueResult;
 }
 
@@ -25,7 +25,7 @@ pub trait BlockHelper: Send + Sync {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: Context<'source>,
+        ctx: &mut Context<'source>,
         block: BlockTemplate<'source>,
     ) -> BlockResult;
 }

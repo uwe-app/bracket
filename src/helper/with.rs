@@ -12,7 +12,7 @@ impl BlockHelper for WithHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: Context<'source>,
+        ctx: &mut Context<'source>,
         block: BlockTemplate<'source>,
     ) -> BlockResult {
         rc.arity(&ctx, 1..1)?;

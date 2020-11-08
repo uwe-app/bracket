@@ -16,7 +16,7 @@ impl Helper for JsonHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: Context<'source>,
+        ctx: &mut Context<'source>,
     ) -> ValueResult {
         rc.arity(&ctx, 1..2)?;
 

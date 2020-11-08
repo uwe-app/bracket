@@ -13,7 +13,7 @@ impl Helper for AndHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: Context<'source>,
+        ctx: &mut Context<'source>,
     ) -> ValueResult {
         rc.arity(&ctx, 2..2)?;
 
@@ -32,7 +32,7 @@ impl Helper for OrHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: Context<'source>,
+        ctx: &mut Context<'source>,
     ) -> ValueResult {
         rc.arity(&ctx, 2..2)?;
 
@@ -51,7 +51,7 @@ impl Helper for NotHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: Context<'source>,
+        ctx: &mut Context<'source>,
     ) -> ValueResult {
         rc.arity(&ctx, 1..1)?;
 

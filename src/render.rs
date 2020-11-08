@@ -374,7 +374,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
         let args = self.arguments(call)?;
         let hash = self.hash(call)?;
-        let context = Context::new(name.to_owned(), args, hash);
+        let mut context = Context::new(name.to_owned(), args, hash);
 
         let locals = self.local_helpers.get_or_insert(Rc::new(Cell::new(Default::default())));
         let local_helpers = Rc::clone(locals);
@@ -387,7 +387,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             HelperType::Value => {
                 //if let Some(helper) = local_helpers.get().get(name).or(self.helpers.get(name)) {
                 if let Some(helper) = self.helpers.get(name) {
-                    helper.call(self, context)?
+                    helper.call(self, &mut context)?
                 } else { None }
             } 
             HelperType::Block => {
@@ -395,7 +395,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 //if let Some(helper) = local_helpers.get().get_block(name).or(self.helpers.get_block(name)) {
                 if let Some(helper) = self.helpers.get_block(name) {
                     let block = BlockTemplate::new(template);
-                    helper.call(self, context, block).map(|_| None)?
+                    helper.call(self, &mut context, block).map(|_| None)?
                 } else { None }
             }
             HelperType::Raw => {

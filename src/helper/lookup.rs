@@ -10,7 +10,7 @@ impl Helper for LookupHelper {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: Context<'source>,
+        ctx: &mut Context<'source>,
     ) -> ValueResult {
         rc.arity(&ctx, 2..2)?;
 
