@@ -98,7 +98,6 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     where
         T: Serialize,
     {
-
         let mut writer = StringOutput::new();
         //let mut local_helpers = HelperRegistry::new();
         let template =
@@ -201,7 +200,6 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     where
         T: Serialize,
     {
-
         //let mut local_helpers = HelperRegistry::new();
         let mut writer = StringOutput::new();
         template.render(

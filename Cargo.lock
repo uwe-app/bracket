@@ -30,6 +30,7 @@ checksum = "474a626a67200bd107d44179bb3d4fc61891172d11696609264589be6a0e6a43"
 name = "bracket"
 version = "0.2.2"
 dependencies = [
+ "dyn-clone",
  "log",
  "logos",
  "pretty_env_logger",
@@ -44,6 +45,12 @@ name = "cfg-if"
 version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822"
+
+[[package]]
+name = "dyn-clone"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d55796afa1b20c2945ca8eabfc421839f2b766619209f1ede813cf2484f31804"
 
 [[package]]
 name = "env_logger"

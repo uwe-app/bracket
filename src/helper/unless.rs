@@ -4,6 +4,7 @@ use crate::{
     render::Render,
 };
 
+#[derive(Clone)]
 pub struct UnlessHelper;
 
 impl BlockHelper for UnlessHelper {

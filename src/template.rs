@@ -128,7 +128,9 @@ impl<'source> Templates<'source> {
 
 impl<'source> TryFrom<&'source Loader> for Templates<'source> {
     type Error = crate::error::Error;
-    fn try_from(loader: &'source Loader) -> std::result::Result<Self, Self::Error> {
+    fn try_from(
+        loader: &'source Loader,
+    ) -> std::result::Result<Self, Self::Error> {
         let mut tpl = Templates::new();
         tpl.build(loader)?;
         Ok(tpl)

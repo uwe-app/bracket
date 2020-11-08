@@ -2,6 +2,7 @@
 use serde_json::{Map, Value};
 use std::collections::HashMap;
 use std::ops::Range;
+use dyn_clone::DynClone;
 
 use crate::{error::HelperError as Error, parser::ast::Node, render::Render};
 
@@ -12,7 +13,7 @@ pub type ValueResult = std::result::Result<Option<Value>, Error>;
 pub type BlockResult = std::result::Result<(), Error>;
 
 /// Trait for helpers.
-pub trait Helper: Send + Sync {
+pub trait Helper: Send + Sync + DynClone {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
@@ -20,8 +21,10 @@ pub trait Helper: Send + Sync {
     ) -> ValueResult;
 }
 
+dyn_clone::clone_trait_object!(Helper);
+
 /// Trait for block helpers.
-pub trait BlockHelper: Send + Sync {
+pub trait BlockHelper: Send + Sync + DynClone {
     fn call<'reg, 'source, 'render>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
@@ -29,6 +32,8 @@ pub trait BlockHelper: Send + Sync {
         block: BlockTemplate<'source>,
     ) -> BlockResult;
 }
+
+dyn_clone::clone_trait_object!(BlockHelper);
 
 #[cfg(feature = "each-helper")]
 pub mod each;
@@ -172,7 +177,7 @@ pub trait Assertion {
 }
 
 /// Registry of helpers.
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct HelperRegistry<'reg> {
     helpers: HashMap<&'reg str, Box<dyn Helper + 'reg>>,
     block_helpers: HashMap<&'reg str, Box<dyn BlockHelper + 'reg>>,

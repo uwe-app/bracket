@@ -4,7 +4,10 @@ use std::ops::Range;
 
 use serde_json::Value;
 
-use crate::parser::{iter::{BlockIter, NodeIter}, trim::TrimHint};
+use crate::parser::{
+    iter::{BlockIter, NodeIter},
+    trim::TrimHint,
+};
 
 static WHITESPACE: &str = "~";
 
@@ -690,7 +693,6 @@ impl<'source> Block<'source> {
     }
 
     pub(crate) fn exit(&mut self, span: Range<usize>) {
-
         // NOTE: close_condition() sets the span up until the next
         // NOTE: block but when we exit a block node the last conditional
         // NOTE: needs a close matching the end tag so that whitespace
@@ -704,7 +706,6 @@ impl<'source> Block<'source> {
                 _ => {}
             }
         }
-        
 
         self.close = Some(span);
     }

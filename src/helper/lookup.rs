@@ -4,6 +4,7 @@ use crate::{
     render::Render,
 };
 
+#[derive(Clone)]
 pub struct LookupHelper;
 
 impl Helper for LookupHelper {

@@ -16,6 +16,7 @@ use log::*;
 /// * warn
 /// * error
 ///
+#[derive(Clone)]
 pub struct LogHelper;
 
 impl Helper for LogHelper {

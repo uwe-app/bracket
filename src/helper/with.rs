@@ -6,6 +6,7 @@ use crate::{
 
 use serde_json::Value;
 
+#[derive(Clone)]
 pub struct WithHelper;
 
 impl BlockHelper for WithHelper {

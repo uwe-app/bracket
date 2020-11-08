@@ -39,7 +39,8 @@ fn if_else_if_block() -> Result<()> {
 #[test]
 fn if_else_if_else_block() -> Result<()> {
     let mut registry = Registry::new();
-    let value = r"{{#if false}}WRONG{{else if false}}WRONG{{else}}{{foo}}{{/if}}";
+    let value =
+        r"{{#if false}}WRONG{{else if false}}WRONG{{else}}{{foo}}{{/if}}";
     let data = json!({"foo": "bar"});
     let result = registry.once(NAME, value, &data)?;
     assert_eq!("bar", &result);

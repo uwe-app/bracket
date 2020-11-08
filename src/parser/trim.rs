@@ -1,7 +1,7 @@
 //! Types that control how whitespace is trimmed.
 use crate::parser::ast::Node;
 
-/// State that indicates how whitespace should be trimmed 
+/// State that indicates how whitespace should be trimmed
 /// from the node being rendered.
 #[derive(Clone, Copy, Default, Debug)]
 pub struct TrimState {

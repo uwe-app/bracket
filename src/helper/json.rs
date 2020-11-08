@@ -10,6 +10,7 @@ use serde_json::{to_string, to_string_pretty, Value};
 ///
 /// Accepts an optional second argument which when *truthy* will
 /// pretty print the value.
+#[derive(Clone)]
 pub struct JsonHelper;
 
 impl Helper for JsonHelper {

@@ -7,6 +7,7 @@ use crate::{
 use serde_json::Value;
 
 /// Perform a logical AND on two arguments.
+#[derive(Clone)]
 pub struct AndHelper;
 
 impl Helper for AndHelper {
@@ -26,6 +27,7 @@ impl Helper for AndHelper {
 }
 
 /// Perform a logical OR on two arguments.
+#[derive(Clone)]
 pub struct OrHelper;
 
 impl Helper for OrHelper {
@@ -45,6 +47,7 @@ impl Helper for OrHelper {
 }
 
 /// Perform a logical NOT on an argument.
+#[derive(Clone)]
 pub struct NotHelper;
 
 impl Helper for NotHelper {

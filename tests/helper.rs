@@ -11,6 +11,7 @@ use serde_json::{json, Value};
 
 static NAME: &str = "helper.rs";
 
+#[derive(Clone)]
 pub struct FooHelper;
 
 impl Helper for FooHelper {
@@ -23,6 +24,7 @@ impl Helper for FooHelper {
     }
 }
 
+#[derive(Clone)]
 pub struct FooBlockHelper;
 
 impl BlockHelper for FooBlockHelper {
@@ -32,7 +34,6 @@ impl BlockHelper for FooBlockHelper {
         ctx: &mut Context<'source>,
         block: BlockTemplate<'source>,
     ) -> BlockResult {
-
         rc.register_helper("foo", Box::new(FooHelper {}));
 
         rc.template(block.template())?;
@@ -44,8 +45,9 @@ impl BlockHelper for FooBlockHelper {
 #[test]
 fn helper_value() -> Result<()> {
     let mut registry = Registry::new();
-    registry.helpers_mut()
-        .register_helper("foo", Box::new(FooHelper{}));
+    registry
+        .helpers_mut()
+        .register_helper("foo", Box::new(FooHelper {}));
     let value = r"{{foo}}";
     // NOTE: the helper takes precedence over the variable
     let data = json!({"foo": "qux"});
@@ -57,8 +59,9 @@ fn helper_value() -> Result<()> {
 #[test]
 fn helper_explicit_this() -> Result<()> {
     let mut registry = Registry::new();
-    registry.helpers_mut()
-        .register_helper("foo", Box::new(FooHelper{}));
+    registry
+        .helpers_mut()
+        .register_helper("foo", Box::new(FooHelper {}));
     let value = r"{{this.foo}}";
     // NOTE: explicit this causes the variable to take precedence
     let data = json!({"foo": "qux"});
@@ -70,8 +73,9 @@ fn helper_explicit_this() -> Result<()> {
 #[test]
 fn helper_explicit_this_dot_slash() -> Result<()> {
     let mut registry = Registry::new();
-    registry.helpers_mut()
-        .register_helper("foo", Box::new(FooHelper{}));
+    registry
+        .helpers_mut()
+        .register_helper("foo", Box::new(FooHelper {}));
     let value = r"{{./foo}}";
     // NOTE: explicit ./ causes the variable to take precedence
     let data = json!({"foo": "qux"});
@@ -80,7 +84,6 @@ fn helper_explicit_this_dot_slash() -> Result<()> {
     Ok(())
 }
 
-/*
 #[test]
 fn helper_block() -> Result<()> {
     let mut registry = Registry::new();
@@ -93,4 +96,4 @@ fn helper_block() -> Result<()> {
     assert_eq!("bar", &result);
     Ok(())
 }
-*/
+

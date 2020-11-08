@@ -9,6 +9,7 @@ use crate::{
 
 use serde_json::Value;
 
+#[derive(Clone)]
 pub struct IfHelper;
 
 impl Helper for IfHelper {
@@ -32,6 +33,7 @@ impl Helper for IfHelper {
     }
 }
 
+#[derive(Clone)]
 pub struct IfBlockHelper;
 
 impl BlockHelper for IfBlockHelper {

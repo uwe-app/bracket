@@ -18,15 +18,25 @@ pub struct NodeEvent<'a> {
 }
 
 impl<'a> NodeEvent<'a> {
-    pub fn new(node: &'a Node, trim: TrimState, first: bool, last: bool) -> Self {
-        Self { node, trim, first, last }
+    pub fn new(
+        node: &'a Node,
+        trim: TrimState,
+        first: bool,
+        last: bool,
+    ) -> Self {
+        Self {
+            node,
+            trim,
+            first,
+            last,
+        }
     }
 }
 
 /// Iterator for leaf nodes.
 ///
-/// Document and block nodes are yielded but child nodes 
-/// are not iterated; to iterate child nodes use the block 
+/// Document and block nodes are yielded but child nodes
+/// are not iterated; to iterate child nodes use the block
 /// iterator.
 pub struct NodeIter<'source> {
     node: &'source Node<'source>,
@@ -117,7 +127,9 @@ impl<'source> Iterator for BlockIter<'source> {
                 self.children.take();
             }
             child
-        } else { None }
+        } else {
+            None
+        }
     }
 }
 

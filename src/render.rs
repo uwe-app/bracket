@@ -1,14 +1,17 @@
 //! Render a template to output using the data.
 use serde::Serialize;
 use serde_json::{Map, Value};
+use std::cell::RefCell;
 use std::ops::Range;
 use std::rc::Rc;
-use std::cell::Cell;
 
 use crate::{
     error::{HelperError, RenderError},
     escape::EscapeFn,
-    helper::{Assertion, BlockHelper, BlockResult, BlockTemplate, Context, Helper, HelperRegistry},
+    helper::{
+        Assertion, BlockHelper, BlockResult, BlockTemplate, Context, Helper,
+        HelperRegistry,
+    },
     json,
     output::Output,
     parser::{
@@ -89,7 +92,7 @@ impl<'scope> Scope<'scope> {
 pub struct Render<'reg, 'source, 'render> {
     escape: &'reg EscapeFn,
     helpers: &'reg HelperRegistry<'reg>,
-    local_helpers: Option<Rc<Cell<HelperRegistry<'render>>>>,
+    local_helpers: Option<Rc<RefCell<HelperRegistry<'render>>>>,
     templates: &'source Templates<'source>,
     source: &'source str,
     root: Value,
@@ -167,7 +170,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         &mut self,
         node: &'source Node<'_>,
     ) -> Result<(), HelperError> {
-
         let mut hint: Option<TrimHint> = None;
         for event in node.block_iter().trim(self.hint) {
             let mut trim = event.trim;
@@ -184,14 +186,14 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                     Node::Condition(ref block) => {
                         let last_hint = block.trim_close();
                         if last_hint.before {
-                            trim.end = true; 
+                            trim.end = true;
                         }
                         hint = Some(last_hint);
                     }
                     Node::Block(ref block) => {
                         let last_hint = block.trim_close();
                         if last_hint.before {
-                            trim.end = true; 
+                            trim.end = true;
                         }
                         hint = Some(last_hint);
                     }
@@ -291,12 +293,11 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 json::find_parts(
                     path.components().iter().map(|c| c.as_str()),
                     scope.as_value(),
-                ).or(
-                    json::find_parts(
-                        path.components().iter().map(|c| c.as_str()),
-                        &self.root,
-                    )
                 )
+                .or(json::find_parts(
+                    path.components().iter().map(|c| c.as_str()),
+                    &self.root,
+                ))
             // Lookup in the root scope
             } else {
                 json::find_parts(
@@ -308,10 +309,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     /// Create the context arguments list.
-    fn arguments(
-        &mut self,
-        call: &Call<'_>,
-    ) -> RenderResult<Vec<Value>> {
+    fn arguments(&mut self, call: &Call<'_>) -> RenderResult<Vec<Value>> {
         let mut out: Vec<Value> = Vec::new();
         for p in call.arguments() {
             let arg = match p {
@@ -329,10 +327,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     /// Create the context hash parameters.
-    fn hash(
-        &mut self,
-        call: &Call<'_>,
-    ) -> RenderResult<Map<String, Value>> {
+    fn hash(&mut self, call: &Call<'_>) -> RenderResult<Map<String, Value>> {
         let mut out = Map::new();
         for (k, p) in call.hash() {
             let (key, value) = match p {
@@ -352,15 +347,31 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         Ok(out)
     }
 
-    pub fn register_helper(&mut self,
+    /// Register a local helper.
+    ///
+    /// Local helpers are available for the scope of the parent helper.
+    pub fn register_helper(
+        &mut self,
         name: &'render str,
-        helper: Box<dyn Helper + 'render>) {
-
-        println!("REGISTER LOCAL HELPER");
-
+        helper: Box<dyn Helper + 'render>,
+    ) {
         if let Some(ref mut locals) = self.local_helpers {
-            println!("Has some local helpers...");
-            //locals.register_helper(name, helper);
+            let registry = Rc::make_mut(locals);
+            registry.borrow_mut().register_helper(name, helper);
+        }
+    }
+
+    /// Register a local block helper.
+    ///
+    /// Local helpers are available for the scope of the parent helper.
+    pub fn register_block_helper(
+        &mut self,
+        name: &'render str,
+        helper: Box<dyn BlockHelper + 'render>,
+    ) {
+        if let Some(ref mut locals) = self.local_helpers {
+            let registry = Rc::make_mut(locals);
+            registry.borrow_mut().register_block_helper(name, helper);
         }
     }
 
@@ -370,33 +381,42 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         name: &str,
         call: &Call<'_>,
         mut content: Option<&'source Node<'_>>,
-        ) -> RenderResult<HelperValue> {
-
+    ) -> RenderResult<HelperValue> {
         let args = self.arguments(call)?;
         let hash = self.hash(call)?;
         let mut context = Context::new(name.to_owned(), args, hash);
 
-        let locals = self.local_helpers.get_or_insert(Rc::new(Cell::new(Default::default())));
-        let local_helpers = Rc::clone(locals);
-        let local_registry = &*local_helpers;
-        //let local_lookup = local_registry.get();
+        println!("Invoke a helper with the name: {}", name);
 
-        //local_registry.get("foo");
+        let locals = self
+            .local_helpers
+            .get_or_insert(Rc::new(RefCell::new(Default::default())));
+        let local_helpers = Rc::clone(locals);
 
         let value: Option<Value> = match kind {
             HelperType::Value => {
-                //if let Some(helper) = local_helpers.get().get(name).or(self.helpers.get(name)) {
-                if let Some(helper) = self.helpers.get(name) {
+                if let Some(helper) =
+                    local_helpers.borrow().get(name).or(self.helpers.get(name))
+                {
+                    //if let Some(helper) = self.helpers.get(name) {
                     helper.call(self, &mut context)?
-                } else { None }
-            } 
+                } else {
+                    None
+                }
+            }
             HelperType::Block => {
-                let template = content.take().unwrap();    
-                //if let Some(helper) = local_helpers.get().get_block(name).or(self.helpers.get_block(name)) {
-                if let Some(helper) = self.helpers.get_block(name) {
+                let template = content.take().unwrap();
+                if let Some(helper) = local_helpers
+                    .borrow()
+                    .get_block(name)
+                    .or(self.helpers.get_block(name))
+                {
+                    //if let Some(helper) = self.helpers.get_block(name) {
                     let block = BlockTemplate::new(template);
                     helper.call(self, &mut context, block).map(|_| None)?
-                } else { None }
+                } else {
+                    None
+                }
             }
             HelperType::Raw => {
                 todo!("Resolve raw helpers");
@@ -409,11 +429,15 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         Ok(value)
     }
 
+    fn has_helper(&mut self, name: &str) -> bool {
+        let locals = self
+            .local_helpers
+            .get_or_insert(Rc::new(RefCell::new(Default::default())));
+        locals.borrow().get(name).is_some() || self.helpers.get(name).is_some()
+    }
+
     // Fallible version of path lookup.
-    fn resolve(
-        &mut self,
-        path: &Path<'_>,
-    ) -> RenderResult<HelperValue> {
+    fn resolve(&mut self, path: &Path<'_>) -> RenderResult<HelperValue> {
         if let Some(value) = self.lookup(path).cloned().take() {
             return Ok(Some(value));
         } else {
@@ -422,10 +446,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     /// Invoke a call and return the result.
-    pub fn call(
-        &mut self,
-        call: &Call<'_>,
-    ) -> RenderResult<HelperValue> {
+    pub fn call(&mut self, call: &Call<'_>) -> RenderResult<HelperValue> {
         match call.target() {
             CallTarget::Path(ref path) => {
                 // Explicit paths should resolve to a lookup
@@ -448,8 +469,13 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
                 // Simple paths may be helpers
                 } else if path.is_simple() {
-                    if let Some(_) = self.helpers.get(path.as_str()) {
-                        self.invoke(HelperType::Value, path.as_str(), call, None)
+                    if self.has_helper(path.as_str()) {
+                        self.invoke(
+                            HelperType::Value,
+                            path.as_str(),
+                            call,
+                            None,
+                        )
                     } else {
                         self.resolve(path)
                     }
@@ -461,10 +487,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         }
     }
 
-    fn statement(
-        &mut self,
-        call: &Call<'_>,
-    ) -> RenderResult<HelperValue> {
+    fn statement(&mut self, call: &Call<'_>) -> RenderResult<HelperValue> {
         if call.is_partial() {
             self.render_partial(call, None)?;
             Ok(None)
@@ -533,7 +556,13 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 CallTarget::Path(ref path) => {
                     if path.is_simple() {
                         self.invoke(
-                            HelperType::Block, path.as_str(), call, Some(node))?;
+                            HelperType::Block,
+                            path.as_str(),
+                            call,
+                            Some(node),
+                        )?;
+                    } else {
+                        panic!("Block helpers identifiers must be simple paths");
                     }
                 }
                 //CallTarget::SubExpr(ref sub) => self.call(sub),
@@ -564,7 +593,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         if let Some(hint) = self.end_tag_hint.take() {
             if hint.after {
                 self.trim.start = true;
-            }        
+            }
         }
 
         match node {
@@ -598,7 +627,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     fn write_str(&mut self, s: &str, escape: bool) -> RenderResult<usize> {
-
         let val = if self.trim.start { s.trim_start() } else { s };
         let val = if self.trim.end { val.trim_end() } else { val };
         if val.is_empty() {

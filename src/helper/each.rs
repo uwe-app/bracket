@@ -13,6 +13,7 @@ static LAST: &str = "last";
 static KEY: &str = "key";
 static INDEX: &str = "index";
 
+#[derive(Clone)]
 pub struct EachHelper;
 
 impl BlockHelper for EachHelper {

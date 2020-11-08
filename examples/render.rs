@@ -1,8 +1,8 @@
 extern crate log;
 extern crate pretty_env_logger;
 
-use std::path::PathBuf;
 use std::convert::TryFrom;
+use std::path::PathBuf;
 
 use bracket::{
     registry::Registry,
