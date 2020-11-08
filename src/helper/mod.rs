@@ -114,7 +114,7 @@ pub struct Context<'ctx> {
     name: String,
     arguments: Vec<Value>,
     hash: Map<String, Value>,
-    helpers: HelperRegistry<'ctx>,
+    phantom: std::marker::PhantomData<&'ctx str>,
 }
 
 impl<'ctx> Context<'ctx> {
@@ -127,7 +127,7 @@ impl<'ctx> Context<'ctx> {
             name,
             arguments,
             hash,
-            helpers: Default::default(),
+            phantom: std::marker::PhantomData,
         }
     }
 
