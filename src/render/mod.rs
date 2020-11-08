@@ -8,9 +8,7 @@ use std::rc::Rc;
 use crate::{
     error::{HelperError, RenderError},
     escape::EscapeFn,
-    helper::{
-        Assertion, BlockHelper, BlockResult, Helper, HelperRegistry,
-    },
+    helper::{Assertion, BlockHelper, BlockResult, Helper, HelperRegistry},
     json,
     output::Output,
     parser::{
@@ -513,7 +511,9 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                             Some(node),
                         )?;
                     } else {
-                        panic!("Block helpers identifiers must be simple paths");
+                        panic!(
+                            "Block helpers identifiers must be simple paths"
+                        );
                     }
                 }
                 //CallTarget::SubExpr(ref sub) => self.call(sub),
@@ -594,7 +594,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 }
 
 impl Assertion for Render<'_, '_, '_> {
-    fn arity(&self, ctx: &Context<'_>, range: Range<usize>) -> BlockResult {
+    fn arity(&self, ctx: &Context<'_, '_, '_, '_>, range: Range<usize>) -> BlockResult {
         if range.start == range.end {
             if ctx.arguments().len() != range.start {
                 return Err(HelperError::ArityExact(

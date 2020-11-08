@@ -14,10 +14,10 @@ use serde_json::{to_string, to_string_pretty, Value};
 pub struct JsonHelper;
 
 impl Helper for JsonHelper {
-    fn call<'reg, 'source, 'render>(
+    fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'source>,
+        ctx: &mut Context<'reg, 'source, 'render, 'call>,
     ) -> ValueResult {
         rc.arity(&ctx, 1..2)?;
 

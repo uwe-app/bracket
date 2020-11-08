@@ -1,8 +1,7 @@
 //! Helpers for conditional statements.
 use crate::{
     helper::{
-        Assertion, BlockHelper, BlockResult, BlockTemplate, Helper,
-        ValueResult,
+        Assertion, BlockHelper, BlockResult, BlockTemplate, Helper, ValueResult,
     },
     render::{Context, Render},
 };
@@ -13,10 +12,10 @@ use serde_json::Value;
 pub struct IfHelper;
 
 impl Helper for IfHelper {
-    fn call<'reg, 'source, 'render>(
+    fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'source>,
+        ctx: &mut Context<'reg, 'source, 'render, 'call>,
     ) -> ValueResult {
         rc.arity(&ctx, 1..usize::MAX)?;
 
@@ -37,10 +36,10 @@ impl Helper for IfHelper {
 pub struct IfBlockHelper;
 
 impl BlockHelper for IfBlockHelper {
-    fn call<'reg, 'source, 'render>(
+    fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'source>,
+        ctx: &mut Context<'reg, 'source, 'render, 'call>,
         block: BlockTemplate<'source>,
     ) -> BlockResult {
         rc.arity(&ctx, 1..1)?;

@@ -1,8 +1,8 @@
 //! Type for block helpers.
 use crate::parser::ast::Node;
 
-use crate::error::HelperError;
 use super::Render;
+use crate::error::HelperError;
 
 /// Encapsulates the templates passed to a block helper.
 #[derive(Debug)]

@@ -1,9 +1,7 @@
 //! Block helper that iterates arrays and objects.
 use crate::{
-    helper::{
-        Assertion, BlockHelper, BlockResult, BlockTemplate, Error,
-    },
-    render::{Render, Context, Scope},
+    helper::{Assertion, BlockHelper, BlockResult, BlockTemplate, Error},
+    render::{Context, Render, Scope},
 };
 
 use serde_json::{Number, Value};
@@ -17,10 +15,10 @@ static INDEX: &str = "index";
 pub struct EachHelper;
 
 impl BlockHelper for EachHelper {
-    fn call<'reg, 'source, 'render>(
+    fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'source>,
+        ctx: &mut Context<'reg, 'source, 'render, 'call>,
         block: BlockTemplate<'source>,
     ) -> BlockResult {
         rc.arity(&ctx, 1..1)?;

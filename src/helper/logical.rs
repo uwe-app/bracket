@@ -11,10 +11,10 @@ use serde_json::Value;
 pub struct AndHelper;
 
 impl Helper for AndHelper {
-    fn call<'reg, 'source, 'render>(
+    fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'source>,
+        ctx: &mut Context<'reg, 'source, 'render, 'call>,
     ) -> ValueResult {
         rc.arity(&ctx, 2..2)?;
 
@@ -31,10 +31,10 @@ impl Helper for AndHelper {
 pub struct OrHelper;
 
 impl Helper for OrHelper {
-    fn call<'reg, 'source, 'render>(
+    fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'source>,
+        ctx: &mut Context<'reg, 'source, 'render, 'call>,
     ) -> ValueResult {
         rc.arity(&ctx, 2..2)?;
 
@@ -51,10 +51,10 @@ impl Helper for OrHelper {
 pub struct NotHelper;
 
 impl Helper for NotHelper {
-    fn call<'reg, 'source, 'render>(
+    fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'source>,
+        ctx: &mut Context<'reg, 'source, 'render, 'call>,
     ) -> ValueResult {
         rc.arity(&ctx, 1..1)?;
 

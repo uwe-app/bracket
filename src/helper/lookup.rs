@@ -8,10 +8,10 @@ use crate::{
 pub struct LookupHelper;
 
 impl Helper for LookupHelper {
-    fn call<'reg, 'source, 'render>(
+    fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'source>,
+        ctx: &mut Context<'reg, 'source, 'render, 'call>,
     ) -> ValueResult {
         rc.arity(&ctx, 2..2)?;
 

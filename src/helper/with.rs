@@ -10,10 +10,10 @@ use serde_json::Value;
 pub struct WithHelper;
 
 impl BlockHelper for WithHelper {
-    fn call<'reg, 'source, 'render>(
+    fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'source>,
+        ctx: &mut Context<'reg, 'source, 'render, 'call>,
         block: BlockTemplate<'source>,
     ) -> BlockResult {
         rc.arity(&ctx, 1..1)?;

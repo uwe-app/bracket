@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 use bracket::{
     error::{Error, SyntaxError},
     helper::*,
-    render::{Context, Render, BlockTemplate},
+    render::{BlockTemplate, Context, Render},
     template::{Loader, Templates},
     Registry, Result,
 };
@@ -15,10 +15,10 @@ static NAME: &str = "helper.rs";
 pub struct FooHelper;
 
 impl Helper for FooHelper {
-    fn call<'reg, 'source, 'render>(
+    fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'source>,
+        ctx: &mut Context<'reg, 'source, 'render, 'call>,
     ) -> ValueResult {
         Ok(Some(Value::String("bar".to_string())))
     }
@@ -28,10 +28,10 @@ impl Helper for FooHelper {
 pub struct FooBlockHelper;
 
 impl BlockHelper for FooBlockHelper {
-    fn call<'reg, 'source, 'render>(
+    fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'source>,
+        ctx: &mut Context<'reg, 'source, 'render, 'call>,
         block: BlockTemplate<'source>,
     ) -> BlockResult {
         rc.register_helper("foo", Box::new(FooHelper {}));
@@ -87,8 +87,9 @@ fn helper_explicit_this_dot_slash() -> Result<()> {
 #[test]
 fn helper_block() -> Result<()> {
     let mut registry = Registry::new();
-    registry.helpers_mut()
-        .register_block_helper("block", Box::new(FooBlockHelper{}));
+    registry
+        .helpers_mut()
+        .register_block_helper("block", Box::new(FooBlockHelper {}));
     let value = r"{{#block}}{{foo}}{{/block}}";
     // NOTE: the helper takes precedence over the variable
     let data = json!({"foo": "qux"});
@@ -96,4 +97,3 @@ fn helper_block() -> Result<()> {
     assert_eq!("bar", &result);
     Ok(())
 }
-

@@ -1,10 +1,14 @@
 //! Helper trait and types for the default set of helpers.
+use dyn_clone::DynClone;
 use serde_json::{Map, Value};
 use std::collections::HashMap;
 use std::ops::Range;
-use dyn_clone::DynClone;
 
-use crate::{error::HelperError as Error, parser::ast::Node, render::{Render, Context, BlockTemplate}};
+use crate::{
+    error::HelperError as Error,
+    parser::ast::Node,
+    render::{BlockTemplate, Context, Render},
+};
 
 /// The result type that helpers should return.
 pub type ValueResult = std::result::Result<Option<Value>, Error>;
@@ -14,10 +18,10 @@ pub type BlockResult = std::result::Result<(), Error>;
 
 /// Trait for helpers.
 pub trait Helper: Send + Sync + DynClone {
-    fn call<'reg, 'source, 'render>(
+    fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'source>,
+        ctx: &mut Context<'reg, 'source, 'render, 'call>,
     ) -> ValueResult;
 }
 
@@ -25,15 +29,21 @@ dyn_clone::clone_trait_object!(Helper);
 
 /// Trait for block helpers.
 pub trait BlockHelper: Send + Sync + DynClone {
-    fn call<'reg, 'source, 'render>(
+    fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'source>,
+        ctx: &mut Context<'reg, 'source, 'render, 'call>,
         block: BlockTemplate<'source>,
     ) -> BlockResult;
 }
 
 dyn_clone::clone_trait_object!(BlockHelper);
+
+/// Trait for types that provide helper assertions.
+pub trait Assertion {
+    /// Assert that the context arguments are in the given arity range.
+    fn arity(&self, context: &Context<'_, '_, '_, '_>, range: Range<usize>) -> BlockResult;
+}
 
 #[cfg(feature = "each-helper")]
 pub mod each;
@@ -51,71 +61,6 @@ pub mod lookup;
 pub mod unless;
 #[cfg(feature = "with-helper")]
 pub mod with;
-
-/*
-/// Encapsulates the templates passed to a block helper.
-#[derive(Debug)]
-pub struct BlockTemplate<'source> {
-    template: &'source Node<'source>,
-}
-
-impl<'source> BlockTemplate<'source> {
-    pub fn new(template: &'source Node<'source>) -> Self {
-        Self { template }
-    }
-
-    /// Get the primary template node for the block.
-    pub fn template(&self) -> &'source Node<'source> {
-        self.template
-    }
-
-    /// Evaluate the block conditionals and find
-    /// the first node that should be rendered.
-    pub fn inverse<'reg, 'render>(
-        &self,
-        rc: &mut Render<'reg, 'source, 'render>,
-    ) -> Result<Option<&'source Node<'source>>, Error> {
-        let mut alt: Option<&'source Node<'source>> = None;
-        let mut branch: Option<&'source Node<'source>> = None;
-        match &self.template {
-            Node::Block(ref block) => {
-                if !block.conditions().is_empty() {
-                    for node in block.conditions().iter() {
-                        match node {
-                            Node::Condition(clause) => {
-                                // Got an else clause, last one wins!
-                                if clause.call().is_empty() {
-                                    alt = Some(node);
-                                } else {
-                                    if let Some(value) = rc
-                                        .call(clause.call())
-                                        .map_err(Box::new)?
-                                    {
-                                        if rc.is_truthy(&value) {
-                                            branch = Some(node);
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-            }
-            _ => {}
-        }
-
-        Ok(branch.or(alt))
-    }
-}
-*/
-
-/// Trait for types that provide helper assertions.
-pub trait Assertion {
-    /// Assert that the context arguments are in the given arity range.
-    fn arity(&self, context: &Context<'_>, range: Range<usize>) -> BlockResult;
-}
 
 /// Registry of helpers.
 #[derive(Clone, Default)]
