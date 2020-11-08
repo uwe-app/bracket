@@ -61,7 +61,7 @@ fn main() -> Result<()> {
         Ok(result) => {
             println!("{}", result);
         }
-        Err(e) => log::error!("{:?}", e),
+        Err(e) => log::error!("{}", e),
     }
 
     Ok(())

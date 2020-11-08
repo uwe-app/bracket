@@ -19,7 +19,7 @@ impl Helper for LookupHelper {
         let target = args.get(0).unwrap();
 
         let field = args
-            .get(0)
+            .get(1)
             .ok_or_else(|| Error::ArityExact(name.to_string(), 2))?
             .as_str()
             .ok_or_else(|| Error::ArgumentTypeString(name.to_string(), 1))?;

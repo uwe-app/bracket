@@ -75,7 +75,6 @@ fn helper_explicit_this_dot_slash() -> Result<()> {
     Ok(())
 }
 
-/*
 #[test]
 fn helper_block() -> Result<()> {
     let mut registry = Registry::new();
@@ -88,4 +87,3 @@ fn helper_block() -> Result<()> {
     assert_eq!("bar", &result);
     Ok(())
 }
-*/

@@ -2,6 +2,7 @@
 use serde::Serialize;
 use serde_json::{Map, Value};
 use std::ops::Range;
+use std::rc::Rc;
 
 use crate::{
     error::{HelperError, RenderError},
@@ -87,7 +88,7 @@ impl<'scope> Scope<'scope> {
 pub struct Render<'reg, 'source, 'render> {
     escape: &'reg EscapeFn,
     helpers: &'reg HelperRegistry<'reg>,
-    //local_helpers: &'render mut HelperRegistry<'render>,
+    local_helpers: Rc<HelperRegistry<'render>>,
     templates: &'source Templates<'source>,
     source: &'source str,
     root: Value,
@@ -117,7 +118,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         Ok(Self {
             escape,
             helpers,
-            //local_helpers,
+            local_helpers: Rc::new(Default::default()),
             templates,
             source,
             root,
@@ -363,17 +364,18 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         let hash = self.hash(call)?;
         let context = Context::new(name.to_owned(), args, hash);
 
+        let local_helpers = Rc::clone(&self.local_helpers);
+
         let value: Option<Value> = match kind {
             HelperType::Value => {
-                //if let Some(helper) = self.local_helpers.get(name).or(self.helpers.get(name)) {
-                if let Some(helper) = self.helpers.get(name) {
+                if let Some(helper) = local_helpers.get(name).or(self.helpers.get(name)) {
                     helper.call(self, context)?
                 } else { None }
             } 
             HelperType::Block => {
                 let template = content.take().unwrap();    
-                //if let Some(helper) = self.local_helpers.get_block(name).or(self.helpers.get_block(name)) {
-                if let Some(helper) = self.helpers.get_block(name) {
+                if let Some(helper) = local_helpers.get_block(name).or(self.helpers.get_block(name)) {
+                //if let Some(helper) = self.helpers.get_block(name) {
                     let block = BlockTemplate::new(template);
                     helper.call(self, context, block).map(|_| None)?
                 } else { None }
