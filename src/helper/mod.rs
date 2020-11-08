@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::ops::Range;
 use dyn_clone::DynClone;
 
-use crate::{error::HelperError as Error, parser::ast::Node, render::{Render, Context}};
+use crate::{error::HelperError as Error, parser::ast::Node, render::{Render, Context, BlockTemplate}};
 
 /// The result type that helpers should return.
 pub type ValueResult = std::result::Result<Option<Value>, Error>;
@@ -52,6 +52,7 @@ pub mod unless;
 #[cfg(feature = "with-helper")]
 pub mod with;
 
+/*
 /// Encapsulates the templates passed to a block helper.
 #[derive(Debug)]
 pub struct BlockTemplate<'source> {
@@ -108,6 +109,7 @@ impl<'source> BlockTemplate<'source> {
         Ok(branch.or(alt))
     }
 }
+*/
 
 /// Trait for types that provide helper assertions.
 pub trait Assertion {

@@ -9,8 +9,7 @@ use crate::{
     error::{HelperError, RenderError},
     escape::EscapeFn,
     helper::{
-        Assertion, BlockHelper, BlockResult, BlockTemplate, Helper,
-        HelperRegistry,
+        Assertion, BlockHelper, BlockResult, Helper, HelperRegistry,
     },
     json,
     output::Output,
@@ -33,9 +32,11 @@ enum HelperType {
     Raw,
 }
 
+pub mod block;
 pub mod context;
 pub mod scope;
 
+pub use block::BlockTemplate;
 pub use context::Context;
 pub use scope::Scope;
 
