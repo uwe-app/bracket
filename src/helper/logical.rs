@@ -1,7 +1,7 @@
 //! Helpers for conditional statements.
 use crate::{
-    helper::{Assertion, Context, Helper, ValueResult},
-    render::Render,
+    helper::{Assertion, Helper, ValueResult},
+    render::{Context, Render},
 };
 
 use serde_json::Value;

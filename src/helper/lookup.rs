@@ -1,7 +1,7 @@
 //! Helper to lookup a field of an array or object.
 use crate::{
-    helper::{Assertion, Context, Error, Helper, ValueResult},
-    render::Render,
+    helper::{Assertion, Error, Helper, ValueResult},
+    render::{Context, Render},
 };
 
 #[derive(Clone)]

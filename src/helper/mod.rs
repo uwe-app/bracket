@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::ops::Range;
 use dyn_clone::DynClone;
 
-use crate::{error::HelperError as Error, parser::ast::Node, render::Render};
+use crate::{error::HelperError as Error, parser::ast::Node, render::{Render, Context}};
 
 /// The result type that helpers should return.
 pub type ValueResult = std::result::Result<Option<Value>, Error>;
@@ -108,67 +108,6 @@ impl<'source> BlockTemplate<'source> {
         Ok(branch.or(alt))
     }
 }
-
-/// Context for the call to a helper.
-pub struct Context<'ctx> {
-    name: String,
-    arguments: Vec<Value>,
-    hash: Map<String, Value>,
-    phantom: std::marker::PhantomData<&'ctx str>,
-}
-
-impl<'ctx> Context<'ctx> {
-    pub fn new(
-        name: String,
-        arguments: Vec<Value>,
-        hash: Map<String, Value>,
-    ) -> Self {
-        Self {
-            name,
-            arguments,
-            hash,
-            phantom: std::marker::PhantomData,
-        }
-    }
-
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-
-    pub fn arguments(&self) -> &Vec<Value> {
-        &self.arguments
-    }
-
-    pub fn hash(&self) -> &Map<String, Value> {
-        &self.hash
-    }
-}
-
-/*
-impl Into<Vec<Value>> for Context<'_> {
-    fn into(self) -> Vec<Value> {
-        self.arguments
-    }
-}
-
-impl Into<String> for Context<'_> {
-    fn into(self) -> String {
-        self.name
-    }
-}
-
-impl Into<(String, Vec<Value>)> for Context<'_> {
-    fn into(self) -> (String, Vec<Value>) {
-        (self.name, self.arguments)
-    }
-}
-
-impl Into<(String, Vec<Value>, Map<String, Value>)> for Context<'_> {
-    fn into(self) -> (String, Vec<Value>, Map<String, Value>) {
-        (self.name, self.arguments, self.hash)
-    }
-}
-*/
 
 /// Trait for types that provide helper assertions.
 pub trait Assertion {

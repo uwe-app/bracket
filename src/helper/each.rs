@@ -1,9 +1,9 @@
 //! Block helper that iterates arrays and objects.
 use crate::{
     helper::{
-        Assertion, BlockHelper, BlockResult, BlockTemplate, Context, Error,
+        Assertion, BlockHelper, BlockResult, BlockTemplate, Error,
     },
-    render::{Render, Scope},
+    render::{Render, Context, Scope},
 };
 
 use serde_json::{Number, Value};

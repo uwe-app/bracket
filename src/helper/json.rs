@@ -1,7 +1,7 @@
 //! Helper that returns a JSON string.
 use crate::{
-    helper::{Assertion, Context, Error, Helper, ValueResult},
-    render::Render,
+    helper::{Assertion, Error, Helper, ValueResult},
+    render::{Context, Render},
 };
 
 use serde_json::{to_string, to_string_pretty, Value};

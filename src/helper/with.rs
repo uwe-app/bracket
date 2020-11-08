@@ -1,7 +1,7 @@
 //! Block helper that sets the scope.
 use crate::{
-    helper::{Assertion, BlockHelper, BlockResult, BlockTemplate, Context},
-    render::{Render, Scope},
+    helper::{Assertion, BlockHelper, BlockResult, BlockTemplate},
+    render::{Context, Render, Scope},
 };
 
 use serde_json::Value;

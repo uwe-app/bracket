@@ -1,7 +1,7 @@
 //! Helper to print log messages.
 use crate::{
-    helper::{Assertion, Context, Helper, ValueResult},
-    render::Render,
+    helper::{Assertion, Helper, ValueResult},
+    render::{Context, Render},
 };
 
 use log::*;

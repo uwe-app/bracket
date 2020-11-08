@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 use bracket::{
     error::{Error, SyntaxError},
     helper::*,
-    render::Render,
+    render::{Context, Render},
     template::{Loader, Templates},
     Registry, Result,
 };
