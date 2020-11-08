@@ -333,7 +333,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     ) -> RenderResult<HelperValue> {
         let args = self.arguments(call)?;
         let hash = self.hash(call)?;
-        let mut context = Context::new(name.to_owned(), args, hash);
+        let mut context = Context::new(call, name.to_owned(), args, hash);
 
         println!("Invoke a helper with the name: {}", name);
 

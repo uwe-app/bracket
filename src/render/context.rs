@@ -1,27 +1,28 @@
 //! Context information for the call to a helper.
 use serde_json::{Map, Value};
 
+use crate::parser::ast::Call;
+
 /// Context for the call to a helper.
 pub struct Context<'call> {
+    call: &'call Call<'call>,
     name: String,
     arguments: Vec<Value>,
     hash: Map<String, Value>,
-
-    call: std::marker::PhantomData<&'call str>,
 }
 
 impl<'call> Context<'call> {
     pub fn new(
+        call: &'call Call<'call>,
         name: String,
         arguments: Vec<Value>,
         hash: Map<String, Value>,
     ) -> Self {
         Self {
+            call,
             name,
             arguments,
             hash,
-
-            call: std::marker::PhantomData,
         }
     }
 

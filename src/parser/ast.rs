@@ -412,6 +412,10 @@ impl<'source> Call<'source> {
         }
     }
 
+    pub fn source(&self) -> &str {
+        self.source
+    }
+
     pub fn is_empty(&self) -> bool {
         self.target.is_empty()
     }
