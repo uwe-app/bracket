@@ -82,6 +82,7 @@ impl Loader {
     }
 }
 
+/// Collection of named templates.
 #[derive(Default)]
 pub struct Templates<'source> {
     templates: HashMap<&'source str, Template<'source>>,
@@ -137,19 +138,15 @@ impl<'source> TryFrom<&'source Loader> for Templates<'source> {
     }
 }
 
+/// Type that adds rendering capability to a document node.
 #[derive(Debug)]
 pub struct Template<'source> {
-    source: &'source str,
     node: Node<'source>,
 }
 
 impl<'source> Template<'source> {
-    pub fn new(source: &'source str, node: Node<'source>) -> Self {
-        Self { source, node }
-    }
-
-    pub fn as_str(&self) -> &'source str {
-        self.source
+    pub fn new(node: Node<'source>) -> Self {
+        Self { node }
     }
 
     pub fn node(&self) -> &'source Node {
@@ -164,6 +161,7 @@ impl fmt::Display for Template<'_> {
 }
 
 impl<'reg, 'source> Template<'source> {
+
     /// Compile a block.
     pub fn compile(
         source: &'source str,
@@ -171,15 +169,14 @@ impl<'reg, 'source> Template<'source> {
     ) -> SyntaxResult<Template> {
         let mut parser = Parser::new(source, options);
         let node = parser.parse()?;
-        Ok(Template::new(source, node))
+        Ok(Template::new(node))
     }
 
     /// Render this template to the given writer.
-    pub fn render<'a, T>(
+    pub(crate) fn render<'a, T>(
         &self,
         escape: &EscapeFn,
         helpers: &'reg HelperRegistry<'reg>,
-        //local_helpers: &'a mut HelperRegistry<'a>,
         templates: &'source Templates<'source>,
         name: &str,
         data: &T,
@@ -191,9 +188,8 @@ impl<'reg, 'source> Template<'source> {
         let mut rc = Render::new(
             escape,
             helpers,
-            //local_helpers,
             templates,
-            self.source,
+            self.node.source(),
             data,
             Box::new(writer),
         )?;

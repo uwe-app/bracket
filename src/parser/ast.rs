@@ -79,6 +79,21 @@ impl<'source> Node<'source> {
         }
     }
 
+    /// The underlying string slice.
+    pub fn source(&self) -> &str {
+        match *self {
+            Self::Document(ref n) => "#document",
+            Self::Text(ref n) => n.0,
+            Self::RawBlock(ref n) => n.source,
+            Self::RawStatement(ref n) => n.source,
+            Self::RawComment(ref n) => n.source,
+            Self::Comment(ref n) => n.source,
+            Self::Statement(ref n) => n.source,
+            Self::Block(ref n) => n.source,
+            Self::Condition(ref n) => n.source,
+        }
+    }
+
     /// Iterate leaf nodes.
     pub fn iter<'a>(&'a self) -> NodeIter<'a> {
         NodeIter::new(self)

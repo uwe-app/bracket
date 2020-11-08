@@ -4,7 +4,11 @@ use serde_json::{Map, Value};
 
 use crate::{parser::ast::Call, helper::BlockResult, error::HelperError};
 
-/// Context for the call to a helper.
+/// Context for the call to a helper exposes immutable access to 
+/// the arguments and hash parameters for the helper.
+///
+/// It also provides some useful functions for asserting on argument 
+/// arity and the type of arguments and hash parameters.
 pub struct Context<'call> {
     call: &'call Call<'call>,
     name: String,

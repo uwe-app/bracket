@@ -38,6 +38,7 @@ pub use block::BlockTemplate;
 pub use context::Context;
 pub use scope::Scope;
 
+/// Render a template.
 pub struct Render<'reg, 'source, 'render> {
     escape: &'reg EscapeFn,
     helpers: &'reg HelperRegistry<'reg>,
@@ -335,7 +336,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         let hash = self.hash(call)?;
         let mut context = Context::new(call, name.to_owned(), args, hash);
 
-        println!("Invoke a helper with the name: {}", name);
+        //println!("Invoke a helper with the name: {}", name);
 
         let locals = self
             .local_helpers
@@ -395,7 +396,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     /// Invoke a call and return the result.
-    pub fn call(&mut self, call: &Call<'_>) -> RenderResult<HelperValue> {
+    pub(crate) fn call(&mut self, call: &Call<'_>) -> RenderResult<HelperValue> {
         match call.target() {
             CallTarget::Path(ref path) => {
                 // Explicit paths should resolve to a lookup
