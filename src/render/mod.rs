@@ -594,7 +594,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 }
 
 impl Assertion for Render<'_, '_, '_> {
-    fn arity(&self, ctx: &Context<'_, '_, '_, '_>, range: Range<usize>) -> BlockResult {
+    fn arity(&self, ctx: &Context<'_>, range: Range<usize>) -> BlockResult {
         if range.start == range.end {
             if ctx.arguments().len() != range.start {
                 return Err(HelperError::ArityExact(

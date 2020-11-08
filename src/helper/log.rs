@@ -23,7 +23,7 @@ impl Helper for LogHelper {
     fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'reg, 'source, 'render, 'call>,
+        ctx: &mut Context<'call>,
     ) -> ValueResult {
         rc.arity(&ctx, 1..usize::MAX)?;
 

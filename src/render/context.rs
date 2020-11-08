@@ -2,18 +2,15 @@
 use serde_json::{Map, Value};
 
 /// Context for the call to a helper.
-pub struct Context<'reg, 'source, 'render, 'call> {
+pub struct Context<'call> {
     name: String,
     arguments: Vec<Value>,
     hash: Map<String, Value>,
 
-    reg: std::marker::PhantomData<&'reg str>,
-    source: std::marker::PhantomData<&'source str>,
-    render: std::marker::PhantomData<&'render str>,
     call: std::marker::PhantomData<&'call str>,
 }
 
-impl<'reg, 'source, 'render, 'call> Context<'reg, 'source, 'render, 'call> {
+impl<'call> Context<'call> {
     pub fn new(
         name: String,
         arguments: Vec<Value>,
@@ -24,9 +21,6 @@ impl<'reg, 'source, 'render, 'call> Context<'reg, 'source, 'render, 'call> {
             arguments,
             hash,
 
-            reg: std::marker::PhantomData,
-            source: std::marker::PhantomData,
-            render: std::marker::PhantomData,
             call: std::marker::PhantomData,
         }
     }

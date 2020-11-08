@@ -11,7 +11,7 @@ impl BlockHelper for UnlessHelper {
     fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'reg, 'source, 'render, 'call>,
+        ctx: &mut Context<'call>,
         block: BlockTemplate<'source>,
     ) -> BlockResult {
         rc.arity(&ctx, 1..1)?;

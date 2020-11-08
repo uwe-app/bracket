@@ -21,7 +21,7 @@ pub trait Helper: Send + Sync + DynClone {
     fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'reg, 'source, 'render, 'call>,
+        ctx: &mut Context<'call>,
     ) -> ValueResult;
 }
 
@@ -32,7 +32,7 @@ pub trait BlockHelper: Send + Sync + DynClone {
     fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'reg, 'source, 'render, 'call>,
+        ctx: &mut Context<'call>,
         block: BlockTemplate<'source>,
     ) -> BlockResult;
 }
@@ -42,7 +42,7 @@ dyn_clone::clone_trait_object!(BlockHelper);
 /// Trait for types that provide helper assertions.
 pub trait Assertion {
     /// Assert that the context arguments are in the given arity range.
-    fn arity(&self, context: &Context<'_, '_, '_, '_>, range: Range<usize>) -> BlockResult;
+    fn arity(&self, context: &Context<'_>, range: Range<usize>) -> BlockResult;
 }
 
 #[cfg(feature = "each-helper")]

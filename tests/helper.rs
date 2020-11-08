@@ -18,7 +18,7 @@ impl Helper for FooHelper {
     fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'reg, 'source, 'render, 'call>,
+        ctx: &mut Context<'call>,
     ) -> ValueResult {
         Ok(Some(Value::String("bar".to_string())))
     }
@@ -31,7 +31,7 @@ impl BlockHelper for FooBlockHelper {
     fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'reg, 'source, 'render, 'call>,
+        ctx: &mut Context<'call>,
         block: BlockTemplate<'source>,
     ) -> BlockResult {
         rc.register_helper("foo", Box::new(FooHelper {}));
