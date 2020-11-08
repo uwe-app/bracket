@@ -1,6 +1,6 @@
 //! Helper to lookup a field of an array or object.
 use crate::{
-    helper::{Assertion, Error, Helper, ValueResult},
+    helper::{Error, Helper, ValueResult},
     render::{Context, Render},
 };
 
@@ -13,7 +13,7 @@ impl Helper for LookupHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &mut Context<'call>,
     ) -> ValueResult {
-        rc.arity(&ctx, 2..2)?;
+        ctx.arity(2..2)?;
 
         let name = ctx.name();
         let args = ctx.arguments();

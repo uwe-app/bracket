@@ -1,6 +1,6 @@
 //! Block helper for negated conditional.
 use crate::{
-    helper::{Assertion, BlockHelper, BlockResult, BlockTemplate},
+    helper::{BlockHelper, BlockResult, BlockTemplate},
     render::{Context, Render},
 };
 
@@ -14,7 +14,7 @@ impl BlockHelper for UnlessHelper {
         ctx: &mut Context<'call>,
         block: BlockTemplate<'source>,
     ) -> BlockResult {
-        rc.arity(&ctx, 1..1)?;
+        ctx.arity(1..1)?;
 
         if !rc.is_truthy(ctx.arguments().get(0).unwrap()) {
             rc.template(block.template())?;

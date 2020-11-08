@@ -1,6 +1,6 @@
 //! Helper to print log messages.
 use crate::{
-    helper::{Assertion, Helper, ValueResult},
+    helper::{Helper, ValueResult},
     render::{Context, Render},
 };
 
@@ -25,7 +25,7 @@ impl Helper for LogHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &mut Context<'call>,
     ) -> ValueResult {
-        rc.arity(&ctx, 1..usize::MAX)?;
+        ctx.arity(1..usize::MAX)?;
 
         let args = ctx.arguments();
         let hash = ctx.hash();

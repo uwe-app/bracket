@@ -1,7 +1,8 @@
 //! Context information for the call to a helper.
+use std::ops::Range;
 use serde_json::{Map, Value};
 
-use crate::parser::ast::Call;
+use crate::{parser::ast::Call, helper::BlockResult, error::HelperError};
 
 /// Context for the call to a helper.
 pub struct Context<'call> {
@@ -36,5 +37,27 @@ impl<'call> Context<'call> {
 
     pub fn hash(&self) -> &Map<String, Value> {
         &self.hash
+    }
+
+    pub fn arity(&self, range: Range<usize>) -> BlockResult {
+        if range.start == range.end {
+            if self.arguments().len() != range.start {
+                return Err(HelperError::ArityExact(
+                    self.name.clone(),
+                    range.start,
+                ));
+            }
+        } else {
+            if self.arguments().len() < range.start
+                || self.arguments().len() > range.end
+            {
+                return Err(HelperError::ArityRange(
+                    self.name.clone(),
+                    range.start,
+                    range.end,
+                ));
+            }
+        }
+        Ok(())
     }
 }

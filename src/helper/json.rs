@@ -1,6 +1,6 @@
 //! Helper that returns a JSON string.
 use crate::{
-    helper::{Assertion, Error, Helper, ValueResult},
+    helper::{Error, Helper, ValueResult},
     render::{Context, Render},
 };
 
@@ -19,7 +19,7 @@ impl Helper for JsonHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &mut Context<'call>,
     ) -> ValueResult {
-        rc.arity(&ctx, 1..2)?;
+        ctx.arity(1..2)?;
 
         let args = ctx.arguments();
         let target = args.get(0).unwrap();

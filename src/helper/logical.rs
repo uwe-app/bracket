@@ -1,6 +1,6 @@
 //! Helpers for conditional statements.
 use crate::{
-    helper::{Assertion, Helper, ValueResult},
+    helper::{Helper, ValueResult},
     render::{Context, Render},
 };
 
@@ -16,7 +16,7 @@ impl Helper for AndHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &mut Context<'call>,
     ) -> ValueResult {
-        rc.arity(&ctx, 2..2)?;
+        ctx.arity(2..2)?;
 
         let args = ctx.arguments();
         Ok(Some(Value::Bool(
@@ -36,7 +36,7 @@ impl Helper for OrHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &mut Context<'call>,
     ) -> ValueResult {
-        rc.arity(&ctx, 2..2)?;
+        ctx.arity(2..2)?;
 
         let args = ctx.arguments();
         Ok(Some(Value::Bool(
@@ -56,7 +56,7 @@ impl Helper for NotHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &mut Context<'call>,
     ) -> ValueResult {
-        rc.arity(&ctx, 1..1)?;
+        ctx.arity(1..1)?;
 
         let args = ctx.arguments();
         Ok(Some(Value::Bool(!rc.is_truthy(args.get(0).unwrap()))))

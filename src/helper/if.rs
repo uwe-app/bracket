@@ -1,7 +1,7 @@
 //! Helpers for conditional statements.
 use crate::{
     helper::{
-        Assertion, BlockHelper, BlockResult, BlockTemplate, Helper, ValueResult,
+        BlockHelper, BlockResult, BlockTemplate, Helper, ValueResult,
     },
     render::{Context, Render},
 };
@@ -17,7 +17,7 @@ impl Helper for IfHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &mut Context<'call>,
     ) -> ValueResult {
-        rc.arity(&ctx, 1..usize::MAX)?;
+        ctx.arity(1..usize::MAX)?;
 
         let args = ctx.arguments();
 
@@ -42,7 +42,7 @@ impl BlockHelper for IfBlockHelper {
         ctx: &mut Context<'call>,
         block: BlockTemplate<'source>,
     ) -> BlockResult {
-        rc.arity(&ctx, 1..1)?;
+        ctx.arity(1..1)?;
 
         if rc.is_truthy(ctx.arguments().get(0).unwrap()) {
             rc.template(block.template())?;

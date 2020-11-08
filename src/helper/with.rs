@@ -1,6 +1,6 @@
 //! Block helper that sets the scope.
 use crate::{
-    helper::{Assertion, BlockHelper, BlockResult, BlockTemplate},
+    helper::{BlockHelper, BlockResult, BlockTemplate},
     render::{Context, Render, Scope},
 };
 
@@ -16,7 +16,7 @@ impl BlockHelper for WithHelper {
         ctx: &mut Context<'call>,
         block: BlockTemplate<'source>,
     ) -> BlockResult {
-        rc.arity(&ctx, 1..1)?;
+        ctx.arity(1..1)?;
 
         let args = ctx.arguments();
         let target = args.get(0).unwrap();

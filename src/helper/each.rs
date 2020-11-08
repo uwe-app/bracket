@@ -1,6 +1,6 @@
 //! Block helper that iterates arrays and objects.
 use crate::{
-    helper::{Assertion, BlockHelper, BlockResult, BlockTemplate, Error},
+    helper::{BlockHelper, BlockResult, BlockTemplate, Error},
     render::{Context, Render, Scope},
 };
 
@@ -21,7 +21,7 @@ impl BlockHelper for EachHelper {
         ctx: &mut Context<'call>,
         block: BlockTemplate<'source>,
     ) -> BlockResult {
-        rc.arity(&ctx, 1..1)?;
+        ctx.arity(1..1)?;
 
         //let (name, mut args) = ctx.into();
         let name = ctx.name();

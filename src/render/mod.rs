@@ -8,7 +8,7 @@ use std::rc::Rc;
 use crate::{
     error::{HelperError, RenderError},
     escape::EscapeFn,
-    helper::{Assertion, BlockHelper, BlockResult, Helper, HelperRegistry},
+    helper::{BlockHelper, BlockResult, Helper, HelperRegistry},
     json,
     output::Output,
     parser::{
@@ -590,29 +590,5 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         } else {
             Ok(self.writer.write_str(val).map_err(RenderError::from)?)
         }
-    }
-}
-
-impl Assertion for Render<'_, '_, '_> {
-    fn arity(&self, ctx: &Context<'_>, range: Range<usize>) -> BlockResult {
-        if range.start == range.end {
-            if ctx.arguments().len() != range.start {
-                return Err(HelperError::ArityExact(
-                    ctx.name().to_owned(),
-                    range.start,
-                ));
-            }
-        } else {
-            if ctx.arguments().len() < range.start
-                || ctx.arguments().len() > range.end
-            {
-                return Err(HelperError::ArityRange(
-                    ctx.name().to_owned(),
-                    range.start,
-                    range.end,
-                ));
-            }
-        }
-        Ok(())
     }
 }
