@@ -39,51 +39,8 @@ impl<'call> Context<'call> {
         }
     }
 
-    pub fn template(&self) -> &Option<&'call Node<'_>> {
-        &self.template
-    }
-
-    /// Evaluate the block conditionals and find
-    /// the first node that should be rendered.
-    pub fn inverse(
-        &self,
-        rc: &mut Render<'_>,
-    ) -> Result<Option<&Node<'_>>, HelperError> {
-        let mut alt: Option<&Node<'_>> = None;
-        let mut branch: Option<&Node<'_>> = None;
-
-        if let Some(template) = self.template {
-            match template {
-                Node::Block(ref block) => {
-                    if !block.conditions().is_empty() {
-                        for node in block.conditions().iter() {
-                            match node {
-                                Node::Condition(clause) => {
-                                    // Got an else clause, last one wins!
-                                    if clause.call().is_empty() {
-                                        alt = Some(node);
-                                    } else {
-                                        if let Some(value) = rc
-                                            .call(clause.call())
-                                            .map_err(Box::new)?
-                                        {
-                                            if rc.is_truthy(&value) {
-                                                branch = Some(node);
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        Ok(branch.or(alt))
+    pub fn template(&self) -> Option<&'call Node<'_>> {
+        self.template
     }
 
     pub fn name(&self) -> &str {

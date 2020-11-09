@@ -20,7 +20,7 @@ impl Helper for IfHelper {
 
             if rc.is_truthy(ctx.arguments().get(0).unwrap()) {
                 rc.template(template)?;
-            } else if let Some(node) = ctx.inverse(rc)? {
+            } else if let Some(node) = rc.inverse(template)? {
                 rc.template(node)?;
             }
 
