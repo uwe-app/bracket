@@ -16,9 +16,9 @@ static INDEX: &str = "index";
 pub struct EachHelper;
 
 impl Helper for EachHelper {
-    fn call<'reg, 'render, 'call>(
+    fn call<'render, 'call>(
         &self,
-        rc: &mut Render<'reg, 'render>,
+        rc: &mut Render<'render>,
         ctx: &Context<'call>,
     ) -> ValueResult {
         ctx.arity(1..1)?;

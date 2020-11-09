@@ -32,10 +32,10 @@ pub use context::Context;
 pub use scope::Scope;
 
 /// Render a template.
-pub struct Render<'reg, 'render> {
+pub struct Render<'render> {
     strict: bool,
     escape: &'render EscapeFn,
-    helpers: &'reg HelperRegistry<'reg>,
+    helpers: &'render HelperRegistry<'render>,
     local_helpers: Option<Rc<RefCell<HelperRegistry<'render>>>>,
     templates: &'render Templates<'render>,
     source: &'render str,
@@ -48,11 +48,11 @@ pub struct Render<'reg, 'render> {
     end_tag_hint: Option<TrimHint>,
 }
 
-impl<'reg, 'render> Render<'reg, 'render> {
+impl<'render> Render<'render> {
     pub fn new<T>(
         strict: bool,
         escape: &'render EscapeFn,
-        helpers: &'reg HelperRegistry<'reg>,
+        helpers: &'render HelperRegistry<'render>,
         templates: &'render Templates<'render>,
         source: &'render str,
         data: &T,

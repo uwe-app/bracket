@@ -10,9 +10,9 @@ use serde_json::Value;
 pub struct WithHelper;
 
 impl Helper for WithHelper {
-    fn call<'reg, 'render, 'call>(
+    fn call<'render, 'call>(
         &self,
-        rc: &mut Render<'reg, 'render>,
+        rc: &mut Render<'render>,
         ctx: &Context<'call>,
     ) -> ValueResult {
         ctx.arity(1..1)?;

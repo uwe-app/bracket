@@ -10,9 +10,9 @@ use serde_json::Value;
 pub struct IfHelper;
 
 impl Helper for IfHelper {
-    fn call<'reg, 'render, 'call>(
+    fn call<'render, 'call>(
         &self,
-        rc: &mut Render<'reg, 'render>,
+        rc: &mut Render<'render>,
         ctx: &Context<'call>,
     ) -> ValueResult {
         if let Some(template) = ctx.template() {

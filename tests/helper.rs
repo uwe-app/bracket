@@ -15,9 +15,9 @@ static NAME: &str = "helper.rs";
 pub struct FooHelper;
 
 impl Helper for FooHelper {
-    fn call<'reg, 'render, 'call>(
+    fn call<'render, 'call>(
         &self,
-        rc: &mut Render<'reg, 'render>,
+        rc: &mut Render<'render>,
         ctx: &Context<'call>,
     ) -> ValueResult {
         Ok(Some(Value::String("bar".to_string())))
@@ -28,9 +28,9 @@ impl Helper for FooHelper {
 pub struct FooBlockHelper;
 
 impl Helper for FooBlockHelper {
-    fn call<'reg, 'render, 'call>(
+    fn call<'render, 'call>(
         &self,
-        rc: &mut Render<'reg, 'render>,
+        rc: &mut Render<'render>,
         ctx: &Context<'call>,
     ) -> ValueResult {
         rc.register_helper("foo", Box::new(FooHelper {}));
@@ -47,9 +47,9 @@ impl Helper for FooBlockHelper {
 pub struct MissingBlockHelper;
 
 impl Helper for MissingBlockHelper {
-    fn call<'reg, 'render, 'call>(
+    fn call<'render, 'call>(
         &self,
-        rc: &mut Render<'reg, 'render>,
+        rc: &mut Render<'render>,
         ctx: &Context<'call>,
     ) -> ValueResult {
         rc.write("bar")?;

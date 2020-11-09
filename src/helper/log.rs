@@ -21,9 +21,9 @@ use log::*;
 pub struct LogHelper;
 
 impl Helper for LogHelper {
-    fn call<'reg, 'render, 'call>(
+    fn call<'render, 'call>(
         &self,
-        rc: &mut Render<'reg, 'render>,
+        rc: &mut Render<'render>,
         ctx: &Context<'call>,
     ) -> ValueResult {
         ctx.arity(1..usize::MAX)?;
