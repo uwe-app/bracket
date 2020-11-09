@@ -45,9 +45,9 @@ impl<'call> Context<'call> {
 
     /// Evaluate the block conditionals and find
     /// the first node that should be rendered.
-    pub fn inverse<'reg, 'source, 'render>(
+    pub fn inverse(
         &self,
-        rc: &mut Render<'reg, 'source, 'render>,
+        rc: &mut Render<'_, '_, '_>,
     ) -> Result<Option<&Node<'_>>, HelperError> {
         let mut alt: Option<&Node<'_>> = None;
         let mut branch: Option<&Node<'_>> = None;
