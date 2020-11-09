@@ -7,6 +7,7 @@ use crate::{
     output::{Output, StringOutput},
     parser::{trim::TrimHint, Parser, ParserOptions},
     render::Render,
+    parser::ast::Node,
     template::{Template, Templates},
     Error, Result,
 };
@@ -151,13 +152,13 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     where
         T: Serialize,
     {
+
         /*
-        let mut local_helpers = HelperRegistry::new();
-        let rc = Render::new(
+        let mut buffer: Vec<Node<'_>> = Vec::new();
+        let mut rc = Render::new(
             self.strict(),
             self.escape(),
             self.helpers(),
-            &mut local_helpers,
             self.templates(),
             source,
             data,
@@ -172,12 +173,17 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         let hint: Option<TrimHint> = Default::default();
         for node in parser {
             let node = node?;
+            //let node = buffer.last().unwrap();
             for event in node.iter().trim(hint) {
                 println!("{:#?}", event.node);
                 //rc.render_node(event.node, event.trim)?;
             }
+            //buffer.push(node);
         }
+
+        drop(buffer);
         */
+    
         Ok(())
     }
 
