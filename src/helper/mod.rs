@@ -18,9 +18,9 @@ pub type ValueResult = HelperResult<Option<Value>>;
 
 /// Trait for helpers.
 pub trait Helper: Send + Sync + DynClone {
-    fn call<'reg, 'source, 'render, 'call>(
+    fn call<'reg, 'render, 'call>(
         &self,
-        rc: &mut Render<'reg, 'source, 'render>,
+        rc: &mut Render<'reg, 'render>,
         ctx: &Context<'call>,
     ) -> ValueResult;
 }

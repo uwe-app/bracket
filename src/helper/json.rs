@@ -15,9 +15,9 @@ use serde_json::{to_string, to_string_pretty, Value};
 pub struct JsonHelper;
 
 impl Helper for JsonHelper {
-    fn call<'reg, 'source, 'render, 'call>(
+    fn call<'reg, 'render, 'call>(
         &self,
-        rc: &mut Render<'reg, 'source, 'render>,
+        rc: &mut Render<'reg, 'render>,
         ctx: &Context<'call>,
     ) -> ValueResult {
         ctx.arity(1..2)?;

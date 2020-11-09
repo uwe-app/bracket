@@ -47,7 +47,7 @@ impl<'call> Context<'call> {
     /// the first node that should be rendered.
     pub fn inverse(
         &self,
-        rc: &mut Render<'_, '_, '_>,
+        rc: &mut Render<'_, '_>,
     ) -> Result<Option<&Node<'_>>, HelperError> {
         let mut alt: Option<&Node<'_>> = None;
         let mut branch: Option<&Node<'_>> = None;

@@ -10,9 +10,9 @@ use serde_json::Value;
 pub struct IfHelper;
 
 impl Helper for IfHelper {
-    fn call<'reg, 'source, 'render, 'call>(
+    fn call<'reg, 'render, 'call>(
         &self,
-        rc: &mut Render<'reg, 'source, 'render>,
+        rc: &mut Render<'reg, 'render>,
         ctx: &Context<'call>,
     ) -> ValueResult {
         if let Some(template) = ctx.template() {
@@ -41,26 +41,3 @@ impl Helper for IfHelper {
         }
     }
 }
-
-/*
-#[derive(Clone)]
-pub struct IfBlockHelper;
-
-impl BlockHelper for IfBlockHelper {
-    fn call<'reg, 'source, 'render, 'call>(
-        &self,
-        rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'call>,
-        block: BlockTemplate<'source>,
-    ) -> HelperResult<()> {
-        ctx.arity(1..1)?;
-
-        if rc.is_truthy(ctx.arguments().get(0).unwrap()) {
-            rc.template(block.template())?;
-        } else if let Some(node) = block.inverse(rc)? {
-            rc.template(node)?;
-        }
-        Ok(())
-    }
-}
-*/

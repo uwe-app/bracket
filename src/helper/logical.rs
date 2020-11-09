@@ -11,9 +11,9 @@ use serde_json::Value;
 pub struct AndHelper;
 
 impl Helper for AndHelper {
-    fn call<'reg, 'source, 'render, 'call>(
+    fn call<'reg, 'render, 'call>(
         &self,
-        rc: &mut Render<'reg, 'source, 'render>,
+        rc: &mut Render<'reg, 'render>,
         ctx: &Context<'call>,
     ) -> ValueResult {
         ctx.arity(2..2)?;
@@ -31,9 +31,9 @@ impl Helper for AndHelper {
 pub struct OrHelper;
 
 impl Helper for OrHelper {
-    fn call<'reg, 'source, 'render, 'call>(
+    fn call<'reg, 'render, 'call>(
         &self,
-        rc: &mut Render<'reg, 'source, 'render>,
+        rc: &mut Render<'reg, 'render>,
         ctx: &Context<'call>,
     ) -> ValueResult {
         ctx.arity(2..2)?;
@@ -51,9 +51,9 @@ impl Helper for OrHelper {
 pub struct NotHelper;
 
 impl Helper for NotHelper {
-    fn call<'reg, 'source, 'render, 'call>(
+    fn call<'reg, 'render, 'call>(
         &self,
-        rc: &mut Render<'reg, 'source, 'render>,
+        rc: &mut Render<'reg, 'render>,
         ctx: &Context<'call>,
     ) -> ValueResult {
         ctx.arity(1..1)?;

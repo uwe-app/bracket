@@ -32,13 +32,13 @@ pub use context::Context;
 pub use scope::Scope;
 
 /// Render a template.
-pub struct Render<'reg, 'source, 'render> {
+pub struct Render<'reg, 'render> {
     strict: bool,
     escape: &'render EscapeFn,
     helpers: &'reg HelperRegistry<'reg>,
     local_helpers: Option<Rc<RefCell<HelperRegistry<'render>>>>,
     templates: &'render Templates<'render>,
-    source: &'source str,
+    source: &'render str,
     root: Value,
     writer: Box<&'render mut dyn Output>,
     scopes: Vec<Scope<'render>>,
@@ -48,13 +48,13 @@ pub struct Render<'reg, 'source, 'render> {
     end_tag_hint: Option<TrimHint>,
 }
 
-impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
+impl<'reg, 'render> Render<'reg, 'render> {
     pub fn new<T>(
         strict: bool,
         escape: &'render EscapeFn,
         helpers: &'reg HelperRegistry<'reg>,
         templates: &'render Templates<'render>,
-        source: &'source str,
+        source: &'render str,
         data: &T,
         writer: Box<&'render mut dyn Output>,
     ) -> RenderResult<Self>
@@ -187,7 +187,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     /// Infallible variable lookup by path.
-    fn lookup<'a>(&'a self, path: &'source Path) -> Option<&'a Value> {
+    fn lookup<'a>(&'a self, path: &Path<'_>) -> Option<&'a Value> {
         //println!("Lookup path {:?}", path.as_str());
         //println!("Lookup path {:?}", path);
 
