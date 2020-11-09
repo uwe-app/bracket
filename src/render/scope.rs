@@ -49,11 +49,11 @@ impl<'scope> Scope<'scope> {
         &self.value
     }
 
-    pub fn set_partial_block(&mut self, block: Option<&'scope Node<'scope>>) {
-        self.partial_block = block;
-    }
+    //pub fn set_partial_block(&mut self, block: Option<&'scope Node<'scope>>) {
+        //self.partial_block = block;
+    //}
 
-    pub fn partial_block_mut(&mut self) -> &mut Option<&'scope Node<'scope>> {
-        &mut self.partial_block
-    }
+    //pub fn partial_block_mut(&mut self) -> &mut Option<&'scope Node<'scope>> {
+        //&mut self.partial_block
+    //}
 }

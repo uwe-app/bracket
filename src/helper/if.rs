@@ -1,6 +1,6 @@
 //! Helpers for conditional statements.
 use crate::{
-    helper::{BlockHelper, HelperResult, BlockTemplate, Helper, ValueResult},
+    helper::{HelperResult, Helper, ValueResult},
     render::{Context, Render},
 };
 
@@ -13,23 +13,38 @@ impl Helper for IfHelper {
     fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'call>,
+        ctx: &mut Context<'source, 'call>,
     ) -> ValueResult {
-        ctx.arity(1..usize::MAX)?;
+        if let Some(template) = ctx.template() {
+            ctx.arity(1..1)?;
 
-        let args = ctx.arguments();
-
-        let mut result = Value::Bool(true);
-        for val in args {
-            if !rc.is_truthy(&val) {
-                result = Value::Bool(false);
-                break;
+            if rc.is_truthy(ctx.arguments().get(0).unwrap()) {
+                rc.template(template)?;
+            } else if let Some(node) = ctx.inverse(rc)? {
+                rc.template(node)?;
             }
+
+            Ok(None)
+        } else {
+        
+            ctx.arity(1..usize::MAX)?;
+
+            let args = ctx.arguments();
+
+            let mut result = Value::Bool(true);
+            for val in args {
+                if !rc.is_truthy(&val) {
+                    result = Value::Bool(false);
+                    break;
+                }
+            }
+            Ok(Some(result))
         }
-        Ok(Some(result))
+
     }
 }
 
+/*
 #[derive(Clone)]
 pub struct IfBlockHelper;
 
@@ -50,3 +65,4 @@ impl BlockHelper for IfBlockHelper {
         Ok(())
     }
 }
+*/

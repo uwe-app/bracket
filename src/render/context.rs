@@ -2,33 +2,86 @@
 use serde_json::{Map, Value};
 use std::ops::Range;
 
-use crate::{helper::HelperResult, error::HelperError, parser::ast::Call};
+use crate::{helper::HelperResult, error::HelperError, parser::ast::{Call, Node}, render::Render};
 
 /// Context for the call to a helper exposes immutable access to
 /// the arguments and hash parameters for the helper.
 ///
 /// It also provides some useful functions for asserting on argument
 /// arity and the type of arguments and hash parameters.
-pub struct Context<'call> {
+pub struct Context<'source, 'call> {
     call: &'call Call<'call>,
     name: String,
     arguments: Vec<Value>,
     hash: Map<String, Value>,
+    template: Option<&'call Node<'call>>,
+
+    phantom: std::marker::PhantomData<&'source str>,
 }
 
-impl<'call> Context<'call> {
+impl<'source, 'call> Context<'source, 'call> {
     pub fn new(
         call: &'call Call<'call>,
         name: String,
         arguments: Vec<Value>,
         hash: Map<String, Value>,
+        template: Option<&'call Node<'call>>,
     ) -> Self {
         Self {
             call,
             name,
             arguments,
             hash,
+            template,
+            phantom: std::marker::PhantomData,
         }
+    }
+
+    pub fn template(&self) -> &Option<&'call Node<'_>> {
+        &self.template 
+    }
+
+    /// Evaluate the block conditionals and find
+    /// the first node that should be rendered.
+    pub fn inverse<'reg, 'render>(
+        &self,
+        rc: &mut Render<'reg, 'source, 'render>,
+    ) -> Result<Option<&Node<'_>>, HelperError> {
+        let mut alt: Option<&Node<'_>> = None;
+        let mut branch: Option<&Node<'_>> = None;
+
+        if let Some(template) = self.template {
+            match template {
+                Node::Block(ref block) => {
+                    if !block.conditions().is_empty() {
+                        for node in block.conditions().iter() {
+                            match node {
+                                Node::Condition(clause) => {
+                                    // Got an else clause, last one wins!
+                                    if clause.call().is_empty() {
+                                        alt = Some(node);
+                                    } else {
+                                        if let Some(value) = rc
+                                            .call(clause.call())
+                                            .map_err(Box::new)?
+                                        {
+                                            if rc.is_truthy(&value) {
+                                                branch = Some(node);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(branch.or(alt))
     }
 
     pub fn name(&self) -> &str {

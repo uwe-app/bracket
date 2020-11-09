@@ -20,8 +20,8 @@ use crate::{
 };
 
 static PARTIAL_BLOCK: &str = "@partial-block";
-static MISSING_HELPER: &str = "missingHelper";
-static MISSING_BLOCK_HELPER: &str = "missingBlockHelper";
+static MISSING_HELPER: &str = "helperMissing";
+static MISSING_BLOCK_HELPER: &str = "blockHelperMissing";
 
 type HelperValue = Option<Value>;
 
@@ -50,7 +50,8 @@ pub struct Render<'reg, 'source, 'render> {
     source: &'source str,
     root: Value,
     writer: Box<&'render mut dyn Output>,
-    scopes: Vec<Scope<'source>>,
+    scopes: Vec<Scope<'render>>,
+    partial_block: Option<&'render Node<'render>>,
     trim: TrimState,
     hint: Option<TrimHint>,
     end_tag_hint: Option<TrimHint>,
@@ -82,6 +83,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             root,
             writer,
             scopes,
+            partial_block: None,
             trim: Default::default(),
             hint: None,
             end_tag_hint: None,
@@ -113,17 +115,17 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     /// Push a scope onto the stack.
-    pub fn push_scope(&mut self, scope: Scope<'source>) {
+    pub fn push_scope(&mut self, scope: Scope<'render>) {
         self.scopes.push(scope);
     }
 
     /// Remove a scope from the stack.
-    pub fn pop_scope(&mut self) -> Option<Scope<'source>> {
+    pub fn pop_scope(&mut self) -> Option<Scope<'render>> {
         self.scopes.pop()
     }
 
     /// Get a mutable reference to the current scope.
-    pub fn scope_mut(&mut self) -> Option<&mut Scope<'source>> {
+    pub fn scope_mut(&mut self) -> Option<&mut Scope<'render>> {
         self.scopes.last_mut()
     }
 
@@ -142,7 +144,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     /// Block helpers should call this when they want to render an inner template.
     pub fn template(
         &mut self,
-        node: &'source Node<'_>,
+        node: &Node<'_>,
     ) -> Result<(), HelperError> {
         let mut hint: Option<TrimHint> = None;
         for event in node.block_iter().trim(self.hint) {
@@ -354,11 +356,11 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         kind: HelperType,
         name: &str,
         call: &Call<'_>,
-        mut content: Option<&'source Node<'_>>,
+        content: Option<&Node<'_>>,
     ) -> RenderResult<HelperValue> {
         let args = self.arguments(call)?;
         let hash = self.hash(call)?;
-        let mut context = Context::new(call, name.to_owned(), args, hash);
+        let mut context = Context::new(call, name.to_owned(), args, hash, content);
 
         //println!("Invoke a helper with the name: {}", name);
 
@@ -368,7 +370,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         let local_helpers = Rc::clone(locals);
 
         let value: Option<Value> = match kind {
-            HelperType::Value => {
+            HelperType::Block
+            | HelperType::Value => {
                 if let Some(helper) =
                     local_helpers.borrow().get(name).or(self.helpers.get(name))
                 {
@@ -378,8 +381,9 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                     None
                 }
             }
+                /*
             HelperType::Block => {
-                let template = content.take().unwrap();
+                //let template = content.take().unwrap();
                 if let Some(helper) = local_helpers
                     .borrow()
                     .get_block(name)
@@ -387,12 +391,14 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                     .or(self.helpers.get_block(MISSING_BLOCK_HELPER))
                 {
                     //if let Some(helper) = self.helpers.get_block(name) {
-                    let block = BlockTemplate::new(template);
-                    helper.call(self, &mut context, block).map(|_| None)?
+                    //let block = BlockTemplate::new(template);
+                    //helper.call(self, &mut context, block).map(|_| None)?
+                    None
                 } else {
                     None
                 }
             }
+                */
             HelperType::Raw => {
                 todo!("Resolve raw helpers");
             }
@@ -442,9 +448,9 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                         == PARTIAL_BLOCK
                 {
                     if let Some(scope) = self.scopes.last_mut() {
-                        if let Some(node) = scope.partial_block_mut().take() {
-                            self.template(node)?;
-                        }
+                        //if let Some(node) = scope.partial_block_mut().take() {
+                            //self.template(node)?;
+                        //}
                         Ok(None)
                     } else {
                         Ok(None)
@@ -502,7 +508,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     fn render_partial(
         &mut self,
         call: &Call<'_>,
-        partial_block: Option<&'source Node<'source>>,
+        partial_block: Option<&Node<'_>>,
     ) -> RenderResult<()> {
         let name = self.get_partial_name(call)?;
         let template = self
@@ -510,10 +516,17 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             .get(&name)
             .ok_or_else(|| RenderError::PartialNotFound(name))?;
 
+        //let partial = partial_block.map(|v| {
+            //let n: &'render Node<'render> = v;
+            //n
+        //});
+        //self.partial_block = partial;
+
         let node = template.node();
         let hash = self.hash(call)?;
         let mut scope = Scope::new_locals(hash);
-        scope.set_partial_block(partial_block);
+        // FIXME: restore partial block!
+        //scope.set_partial_block(partial_block);
         self.scopes.push(scope);
         // WARN: We must iterate the document child nodes
         // WARN: when rendering partials otherwise the
@@ -527,8 +540,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
     fn block(
         &mut self,
-        node: &'source Node<'_>,
-        block: &'source Block<'_>,
+        node: &Node<'_>,
+        block: &Block<'_>,
     ) -> RenderResult<()> {
         let call = block.call();
 
@@ -560,7 +573,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     /// Render and return a helper result wrapping the underlying render error.
     pub(crate) fn render_from_helper(
         &mut self,
-        node: &'source Node<'_>,
+        node: &Node<'_>,
         trim: TrimState,
     ) -> HelperResult<()> {
         self.render_node(node, trim)
@@ -569,7 +582,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
     pub(crate) fn render_node(
         &mut self,
-        node: &'source Node<'_>,
+        node: &Node<'_>,
         trim: TrimState,
     ) -> RenderResult<()> {
         self.trim = trim;

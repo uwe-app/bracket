@@ -21,7 +21,7 @@ pub trait Helper: Send + Sync + DynClone {
     fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'call>,
+        ctx: &mut Context<'source, 'call>,
     ) -> ValueResult;
 }
 
@@ -32,7 +32,7 @@ pub trait BlockHelper: Send + Sync + DynClone {
     fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'call>,
+        ctx: &mut Context<'source, 'call>,
         block: BlockTemplate<'source>,
     ) -> HelperResult<()>;
 }
@@ -76,10 +76,10 @@ impl<'reg> HelperRegistry<'reg> {
     fn builtins(&mut self) {
         #[cfg(feature = "conditional-helper")]
         self.register_helper("if", Box::new(r#if::IfHelper {}));
+        //#[cfg(feature = "conditional-helper")]
+        //self.register_block_helper("if", Box::new(r#if::IfBlockHelper {}));
         #[cfg(feature = "conditional-helper")]
-        self.register_block_helper("if", Box::new(r#if::IfBlockHelper {}));
-        #[cfg(feature = "conditional-helper")]
-        self.register_block_helper("unless", Box::new(unless::UnlessHelper {}));
+        self.register_helper("unless", Box::new(unless::UnlessHelper {}));
 
         #[cfg(feature = "log-helper")]
         self.register_helper("log", Box::new(log::LogHelper {}));
@@ -94,9 +94,9 @@ impl<'reg> HelperRegistry<'reg> {
         self.register_helper("not", Box::new(logical::NotHelper {}));
 
         #[cfg(feature = "with-helper")]
-        self.register_block_helper("with", Box::new(with::WithHelper {}));
+        self.register_helper("with", Box::new(with::WithHelper {}));
         #[cfg(feature = "each-helper")]
-        self.register_block_helper("each", Box::new(each::EachHelper {}));
+        self.register_helper("each", Box::new(each::EachHelper {}));
 
         #[cfg(feature = "json-helper")]
         self.register_helper("json", Box::new(json::JsonHelper {}));
