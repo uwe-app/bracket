@@ -34,12 +34,12 @@ impl<'reg, 'source> Registry<'reg, 'source> {
 
     /// Set the strict mode.
     pub fn set_strict(&mut self, strict: bool) {
-        self.strict = strict 
+        self.strict = strict
     }
 
     /// Get the strict mode.
     pub fn strict(&self) -> bool {
-        self.strict 
+        self.strict
     }
 
     /// Set the escape function for rendering.

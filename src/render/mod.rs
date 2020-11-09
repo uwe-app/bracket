@@ -8,7 +8,7 @@ use std::rc::Rc;
 use crate::{
     error::{HelperError, RenderError},
     escape::EscapeFn,
-    helper::{Helper, HelperResult, HelperRegistry},
+    helper::{Helper, HelperRegistry, HelperResult},
     json,
     output::Output,
     parser::{
@@ -90,8 +90,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
 
     /// Get a mutable reference to the output destination.
     ///
-    /// You should prefer the `write()` and `write_escaped()` functions 
-    /// when writing strings but if you want to write bytes directly to 
+    /// You should prefer the `write()` and `write_escaped()` functions
+    /// when writing strings but if you want to write bytes directly to
     /// the output destination you can use this reference.
     pub fn out(&mut self) -> &mut Box<&'render mut dyn Output> {
         &mut self.writer
@@ -140,10 +140,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     /// Render an inner template.
     ///
     /// Block helpers should call this when they want to render an inner template.
-    pub fn template(
-        &mut self,
-        node: &Node<'_>,
-    ) -> Result<(), HelperError> {
+    pub fn template(&mut self, node: &Node<'_>) -> Result<(), HelperError> {
         let mut hint: Option<TrimHint> = None;
         for event in node.block_iter().trim(self.hint) {
             let mut trim = event.trim;
@@ -360,7 +357,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     ) -> RenderResult<HelperValue> {
         let args = self.arguments(call)?;
         let hash = self.hash(call)?;
-        let mut context = Context::new(call, name.to_owned(), args, hash, content);
+        let mut context =
+            Context::new(call, name.to_owned(), args, hash, content);
 
         //println!("Invoke a helper with the name: {}", name);
 
@@ -370,8 +368,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         let local_helpers = Rc::clone(locals);
 
         let value: Option<Value> = match kind {
-            HelperType::Block
-            | HelperType::Value => {
+            HelperType::Block | HelperType::Value => {
                 if let Some(helper) =
                     local_helpers.borrow().get(name).or(self.helpers.get(name))
                 {
@@ -381,7 +378,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                     None
                 }
             }
-                /*
+            /*
             HelperType::Block => {
                 //let template = content.take().unwrap();
                 if let Some(helper) = local_helpers
@@ -449,7 +446,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 {
                     if let Some(scope) = self.scopes.last_mut() {
                         //if let Some(node) = scope.partial_block_mut().take() {
-                            //self.template(node)?;
+                        //self.template(node)?;
                         //}
                         Ok(None)
                     } else {
@@ -517,8 +514,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             .ok_or_else(|| RenderError::PartialNotFound(name))?;
 
         //let partial = partial_block.map(|v| {
-            //let n: &'render Node<'render> = v;
-            //n
+        //let n: &'render Node<'render> = v;
+        //n
         //});
         //self.partial_block = partial_block;
 

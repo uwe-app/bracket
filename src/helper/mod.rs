@@ -21,25 +21,11 @@ pub trait Helper: Send + Sync + DynClone {
     fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &Context<'source, 'call>,
+        ctx: &Context<'call>,
     ) -> ValueResult;
 }
 
 dyn_clone::clone_trait_object!(Helper);
-
-/*
-/// Trait for block helpers.
-pub trait BlockHelper: Send + Sync + DynClone {
-    fn call<'reg, 'source, 'render, 'call>(
-        &self,
-        rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'source, 'call>,
-        block: BlockTemplate<'source>,
-    ) -> HelperResult<()>;
-}
-
-dyn_clone::clone_trait_object!(BlockHelper);
-*/
 
 #[cfg(feature = "each-helper")]
 pub mod each;
@@ -62,14 +48,12 @@ pub mod with;
 #[derive(Clone, Default)]
 pub struct HelperRegistry<'reg> {
     helpers: HashMap<&'reg str, Box<dyn Helper + 'reg>>,
-    //block_helpers: HashMap<&'reg str, Box<dyn BlockHelper + 'reg>>,
 }
 
 impl<'reg> HelperRegistry<'reg> {
     pub fn new() -> Self {
         let mut reg = Self {
             helpers: Default::default(),
-            //block_helpers: Default::default(),
         };
         reg.builtins();
         reg
@@ -78,8 +62,6 @@ impl<'reg> HelperRegistry<'reg> {
     fn builtins(&mut self) {
         #[cfg(feature = "conditional-helper")]
         self.register_helper("if", Box::new(r#if::IfHelper {}));
-        //#[cfg(feature = "conditional-helper")]
-        //self.register_block_helper("if", Box::new(r#if::IfBlockHelper {}));
         #[cfg(feature = "conditional-helper")]
         self.register_helper("unless", Box::new(unless::UnlessHelper {}));
 
@@ -112,26 +94,7 @@ impl<'reg> HelperRegistry<'reg> {
         self.helpers.insert(name, helper);
     }
 
-    /*
-    pub fn register_block_helper(
-        &mut self,
-        name: &'reg str,
-        helper: Box<dyn BlockHelper + 'reg>,
-    ) {
-        self.block_helpers.insert(name, helper);
-    }
-    */
-
     pub fn get(&self, name: &str) -> Option<&Box<dyn Helper + 'reg>> {
         self.helpers.get(name)
     }
-
-    /*
-    pub fn get_block(
-        &self,
-        name: &str,
-    ) -> Option<&Box<dyn BlockHelper + 'reg>> {
-        self.block_helpers.get(name)
-    }
-    */
 }

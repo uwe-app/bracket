@@ -19,12 +19,11 @@ impl Helper for EachHelper {
     fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &Context<'source, 'call>,
+        ctx: &Context<'call>,
     ) -> ValueResult {
         ctx.arity(1..1)?;
 
         if let Some(template) = ctx.template() {
-            //let (name, mut args) = ctx.into();
             let name = ctx.name();
             let args = ctx.arguments();
             let target = args.get(0).unwrap();
@@ -38,8 +37,10 @@ impl Helper for EachHelper {
                         next_value = it.next();
                         if let Some(ref mut scope) = rc.scope_mut() {
                             scope.set_local(FIRST, Value::Bool(index == 0));
-                            scope
-                                .set_local(LAST, Value::Bool(next_value.is_none()));
+                            scope.set_local(
+                                LAST,
+                                Value::Bool(next_value.is_none()),
+                            );
                             scope.set_local(
                                 INDEX,
                                 Value::Number(Number::from(index)),
@@ -55,7 +56,8 @@ impl Helper for EachHelper {
                     for (index, value) in t.into_iter().enumerate() {
                         if let Some(ref mut scope) = rc.scope_mut() {
                             scope.set_local(FIRST, Value::Bool(index == 0));
-                            scope.set_local(LAST, Value::Bool(index == len - 1));
+                            scope
+                                .set_local(LAST, Value::Bool(index == len - 1));
                             scope.set_local(
                                 INDEX,
                                 Value::Number(Number::from(index)),
@@ -65,10 +67,14 @@ impl Helper for EachHelper {
                         rc.template(template)?;
                     }
                 }
-                _ => return Err(HelperError::IterableExpected(name.to_string(), 1)),
+                _ => {
+                    return Err(HelperError::IterableExpected(
+                        name.to_string(),
+                        1,
+                    ))
+                }
             }
             rc.pop_scope();
-
         }
 
         Ok(None)

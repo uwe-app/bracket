@@ -11,7 +11,7 @@ impl Helper for UnlessHelper {
     fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &Context<'source, 'call>,
+        ctx: &Context<'call>,
     ) -> ValueResult {
         ctx.arity(1..1)?;
 

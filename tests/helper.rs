@@ -18,7 +18,7 @@ impl Helper for FooHelper {
     fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &Context<'source, 'call>,
+        ctx: &Context<'call>,
     ) -> ValueResult {
         Ok(Some(Value::String("bar".to_string())))
     }
@@ -31,14 +31,13 @@ impl Helper for FooBlockHelper {
     fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &Context<'source, 'call>,
+        ctx: &Context<'call>,
     ) -> ValueResult {
         rc.register_helper("foo", Box::new(FooHelper {}));
 
         if let Some(template) = ctx.template() {
             rc.template(template)?;
         }
-
 
         Ok(None)
     }
@@ -51,13 +50,12 @@ impl Helper for MissingBlockHelper {
     fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &Context<'source, 'call>,
+        ctx: &Context<'call>,
     ) -> ValueResult {
         rc.write("bar")?;
         Ok(None)
     }
 }
-
 
 #[test]
 fn helper_value() -> Result<()> {

@@ -12,7 +12,7 @@ impl Helper for LookupHelper {
     fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &Context<'source, 'call>,
+        ctx: &Context<'call>,
     ) -> ValueResult {
         ctx.arity(2..2)?;
 
@@ -24,7 +24,9 @@ impl Helper for LookupHelper {
             .get(1)
             .ok_or_else(|| HelperError::ArityExact(name.to_string(), 2))?
             .as_str()
-            .ok_or_else(|| HelperError::ArgumentTypeString(name.to_string(), 1))?;
+            .ok_or_else(|| {
+                HelperError::ArgumentTypeString(name.to_string(), 1)
+            })?;
 
         let result = rc.field(&target, field).cloned();
         if result.is_none() {

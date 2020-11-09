@@ -1,6 +1,6 @@
 //! Helpers for conditional statements.
 use crate::{
-    helper::{HelperResult, Helper, ValueResult},
+    helper::{Helper, HelperResult, ValueResult},
     render::{Context, Render},
 };
 
@@ -13,7 +13,7 @@ impl Helper for IfHelper {
     fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &Context<'source, 'call>,
+        ctx: &Context<'call>,
     ) -> ValueResult {
         if let Some(template) = ctx.template() {
             ctx.arity(1..1)?;
@@ -26,7 +26,6 @@ impl Helper for IfHelper {
 
             Ok(None)
         } else {
-        
             ctx.arity(1..usize::MAX)?;
 
             let args = ctx.arguments();
@@ -40,7 +39,6 @@ impl Helper for IfHelper {
             }
             Ok(Some(result))
         }
-
     }
 }
 

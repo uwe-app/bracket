@@ -1,7 +1,7 @@
 //! Helper to print log messages.
 use crate::{
-    json,
     helper::{Helper, ValueResult},
+    json,
     render::{Context, Render},
 };
 
@@ -24,7 +24,7 @@ impl Helper for LogHelper {
     fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &Context<'source, 'call>,
+        ctx: &Context<'call>,
     ) -> ValueResult {
         ctx.arity(1..usize::MAX)?;
 
