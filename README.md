@@ -2,7 +2,7 @@
 
 Alternative template engine using handlebars-compatible syntax designed for speed, correctness and excellent error handling.
 
-Inspired by [handlebars-rust][] but the API is incompatible in certain places where we think the design should be different. In particular this library differentiates between normal helpers and block helpers and is designed to cater better to templates that are not tied to the registry lifetime (dynamic templates).
+Inspired by [handlebars-rust][] but the API is incompatible in certain places where we think the design should be different. 
 
 Except for partials the library does not take ownership of the underlying template strings it simply references them as string slices so it is the caller's responsibility to store them; as a convenience a `Loader` can be used to store and load templates from disc.
 
