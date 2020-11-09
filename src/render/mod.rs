@@ -34,10 +34,10 @@ pub use scope::Scope;
 /// Render a template.
 pub struct Render<'reg, 'source, 'render> {
     strict: bool,
-    escape: &'reg EscapeFn,
+    escape: &'render EscapeFn,
     helpers: &'reg HelperRegistry<'reg>,
     local_helpers: Option<Rc<RefCell<HelperRegistry<'render>>>>,
-    templates: &'source Templates<'source>,
+    templates: &'render Templates<'render>,
     source: &'source str,
     root: Value,
     writer: Box<&'render mut dyn Output>,
@@ -51,9 +51,9 @@ pub struct Render<'reg, 'source, 'render> {
 impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     pub fn new<T>(
         strict: bool,
-        escape: &'reg EscapeFn,
+        escape: &'render EscapeFn,
         helpers: &'reg HelperRegistry<'reg>,
-        templates: &'source Templates<'source>,
+        templates: &'render Templates<'render>,
         source: &'source str,
         data: &T,
         writer: Box<&'render mut dyn Output>,
