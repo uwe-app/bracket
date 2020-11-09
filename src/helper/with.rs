@@ -13,7 +13,7 @@ impl Helper for WithHelper {
     fn call<'reg, 'source, 'render, 'call>(
         &self,
         rc: &mut Render<'reg, 'source, 'render>,
-        ctx: &mut Context<'source, 'call>,
+        ctx: &Context<'source, 'call>,
     ) -> ValueResult {
         ctx.arity(1..1)?;
 
