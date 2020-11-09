@@ -25,13 +25,6 @@ static MISSING_BLOCK_HELPER: &str = "blockHelperMissing";
 
 type HelperValue = Option<Value>;
 
-// Used to determine how to find and invoke helpers.
-enum HelperType {
-    Value,
-    Block,
-    Raw,
-}
-
 pub mod context;
 pub mod scope;
 
@@ -49,7 +42,7 @@ pub struct Render<'reg, 'source, 'render> {
     root: Value,
     writer: Box<&'render mut dyn Output>,
     scopes: Vec<Scope<'render>>,
-    partial_block: Option<&'render Node<'render>>,
+    //partial_block: Option<&'render Node<'render>>,
     trim: TrimState,
     hint: Option<TrimHint>,
     end_tag_hint: Option<TrimHint>,
@@ -81,7 +74,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             root,
             writer,
             scopes,
-            partial_block: None,
+            //partial_block: None,
             trim: Default::default(),
             hint: None,
             end_tag_hint: None,
@@ -332,25 +325,8 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         }
     }
 
-    /*
-    /// Register a local block helper.
-    ///
-    /// Local helpers are available for the scope of the parent helper.
-    pub fn register_block_helper(
-        &mut self,
-        name: &'render str,
-        helper: Box<dyn BlockHelper + 'render>,
-    ) {
-        if let Some(ref mut locals) = self.local_helpers {
-            let registry = Rc::make_mut(locals);
-            registry.borrow_mut().register_block_helper(name, helper);
-        }
-    }
-    */
-
     fn invoke(
         &mut self,
-        kind: HelperType,
         name: &str,
         call: &Call<'_>,
         content: Option<&Node<'_>>,
@@ -367,38 +343,13 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             .get_or_insert(Rc::new(RefCell::new(Default::default())));
         let local_helpers = Rc::clone(locals);
 
-        let value: Option<Value> = match kind {
-            HelperType::Block | HelperType::Value => {
-                if let Some(helper) =
-                    local_helpers.borrow().get(name).or(self.helpers.get(name))
-                {
-                    //if let Some(helper) = self.helpers.get(name) {
-                    helper.call(self, &mut context)?
-                } else {
-                    None
-                }
-            }
-            /*
-            HelperType::Block => {
-                //let template = content.take().unwrap();
-                if let Some(helper) = local_helpers
-                    .borrow()
-                    .get_block(name)
-                    .or(self.helpers.get_block(name))
-                    .or(self.helpers.get_block(MISSING_BLOCK_HELPER))
-                {
-                    //if let Some(helper) = self.helpers.get_block(name) {
-                    //let block = BlockTemplate::new(template);
-                    //helper.call(self, &mut context, block).map(|_| None)?
-                    None
-                } else {
-                    None
-                }
-            }
-                */
-            HelperType::Raw => {
-                todo!("Resolve raw helpers");
-            }
+        let value: Option<Value> = if let Some(helper) =
+            local_helpers.borrow().get(name).or(self.helpers.get(name))
+        {
+            //if let Some(helper) = self.helpers.get(name) {
+            helper.call(self, &mut context)?
+        } else {
+            None
         };
 
         drop(local_helpers);
@@ -457,7 +408,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 } else if path.is_simple() {
                     if self.has_helper(path.as_str()) {
                         self.invoke(
-                            HelperType::Value,
                             path.as_str(),
                             call,
                             None,
@@ -513,12 +463,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             .get(&name)
             .ok_or_else(|| RenderError::PartialNotFound(name))?;
 
-        //let partial = partial_block.map(|v| {
-        //let n: &'render Node<'render> = v;
-        //n
-        //});
-        //self.partial_block = partial_block;
-
         let node = template.node();
         let hash = self.hash(call)?;
         let mut scope = Scope::new_locals(hash);
@@ -549,7 +493,6 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                 CallTarget::Path(ref path) => {
                     if path.is_simple() {
                         self.invoke(
-                            HelperType::Block,
                             path.as_str(),
                             call,
                             Some(node),
