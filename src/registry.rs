@@ -18,6 +18,7 @@ pub struct Registry<'reg, 'source> {
     helpers: HelperRegistry<'reg>,
     templates: Templates<'source>,
     escape: EscapeFn,
+    strict: bool,
 }
 
 impl<'reg, 'source> Registry<'reg, 'source> {
@@ -27,16 +28,19 @@ impl<'reg, 'source> Registry<'reg, 'source> {
             helpers: HelperRegistry::new(),
             templates: Default::default(),
             escape: Box::new(escape_html),
+            strict: true,
         }
     }
 
-    /*
-    pub fn new_templates(templates: Templates<'source>) -> Self {
-        let mut reg = Registry::new();
-        reg.templates = templates;
-        reg
+    /// Set the strict mode.
+    pub fn set_strict(&mut self, strict: bool) {
+        self.strict = strict 
     }
-    */
+
+    /// Get the strict mode.
+    pub fn strict(&self) -> bool {
+        self.strict 
+    }
 
     /// Set the escape function for rendering.
     pub fn set_escape(&mut self, escape: EscapeFn) {
@@ -99,13 +103,12 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         T: Serialize,
     {
         let mut writer = StringOutput::new();
-        //let mut local_helpers = HelperRegistry::new();
         let template =
             self.compile(source, ParserOptions::new(name.to_string()))?;
         template.render(
+            self.strict(),
             self.escape(),
             self.helpers(),
-            //&mut local_helpers,
             self.templates(),
             name,
             data,
@@ -151,6 +154,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         /*
         let mut local_helpers = HelperRegistry::new();
         let rc = Render::new(
+            self.strict(),
             self.escape(),
             self.helpers(),
             &mut local_helpers,
@@ -203,6 +207,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         //let mut local_helpers = HelperRegistry::new();
         let mut writer = StringOutput::new();
         template.render(
+            self.strict(),
             self.escape(),
             self.helpers(),
             //&mut local_helpers,
@@ -226,15 +231,14 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     where
         T: Serialize,
     {
-        //let mut local_helpers = HelperRegistry::new();
         let tpl = self
             .templates
             .get(name)
             .ok_or_else(|| Error::TemplateNotFound(name.to_string()))?;
         tpl.render(
+            self.strict(),
             self.escape(),
             self.helpers(),
-            //&mut local_helpers,
             self.templates(),
             name,
             data,

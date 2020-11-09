@@ -1,7 +1,19 @@
 //! Helper functions for working with JSON values.
 use serde_json::Value;
 
+static OBJECT: &str = "Object";
+static ARRAY: &str = "Array";
+
 pub(crate) fn stringify(value: &Value) -> String {
+    match value {
+        Value::String(ref s) => s.to_owned(),
+        Value::Object(_) => OBJECT.to_owned(),
+        Value::Array(ref arr) => format!("{}[{}]", ARRAY, arr.len()),
+        _ => value.to_string(),
+    }
+}
+
+pub(crate) fn unquote(value: &Value) -> String {
     match value {
         Value::String(ref s) => s.to_owned(),
         _ => value.to_string(),

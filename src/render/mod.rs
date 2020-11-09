@@ -42,6 +42,7 @@ pub use scope::Scope;
 
 /// Render a template.
 pub struct Render<'reg, 'source, 'render> {
+    strict: bool,
     escape: &'reg EscapeFn,
     helpers: &'reg HelperRegistry<'reg>,
     local_helpers: Option<Rc<RefCell<HelperRegistry<'render>>>>,
@@ -57,6 +58,7 @@ pub struct Render<'reg, 'source, 'render> {
 
 impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     pub fn new<T>(
+        strict: bool,
         escape: &'reg EscapeFn,
         helpers: &'reg HelperRegistry<'reg>,
         templates: &'source Templates<'source>,
@@ -71,6 +73,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         let scopes: Vec<Scope> = Vec::new();
 
         Ok(Self {
+            strict,
             escape,
             helpers,
             local_helpers: None,
@@ -411,9 +414,9 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     // Fallible version of path lookup.
     fn resolve(&mut self, path: &Path<'_>) -> RenderResult<HelperValue> {
         if let Some(value) = self.lookup(path).cloned().take() {
-            return Ok(Some(value));
+            Ok(Some(value))
         } else {
-            panic!("Missing variable with path {:?}", path);
+            Err(RenderError::VariableNotFound(path.as_str().to_string()))
         }
     }
 

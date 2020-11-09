@@ -174,6 +174,7 @@ impl<'reg, 'source> Template<'source> {
     /// Render this template to the given writer.
     pub(crate) fn render<'a, T>(
         &self,
+        strict: bool,
         escape: &EscapeFn,
         helpers: &'reg HelperRegistry<'reg>,
         templates: &'source Templates<'source>,
@@ -185,6 +186,7 @@ impl<'reg, 'source> Template<'source> {
         T: Serialize,
     {
         let mut rc = Render::new(
+            strict,
             escape,
             helpers,
             templates,

@@ -1,5 +1,6 @@
 //! Helper to print log messages.
 use crate::{
+    json,
     helper::{Helper, ValueResult},
     render::{Context, Render},
 };
@@ -32,7 +33,7 @@ impl Helper for LogHelper {
 
         let message = args
             .iter()
-            .map(|v| v.to_string())
+            .map(|v| json::unquote(v))
             .collect::<Vec<String>>()
             .join(" ");
 
@@ -42,12 +43,15 @@ impl Helper for LogHelper {
             .unwrap_or(Some("info"))
             .unwrap();
 
-        match level {
-            "error" => error!("{}", message),
-            "debug" => debug!("{}", message),
-            "warn" => warn!("{}", message),
-            "trace" => trace!("{}", message),
-            _ => info!("{}", message),
+        let lines = message.split("\n");
+        for line in lines {
+            match level {
+                "error" => error!("{}", line),
+                "debug" => debug!("{}", line),
+                "warn" => warn!("{}", line),
+                "trace" => trace!("{}", line),
+                _ => info!("{}", line),
+            }
         }
 
         Ok(None)

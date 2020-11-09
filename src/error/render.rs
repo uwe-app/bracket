@@ -8,6 +8,8 @@ pub enum RenderError {
     PartialNameResolve(String),
     #[error("Partial '{0}' not found")]
     PartialNotFound(String),
+    #[error("Variable '{0}' not found, check the variable path and verify the template data")]
+    VariableNotFound(String),
     #[error(transparent)]
     Helper(#[from] HelperError),
     #[error(transparent)]
