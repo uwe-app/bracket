@@ -42,7 +42,7 @@ pub struct Render<'render> {
     root: Value,
     writer: Box<&'render mut dyn Output>,
     scopes: Vec<Scope<'render>>,
-    //partial_block: Option<&'render Node<'render>>,
+    partial_block: Option<&'render Node<'render>>,
     trim: TrimState,
     hint: Option<TrimHint>,
     end_tag_hint: Option<TrimHint>,
@@ -74,7 +74,7 @@ impl<'render> Render<'render> {
             root,
             writer,
             scopes,
-            //partial_block: None,
+            partial_block: None,
             trim: Default::default(),
             hint: None,
             end_tag_hint: None,
@@ -176,7 +176,7 @@ impl<'render> Render<'render> {
     /// Render an inner template.
     ///
     /// Block helpers should call this when they want to render an inner template.
-    pub fn template(&mut self, node: &Node<'_>) -> Result<(), HelperError> {
+    pub fn template(&mut self, node: &'render Node<'render>) -> Result<(), HelperError> {
         let mut hint: Option<TrimHint> = None;
         for event in node.block_iter().trim(self.hint) {
             let mut trim = event.trim;
@@ -372,12 +372,12 @@ impl<'render> Render<'render> {
         &mut self,
         name: &str,
         call: &Call<'_>,
-        content: Option<&Node<'_>>,
+        content: Option<&'render Node<'render>>,
     ) -> RenderResult<HelperValue> {
         let args = self.arguments(call)?;
         let hash = self.hash(call)?;
         let mut context =
-            Context::new(call, name.to_owned(), args, hash, content);
+            Context::new(call, name.to_owned(), args, hash);
 
         //println!("Invoke a helper with the name: {}", name);
 
@@ -390,7 +390,7 @@ impl<'render> Render<'render> {
             local_helpers.borrow().get(name).or(self.helpers.get(name))
         {
             //if let Some(helper) = self.helpers.get(name) {
-            helper.call(self, &mut context)?
+            helper.call(self, &mut context, content)?
         } else {
             None
         };
@@ -439,9 +439,9 @@ impl<'render> Render<'render> {
                         == PARTIAL_BLOCK
                 {
                     if let Some(scope) = self.scopes.last_mut() {
-                        //if let Some(node) = scope.partial_block_mut().take() {
-                        //self.template(node)?;
-                        //}
+                        if let Some(node) = self.partial_block.take() {
+                            self.template(node)?;
+                        }
                         Ok(None)
                     } else {
                         Ok(None)
@@ -498,7 +498,7 @@ impl<'render> Render<'render> {
     fn render_partial(
         &mut self,
         call: &Call<'_>,
-        partial_block: Option<&Node<'_>>,
+        partial_block: Option<&'render Node<'render>>,
     ) -> RenderResult<()> {
         let name = self.get_partial_name(call)?;
         let template = self
@@ -506,11 +506,12 @@ impl<'render> Render<'render> {
             .get(&name)
             .ok_or_else(|| RenderError::PartialNotFound(name))?;
 
+        // Store the partial block so it can be resolved
+        self.partial_block = partial_block;
+
         let node = template.node();
         let hash = self.hash(call)?;
         let mut scope = Scope::new_locals(hash);
-        // FIXME: restore partial block!
-        //scope.set_partial_block(partial_block);
         self.scopes.push(scope);
         // WARN: We must iterate the document child nodes
         // WARN: when rendering partials otherwise the
@@ -524,10 +525,10 @@ impl<'render> Render<'render> {
 
     fn block(
         &mut self,
-        node: &Node<'_>,
-        block: &Block<'_>,
+        node: &'render Node<'render>,
+        call: &Call<'_>,
     ) -> RenderResult<()> {
-        let call = block.call();
+        //let call = block.call();
 
         if call.is_partial() {
             self.render_partial(call, Some(node))?;
@@ -556,7 +557,7 @@ impl<'render> Render<'render> {
     /// Render and return a helper result wrapping the underlying render error.
     pub(crate) fn render_from_helper(
         &mut self,
-        node: &Node<'_>,
+        node: &'render Node<'render>,
         trim: TrimState,
     ) -> HelperResult<()> {
         self.render_node(node, trim)
@@ -565,7 +566,7 @@ impl<'render> Render<'render> {
 
     pub(crate) fn render_node(
         &mut self,
-        node: &Node<'_>,
+        node: &'render Node<'render>,
         trim: TrimState,
     ) -> RenderResult<()> {
         self.trim = trim;
@@ -599,7 +600,7 @@ impl<'render> Render<'render> {
                 }
             }
             Node::Block(ref block) => {
-                self.block(node, block)?;
+                self.block(node, block.call())?;
             }
             _ => todo!("Render other node types"),
         }

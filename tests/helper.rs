@@ -5,6 +5,7 @@ use bracket::{
     helper::*,
     render::{Context, Render},
     template::{Loader, Templates},
+    parser::ast::Node,
     Registry, Result,
 };
 use serde_json::{json, Value};
@@ -19,6 +20,7 @@ impl Helper for FooHelper {
         &self,
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
     ) -> ValueResult {
         Ok(Some(Value::String("bar".to_string())))
     }
@@ -32,10 +34,11 @@ impl Helper for FooBlockHelper {
         &self,
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
     ) -> ValueResult {
         rc.register_helper("foo", Box::new(FooHelper {}));
 
-        if let Some(template) = ctx.template() {
+        if let Some(template) = template {
             rc.template(template)?;
         }
 
@@ -51,6 +54,7 @@ impl Helper for MissingBlockHelper {
         &self,
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
     ) -> ValueResult {
         rc.write("bar")?;
         Ok(None)

@@ -2,6 +2,7 @@
 use crate::{
     helper::{Helper, ValueResult},
     render::{Context, Render},
+    parser::ast::Node,
 };
 
 use serde_json::Value;
@@ -15,6 +16,7 @@ impl Helper for AndHelper {
         &self,
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
     ) -> ValueResult {
         ctx.arity(2..2)?;
 
@@ -35,6 +37,7 @@ impl Helper for OrHelper {
         &self,
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
     ) -> ValueResult {
         ctx.arity(2..2)?;
 
@@ -55,6 +58,7 @@ impl Helper for NotHelper {
         &self,
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
     ) -> ValueResult {
         ctx.arity(1..1)?;
 

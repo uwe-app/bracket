@@ -2,6 +2,7 @@
 use crate::{
     helper::{Helper, HelperResult, ValueResult},
     render::{Context, Render},
+    parser::ast::Node,
 };
 
 use serde_json::Value;
@@ -14,8 +15,9 @@ impl Helper for IfHelper {
         &self,
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
     ) -> ValueResult {
-        if let Some(template) = ctx.template() {
+        if let Some(template) = template {
             ctx.arity(1..1)?;
 
             if rc.is_truthy(ctx.arguments().get(0).unwrap()) {

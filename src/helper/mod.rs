@@ -22,6 +22,7 @@ pub trait Helper: Send + Sync + DynClone {
         &self,
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
     ) -> ValueResult;
 }
 

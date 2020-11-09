@@ -19,7 +19,7 @@ pub struct Context<'call> {
     name: String,
     arguments: Vec<Value>,
     hash: Map<String, Value>,
-    template: Option<&'call Node<'call>>,
+    //template: Option<&'call Node<'call>>,
 }
 
 impl<'call> Context<'call> {
@@ -28,20 +28,20 @@ impl<'call> Context<'call> {
         name: String,
         arguments: Vec<Value>,
         hash: Map<String, Value>,
-        template: Option<&'call Node<'call>>,
+        //template: Option<&'call Node<'call>>,
     ) -> Self {
         Self {
             call,
             name,
             arguments,
             hash,
-            template,
+            //template,
         }
     }
 
-    pub fn template(&self) -> Option<&'call Node<'_>> {
-        self.template
-    }
+    //pub fn template(&self) -> Option<&'call Node<'_>> {
+        //self.template
+    //}
 
     pub fn name(&self) -> &str {
         &self.name

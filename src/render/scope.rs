@@ -6,7 +6,7 @@ use serde_json::{Map, Value};
 pub struct Scope<'scope> {
     value: Option<Value>,
     locals: Value,
-    partial_block: Option<&'scope Node<'scope>>,
+    phantom: std::marker::PhantomData<&'scope str>,
 }
 
 impl<'scope> Scope<'scope> {
@@ -14,7 +14,7 @@ impl<'scope> Scope<'scope> {
         Self {
             locals: Value::Object(Map::new()),
             value: None,
-            partial_block: None,
+            phantom: std::marker::PhantomData,
         }
     }
 
@@ -22,7 +22,7 @@ impl<'scope> Scope<'scope> {
         Self {
             locals: Value::Object(locals),
             value: None,
-            partial_block: None,
+            phantom: std::marker::PhantomData,
         }
     }
 
@@ -49,11 +49,4 @@ impl<'scope> Scope<'scope> {
         &self.value
     }
 
-    pub fn set_partial_block(&mut self, block: Option<&'scope Node<'scope>>) {
-        self.partial_block = block;
-    }
-
-    pub fn partial_block_mut(&mut self) -> &mut Option<&'scope Node<'scope>> {
-        &mut self.partial_block
-    }
 }

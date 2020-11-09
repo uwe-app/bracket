@@ -3,6 +3,7 @@ use crate::{
     helper::{Helper, ValueResult},
     json,
     render::{Context, Render},
+    parser::ast::Node,
 };
 
 use log::*;
@@ -25,6 +26,7 @@ impl Helper for LogHelper {
         &self,
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
     ) -> ValueResult {
         ctx.arity(1..usize::MAX)?;
 

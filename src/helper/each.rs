@@ -3,6 +3,7 @@ use crate::{
     error::HelperError,
     helper::{Helper, ValueResult},
     render::{Context, Render, Scope},
+    parser::ast::Node,
 };
 
 use serde_json::{Number, Value};
@@ -20,10 +21,11 @@ impl Helper for EachHelper {
         &self,
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
     ) -> ValueResult {
         ctx.arity(1..1)?;
 
-        if let Some(template) = ctx.template() {
+        if let Some(template) = template {
             let name = ctx.name();
             let args = ctx.arguments();
             let target = args.get(0).unwrap();

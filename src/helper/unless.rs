@@ -2,6 +2,7 @@
 use crate::{
     helper::{Helper, ValueResult},
     render::{Context, Render},
+    parser::ast::Node,
 };
 
 #[derive(Clone)]
@@ -12,10 +13,11 @@ impl Helper for UnlessHelper {
         &self,
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
+        template: Option<&'render Node<'render>>,
     ) -> ValueResult {
         ctx.arity(1..1)?;
 
-        if let Some(template) = ctx.template() {
+        if let Some(template) = template {
             if !rc.is_truthy(ctx.arguments().get(0).unwrap()) {
                 rc.template(template)?;
             } else if let Some(node) = rc.inverse(template)? {
