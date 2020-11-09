@@ -5,16 +5,16 @@ use std::collections::HashMap;
 use std::ops::Range;
 
 use crate::{
-    error::HelperError as Error,
+    error::HelperError,
     parser::ast::Node,
     render::{BlockTemplate, Context, Render},
 };
 
-/// The result type that helpers should return.
-pub type ValueResult = std::result::Result<Option<Value>, Error>;
+/// Result type returned when invoking helpers.
+pub type HelperResult<T> = std::result::Result<T, HelperError>;
 
-/// The result type that block helpers should return.
-pub type BlockResult = std::result::Result<(), Error>;
+/// The result type that helpers should return.
+pub type ValueResult = HelperResult<Option<Value>>;
 
 /// Trait for helpers.
 pub trait Helper: Send + Sync + DynClone {
@@ -34,7 +34,7 @@ pub trait BlockHelper: Send + Sync + DynClone {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &mut Context<'call>,
         block: BlockTemplate<'source>,
-    ) -> BlockResult;
+    ) -> HelperResult<()>;
 }
 
 dyn_clone::clone_trait_object!(BlockHelper);

@@ -33,7 +33,7 @@ impl BlockHelper for FooBlockHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &mut Context<'call>,
         block: BlockTemplate<'source>,
-    ) -> BlockResult {
+    ) -> HelperResult<()> {
         rc.register_helper("foo", Box::new(FooHelper {}));
 
         rc.template(block.template())?;
@@ -51,11 +51,12 @@ impl BlockHelper for MissingBlockHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &mut Context<'call>,
         block: BlockTemplate<'source>,
-    ) -> BlockResult {
+    ) -> HelperResult<()> {
         rc.write("bar")?;
         Ok(())
     }
 }
+
 
 #[test]
 fn helper_value() -> Result<()> {
@@ -116,10 +117,9 @@ fn helper_block() -> Result<()> {
 #[test]
 fn helper_block_missing() -> Result<()> {
     let mut registry = Registry::new();
-    registry.helpers_mut().register_block_helper(
-        "missingBlockHelper",
-        Box::new(MissingBlockHelper {}),
-    );
+    registry
+        .helpers_mut()
+        .register_block_helper("missingBlockHelper", Box::new(MissingBlockHelper {}));
     let value = r"{{#block}}{{foo}}{{/block}}";
     // NOTE: the helper takes precedence over the variable
     let data = json!({"foo": "qux"});

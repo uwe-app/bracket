@@ -8,7 +8,7 @@ use std::rc::Rc;
 use crate::{
     error::{HelperError, RenderError},
     escape::EscapeFn,
-    helper::{BlockHelper, BlockResult, Helper, HelperRegistry},
+    helper::{BlockHelper, Helper, HelperResult, HelperRegistry},
     json,
     output::Output,
     parser::{
@@ -16,7 +16,7 @@ use crate::{
         trim::{TrimHint, TrimState},
     },
     template::Templates,
-    HelperResult, RenderResult,
+    RenderResult,
 };
 
 static PARTIAL_BLOCK: &str = "@partial-block";
@@ -554,7 +554,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         &mut self,
         node: &'source Node<'_>,
         trim: TrimState,
-    ) -> BlockResult {
+    ) -> HelperResult<()> {
         self.render_node(node, trim)
             .map_err(|e| HelperError::Render(Box::new(e)))
     }

@@ -1,6 +1,7 @@
 //! Block helper that iterates arrays and objects.
 use crate::{
-    helper::{BlockHelper, BlockResult, BlockTemplate, Error},
+    error::HelperError,
+    helper::{BlockHelper, HelperResult, BlockTemplate},
     render::{Context, Render, Scope},
 };
 
@@ -20,7 +21,7 @@ impl BlockHelper for EachHelper {
         rc: &mut Render<'reg, 'source, 'render>,
         ctx: &mut Context<'call>,
         block: BlockTemplate<'source>,
-    ) -> BlockResult {
+    ) -> HelperResult<()> {
         ctx.arity(1..1)?;
 
         //let (name, mut args) = ctx.into();
@@ -64,7 +65,7 @@ impl BlockHelper for EachHelper {
                     rc.template(block.template())?;
                 }
             }
-            _ => return Err(Error::IterableExpected(name.to_string(), 1)),
+            _ => return Err(HelperError::IterableExpected(name.to_string(), 1)),
         }
         rc.pop_scope();
 

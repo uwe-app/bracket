@@ -2,7 +2,7 @@
 use serde_json::{Map, Value};
 use std::ops::Range;
 
-use crate::{error::HelperError, helper::BlockResult, parser::ast::Call};
+use crate::{helper::HelperResult, error::HelperError, parser::ast::Call};
 
 /// Context for the call to a helper exposes immutable access to
 /// the arguments and hash parameters for the helper.
@@ -43,7 +43,7 @@ impl<'call> Context<'call> {
         &self.hash
     }
 
-    pub fn arity(&self, range: Range<usize>) -> BlockResult {
+    pub fn arity(&self, range: Range<usize>) -> HelperResult<()> {
         if range.start == range.end {
             if self.arguments().len() != range.start {
                 return Err(HelperError::ArityExact(

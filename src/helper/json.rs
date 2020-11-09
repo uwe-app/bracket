@@ -1,6 +1,7 @@
 //! Helper that returns a JSON string.
 use crate::{
-    helper::{Error, Helper, ValueResult},
+    error::HelperError,
+    helper::{Helper, ValueResult},
     render::{Context, Render},
 };
 
@@ -26,9 +27,9 @@ impl Helper for JsonHelper {
 
         let pretty = rc.is_truthy(args.get(0).unwrap_or(&Value::Bool(false)));
         let value = if pretty {
-            Value::String(to_string_pretty(&target).map_err(Error::from)?)
+            Value::String(to_string_pretty(&target).map_err(HelperError::from)?)
         } else {
-            Value::String(to_string(&target).map_err(Error::from)?)
+            Value::String(to_string(&target).map_err(HelperError::from)?)
         };
 
         Ok(Some(value))
