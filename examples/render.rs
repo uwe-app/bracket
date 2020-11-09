@@ -55,7 +55,8 @@ fn main() -> Result<()> {
     //println!("{:?}", node);
     //}
 
-    let registry = Registry::from(templates);
+    let mut registry = Registry::from(templates);
+    registry.set_strict(false);
 
     match registry.render(name, &data) {
         Ok(result) => {

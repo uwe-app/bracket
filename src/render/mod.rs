@@ -416,7 +416,12 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         if let Some(value) = self.lookup(path).cloned().take() {
             Ok(Some(value))
         } else {
-            Err(RenderError::VariableNotFound(path.as_str().to_string()))
+            if self.strict {
+                Err(RenderError::VariableNotFound(path.as_str().to_string()))
+            } else {
+                // TODO: call a missing_variable handler?
+                Ok(None)
+            }
         }
     }
 
