@@ -16,10 +16,12 @@ use crate::{
         trim::{TrimHint, TrimState},
     },
     template::Templates,
-    RenderResult,
+    HelperResult, RenderResult,
 };
 
 static PARTIAL_BLOCK: &str = "@partial-block";
+static MISSING_HELPER: &str = "missingHelper";
+static MISSING_BLOCK_HELPER: &str = "missingBlockHelper";
 
 type HelperValue = Option<Value>;
 
@@ -83,9 +85,28 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         })
     }
 
-    /// Get a mutable reference to the output writer.
+    /// Get a mutable reference to the output destination.
+    ///
+    /// You should prefer the `write()` and `write_escaped()` functions 
+    /// when writing strings but if you want to write bytes directly to 
+    /// the output destination you can use this reference.
     pub fn out(&mut self) -> &mut Box<&'render mut dyn Output> {
         &mut self.writer
+    }
+
+    /// Write a string to the output destination.
+    pub fn write(&mut self, s: &str) -> HelperResult<usize> {
+        self.write_str(s, false)
+            .map_err(Box::new)
+            .map_err(HelperError::from)
+    }
+
+    /// Write a string to the output destination and escape the content
+    /// using the current escape function.
+    pub fn write_escaped(&mut self, s: &str) -> HelperResult<usize> {
+        self.write_str(s, true)
+            .map_err(Box::new)
+            .map_err(HelperError::from)
     }
 
     /// Push a scope onto the stack.
@@ -360,6 +381,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
                     .borrow()
                     .get_block(name)
                     .or(self.helpers.get_block(name))
+                    .or(self.helpers.get_block(MISSING_BLOCK_HELPER))
                 {
                     //if let Some(helper) = self.helpers.get_block(name) {
                     let block = BlockTemplate::new(template);
@@ -396,7 +418,10 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
     }
 
     /// Invoke a call and return the result.
-    pub(crate) fn call(&mut self, call: &Call<'_>) -> RenderResult<HelperValue> {
+    pub(crate) fn call(
+        &mut self,
+        call: &Call<'_>,
+    ) -> RenderResult<HelperValue> {
         match call.target() {
             CallTarget::Path(ref path) => {
                 // Explicit paths should resolve to a lookup

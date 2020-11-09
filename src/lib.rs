@@ -18,6 +18,9 @@ pub type RenderResult<T> = std::result::Result<T, error::RenderError>;
 /// Result type returned when compiling templates.
 pub type SyntaxResult<T> = std::result::Result<T, error::SyntaxError>;
 
+/// Result type returned when invoking helpers.
+pub type HelperResult<T> = std::result::Result<T, error::HelperError>;
+
 pub use error::Error;
 pub use registry::Registry;
 pub use template::Template;

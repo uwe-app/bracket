@@ -36,3 +36,9 @@ pub enum HelperError {
     #[error(transparent)]
     Json(#[from] serde_json::Error),
 }
+
+impl From<std::io::Error> for HelperError {
+    fn from(err: std::io::Error) -> Self {
+        Self::Io(IoError::Io(err))
+    }
+}

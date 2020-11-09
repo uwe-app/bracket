@@ -161,7 +161,6 @@ impl fmt::Display for Template<'_> {
 }
 
 impl<'reg, 'source> Template<'source> {
-
     /// Compile a block.
     pub fn compile(
         source: &'source str,

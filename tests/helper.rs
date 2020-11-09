@@ -42,6 +42,21 @@ impl BlockHelper for FooBlockHelper {
     }
 }
 
+#[derive(Clone)]
+pub struct MissingBlockHelper;
+
+impl BlockHelper for MissingBlockHelper {
+    fn call<'reg, 'source, 'render, 'call>(
+        &self,
+        rc: &mut Render<'reg, 'source, 'render>,
+        ctx: &mut Context<'call>,
+        block: BlockTemplate<'source>,
+    ) -> BlockResult {
+        rc.write("bar")?;
+        Ok(())
+    }
+}
+
 #[test]
 fn helper_value() -> Result<()> {
     let mut registry = Registry::new();
@@ -90,6 +105,21 @@ fn helper_block() -> Result<()> {
     registry
         .helpers_mut()
         .register_block_helper("block", Box::new(FooBlockHelper {}));
+    let value = r"{{#block}}{{foo}}{{/block}}";
+    // NOTE: the helper takes precedence over the variable
+    let data = json!({"foo": "qux"});
+    let result = registry.once(NAME, value, &data)?;
+    assert_eq!("bar", &result);
+    Ok(())
+}
+
+#[test]
+fn helper_block_missing() -> Result<()> {
+    let mut registry = Registry::new();
+    registry.helpers_mut().register_block_helper(
+        "missingBlockHelper",
+        Box::new(MissingBlockHelper {}),
+    );
     let value = r"{{#block}}{{foo}}{{/block}}";
     // NOTE: the helper takes precedence over the variable
     let data = json!({"foo": "qux"});
