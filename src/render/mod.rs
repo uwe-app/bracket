@@ -20,8 +20,8 @@ use crate::{
 };
 
 static PARTIAL_BLOCK: &str = "@partial-block";
-static MISSING_HELPER: &str = "helperMissing";
-static MISSING_BLOCK_HELPER: &str = "blockHelperMissing";
+static HELPER_MISSING: &str = "helperMissing";
+static BLOCK_HELPER_MISSING: &str = "blockHelperMissing";
 
 type HelperValue = Option<Value>;
 
@@ -456,7 +456,22 @@ impl<'render> Render<'render> {
                             None,
                         )
                     } else {
-                        self.resolve(path)
+                        let value = self.lookup(path).cloned();
+                        if let None = value {
+                            if self.has_helper(HELPER_MISSING) {
+                                println!("HAS HELPER MISSING");
+                                return self.invoke(
+                                    HELPER_MISSING,
+                                    call,
+                                    None,
+                                )
+                            } else {
+                                return Err(
+                                    RenderError::VariableNotFound(
+                                        path.as_str().to_string()))
+                            }
+                        }
+                        Ok(value)
                     }
                 } else {
                     self.resolve(path)
@@ -528,8 +543,6 @@ impl<'render> Render<'render> {
         node: &'render Node<'render>,
         call: &Call<'_>,
     ) -> RenderResult<()> {
-        //let call = block.call();
-
         if call.is_partial() {
             self.render_partial(call, Some(node))?;
         } else {
