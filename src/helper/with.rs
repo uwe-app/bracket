@@ -1,6 +1,6 @@
 //! Block helper that sets the scope.
 use crate::{
-    helper::{Helper, ValueResult, BlockTemplate},
+    helper::{Helper, ValueResult},
     render::{Context, Render, Scope},
 };
 

@@ -7,7 +7,7 @@ use std::ops::Range;
 use crate::{
     error::HelperError,
     parser::ast::Node,
-    render::{BlockTemplate, Context, Render},
+    render::{Context, Render},
 };
 
 /// Result type returned when invoking helpers.
@@ -27,6 +27,7 @@ pub trait Helper: Send + Sync + DynClone {
 
 dyn_clone::clone_trait_object!(Helper);
 
+/*
 /// Trait for block helpers.
 pub trait BlockHelper: Send + Sync + DynClone {
     fn call<'reg, 'source, 'render, 'call>(
@@ -38,6 +39,7 @@ pub trait BlockHelper: Send + Sync + DynClone {
 }
 
 dyn_clone::clone_trait_object!(BlockHelper);
+*/
 
 #[cfg(feature = "each-helper")]
 pub mod each;
@@ -60,14 +62,14 @@ pub mod with;
 #[derive(Clone, Default)]
 pub struct HelperRegistry<'reg> {
     helpers: HashMap<&'reg str, Box<dyn Helper + 'reg>>,
-    block_helpers: HashMap<&'reg str, Box<dyn BlockHelper + 'reg>>,
+    //block_helpers: HashMap<&'reg str, Box<dyn BlockHelper + 'reg>>,
 }
 
 impl<'reg> HelperRegistry<'reg> {
     pub fn new() -> Self {
         let mut reg = Self {
             helpers: Default::default(),
-            block_helpers: Default::default(),
+            //block_helpers: Default::default(),
         };
         reg.builtins();
         reg
@@ -110,6 +112,7 @@ impl<'reg> HelperRegistry<'reg> {
         self.helpers.insert(name, helper);
     }
 
+    /*
     pub fn register_block_helper(
         &mut self,
         name: &'reg str,
@@ -117,15 +120,18 @@ impl<'reg> HelperRegistry<'reg> {
     ) {
         self.block_helpers.insert(name, helper);
     }
+    */
 
     pub fn get(&self, name: &str) -> Option<&Box<dyn Helper + 'reg>> {
         self.helpers.get(name)
     }
 
+    /*
     pub fn get_block(
         &self,
         name: &str,
     ) -> Option<&Box<dyn BlockHelper + 'reg>> {
         self.block_helpers.get(name)
     }
+    */
 }

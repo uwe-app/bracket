@@ -8,7 +8,7 @@ use std::rc::Rc;
 use crate::{
     error::{HelperError, RenderError},
     escape::EscapeFn,
-    helper::{BlockHelper, Helper, HelperResult, HelperRegistry},
+    helper::{Helper, HelperResult, HelperRegistry},
     json,
     output::Output,
     parser::{
@@ -32,11 +32,9 @@ enum HelperType {
     Raw,
 }
 
-pub mod block;
 pub mod context;
 pub mod scope;
 
-pub use block::BlockTemplate;
 pub use context::Context;
 pub use scope::Scope;
 
@@ -337,6 +335,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
         }
     }
 
+    /*
     /// Register a local block helper.
     ///
     /// Local helpers are available for the scope of the parent helper.
@@ -350,6 +349,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             registry.borrow_mut().register_block_helper(name, helper);
         }
     }
+    */
 
     fn invoke(
         &mut self,
@@ -520,7 +520,7 @@ impl<'reg, 'source, 'render> Render<'reg, 'source, 'render> {
             //let n: &'render Node<'render> = v;
             //n
         //});
-        //self.partial_block = partial;
+        //self.partial_block = partial_block;
 
         let node = template.node();
         let hash = self.hash(call)?;
