@@ -376,7 +376,6 @@ impl<'source> Parser<'source> {
                 }
                 _ => {}
             },
-            //Token::RawBlock(_, _) => {}
             Token::RawComment(_, _) => {}
             Token::RawStatement(_, _) => {}
             Token::Comment(_, _) => {}

@@ -21,7 +21,6 @@ pub enum Node<'source> {
     Statement(Call<'source>),
     Block(Block<'source>),
     Condition(Condition<'source>),
-    RawBlock(TextBlock<'source>),
     RawStatement(TextBlock<'source>),
     RawComment(TextBlock<'source>),
     Comment(TextBlock<'source>),
@@ -35,8 +34,7 @@ impl<'source> Node<'source> {
             Self::Statement(ref n) => n.as_str(),
             Self::Block(ref n) => n.as_str(),
             Self::Condition(ref n) => n.as_str(),
-            Self::RawBlock(ref n)
-            | Self::RawStatement(ref n)
+            Self::RawStatement(ref n)
             | Self::RawComment(ref n)
             | Self::Comment(ref n) => n.as_str(),
         }
@@ -53,7 +51,6 @@ impl<'source> Node<'source> {
         match *self {
             Self::Document(_)
             | Self::Text(_)
-            | Self::RawBlock(_)
             | Self::RawStatement(_)
             | Self::RawComment(_)
             | Self::Comment(_) => false,
@@ -67,7 +64,6 @@ impl<'source> Node<'source> {
         match *self {
             Self::Document(_)
             | Self::Text(_)
-            | Self::RawBlock(_)
             | Self::RawStatement(_)
             | Self::RawComment(_)
             | Self::Comment(_) => false,
@@ -82,7 +78,6 @@ impl<'source> Node<'source> {
         match *self {
             Self::Document(_) => "#document",
             Self::Text(ref n) => n.0,
-            Self::RawBlock(ref n) => n.source,
             Self::RawStatement(ref n) => n.source,
             Self::RawComment(ref n) => n.source,
             Self::Comment(ref n) => n.source,
@@ -111,8 +106,7 @@ impl fmt::Display for Node<'_> {
             Self::Statement(ref n) => n.fmt(f),
             Self::Block(ref n) => n.fmt(f),
             Self::Condition(ref n) => n.fmt(f),
-            Self::RawBlock(ref n)
-            | Self::RawStatement(ref n)
+            Self::RawStatement(ref n)
             | Self::RawComment(ref n)
             | Self::Comment(ref n) => n.fmt(f),
         }
@@ -127,8 +121,7 @@ impl fmt::Debug for Node<'_> {
             Self::Block(ref n) => fmt::Debug::fmt(n, f),
             Self::Condition(ref n) => fmt::Debug::fmt(n, f),
             Self::Statement(ref n) => fmt::Debug::fmt(n, f),
-            Self::RawBlock(ref n)
-            | Self::RawStatement(ref n)
+            Self::RawStatement(ref n)
             | Self::RawComment(ref n)
             | Self::Comment(ref n) => fmt::Debug::fmt(n, f),
         }

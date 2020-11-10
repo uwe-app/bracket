@@ -63,8 +63,7 @@ impl<'source> Iterator for NodeIter<'source> {
             Node::Condition(_) => Some(self.node),
             Node::Text(_) => Some(self.node),
             Node::Statement(_) => Some(self.node),
-            Node::RawBlock(_)
-            | Node::RawStatement(_)
+            Node::RawStatement(_)
             | Node::RawComment(_)
             | Node::Comment(_) => Some(self.node),
         }
@@ -111,8 +110,7 @@ impl<'source> Iterator for BlockIter<'source> {
             }
             Node::Text(_) => None,
             Node::Statement(_) => None,
-            Node::RawBlock(_)
-            | Node::RawStatement(_)
+            Node::RawStatement(_)
             | Node::RawComment(_)
             | Node::Comment(_) => None,
         };

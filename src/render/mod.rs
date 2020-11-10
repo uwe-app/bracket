@@ -602,9 +602,6 @@ impl<'render> Render<'render> {
             Node::Text(ref n) => {
                 self.write_str(n.as_str(), false)?;
             }
-            Node::RawBlock(ref n) => {
-                self.write_str(n.between(), false)?;
-            }
             Node::RawStatement(ref n) => {
                 let raw = &n.as_str()[1..];
                 self.write_str(raw, false)?;
