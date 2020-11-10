@@ -36,14 +36,14 @@ fn component_type(lex: &Parameters) -> ComponentType {
 }
 
 fn parents<'source>(
-    state: &mut ParseState,
+    _state: &mut ParseState,
     lexer: &mut Lexer<'source>,
     path: &mut Path,
 ) -> Option<Token> {
     path.set_parents(1);
     while let Some(token) = lexer.next() {
         match &token {
-            Token::Parameters(lex, span) => match &lex {
+            Token::Parameters(lex, _) => match &lex {
                 Parameters::ParentRef => {
                     path.set_parents(path.parents() + 1);
                 }

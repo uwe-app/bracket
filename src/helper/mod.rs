@@ -1,8 +1,7 @@
 //! Helper trait and types for the default set of helpers.
 use dyn_clone::DynClone;
-use serde_json::{Map, Value};
+use serde_json::Value;
 use std::collections::HashMap;
-use std::ops::Range;
 
 use crate::{
     error::HelperError,
@@ -23,7 +22,7 @@ pub trait Helper: Send + Sync + DynClone {
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
-    ) -> ValueResult;
+    ) -> HelperResult<Option<Value>>;
 }
 
 dyn_clone::clone_trait_object!(Helper);

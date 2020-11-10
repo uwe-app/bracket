@@ -93,7 +93,6 @@ pub struct Parser<'source> {
     source: &'source str,
     lexer: Lexer<'source>,
     state: ParseState,
-    options: ParserOptions,
     stack: Vec<(&'source str, Block<'source>)>,
     next_token: Option<Token>,
 }
@@ -106,7 +105,6 @@ impl<'source> Parser<'source> {
             source,
             lexer,
             state,
-            options,
             stack: vec![],
             next_token: None,
         }
@@ -367,7 +365,7 @@ impl<'source> Parser<'source> {
                     } else {
                         CallParseContext::ScopeStatement
                     };
-                    let mut call = call::parse(
+                    let call = call::parse(
                         self.source,
                         &mut self.lexer,
                         &mut self.state,

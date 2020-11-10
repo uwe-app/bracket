@@ -1,11 +1,7 @@
-use std::convert::TryFrom;
-
 use bracket::{
-    error::{Error, SyntaxError},
     helper::*,
-    render::{Context, Render},
-    template::{Loader, Templates},
     parser::ast::Node,
+    render::{Context, Render},
     Registry, Result,
 };
 use serde_json::{json, Value};
@@ -18,9 +14,9 @@ pub struct FooHelper;
 impl Helper for FooHelper {
     fn call<'render, 'call>(
         &self,
-        rc: &mut Render<'render>,
-        ctx: &Context<'call>,
-        template: Option<&'render Node<'render>>,
+        _rc: &mut Render<'render>,
+        _ctx: &Context<'call>,
+        _template: Option<&'render Node<'render>>,
     ) -> ValueResult {
         Ok(Some(Value::String("bar".to_string())))
     }
@@ -33,7 +29,7 @@ impl Helper for FooBlockHelper {
     fn call<'render, 'call>(
         &self,
         rc: &mut Render<'render>,
-        ctx: &Context<'call>,
+        _ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> ValueResult {
         rc.register_helper("foo", Box::new(FooHelper {}));
@@ -53,8 +49,8 @@ impl Helper for HelperMissing {
     fn call<'render, 'call>(
         &self,
         rc: &mut Render<'render>,
-        ctx: &Context<'call>,
-        template: Option<&'render Node<'render>>,
+        _ctx: &Context<'call>,
+        _template: Option<&'render Node<'render>>,
     ) -> ValueResult {
         rc.write("bar")?;
         Ok(None)

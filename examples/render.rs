@@ -46,7 +46,7 @@ fn main() -> Result<()> {
     )?;
     loader.insert(name, content);
 
-    let mut templates = Templates::try_from(&loader)?;
+    let templates = Templates::try_from(&loader)?;
 
     //println!("{:#?}", templates.get(name));
 

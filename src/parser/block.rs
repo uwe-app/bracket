@@ -64,7 +64,7 @@ pub(crate) fn raw<'source>(
     span: Range<usize>,
 ) -> SyntaxResult<Node<'source>> {
     let end = |t: &Token| match t {
-        Token::RawBlock(lex, span) => match lex {
+        Token::RawBlock(lex, _) => match lex {
             lexer::RawBlock::End => true,
             _ => false,
         },
@@ -89,7 +89,7 @@ pub(crate) fn raw_comment<'source>(
     span: Range<usize>,
 ) -> SyntaxResult<Node<'source>> {
     let end = |t: &Token| match t {
-        Token::RawComment(lex, span) => match lex {
+        Token::RawComment(lex, _) => match lex {
             lexer::RawComment::End => true,
             _ => false,
         },
@@ -114,7 +114,7 @@ pub(crate) fn raw_statement<'source>(
     span: Range<usize>,
 ) -> SyntaxResult<Node<'source>> {
     let end = |t: &Token| match t {
-        Token::RawStatement(lex, span) => match lex {
+        Token::RawStatement(lex, _) => match lex {
             lexer::RawStatement::End => true,
             _ => false,
         },
@@ -139,7 +139,7 @@ pub(crate) fn comment<'source>(
     span: Range<usize>,
 ) -> SyntaxResult<Node<'source>> {
     let end = |t: &Token| match t {
-        Token::Comment(lex, span) => match lex {
+        Token::Comment(lex, _) => match lex {
             lexer::Comment::End => true,
             _ => false,
         },

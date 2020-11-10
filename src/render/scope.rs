@@ -1,5 +1,4 @@
 //! Scopes are used by helpers to define local variables.
-use crate::parser::ast::Node;
 use serde_json::{Map, Value};
 
 #[derive(Debug)]
@@ -48,5 +47,4 @@ impl<'scope> Scope<'scope> {
     pub fn base_value(&self) -> &Option<Value> {
         &self.value
     }
-
 }

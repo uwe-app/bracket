@@ -2,7 +2,6 @@
 use serde::Serialize;
 use serde_json::{Map, Value};
 use std::cell::RefCell;
-use std::ops::Range;
 use std::rc::Rc;
 
 use crate::{
@@ -12,7 +11,7 @@ use crate::{
     json,
     output::Output,
     parser::{
-        ast::{Block, Call, CallTarget, Node, ParameterValue, Path},
+        ast::{Call, CallTarget, Node, ParameterValue, Path},
         trim::{TrimHint, TrimState},
     },
     template::Templates,
@@ -38,7 +37,7 @@ pub struct Render<'render> {
     helpers: &'render HelperRegistry<'render>,
     local_helpers: Option<Rc<RefCell<HelperRegistry<'render>>>>,
     templates: &'render Templates<'render>,
-    source: &'render str,
+    name: &'render str,
     root: Value,
     writer: Box<&'render mut dyn Output>,
     scopes: Vec<Scope<'render>>,
@@ -54,7 +53,7 @@ impl<'render> Render<'render> {
         escape: &'render EscapeFn,
         helpers: &'render HelperRegistry<'render>,
         templates: &'render Templates<'render>,
-        source: &'render str,
+        name: &'render str,
         data: &T,
         writer: Box<&'render mut dyn Output>,
     ) -> RenderResult<Self>
@@ -70,7 +69,7 @@ impl<'render> Render<'render> {
             helpers,
             local_helpers: None,
             templates,
-            source,
+            name,
             root,
             writer,
             scopes,
@@ -139,36 +138,34 @@ impl<'render> Render<'render> {
         let mut alt: Option<&'a Node<'_>> = None;
         let mut branch: Option<&'a Node<'_>> = None;
 
-        //if let Some(template) = template {
-            match template {
-                Node::Block(ref block) => {
-                    if !block.conditions().is_empty() {
-                        for node in block.conditions().iter() {
-                            match node {
-                                Node::Condition(clause) => {
-                                    // Got an else clause, last one wins!
-                                    if clause.call().is_empty() {
-                                        alt = Some(node);
-                                    } else {
-                                        if let Some(value) = self
-                                            .call(clause.call())
-                                            .map_err(Box::new)?
-                                        {
-                                            if self.is_truthy(&value) {
-                                                branch = Some(node);
-                                                break;
-                                            }
+        match template {
+            Node::Block(ref block) => {
+                if !block.conditions().is_empty() {
+                    for node in block.conditions().iter() {
+                        match node {
+                            Node::Condition(clause) => {
+                                // Got an else clause, last one wins!
+                                if clause.call().is_empty() {
+                                    alt = Some(node);
+                                } else {
+                                    if let Some(value) = self
+                                        .call(clause.call())
+                                        .map_err(Box::new)?
+                                    {
+                                        if self.is_truthy(&value) {
+                                            branch = Some(node);
+                                            break;
                                         }
                                     }
                                 }
-                                _ => {}
                             }
+                            _ => {}
                         }
                     }
                 }
-                _ => {}
             }
-        //}
+            _ => {}
+        }
 
         Ok(branch.or(alt))
     }
@@ -176,7 +173,10 @@ impl<'render> Render<'render> {
     /// Render an inner template.
     ///
     /// Block helpers should call this when they want to render an inner template.
-    pub fn template(&mut self, node: &'render Node<'render>) -> Result<(), HelperError> {
+    pub fn template(
+        &mut self,
+        node: &'render Node<'render>,
+    ) -> Result<(), HelperError> {
         let mut hint: Option<TrimHint> = None;
         for event in node.block_iter().trim(self.hint) {
             let mut trim = event.trim;
@@ -376,8 +376,7 @@ impl<'render> Render<'render> {
     ) -> RenderResult<HelperValue> {
         let args = self.arguments(call)?;
         let hash = self.hash(call)?;
-        let mut context =
-            Context::new(call, name.to_owned(), args, hash);
+        let mut context = Context::new(call, name.to_owned(), args, hash);
 
         //println!("Invoke a helper with the name: {}", name);
 
@@ -438,37 +437,24 @@ impl<'render> Render<'render> {
                     && path.components().get(0).unwrap().as_str()
                         == PARTIAL_BLOCK
                 {
-                    if let Some(scope) = self.scopes.last_mut() {
-                        if let Some(node) = self.partial_block.take() {
-                            self.template(node)?;
-                        }
-                        Ok(None)
-                    } else {
-                        Ok(None)
+                    if let Some(node) = self.partial_block.take() {
+                        self.template(node)?;
                     }
-
+                    Ok(None)
                 // Simple paths may be helpers
                 } else if path.is_simple() {
                     if self.has_helper(path.as_str()) {
-                        self.invoke(
-                            path.as_str(),
-                            call,
-                            None,
-                        )
+                        self.invoke(path.as_str(), call, None)
                     } else {
                         let value = self.lookup(path).cloned();
                         if let None = value {
                             if self.has_helper(HELPER_MISSING) {
                                 println!("HAS HELPER MISSING");
-                                return self.invoke(
-                                    HELPER_MISSING,
-                                    call,
-                                    None,
-                                )
+                                return self.invoke(HELPER_MISSING, call, None);
                             } else {
-                                return Err(
-                                    RenderError::VariableNotFound(
-                                        path.as_str().to_string()))
+                                return Err(RenderError::VariableNotFound(
+                                    path.as_str().to_string(),
+                                ));
                             }
                         }
                         Ok(value)
@@ -507,7 +493,6 @@ impl<'render> Render<'render> {
                 return Ok(json::stringify(&result));
             }
         }
-        Err(RenderError::PartialNameResolve(call.as_str().to_string()))
     }
 
     fn render_partial(
@@ -526,7 +511,7 @@ impl<'render> Render<'render> {
 
         let node = template.node();
         let hash = self.hash(call)?;
-        let mut scope = Scope::new_locals(hash);
+        let scope = Scope::new_locals(hash);
         self.scopes.push(scope);
         // WARN: We must iterate the document child nodes
         // WARN: when rendering partials otherwise the
@@ -549,11 +534,7 @@ impl<'render> Render<'render> {
             match call.target() {
                 CallTarget::Path(ref path) => {
                     if path.is_simple() {
-                        self.invoke(
-                            path.as_str(),
-                            call,
-                            Some(node),
-                        )?;
+                        self.invoke(path.as_str(), call, Some(node))?;
                     } else {
                         panic!(
                             "Block helpers identifiers must be simple paths"
@@ -615,7 +596,6 @@ impl<'render> Render<'render> {
             Node::Block(ref block) => {
                 self.block(node, block.call())?;
             }
-            _ => todo!("Render other node types"),
         }
 
         Ok(())

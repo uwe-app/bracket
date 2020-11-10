@@ -2,8 +2,8 @@
 use crate::{
     error::HelperError,
     helper::{Helper, ValueResult},
-    render::{Context, Render},
     parser::ast::Node,
+    render::{Context, Render},
 };
 
 use serde_json::{to_string, to_string_pretty, Value};
@@ -20,7 +20,7 @@ impl Helper for JsonHelper {
         &self,
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
-        template: Option<&'render Node<'render>>,
+        _template: Option<&'render Node<'render>>,
     ) -> ValueResult {
         ctx.arity(1..2)?;
 

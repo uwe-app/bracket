@@ -1,10 +1,6 @@
-use crate::{
-    parser::{
-        ast::Node,
-        trim::{TrimHint, TrimState},
-        Parser,
-    },
-    SyntaxResult,
+use crate::parser::{
+    ast::Node,
+    trim::{TrimHint, TrimState},
 };
 
 /// Event for node iterators that also

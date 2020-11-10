@@ -2,12 +2,7 @@
 use serde_json::{Map, Value};
 use std::ops::Range;
 
-use crate::{
-    error::HelperError,
-    helper::HelperResult,
-    parser::ast::{Call, Node},
-    render::Render,
-};
+use crate::{error::HelperError, helper::HelperResult, parser::ast::Call};
 
 /// Context for the call to a helper exposes immutable access to
 /// the arguments and hash parameters for the helper.
@@ -15,7 +10,9 @@ use crate::{
 /// It also provides some useful functions for asserting on argument
 /// arity and the type of arguments and hash parameters.
 pub struct Context<'call> {
+    // TODO: use call to generate context specific errors!
     call: &'call Call<'call>,
+
     name: String,
     arguments: Vec<Value>,
     hash: Map<String, Value>,

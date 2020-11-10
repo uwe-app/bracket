@@ -4,8 +4,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum RenderError {
-    #[error("Unable to resolve partial name from '{0}'")]
-    PartialNameResolve(String),
     #[error("Partial '{0}' not found")]
     PartialNotFound(String),
     #[error("Variable '{0}' not found, check the variable path and verify the template data")]

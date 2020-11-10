@@ -190,7 +190,7 @@ impl<'reg, 'source> Template<'source> {
             escape,
             helpers,
             templates,
-            self.node.source(),
+            name,
             data,
             Box::new(writer),
         )?;

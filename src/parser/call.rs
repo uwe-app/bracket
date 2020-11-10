@@ -44,7 +44,7 @@ fn string_literal<'source>(
     state: &mut ParseState,
     current: (Parameters, Span),
 ) -> SyntaxResult<Value> {
-    let (lex, span) = current;
+    let (_lex, span) = current;
     let str_start = span.end;
     let mut str_end = span.end;
 
@@ -147,7 +147,7 @@ fn key_value<'source>(
     call: &mut Call<'source>,
     current: (Parameters, Span),
 ) -> SyntaxResult<Option<Token>> {
-    let (lex, span) = current;
+    let (_lex, span) = current;
     let key = &source[span.start..span.end - 1];
     let mut next: Option<Token> = None;
 
@@ -155,8 +155,7 @@ fn key_value<'source>(
     if let Some(token) = lexer.next() {
         match token {
             Token::Parameters(lex, span) => {
-                let (mut value, token) =
-                    value(source, lexer, state, (lex, span))?;
+                let (value, token) = value(source, lexer, state, (lex, span))?;
                 call.add_hash(key, value);
                 next = token;
             }
@@ -383,7 +382,7 @@ fn target<'source>(
 
 /// Parse the partial and conditional flags.
 fn flags<'source>(
-    source: &'source str,
+    _source: &'source str,
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     call: &mut Call<'source>,
@@ -439,7 +438,8 @@ pub(crate) fn parse<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     open: Span,
-    parse_context: CallParseContext,
+    // TODO: use this to determine whether `else` keyword is legal
+    _parse_context: CallParseContext,
 ) -> SyntaxResult<Call<'source>> {
     *state.byte_mut() = open.end;
 
@@ -453,7 +453,7 @@ pub(crate) fn parse<'source>(
 
     let next =
         target(source, lexer, state, &mut call, next, CallContext::Call)?;
-    let next =
+    let _next =
         arguments(source, lexer, state, &mut call, next, CallContext::Call)?;
     // FIXME: we should return the next token here so it is consumed ???
     if !call.is_closed() {

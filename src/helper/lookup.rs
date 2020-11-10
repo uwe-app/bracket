@@ -2,8 +2,8 @@
 use crate::{
     error::HelperError,
     helper::{Helper, ValueResult},
-    render::{Context, Render},
     parser::ast::Node,
+    render::{Context, Render},
 };
 
 #[derive(Clone)]
@@ -14,7 +14,7 @@ impl Helper for LookupHelper {
         &self,
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
-        template: Option<&'render Node<'render>>,
+        _template: Option<&'render Node<'render>>,
     ) -> ValueResult {
         ctx.arity(2..2)?;
 

@@ -1,11 +1,9 @@
 //! Block helper that sets the scope.
 use crate::{
     helper::{Helper, ValueResult},
-    render::{Context, Render, Scope},
     parser::ast::Node,
+    render::{Context, Render, Scope},
 };
-
-use serde_json::Value;
 
 #[derive(Clone)]
 pub struct WithHelper;

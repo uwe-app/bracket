@@ -1,14 +1,11 @@
-use bracket::{
-    error::{Error, SyntaxError},
-    Registry, Result,
-};
+use bracket::{Registry, Result};
 use serde_json::json;
 
 static NAME: &str = "trim.rs";
 
 #[test]
 fn trim_statement() -> Result<()> {
-    let mut registry = Registry::new();
+    let registry = Registry::new();
     let value = r"
 {{~foo~}}
 ";
@@ -20,7 +17,7 @@ fn trim_statement() -> Result<()> {
 
 #[test]
 fn trim_before_block_start() -> Result<()> {
-    let mut registry = Registry::new();
+    let registry = Registry::new();
     let value = r"
 {{~#if true}}{{foo}}{{/if}}";
     let data = json!({"foo": "bar"});
@@ -31,7 +28,7 @@ fn trim_before_block_start() -> Result<()> {
 
 #[test]
 fn trim_after_block_start() -> Result<()> {
-    let mut registry = Registry::new();
+    let registry = Registry::new();
     let value = r"{{#if true~}}
 {{foo}}{{/if}}";
     let data = json!({"foo": "bar"});
@@ -42,7 +39,7 @@ fn trim_after_block_start() -> Result<()> {
 
 #[test]
 fn trim_before_block_end() -> Result<()> {
-    let mut registry = Registry::new();
+    let registry = Registry::new();
     let value = r"{{#if true}}{{foo}}
 {{~/if}}";
     let data = json!({"foo": "bar"});
@@ -53,7 +50,7 @@ fn trim_before_block_end() -> Result<()> {
 
 #[test]
 fn trim_after_block_end() -> Result<()> {
-    let mut registry = Registry::new();
+    let registry = Registry::new();
     let value = r"{{#if true}}{{foo}}{{/if~}}
 ";
     let data = json!({"foo": "bar"});
@@ -64,7 +61,7 @@ fn trim_after_block_end() -> Result<()> {
 
 #[test]
 fn trim_condition_after() -> Result<()> {
-    let mut registry = Registry::new();
+    let registry = Registry::new();
     let value = r"{{#if false}}WRONG{{else~}}
 {{foo}}{{/if~}}
 ";
@@ -76,7 +73,7 @@ fn trim_condition_after() -> Result<()> {
 
 #[test]
 fn trim_condition_if() -> Result<()> {
-    let mut registry = Registry::new();
+    let registry = Registry::new();
     let value = r"{{#if true ~}}
 {{foo}}
 {{~else~}}
@@ -91,7 +88,7 @@ fn trim_condition_if() -> Result<()> {
 
 #[test]
 fn trim_condition_else() -> Result<()> {
-    let mut registry = Registry::new();
+    let registry = Registry::new();
     let value = r"{{#if false ~}}
 {{foo}}
 {{~else~}}

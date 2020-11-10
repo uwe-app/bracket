@@ -2,8 +2,8 @@
 use crate::{
     helper::{Helper, ValueResult},
     json,
-    render::{Context, Render},
     parser::ast::Node,
+    render::{Context, Render},
 };
 
 use log::*;
@@ -24,9 +24,9 @@ pub struct LogHelper;
 impl Helper for LogHelper {
     fn call<'render, 'call>(
         &self,
-        rc: &mut Render<'render>,
+        _rc: &mut Render<'render>,
         ctx: &Context<'call>,
-        template: Option<&'render Node<'render>>,
+        _template: Option<&'render Node<'render>>,
     ) -> ValueResult {
         ctx.arity(1..usize::MAX)?;
 

@@ -11,7 +11,7 @@ fn main() -> Result<()> {
         line_offset: 0,
         byte_offset: 0,
     };
-    let mut parser = Parser::new(content, options);
+    let parser = Parser::new(content, options);
     for node in parser {
         let node = node?;
         println!("{:#?}", node);

@@ -49,8 +49,7 @@ impl<'source> Node<'source> {
         }
     }
 
-    #[deprecated(note = "Use trim()")]
-    pub fn trim_before(&self) -> bool {
+    fn trim_before(&self) -> bool {
         match *self {
             Self::Document(_)
             | Self::Text(_)
@@ -64,8 +63,7 @@ impl<'source> Node<'source> {
         }
     }
 
-    #[deprecated(note = "Use trim()")]
-    pub fn trim_after(&self) -> bool {
+    fn trim_after(&self) -> bool {
         match *self {
             Self::Document(_)
             | Self::Text(_)
@@ -82,7 +80,7 @@ impl<'source> Node<'source> {
     /// The underlying string slice.
     pub fn source(&self) -> &str {
         match *self {
-            Self::Document(ref n) => "#document",
+            Self::Document(_) => "#document",
             Self::Text(ref n) => n.0,
             Self::RawBlock(ref n) => n.source,
             Self::RawStatement(ref n) => n.source,

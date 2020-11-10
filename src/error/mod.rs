@@ -39,7 +39,7 @@ impl fmt::Debug for Error {
         match *self {
             Self::Syntax(ref e) => fmt::Debug::fmt(e, f),
             Self::Render(ref e) => fmt::Debug::fmt(e, f),
-            Self::TemplateNotFound(ref e) => fmt::Display::fmt(self, f),
+            Self::TemplateNotFound(_) => fmt::Display::fmt(self, f),
             Self::Io(ref e) => fmt::Debug::fmt(e, f),
         }
     }

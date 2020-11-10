@@ -1,14 +1,11 @@
-use bracket::{
-    error::{Error, SyntaxError},
-    Registry, Result,
-};
+use bracket::{Registry, Result};
 use serde_json::json;
 
 static NAME: &str = "each.rs";
 
 #[test]
 fn each_array() -> Result<()> {
-    let mut registry = Registry::new();
+    let registry = Registry::new();
     let value = r"{{#each foo}}{{this}}{{/each}}";
     let data = json!({"foo": ["b", "a", "r"]});
     let result = registry.once(NAME, value, &data)?;
@@ -18,7 +15,7 @@ fn each_array() -> Result<()> {
 
 #[test]
 fn each_array_index() -> Result<()> {
-    let mut registry = Registry::new();
+    let registry = Registry::new();
     let value = r"{{#each foo}}{{@index}}{{/each}}";
     let data = json!({"foo": ["b", "a", "r"]});
     let result = registry.once(NAME, value, &data)?;
@@ -28,7 +25,7 @@ fn each_array_index() -> Result<()> {
 
 #[test]
 fn each_map() -> Result<()> {
-    let mut registry = Registry::new();
+    let registry = Registry::new();
     let value = r"{{#each foo}}{{this}}{{/each}}";
     let data = json!({"foo": {"bar": "baz", "buz": "qux"}});
     let result = registry.once(NAME, value, &data)?;
@@ -38,7 +35,7 @@ fn each_map() -> Result<()> {
 
 #[test]
 fn each_map_key() -> Result<()> {
-    let mut registry = Registry::new();
+    let registry = Registry::new();
     let value = r"{{#each foo}}{{@key}}{{/each}}";
     let data = json!({"foo": {"bar": "baz", "buz": "qux"}});
     let result = registry.once(NAME, value, &data)?;

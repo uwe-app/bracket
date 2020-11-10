@@ -266,7 +266,7 @@ impl Token {
             Token::Parameters(ref lex, _) => lex == &Parameters::Newline,
             // NOTE: new lines are not allowed in string literals
             // NOTE: so we have special handling for this case
-            Token::StringLiteral(ref lex, _) => false,
+            Token::StringLiteral(_, _) => false,
         }
     }
 }

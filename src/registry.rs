@@ -5,9 +5,7 @@ use crate::{
     escape::{escape_html, EscapeFn},
     helper::HelperRegistry,
     output::{Output, StringOutput},
-    parser::{trim::TrimHint, Parser, ParserOptions},
-    render::Render,
-    parser::ast::Node,
+    parser::ParserOptions,
     template::{Template, Templates},
     Error, Result,
 };
@@ -97,8 +95,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     /// Render a template without registering it and return
     /// the result as a string.
     ///
-    /// This function buffers the template nodes before rendering; if low
-    /// latency is required use the stream functions.
+    /// This function buffers the template nodes before rendering.
     pub fn once<T>(&self, name: &str, source: &str, data: &T) -> Result<String>
     where
         T: Serialize,
@@ -117,6 +114,8 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         )?;
         Ok(writer.into())
     }
+
+    /*
 
     /// Stream a dynamic template and buffer the result to a string.
     ///
@@ -152,8 +151,6 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     where
         T: Serialize,
     {
-
-        /*
         let mut buffer: Vec<Node<'_>> = Vec::new();
         let mut rc = Render::new(
             self.strict(),
@@ -182,10 +179,10 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         }
 
         drop(buffer);
-        */
-    
+
         Ok(())
     }
+    */
 
     /// Render a named template and buffer the result to a string.
     ///

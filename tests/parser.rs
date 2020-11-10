@@ -15,8 +15,8 @@ fn parse_statement() -> Result<()> {
         Node::Document(doc) => {
             assert_eq!(1, doc.nodes().len());
             let node = doc.nodes().first().unwrap();
-            assert_eq!(false, node.trim_before());
-            assert_eq!(false, node.trim_after());
+            assert_eq!(false, node.trim().before);
+            assert_eq!(false, node.trim().after);
         }
         _ => panic!("Bad root node type for parser()."),
     }
@@ -542,8 +542,8 @@ fn parse_statement_trim() -> Result<()> {
         Node::Document(doc) => {
             assert_eq!(1, doc.nodes().len());
             let node = doc.nodes().first().unwrap();
-            assert_eq!(true, node.trim_before());
-            assert_eq!(true, node.trim_after());
+            assert_eq!(true, node.trim().before);
+            assert_eq!(true, node.trim().after);
         }
         _ => panic!("Bad root node type for parser()."),
     }
@@ -561,8 +561,8 @@ fn parse_block_trim() -> Result<()> {
         Node::Document(doc) => {
             assert_eq!(1, doc.nodes().len());
             let node = doc.nodes().first().unwrap();
-            assert_eq!(true, node.trim_before());
-            assert_eq!(true, node.trim_after());
+            assert_eq!(true, node.trim().before);
+            assert_eq!(true, node.trim().after);
 
             match node {
                 Node::Block(b) => {

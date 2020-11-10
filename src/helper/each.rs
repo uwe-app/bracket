@@ -2,8 +2,8 @@
 use crate::{
     error::HelperError,
     helper::{Helper, ValueResult},
-    render::{Context, Render, Scope},
     parser::ast::Node,
+    render::{Context, Render, Scope},
 };
 
 use serde_json::{Number, Value};
