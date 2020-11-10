@@ -2,7 +2,7 @@ use bracket::{
     helper::*,
     parser::ast::Node,
     render::{Context, Render},
-    Registry, Result
+    Registry, Result,
 };
 use serde_json::json;
 
@@ -19,7 +19,7 @@ impl Helper for RawBlockHelper {
         _template: Option<&'render Node<'render>>,
     ) -> HelperValue {
         if let Some(text) = ctx.text() {
-            rc.write(text)?; 
+            rc.write(text)?;
         }
         Ok(None)
     }

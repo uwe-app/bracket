@@ -480,7 +480,7 @@ impl<'source> Call<'source> {
     }
 
     pub fn close_span(&self) -> &Option<Range<usize>> {
-        &self.close 
+        &self.close
     }
 
     /// The full range for this call; if the call is not closed

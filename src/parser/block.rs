@@ -64,16 +64,10 @@ pub(crate) fn raw<'source>(
     state: &mut ParseState,
     span: Range<usize>,
 ) -> SyntaxResult<Node<'source>> {
-
     let mut block = Block::new(source, span.clone(), true);
 
-    let call = call::parse(
-        source,
-        lexer,
-        state,
-        span.clone(),
-        CallParseContext::Raw,
-    )?;
+    let call =
+        call::parse(source, lexer, state, span.clone(), CallParseContext::Raw)?;
 
     if !call.is_closed() {
         panic!("Raw block start tag was not terminated");
@@ -100,19 +94,17 @@ pub(crate) fn raw<'source>(
     if let Some((node, span)) = maybe_node {
         block.push(node);
 
-        let end_tag = call::parse(
-            source,
-            lexer,
-            state,
-            span,
-            CallParseContext::Raw,
-        )?;
+        let end_tag =
+            call::parse(source, lexer, state, span, CallParseContext::Raw)?;
 
         let end_name = end_tag.target().as_str();
 
         if start_name != end_name {
             // FIXME: return an error here!
-            panic!("Raw block start '{}' does not match end name '{}'", start_name, end_name);
+            panic!(
+                "Raw block start '{}' does not match end name '{}'",
+                start_name, end_name
+            );
         }
 
         Ok(Node::Block(block))

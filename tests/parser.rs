@@ -585,21 +585,21 @@ fn parse_raw_block() -> Result<()> {
     let node = parser.parse()?;
 
     //match node {
-        //Node::Document(doc) => {
-            //assert_eq!(1, doc.nodes().len());
-            //let node = doc.nodes().first().unwrap();
-            //assert_eq!(true, node.trim().before);
-            //assert_eq!(true, node.trim().after);
+    //Node::Document(doc) => {
+    //assert_eq!(1, doc.nodes().len());
+    //let node = doc.nodes().first().unwrap();
+    //assert_eq!(true, node.trim().before);
+    //assert_eq!(true, node.trim().after);
 
-            //match node {
-                //Node::Block(b) => {
-                    //assert_eq!(true, b.trim_before_close());
-                    //assert_eq!(true, b.trim_after_close());
-                //}
-                //_ => panic!("Expecting block node!"),
-            //}
-        //}
-        //_ => panic!("Bad root node type for parser()."),
+    //match node {
+    //Node::Block(b) => {
+    //assert_eq!(true, b.trim_before_close());
+    //assert_eq!(true, b.trim_after_close());
+    //}
+    //_ => panic!("Expecting block node!"),
+    //}
+    //}
+    //_ => panic!("Bad root node type for parser()."),
     //}
 
     Ok(())

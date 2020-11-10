@@ -26,6 +26,11 @@ pub enum HelperError {
     #[error("Helper '{0}' failed to resolve field '{1}'")]
     LookupField(String, String),
 
+    #[error(
+        "Helper '{0}' type assertion failed, expected '{1}' but got '{2}'"
+    )]
+    TypeAssert(String, String, String),
+
     /// Proxy for render errors that occur via helpers; for example
     /// when rendering inner templates.
     #[error(transparent)]

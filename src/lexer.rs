@@ -227,7 +227,7 @@ impl Token {
         match self {
             Token::Block(ref t, _) => t == &Block::Text || t == &Block::Newline,
             //Token::RawBlock(ref t, _) => {
-                //t == &Block::Text || t == &Block::Newline
+            //t == &Block::Text || t == &Block::Newline
             //}
             Token::RawComment(ref t, _) => {
                 t == &RawComment::Text || t == &RawComment::Newline
@@ -315,17 +315,17 @@ impl<'source> Iterator for Lexer<'source> {
                 }
             }
             //Modes::RawBlock(lexer) => {
-                //let result = lexer.next();
-                //let span = lexer.span();
+            //let result = lexer.next();
+            //let span = lexer.span();
 
-                //if let Some(token) = result {
-                    ////if Block::EndRawBlock == token {
-                        ////self.mode = Modes::Parameters(lexer.to_owned().morph());
-                    ////}
-                    //Some(Token::RawBlock(token, span))
-                //} else {
-                    //None
-                //}
+            //if let Some(token) = result {
+            ////if Block::EndRawBlock == token {
+            ////self.mode = Modes::Parameters(lexer.to_owned().morph());
+            ////}
+            //Some(Token::RawBlock(token, span))
+            //} else {
+            //None
+            //}
             //}
             Modes::RawComment(lexer) => {
                 let result = lexer.next();
