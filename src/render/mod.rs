@@ -353,12 +353,9 @@ impl<'render> Render<'render> {
 
     /// Remove a local helper.
     ///
-    /// Local helpers will be removed once a helper call has finished 
+    /// Local helpers will be removed once a helper call has finished
     /// but you can call this if you want to be explicit.
-    pub fn unregister_local_helper(
-        &mut self,
-        name: &'render str,
-    ) {
+    pub fn unregister_local_helper(&mut self, name: &'render str) {
         if let Some(ref mut locals) = self.local_helpers {
             let registry = Rc::make_mut(locals);
             registry.borrow_mut().unregister_helper(name);
@@ -370,10 +367,11 @@ impl<'render> Render<'render> {
         name: &str,
         call: &Call<'_>,
         content: Option<&'render Node<'render>>,
+        text: Option<&'render str>,
     ) -> RenderResult<HelperValue> {
         let args = self.arguments(call)?;
         let hash = self.hash(call)?;
-        let mut context = Context::new(call, name.to_owned(), args, hash);
+        let mut context = Context::new(call, name.to_owned(), args, hash, text);
 
         //println!("Invoke a helper with the name: {}", name);
 
@@ -441,13 +439,17 @@ impl<'render> Render<'render> {
                 // Simple paths may be helpers
                 } else if path.is_simple() {
                     if self.has_helper(path.as_str()) {
-                        self.invoke(path.as_str(), call, None)
+                        self.invoke(path.as_str(), call, None, None)
                     } else {
                         let value = self.lookup(path).cloned();
                         if let None = value {
                             if self.has_helper(HELPER_MISSING) {
-                                println!("HAS HELPER MISSING");
-                                return self.invoke(HELPER_MISSING, call, None);
+                                return self.invoke(
+                                    HELPER_MISSING,
+                                    call,
+                                    None,
+                                    None,
+                                );
                             } else {
                                 return Err(RenderError::VariableNotFound(
                                     path.as_str().to_string(),
@@ -531,7 +533,7 @@ impl<'render> Render<'render> {
             match call.target() {
                 CallTarget::Path(ref path) => {
                     if path.is_simple() {
-                        self.invoke(path.as_str(), call, Some(node))?;
+                        self.invoke(path.as_str(), call, Some(node), None)?;
                     } else {
                         panic!(
                             "Block helpers identifiers must be simple paths"

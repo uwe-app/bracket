@@ -2,7 +2,9 @@
 use serde_json::{Map, Value};
 use std::ops::Range;
 
-use crate::{json, error::HelperError, helper::HelperResult, parser::ast::Call};
+use crate::{
+    error::HelperError, helper::HelperResult, json, parser::ast::Call,
+};
 
 /// Enumerate JSON types for type assertions.
 pub enum Type {
@@ -26,20 +28,23 @@ pub struct Context<'call> {
     name: String,
     arguments: Vec<Value>,
     parameters: Map<String, Value>,
+    text: Option<&'call str>,
 }
 
 impl<'call> Context<'call> {
-    pub fn new(
+    pub(crate) fn new(
         call: &'call Call<'call>,
         name: String,
         arguments: Vec<Value>,
         parameters: Map<String, Value>,
+        text: Option<&'call str>,
     ) -> Self {
         Self {
             call,
             name,
             arguments,
             parameters,
+            text,
         }
     }
 
@@ -60,19 +65,26 @@ impl<'call> Context<'call> {
 
     /// Get an argument at an index.
     pub fn get(&self, index: usize) -> Option<&Value> {
-        self.arguments.get(index) 
+        self.arguments.get(index)
     }
 
     /// Get a hash parameter for the name.
     pub fn hash(&self, name: &str) -> Option<&Value> {
-        self.parameters.get(name) 
+        self.parameters.get(name)
+    }
+
+    /// Get the text for this context.
+    ///
+    /// Only available for raw block helpers.
+    pub fn text(&self) -> &Option<&'call str> {
+        &self.text
     }
 
     /// Assert that the call arguments have a valid arity.
     ///
-    /// If the range start and end are equal than an exact number 
-    /// of arguments are expected and a more concise error message 
-    /// is used. Range ends are exclusive so 1..1 and 1..2 are the 
+    /// If the range start and end are equal than an exact number
+    /// of arguments are expected and a more concise error message
+    /// is used. Range ends are exclusive so 1..1 and 1..2 are the
     /// same test they will just generate different error messages.
     pub fn arity(&self, range: Range<usize>) -> HelperResult<()> {
         if range.start == range.end {

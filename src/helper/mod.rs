@@ -94,10 +94,7 @@ impl<'reg> HelperRegistry<'reg> {
         self.helpers.insert(name, helper);
     }
 
-    pub fn unregister_helper(
-        &mut self,
-        name: &'reg str,
-    ) {
+    pub fn unregister_helper(&mut self, name: &'reg str) {
         self.helpers.remove(name);
     }
 

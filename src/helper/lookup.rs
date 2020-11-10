@@ -32,7 +32,10 @@ impl Helper for LookupHelper {
 
         let result = ctx.field(&target, field).cloned();
         if result.is_none() {
-            Err(HelperError::LookupField(name.to_string(), field.to_string()))
+            Err(HelperError::LookupField(
+                name.to_string(),
+                field.to_string(),
+            ))
         } else {
             Ok(result)
         }
