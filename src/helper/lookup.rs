@@ -12,7 +12,7 @@ pub struct LookupHelper;
 impl Helper for LookupHelper {
     fn call<'render, 'call>(
         &self,
-        rc: &mut Render<'render>,
+        _rc: &mut Render<'render>,
         ctx: &Context<'call>,
         _template: Option<&'render Node<'render>>,
     ) -> HelperValue {
@@ -32,10 +32,7 @@ impl Helper for LookupHelper {
 
         let result = ctx.field(&target, field).cloned();
         if result.is_none() {
-            Err(HelperError::Message(format!(
-                "Helper '{}' failed to resolve field '{}'",
-                name, field
-            )))
+            Err(HelperError::LookupField(name.to_string(), field.to_string()))
         } else {
             Ok(result)
         }

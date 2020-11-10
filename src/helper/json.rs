@@ -18,7 +18,7 @@ pub struct JsonHelper;
 impl Helper for JsonHelper {
     fn call<'render, 'call>(
         &self,
-        rc: &mut Render<'render>,
+        _rc: &mut Render<'render>,
         ctx: &Context<'call>,
         _template: Option<&'render Node<'render>>,
     ) -> HelperValue {

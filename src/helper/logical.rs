@@ -14,7 +14,7 @@ pub struct AndHelper;
 impl Helper for AndHelper {
     fn call<'render, 'call>(
         &self,
-        rc: &mut Render<'render>,
+        _rc: &mut Render<'render>,
         ctx: &Context<'call>,
         _template: Option<&'render Node<'render>>,
     ) -> HelperValue {
@@ -34,7 +34,7 @@ pub struct OrHelper;
 impl Helper for OrHelper {
     fn call<'render, 'call>(
         &self,
-        rc: &mut Render<'render>,
+        _rc: &mut Render<'render>,
         ctx: &Context<'call>,
         _template: Option<&'render Node<'render>>,
     ) -> HelperValue {
@@ -54,7 +54,7 @@ pub struct NotHelper;
 impl Helper for NotHelper {
     fn call<'render, 'call>(
         &self,
-        rc: &mut Render<'render>,
+        _rc: &mut Render<'render>,
         ctx: &Context<'call>,
         _template: Option<&'render Node<'render>>,
     ) -> HelperValue {
