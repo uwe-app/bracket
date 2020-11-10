@@ -81,8 +81,8 @@ pub(crate) fn raw<'source>(
 
     let start_name = call.target().as_str();
 
-    let end_span = call.span().clone();
-    let end_span = span.end..span.end + 1;
+    // NOTE: must have an accurate end span before reading the Text chunk!
+    let end_span = call.close_span().clone().unwrap();
 
     block.set_call(call);
 

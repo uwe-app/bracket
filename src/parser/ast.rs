@@ -479,6 +479,10 @@ impl<'source> Call<'source> {
         self.close.is_some()
     }
 
+    pub fn close_span(&self) -> &Option<Range<usize>> {
+        &self.close 
+    }
+
     /// The full range for this call; if the call is not closed
     /// only the open span is returned.
     pub fn span(&self) -> Range<usize> {

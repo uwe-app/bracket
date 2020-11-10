@@ -374,7 +374,6 @@ impl<'render> Render<'render> {
         let mut context = Context::new(call, name.to_owned(), args, hash, text);
 
         //println!("Invoke a helper with the name: {}", name);
-
         let locals = self
             .local_helpers
             .get_or_insert(Rc::new(RefCell::new(Default::default())));
@@ -386,6 +385,11 @@ impl<'render> Render<'render> {
             //if let Some(helper) = self.helpers.get(name) {
             helper.call(self, &mut context, content)?
         } else {
+            // Handling a raw block without a corresponding helper
+            // so we just write out the content
+            if let Some(text) = text {
+                self.write_str(text, false)?;
+            }
             None
         };
 
@@ -533,7 +537,21 @@ impl<'render> Render<'render> {
             match call.target() {
                 CallTarget::Path(ref path) => {
                     if path.is_simple() {
-                        self.invoke(path.as_str(), call, Some(node), None)?;
+
+                        let text: Option<&str> = match node {
+                            Node::Block(ref block) => {
+                                if block.is_raw() {
+                                    // Raw block nodes should have a single Text child node
+                                    if !block.nodes().is_empty() {
+                                        Some(block.nodes().get(0).unwrap().as_str()) 
+                                    // Empty raw block should be treated as the empty string
+                                    } else { Some("") }
+                                } else { None }
+                            }
+                            _ => None   
+                        };
+
+                        self.invoke(path.as_str(), call, Some(node), text)?;
                     } else {
                         panic!(
                             "Block helpers identifiers must be simple paths"
