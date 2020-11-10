@@ -9,7 +9,7 @@ pub struct Extras;
 #[logos(extras = Extras)]
 #[logos(subpattern identifier = r#"[^\s"!#%&'()*+,./;<=>@\[/\]^`{|}~]"#)]
 pub enum Block {
-    #[regex(r"\{\{\{\{[\t ]*raw[\t ]*\}\}\}\}")]
+    #[regex(r"\{\{\{\{[\t ]*")]
     StartRawBlock,
 
     #[regex(r"\{\{!--")]
@@ -30,24 +30,11 @@ pub enum Block {
     #[regex(r"\{\{\~?[\t ]*/")]
     EndBlockScope,
 
+    #[regex(r"\{\{\{\{[\t ]*/")]
+    EndRawBlock,
+
     #[regex(r".")]
     Text,
-
-    #[token("\n")]
-    Newline,
-
-    #[error]
-    Error,
-}
-
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
-#[logos(extras = Extras)]
-pub enum RawBlock {
-    #[regex(r".")]
-    Text,
-
-    #[regex(r"\{\{\{\{\s*/\s*raw\s*\}\}\}\}")]
-    End,
 
     #[token("\n")]
     Newline,
@@ -164,7 +151,7 @@ pub enum Parameters {
     #[regex(r" +")]
     WhiteSpace,
 
-    #[regex(r"~?\}?\}\}")]
+    #[regex(r"~?\}?\}?\}\}")]
     End,
 
     #[token("\n")]
@@ -215,7 +202,7 @@ pub enum StringLiteral {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Token {
     Block(Block, Span),
-    RawBlock(RawBlock, Span),
+    //RawBlock(Block, Span),
     RawComment(RawComment, Span),
     RawStatement(RawStatement, Span),
     Comment(Comment, Span),
@@ -227,7 +214,7 @@ impl Token {
     pub fn span(&self) -> &Span {
         match self {
             Token::Block(_, ref span) => span,
-            Token::RawBlock(_, ref span) => span,
+            //Token::RawBlock(_, ref span) => span,
             Token::RawComment(_, ref span) => span,
             Token::RawStatement(_, ref span) => span,
             Token::Comment(_, ref span) => span,
@@ -239,9 +226,9 @@ impl Token {
     pub fn is_text(&self) -> bool {
         match self {
             Token::Block(ref t, _) => t == &Block::Text || t == &Block::Newline,
-            Token::RawBlock(ref t, _) => {
-                t == &RawBlock::Text || t == &RawBlock::Newline
-            }
+            //Token::RawBlock(ref t, _) => {
+                //t == &Block::Text || t == &Block::Newline
+            //}
             Token::RawComment(ref t, _) => {
                 t == &RawComment::Text || t == &RawComment::Newline
             }
@@ -258,10 +245,10 @@ impl Token {
 
     pub fn is_newline(&self) -> bool {
         match *self {
-            Token::RawBlock(ref lex, _) => lex == &RawBlock::Newline,
             Token::RawComment(ref lex, _) => lex == &RawComment::Newline,
             Token::RawStatement(ref lex, _) => lex == &RawStatement::Newline,
             Token::Comment(ref lex, _) => lex == &Comment::Newline,
+            //Token::RawBlock(ref lex, _) => lex == &Block::Newline,
             Token::Block(ref lex, _) => lex == &Block::Newline,
             Token::Parameters(ref lex, _) => lex == &Parameters::Newline,
             // NOTE: new lines are not allowed in string literals
@@ -275,7 +262,7 @@ impl Token {
 
 enum Modes<'source> {
     Block(Lex<'source, Block>),
-    RawBlock(Lex<'source, RawBlock>),
+    //RawBlock(Lex<'source, Block>),
     RawComment(Lex<'source, RawComment>),
     RawStatement(Lex<'source, RawStatement>),
     Comment(Lex<'source, Comment>),
@@ -305,7 +292,9 @@ impl<'source> Iterator for Lexer<'source> {
 
                 if let Some(token) = result {
                     if Block::StartRawBlock == token {
-                        self.mode = Modes::RawBlock(lexer.to_owned().morph());
+                        self.mode = Modes::Parameters(lexer.to_owned().morph());
+                    } else if Block::EndRawBlock == token {
+                        self.mode = Modes::Parameters(lexer.to_owned().morph());
                     } else if Block::StartRawComment == token {
                         self.mode = Modes::RawComment(lexer.to_owned().morph());
                     } else if Block::StartRawStatement == token {
@@ -325,19 +314,19 @@ impl<'source> Iterator for Lexer<'source> {
                     None
                 }
             }
-            Modes::RawBlock(lexer) => {
-                let result = lexer.next();
-                let span = lexer.span();
+            //Modes::RawBlock(lexer) => {
+                //let result = lexer.next();
+                //let span = lexer.span();
 
-                if let Some(token) = result {
-                    if RawBlock::End == token {
-                        self.mode = Modes::Block(lexer.to_owned().morph());
-                    }
-                    Some(Token::RawBlock(token, span))
-                } else {
-                    None
-                }
-            }
+                //if let Some(token) = result {
+                    ////if Block::EndRawBlock == token {
+                        ////self.mode = Modes::Parameters(lexer.to_owned().morph());
+                    ////}
+                    //Some(Token::RawBlock(token, span))
+                //} else {
+                    //None
+                //}
+            //}
             Modes::RawComment(lexer) => {
                 let result = lexer.next();
                 let span = lexer.span();

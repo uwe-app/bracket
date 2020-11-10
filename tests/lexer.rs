@@ -1,5 +1,5 @@
 use bracket::lexer::{
-    collect as lex, Block, Comment, Parameters, RawBlock, RawComment,
+    collect as lex, Block, Comment, Parameters, RawComment,
     RawStatement, Token,
 };
 
@@ -26,13 +26,25 @@ fn lex_block_text() {
 }
 
 #[test]
-fn lex_raw_block() {
+fn lex_raw_block_text() {
     let value = "{{{{ raw }}}}foo {{bar}} baz{{{{ / raw }}}}";
     let tokens = lex(value, true);
+
     let expect = vec![
-        Token::Block(Block::StartRawBlock, 0..13),
-        Token::Block(Block::Text, 13..28),
-        Token::RawBlock(RawBlock::End, 28..43),
+        Token::Block(Block::StartRawBlock, 0..5),
+        Token::Parameters(Parameters::Identifier, 5..8),
+        Token::Parameters(Parameters::WhiteSpace, 8..9),
+        Token::Parameters(Parameters::End, 9..13),
+        Token::Block(Block::Text, 13..17),
+        Token::Block(Block::StartStatement, 17..19),
+        Token::Parameters(Parameters::Identifier, 19..22),
+        Token::Parameters(Parameters::End, 22..24),
+        Token::Block(Block::Text, 24..28),
+        Token::Block(Block::EndRawBlock, 28..34),
+        Token::Parameters(Parameters::WhiteSpace, 34..35),
+        Token::Parameters(Parameters::Identifier, 35..38),
+        Token::Parameters(Parameters::WhiteSpace, 38..39),
+        Token::Parameters(Parameters::End, 39..43),
     ];
     assert_eq!(expect, tokens);
 }
@@ -47,9 +59,17 @@ baz
 ";
     let tokens = lex(value, true);
     let expect = vec![
-        Token::Block(Block::StartRawBlock, 0..11),
-        Token::Block(Block::Text, 11..28),
-        Token::RawBlock(RawBlock::End, 28..40),
+        Token::Block(Block::StartRawBlock, 0..4),
+        Token::Parameters(Parameters::Identifier, 4..7),
+        Token::Parameters(Parameters::End, 7..11),
+        Token::Block(Block::Text, 11..16),
+        Token::Block(Block::StartStatement, 16..18),
+        Token::Parameters(Parameters::Identifier, 18..21),
+        Token::Parameters(Parameters::End, 21..23),
+        Token::Block(Block::Text, 23..28),
+        Token::Block(Block::EndRawBlock, 28..33),
+        Token::Parameters(Parameters::Identifier, 33..36),
+        Token::Parameters(Parameters::End, 36..40),
         Token::Block(Block::Text, 40..41),
     ];
     assert_eq!(expect, tokens);

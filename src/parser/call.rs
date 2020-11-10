@@ -18,6 +18,8 @@ use crate::{
 pub(crate) enum CallParseContext {
     /// Parsing as an open block.
     Block,
+    /// Parsing as a raw block.
+    Raw,
     /// Parsing as a statement out side a block
     Statement,
     /// Parsing as a statement inside a block scope
@@ -371,7 +373,7 @@ fn target<'source>(
                 }
             }
             _ => {
-                panic!("Expecting parameter token");
+                panic!("Expecting parameter token, got {:?}", token);
             }
         }
 
@@ -455,6 +457,7 @@ pub(crate) fn parse<'source>(
         target(source, lexer, state, &mut call, next, CallContext::Call)?;
     let _next =
         arguments(source, lexer, state, &mut call, next, CallContext::Call)?;
+
     // FIXME: we should return the next token here so it is consumed ???
     if !call.is_closed() {
         //println!("{:?}", call);

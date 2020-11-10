@@ -191,6 +191,12 @@ impl<'source> TextBlock<'source> {
     }
 }
 
+impl<'source> Into<Text<'source>> for TextBlock<'source> {
+    fn into(self) -> Text<'source> {
+        self.text
+    }
+}
+
 impl fmt::Display for TextBlock<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.as_str())
@@ -665,9 +671,9 @@ impl fmt::Debug for Condition<'_> {
 
 #[derive(Eq, PartialEq)]
 pub struct Block<'source> {
-    // Raw source input.
     source: &'source str,
     nodes: Vec<Node<'source>>,
+    raw: bool,
     open: Range<usize>,
     close: Option<Range<usize>>,
     call: Call<'source>,
@@ -675,10 +681,11 @@ pub struct Block<'source> {
 }
 
 impl<'source> Block<'source> {
-    pub fn new(source: &'source str, open: Range<usize>) -> Self {
+    pub fn new(source: &'source str, open: Range<usize>, raw: bool) -> Self {
         Self {
             source,
             nodes: Vec::new(),
+            raw,
             open,
             close: None,
             call: Default::default(),
@@ -725,6 +732,10 @@ impl<'source> Block<'source> {
         }
 
         self.close = Some(span);
+    }
+
+    pub fn is_raw(&self) -> bool {
+        self.raw
     }
 
     pub fn as_str(&self) -> &'source str {
