@@ -455,9 +455,12 @@ impl<'render> Render<'render> {
                                     None,
                                 );
                             } else {
-                                return Err(RenderError::VariableNotFound(
-                                    path.as_str().to_string(),
-                                ));
+                                // TODO: also error if Call has arguments or parameters
+                                if self.strict {
+                                    return Err(RenderError::VariableNotFound(
+                                        path.as_str().to_string(),
+                                    ));
+                                }
                             }
                         }
                         Ok(value)

@@ -27,7 +27,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
             helpers: HelperRegistry::new(),
             templates: Default::default(),
             escape: Box::new(escape_html),
-            strict: true,
+            strict: false,
         }
     }
 
