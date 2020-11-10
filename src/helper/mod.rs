@@ -12,8 +12,8 @@ use crate::{
 /// Result type returned when invoking helpers.
 pub type HelperResult<T> = std::result::Result<T, HelperError>;
 
-/// The result type that helpers should return.
-pub type ValueResult = HelperResult<Option<Value>>;
+/// The result type that helper implementations should return.
+pub type HelperValue = HelperResult<Option<Value>>;
 
 /// Trait for helpers.
 pub trait Helper: Send + Sync + DynClone {
@@ -22,7 +22,7 @@ pub trait Helper: Send + Sync + DynClone {
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
-    ) -> HelperResult<Option<Value>>;
+    ) -> HelperValue;
 }
 
 dyn_clone::clone_trait_object!(Helper);
@@ -92,6 +92,13 @@ impl<'reg> HelperRegistry<'reg> {
         helper: Box<dyn Helper + 'reg>,
     ) {
         self.helpers.insert(name, helper);
+    }
+
+    pub fn unregister_helper(
+        &mut self,
+        name: &'reg str,
+    ) {
+        self.helpers.remove(name);
     }
 
     pub fn get(&self, name: &str) -> Option<&Box<dyn Helper + 'reg>> {

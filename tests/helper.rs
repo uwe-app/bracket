@@ -17,7 +17,7 @@ impl Helper for FooHelper {
         _rc: &mut Render<'render>,
         _ctx: &Context<'call>,
         _template: Option<&'render Node<'render>>,
-    ) -> ValueResult {
+    ) -> HelperValue {
         Ok(Some(Value::String("bar".to_string())))
     }
 }
@@ -31,12 +31,14 @@ impl Helper for FooBlockHelper {
         rc: &mut Render<'render>,
         _ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
-    ) -> ValueResult {
-        rc.register_helper("foo", Box::new(FooHelper {}));
+    ) -> HelperValue {
+        rc.register_local_helper("foo", Box::new(FooHelper {}));
 
         if let Some(template) = template {
             rc.template(template)?;
         }
+
+        rc.unregister_local_helper("foo");
 
         Ok(None)
     }
@@ -51,7 +53,7 @@ impl Helper for HelperMissing {
         rc: &mut Render<'render>,
         _ctx: &Context<'call>,
         _template: Option<&'render Node<'render>>,
-    ) -> ValueResult {
+    ) -> HelperValue {
         rc.write("bar")?;
         Ok(None)
     }
@@ -67,7 +69,7 @@ impl Helper for MissingBlockHelper {
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
-    ) -> ValueResult {
+    ) -> HelperValue {
         rc.write("bar")?;
         Ok(None)
     }

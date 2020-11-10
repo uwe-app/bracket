@@ -1,6 +1,6 @@
 //! Helpers for conditional statements.
 use crate::{
-    helper::{Helper, ValueResult},
+    helper::{Helper, HelperValue},
     parser::ast::Node,
     render::{Context, Render},
 };
@@ -17,13 +17,12 @@ impl Helper for AndHelper {
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
         _template: Option<&'render Node<'render>>,
-    ) -> ValueResult {
+    ) -> HelperValue {
         ctx.arity(2..2)?;
 
-        let args = ctx.arguments();
         Ok(Some(Value::Bool(
-            rc.is_truthy(args.get(0).unwrap())
-                && rc.is_truthy(args.get(1).unwrap()),
+            ctx.is_truthy(ctx.get(0).unwrap())
+                && ctx.is_truthy(ctx.get(1).unwrap()),
         )))
     }
 }
@@ -38,13 +37,12 @@ impl Helper for OrHelper {
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
         _template: Option<&'render Node<'render>>,
-    ) -> ValueResult {
+    ) -> HelperValue {
         ctx.arity(2..2)?;
 
-        let args = ctx.arguments();
         Ok(Some(Value::Bool(
-            rc.is_truthy(args.get(0).unwrap())
-                || rc.is_truthy(args.get(1).unwrap()),
+            ctx.is_truthy(ctx.get(0).unwrap())
+                || ctx.is_truthy(ctx.get(1).unwrap()),
         )))
     }
 }
@@ -59,10 +57,8 @@ impl Helper for NotHelper {
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
         _template: Option<&'render Node<'render>>,
-    ) -> ValueResult {
+    ) -> HelperValue {
         ctx.arity(1..1)?;
-
-        let args = ctx.arguments();
-        Ok(Some(Value::Bool(!rc.is_truthy(args.get(0).unwrap()))))
+        Ok(Some(Value::Bool(!ctx.is_truthy(ctx.get(0).unwrap()))))
     }
 }

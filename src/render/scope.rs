@@ -1,4 +1,4 @@
-//! Scopes are used by helpers to define local variables.
+//! Scopes define the evaluation context for variable paths.
 use serde_json::{Map, Value};
 
 #[derive(Debug)]

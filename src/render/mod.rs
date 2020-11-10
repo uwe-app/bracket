@@ -124,11 +124,6 @@ impl<'render> Render<'render> {
         &self.root
     }
 
-    /// Determine if a value is truthy.
-    pub fn is_truthy(&self, value: &Value) -> bool {
-        json::is_truthy(value)
-    }
-
     /// Evaluate the block conditionals and find
     /// the first node that should be rendered.
     pub fn inverse<'a>(
@@ -152,7 +147,7 @@ impl<'render> Render<'render> {
                                         .call(clause.call())
                                         .map_err(Box::new)?
                                     {
-                                        if self.is_truthy(&value) {
+                                        if json::is_truthy(&value) {
                                             branch = Some(node);
                                             break;
                                         }
@@ -215,18 +210,6 @@ impl<'render> Render<'render> {
         self.end_tag_hint = hint;
 
         Ok(())
-    }
-
-    /// Lookup a field of a value.
-    ///
-    /// If the target value is not an object or array then this
-    /// will yield None.
-    pub fn field<'a, S: AsRef<str>>(
-        &self,
-        target: &'a Value,
-        field: S,
-    ) -> Option<&'a Value> {
-        json::find_field(target, field)
     }
 
     /// Infallible variable lookup by path.
@@ -357,7 +340,7 @@ impl<'render> Render<'render> {
     /// Register a local helper.
     ///
     /// Local helpers are available for the scope of the parent helper.
-    pub fn register_helper(
+    pub fn register_local_helper(
         &mut self,
         name: &'render str,
         helper: Box<dyn Helper + 'render>,
@@ -365,6 +348,20 @@ impl<'render> Render<'render> {
         if let Some(ref mut locals) = self.local_helpers {
             let registry = Rc::make_mut(locals);
             registry.borrow_mut().register_helper(name, helper);
+        }
+    }
+
+    /// Remove a local helper.
+    ///
+    /// Local helpers will be removed once a helper call has finished 
+    /// but you can call this if you want to be explicit.
+    pub fn unregister_local_helper(
+        &mut self,
+        name: &'render str,
+    ) {
+        if let Some(ref mut locals) = self.local_helpers {
+            let registry = Rc::make_mut(locals);
+            registry.borrow_mut().unregister_helper(name);
         }
     }
 

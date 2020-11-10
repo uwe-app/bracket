@@ -1,6 +1,6 @@
 //! Helpers for conditional statements.
 use crate::{
-    helper::{Helper, ValueResult},
+    helper::{Helper, HelperValue},
     parser::ast::Node,
     render::{Context, Render},
 };
@@ -16,11 +16,11 @@ impl Helper for IfHelper {
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
-    ) -> ValueResult {
+    ) -> HelperValue {
         if let Some(template) = template {
             ctx.arity(1..1)?;
 
-            if rc.is_truthy(ctx.arguments().get(0).unwrap()) {
+            if ctx.is_truthy(ctx.get(0).unwrap()) {
                 rc.template(template)?;
             } else if let Some(node) = rc.inverse(template)? {
                 rc.template(node)?;
@@ -31,10 +31,9 @@ impl Helper for IfHelper {
             ctx.arity(1..usize::MAX)?;
 
             let args = ctx.arguments();
-
             let mut result = Value::Bool(true);
             for val in args {
-                if !rc.is_truthy(&val) {
+                if !ctx.is_truthy(&val) {
                     result = Value::Bool(false);
                     break;
                 }

@@ -1,7 +1,7 @@
 //! Helper to lookup a field of an array or object.
 use crate::{
     error::HelperError,
-    helper::{Helper, ValueResult},
+    helper::{Helper, HelperValue},
     parser::ast::Node,
     render::{Context, Render},
 };
@@ -15,7 +15,7 @@ impl Helper for LookupHelper {
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
         _template: Option<&'render Node<'render>>,
-    ) -> ValueResult {
+    ) -> HelperValue {
         ctx.arity(2..2)?;
 
         let name = ctx.name();
@@ -30,7 +30,7 @@ impl Helper for LookupHelper {
                 HelperError::ArgumentTypeString(name.to_string(), 1)
             })?;
 
-        let result = rc.field(&target, field).cloned();
+        let result = ctx.field(&target, field).cloned();
         if result.is_none() {
             Err(HelperError::Message(format!(
                 "Helper '{}' failed to resolve field '{}'",

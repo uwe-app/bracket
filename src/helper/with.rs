@@ -1,6 +1,6 @@
 //! Block helper that sets the scope.
 use crate::{
-    helper::{Helper, ValueResult},
+    helper::{Helper, HelperValue},
     parser::ast::Node,
     render::{Context, Render, Scope},
 };
@@ -14,7 +14,7 @@ impl Helper for WithHelper {
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
-    ) -> ValueResult {
+    ) -> HelperValue {
         ctx.arity(1..1)?;
 
         if let Some(template) = template {

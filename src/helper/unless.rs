@@ -1,6 +1,6 @@
 //! Block helper for negated conditional.
 use crate::{
-    helper::{Helper, ValueResult},
+    helper::{Helper, HelperValue},
     parser::ast::Node,
     render::{Context, Render},
 };
@@ -14,11 +14,11 @@ impl Helper for UnlessHelper {
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
-    ) -> ValueResult {
+    ) -> HelperValue {
         ctx.arity(1..1)?;
 
         if let Some(template) = template {
-            if !rc.is_truthy(ctx.arguments().get(0).unwrap()) {
+            if !ctx.is_truthy(ctx.get(0).unwrap()) {
                 rc.template(template)?;
             } else if let Some(node) = rc.inverse(template)? {
                 rc.template(node)?;

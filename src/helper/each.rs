@@ -1,7 +1,7 @@
 //! Block helper that iterates arrays and objects.
 use crate::{
     error::HelperError,
-    helper::{Helper, ValueResult},
+    helper::{Helper, HelperValue},
     parser::ast::Node,
     render::{Context, Render, Scope},
 };
@@ -22,7 +22,7 @@ impl Helper for EachHelper {
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
-    ) -> ValueResult {
+    ) -> HelperValue {
         ctx.arity(1..1)?;
 
         if let Some(template) = template {
