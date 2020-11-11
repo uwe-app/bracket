@@ -40,7 +40,7 @@ pub struct Render<'render> {
     name: &'render str,
     root: Value,
     writer: Box<&'render mut dyn Output>,
-    scopes: Vec<Scope<'render>>,
+    scopes: Vec<Scope>,
     partial_block: Option<&'render Node<'render>>,
     trim: TrimState,
     hint: Option<TrimHint>,
@@ -105,17 +105,17 @@ impl<'render> Render<'render> {
     }
 
     /// Push a scope onto the stack.
-    pub fn push_scope(&mut self, scope: Scope<'render>) {
+    pub fn push_scope(&mut self, scope: Scope) {
         self.scopes.push(scope);
     }
 
     /// Remove a scope from the stack.
-    pub fn pop_scope(&mut self) -> Option<Scope<'render>> {
+    pub fn pop_scope(&mut self) -> Option<Scope> {
         self.scopes.pop()
     }
 
     /// Get a mutable reference to the current scope.
-    pub fn scope_mut(&mut self) -> Option<&mut Scope<'render>> {
+    pub fn scope_mut(&mut self) -> Option<&mut Scope> {
         self.scopes.last_mut()
     }
 

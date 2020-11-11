@@ -2,18 +2,16 @@
 use serde_json::{Map, Value};
 
 #[derive(Debug)]
-pub struct Scope<'scope> {
+pub struct Scope {
     value: Option<Value>,
     locals: Value,
-    phantom: std::marker::PhantomData<&'scope str>,
 }
 
-impl<'scope> Scope<'scope> {
+impl Scope {
     pub fn new() -> Self {
         Self {
             locals: Value::Object(Map::new()),
             value: None,
-            phantom: std::marker::PhantomData,
         }
     }
 
@@ -21,7 +19,6 @@ impl<'scope> Scope<'scope> {
         Self {
             locals: Value::Object(locals),
             value: None,
-            phantom: std::marker::PhantomData,
         }
     }
 
