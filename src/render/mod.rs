@@ -27,7 +27,7 @@ type HelperValue = Option<Value>;
 pub mod context;
 pub mod scope;
 
-pub use context::Context;
+pub use context::{Context, Type};
 pub use scope::Scope;
 
 /// Render a template.

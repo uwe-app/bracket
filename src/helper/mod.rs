@@ -39,6 +39,8 @@ pub mod log;
 pub mod logical;
 #[cfg(feature = "lookup-helper")]
 pub mod lookup;
+#[cfg(feature = "comparison-helper")]
+pub mod comparison;
 #[cfg(feature = "conditional-helper")]
 pub mod unless;
 #[cfg(feature = "with-helper")]
@@ -64,6 +66,20 @@ impl<'reg> HelperRegistry<'reg> {
         self.register_helper("if", Box::new(r#if::IfHelper {}));
         #[cfg(feature = "conditional-helper")]
         self.register_helper("unless", Box::new(unless::UnlessHelper {}));
+
+        #[cfg(feature = "comparison-helper")]
+        self.register_helper("eq", Box::new(comparison::Equal{}));
+        #[cfg(feature = "comparison-helper")]
+        self.register_helper("ne", Box::new(comparison::NotEqual{}));
+
+        #[cfg(feature = "comparison-helper")]
+        self.register_helper("gt", Box::new(comparison::GreaterThan {}));
+        #[cfg(feature = "comparison-helper")]
+        self.register_helper("gte", Box::new(comparison::GreaterThanEqual {}));
+        #[cfg(feature = "comparison-helper")]
+        self.register_helper("lt", Box::new(comparison::LessThan {}));
+        #[cfg(feature = "comparison-helper")]
+        self.register_helper("lte", Box::new(comparison::LessThanEqual {}));
 
         #[cfg(feature = "log-helper")]
         self.register_helper("log", Box::new(log::LogHelper {}));

@@ -30,6 +30,7 @@ helpers = [
   "each-helper",
   "with-helper",
   "conditional-helper",
+  "comparison-helper",
 ]
 log-helper = ["log"]
 json-helper = []
@@ -38,6 +39,7 @@ lookup-helper = []
 each-helper = []
 with-helper = []
 conditional-helper = []
+comparison-helper = []
 stream = []
 fs = []
 

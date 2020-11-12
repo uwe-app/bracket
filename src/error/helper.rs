@@ -26,6 +26,9 @@ pub enum HelperError {
     #[error("Helper '{0}' failed to resolve field '{1}'")]
     LookupField(String, String),
 
+    #[error("Helper '{0}' got invalid numerical operand")]
+    InvalidNumericalOperand(String),
+
     #[error(
         "Helper '{0}' type assertion failed, expected '{1}' but got '{2}'"
     )]
