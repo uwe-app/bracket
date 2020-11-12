@@ -122,14 +122,14 @@ impl<'source> Slice<'source> for Node<'source> {
 
     fn source(&self) -> &'source str {
         match *self {
-            Self::Document(_) => "#document",
-            Self::Text(ref n) => n.0,
-            Self::RawStatement(ref n) => n.source,
-            Self::RawComment(ref n) => n.source,
-            Self::Comment(ref n) => n.source,
-            Self::Statement(ref n) => n.source,
-            Self::Block(ref n) => n.source,
-            Self::Condition(ref n) => n.source,
+            Self::Document(ref n) => n.source(),
+            Self::Text(ref n) => n.source(),
+            Self::RawStatement(ref n) => n.source(),
+            Self::RawComment(ref n) => n.source(),
+            Self::Comment(ref n) => n.source(),
+            Self::Statement(ref n) => n.source(),
+            Self::Block(ref n) => n.source(),
+            Self::Condition(ref n) => n.source(),
         }
     }
 }
