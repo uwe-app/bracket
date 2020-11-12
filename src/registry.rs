@@ -1,4 +1,4 @@
-//! Collection of helpers and function handlers.
+//! Primary entry point for compiling and rendering templates.
 use serde::Serialize;
 
 use crate::{

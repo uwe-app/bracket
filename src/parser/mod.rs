@@ -103,8 +103,7 @@ impl From<&ParserOptions> for ParseState {
 /// let content = "A {{var}} template.";
 /// let parser = Parser::new(content, Default::default());
 /// for node in parser {
-///     let node = node?;
-///     println!("{:#?}", node);
+///     println!("{:#?}", node.unwrap());
 /// }
 /// ```
 pub struct Parser<'source> {

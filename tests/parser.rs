@@ -566,8 +566,8 @@ fn parse_block_trim() -> Result<()> {
 
             match node {
                 Node::Block(b) => {
-                    assert_eq!(true, b.trim_before_close());
-                    assert_eq!(true, b.trim_after_close());
+                    assert_eq!(true, b.trim_close().before);
+                    assert_eq!(true, b.trim_close().after);
                 }
                 _ => panic!("Expecting block node!"),
             }
@@ -580,27 +580,29 @@ fn parse_block_trim() -> Result<()> {
 
 #[test]
 fn parse_raw_block() -> Result<()> {
-    let value = "{{{{raw}}}}foo{{{{/raw}}}}";
+    let value = "{{{{~raw~}}}}foo{{{{~/raw~}}}}";
     let mut parser = Parser::new(value, Default::default());
     let node = parser.parse()?;
 
-    //match node {
-    //Node::Document(doc) => {
-    //assert_eq!(1, doc.nodes().len());
-    //let node = doc.nodes().first().unwrap();
-    //assert_eq!(true, node.trim().before);
-    //assert_eq!(true, node.trim().after);
+    match node {
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
 
-    //match node {
-    //Node::Block(b) => {
-    //assert_eq!(true, b.trim_before_close());
-    //assert_eq!(true, b.trim_after_close());
-    //}
-    //_ => panic!("Expecting block node!"),
-    //}
-    //}
-    //_ => panic!("Bad root node type for parser()."),
-    //}
+            assert_eq!(true, node.trim().before);
+            assert_eq!(true, node.trim().after);
+
+            match node {
+                Node::Block(block) => {
+                    assert_eq!(true, block.is_raw());
+                    assert_eq!(true, block.trim_close().before);
+                    assert_eq!(true, block.trim_close().after);
+                }
+                _ => panic!("Expecting block node!"),
+            }
+        }
+        _ => panic!("Bad root node type for parser()."),
+    }
 
     Ok(())
 }

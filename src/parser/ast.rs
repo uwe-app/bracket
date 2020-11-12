@@ -473,6 +473,10 @@ impl<'source> Call<'source> {
         self.close.is_some()
     }
 
+    pub fn open_span(&self) -> &Range<usize> {
+        &self.open
+    }
+
     pub fn close_span(&self) -> &Option<Range<usize>> {
         &self.close
     }
@@ -797,30 +801,50 @@ impl<'source> Block<'source> {
 
     pub fn trim_before(&self) -> bool {
         let open = self.open();
-        open.len() > 2 && WHITESPACE == &open[2..3]
+        if self.is_raw() {
+            open.len() > 4 && WHITESPACE == &open[4..5]
+        } else {
+            open.len() > 2 && WHITESPACE == &open[2..3]
+        }
     }
 
     pub fn trim_after(&self) -> bool {
         self.call.trim_after()
     }
 
-    pub fn trim_before_close(&self) -> bool {
-        let close = self.close();
-        close.len() > 2 && WHITESPACE == &close[2..3]
-    }
-
-    pub fn trim_after_close(&self) -> bool {
-        let close = self.close();
-        let index = close.len() - 3;
-        close.len() > 2 && WHITESPACE == &close[index..index + 1]
-    }
-
+    /// The trim hint for the close tag.
     pub fn trim_close(&self) -> TrimHint {
         TrimHint {
             before: self.trim_before_close(),
             after: self.trim_after_close(),
         }
     }
+
+    fn trim_before_close(&self) -> bool {
+        let close = self.close();
+        if self.is_raw() {
+            close.len() > 4 && WHITESPACE == &close[4..5]
+        } else {
+            close.len() > 2 && WHITESPACE == &close[2..3]
+        }
+    }
+
+    fn trim_after_close(&self) -> bool {
+        let close = self.close();
+
+        if self.is_raw() {
+            if close.len() > 5 {
+                let index = close.len() - 5;
+                close.len() > 4 && WHITESPACE == &close[index..index + 1]
+            } else { false }
+        } else {
+            if close.len() > 3 {
+                let index = close.len() - 3;
+                close.len() > 2 && WHITESPACE == &close[index..index + 1]
+            } else { false }
+        }
+    }
+
 }
 
 impl fmt::Display for Block<'_> {

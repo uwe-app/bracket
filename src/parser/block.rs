@@ -40,11 +40,11 @@ pub(crate) fn text_until<'source>(
     span: Range<usize>,
     end: &dyn Fn(&Token) -> bool,
     wrap: &dyn Fn(TextBlock<'source>) -> Node<'source>,
-) -> Option<(Node<'source>, Range<usize>)> {
+) -> Option<(Node<'source>, Option<Token>)> {
     let text = span.end..span.end;
     let open = span;
     let (span, next_token) = until(lexer, state, text, end);
-    if let Some(close) = next_token {
+    if let Some(ref close) = next_token {
         let last = span.clone();
         let block = TextBlock::new(
             source,
@@ -52,7 +52,7 @@ pub(crate) fn text_until<'source>(
             open,
             close.span().clone(),
         );
-        return Some((wrap(block), last));
+        return Some((wrap(block), next_token));
     }
     None
 }
@@ -91,11 +91,41 @@ pub(crate) fn raw<'source>(
     let wrap = |t: TextBlock<'source>| Node::Text(t.into());
 
     let maybe_node = text_until(source, lexer, state, end_span, &end, &wrap);
-    if let Some((node, span)) = maybe_node {
+    if let Some((node, next_token)) = maybe_node {
+
+        //let string = &node.source()[span.clone()];
+
+        //println!("Got end raw block slice {:?}", string);
+
+        let span = if let Some(token) = next_token {
+            match token {
+                Token::Block(lex, span) => match lex {
+                    lexer::Block::EndRawBlock => {
+                        span
+                    }
+                    _ => {
+                        panic!("Expecting end raw block!")
+                    }
+                }
+                _ => {
+                    panic!("Expecting block token in end raw block!")
+                }
+            }
+        } else {
+            panic!("Unable to get end raw block span")
+        };
+
         block.push(node);
 
         let end_tag =
             call::parse(source, lexer, state, span, CallParseContext::Raw)?;
+
+        if let Some(close_span) = end_tag.close_span() {
+            let exit_span = end_tag.open_span().start..close_span.end;
+            block.exit(exit_span);
+        } else {
+            panic!("Raw block was not terminated correctly!");
+        }
 
         let end_name = end_tag.target().as_str();
 
