@@ -11,7 +11,7 @@ use crate::{
     json,
     output::Output,
     parser::{
-        ast::{Call, CallTarget, Node, ParameterValue, Path},
+        ast::{Call, CallTarget, Node, ParameterValue, Path, Slice},
         trim::{TrimHint, TrimState},
     },
     template::Templates,

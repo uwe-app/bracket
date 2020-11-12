@@ -14,6 +14,32 @@ static WHITESPACE: &str = "~";
 static ROOT: &str = "@root";
 //pub static LEVEL: &str = "@level";
 
+/// Base trait for nodes that reference a slice of the 
+/// source template.
+pub trait Slice<'source> : fmt::Display + fmt::Debug {
+
+    /// Get a string slice of the full span for this node.
+    fn as_str(&self) -> &'source str;
+
+    /// Get the underlying template source.
+    fn source(&self) -> &'source str;
+}
+
+/// Trait for nodes that have an optional close marker.
+pub trait Closable<'source> {
+    /// Get the string for the open tag.
+    fn open(&self) -> &'source str;
+
+    /// Get the string for the close tag.
+    fn close(&self) -> &'source str;
+
+    /// Get the span for the open tag.
+    fn open_span(&self) -> &Range<usize>;
+
+    /// Get the span for the close tag.
+    fn close_span(&self) -> &Option<Range<usize>>;
+}
+
 /// Enumeration of the different kinds of nodes.
 #[derive(Eq, PartialEq)]
 pub enum Node<'source> {
@@ -28,19 +54,6 @@ pub enum Node<'source> {
 }
 
 impl<'source> Node<'source> {
-    pub fn as_str(&self) -> &'source str {
-        match *self {
-            Self::Document(ref n) => n.as_str(),
-            Self::Text(ref n) => n.as_str(),
-            Self::Statement(ref n) => n.as_str(),
-            Self::Block(ref n) => n.as_str(),
-            Self::Condition(ref n) => n.as_str(),
-            Self::RawStatement(ref n)
-            | Self::RawComment(ref n)
-            | Self::Comment(ref n) => n.as_str(),
-        }
-    }
-
     pub fn trim(&self) -> TrimHint {
         TrimHint {
             before: self.trim_before(),
@@ -74,8 +87,32 @@ impl<'source> Node<'source> {
         }
     }
 
-    /// The underlying string slice.
-    pub fn source(&self) -> &str {
+    /// Iterate leaf nodes.
+    pub fn iter<'a>(&'a self) -> NodeIter<'a> {
+        NodeIter::new(self)
+    }
+
+    /// Iterate descendants of documents and blocks.
+    pub fn block_iter<'a>(&'a self) -> BlockIter<'a> {
+        BlockIter::new(self)
+    }
+}
+
+impl<'source> Slice<'source> for Node<'source> {
+    fn as_str(&self) -> &'source str {
+        match *self {
+            Self::Document(ref n) => n.as_str(),
+            Self::Text(ref n) => n.as_str(),
+            Self::Statement(ref n) => n.as_str(),
+            Self::Block(ref n) => n.as_str(),
+            Self::Condition(ref n) => n.as_str(),
+            Self::RawStatement(ref n)
+            | Self::RawComment(ref n)
+            | Self::Comment(ref n) => n.as_str(),
+        }
+    }
+
+    fn source(&self) -> &'source str {
         match *self {
             Self::Document(_) => "#document",
             Self::Text(ref n) => n.0,
@@ -86,16 +123,6 @@ impl<'source> Node<'source> {
             Self::Block(ref n) => n.source,
             Self::Condition(ref n) => n.source,
         }
-    }
-
-    /// Iterate leaf nodes.
-    pub fn iter<'a>(&'a self) -> NodeIter<'a> {
-        NodeIter::new(self)
-    }
-
-    /// Iterate descendants of documents and blocks.
-    pub fn block_iter<'a>(&'a self) -> BlockIter<'a> {
-        BlockIter::new(self)
     }
 }
 
@@ -132,9 +159,13 @@ impl fmt::Debug for Node<'_> {
 #[derive(Eq, PartialEq)]
 pub struct Text<'source>(pub &'source str, pub Range<usize>);
 
-impl<'source> Text<'source> {
-    pub fn as_str(&self) -> &'source str {
+impl<'source> Slice<'source> for Text<'source> {
+    fn as_str(&self) -> &'source str {
         &self.0[self.1.start..self.1.end]
+    }
+
+    fn source(&self) -> &'source str {
+        self.0
     }
 }
 
@@ -153,6 +184,8 @@ impl fmt::Debug for Text<'_> {
     }
 }
 
+/// Text blocks encapsulate a text node with start and end 
+/// ranges; used primarily for comments.
 #[derive(Eq, PartialEq)]
 pub struct TextBlock<'source> {
     source: &'source str,
@@ -168,20 +201,17 @@ impl<'source> TextBlock<'source> {
         open: Range<usize>,
         close: Range<usize>,
     ) -> Self {
-        Self {
-            source,
-            text,
-            open,
-            close,
-        }
+        Self { source, text, open, close }
     }
+}
 
-    pub fn as_str(&self) -> &'source str {
+impl<'source> Slice<'source> for TextBlock<'source> {
+    fn as_str(&self) -> &'source str {
         &self.source[self.open.start..self.close.end]
     }
 
-    pub fn between(&self) -> &'source str {
-        &self.source[self.open.end..self.close.start]
+    fn source(&self) -> &'source str {
+        self.source
     }
 }
 
@@ -718,6 +748,76 @@ impl<'source> Block<'source> {
         }
     }
 
+    /// Determine if this block has the raw flag.
+    pub fn is_raw(&self) -> bool {
+        self.raw
+    }
+
+    pub fn as_str(&self) -> &'source str {
+        let close = self.close.clone().unwrap_or(0..self.source.len());
+        &self.source[self.open.start..close.end]
+    }
+
+    /// Get a string of the open span.
+    pub fn open(&self) -> &'source str {
+        &self.source[self.open.start..self.open.end]
+    }
+
+    /// Get a string of the close span.
+    ///
+    /// If no close span has been set which can happen if the 
+    /// block has no end tag this will return the empty string.
+    pub fn close(&self) -> &'source str {
+        if let Some(ref close) = self.close {
+            &self.source[close.start..close.end]
+        } else {
+            ""
+        }
+    }
+
+    /// Add a condition to this block.
+    pub fn add_condition(&mut self, condition: Condition<'source>) {
+        self.close_condition(condition.call.open.clone());
+        self.conditionals.push(Node::Condition(condition));
+    }
+
+    /// Get the list of conditional blocks.
+    pub fn conditions(&self) -> &Vec<Node<'source>> {
+        &self.conditionals
+    }
+
+    /// Add a node to this block; if this block has 
+    /// conditionals then the node is added to the last conditional.
+    pub fn push(&mut self, node: Node<'source>) {
+        if !self.conditionals.is_empty() {
+            let mut last = self.conditionals.last_mut().unwrap();
+            match &mut last {
+                Node::Condition(ref mut condition) => {
+                    condition.nodes.push(node);
+                }
+                _ => {}
+            }
+        } else {
+            self.nodes.push(node);
+        }
+    }
+
+    /// The collection of nodes for this block.
+    ///
+    /// For raw blocks this should always be a single `Text` node.
+    pub fn nodes(&self) -> &'source Vec<Node> {
+        &self.nodes
+    }
+
+    /// The trim hint for the close tag.
+    pub fn trim_close(&self) -> TrimHint {
+        TrimHint {
+            before: self.trim_before_close(),
+            after: self.trim_after_close(),
+        }
+    }
+
+    /// Mark this block as closed and set the close span.
     pub(crate) fn exit(&mut self, span: Range<usize>) {
         // NOTE: close_condition() sets the span up until the next
         // NOTE: block but when we exit a block node the last conditional
@@ -736,27 +836,6 @@ impl<'source> Block<'source> {
         self.close = Some(span);
     }
 
-    pub fn is_raw(&self) -> bool {
-        self.raw
-    }
-
-    pub fn as_str(&self) -> &'source str {
-        let close = self.close.clone().unwrap_or(0..self.source.len());
-        &self.source[self.open.start..close.end]
-    }
-
-    pub fn open(&self) -> &'source str {
-        &self.source[self.open.start..self.open.end]
-    }
-
-    pub fn close(&self) -> &'source str {
-        if let Some(ref close) = self.close {
-            &self.source[close.start..close.end]
-        } else {
-            ""
-        }
-    }
-
     fn close_condition(&mut self, span: Range<usize>) {
         if !self.conditionals.is_empty() {
             if span.start > 0 {
@@ -772,34 +851,7 @@ impl<'source> Block<'source> {
         }
     }
 
-    pub fn add_condition(&mut self, condition: Condition<'source>) {
-        self.close_condition(condition.call.open.clone());
-        self.conditionals.push(Node::Condition(condition));
-    }
-
-    pub fn conditions(&self) -> &Vec<Node<'source>> {
-        &self.conditionals
-    }
-
-    pub fn push(&mut self, node: Node<'source>) {
-        if !self.conditionals.is_empty() {
-            let mut last = self.conditionals.last_mut().unwrap();
-            match &mut last {
-                Node::Condition(ref mut condition) => {
-                    condition.nodes.push(node);
-                }
-                _ => {}
-            }
-        } else {
-            self.nodes.push(node);
-        }
-    }
-
-    pub fn nodes(&self) -> &'source Vec<Node> {
-        &self.nodes
-    }
-
-    pub fn trim_before(&self) -> bool {
+    fn trim_before(&self) -> bool {
         let open = self.open();
         if self.is_raw() {
             open.len() > 4 && WHITESPACE == &open[4..5]
@@ -808,16 +860,8 @@ impl<'source> Block<'source> {
         }
     }
 
-    pub fn trim_after(&self) -> bool {
+    fn trim_after(&self) -> bool {
         self.call.trim_after()
-    }
-
-    /// The trim hint for the close tag.
-    pub fn trim_close(&self) -> TrimHint {
-        TrimHint {
-            before: self.trim_before_close(),
-            after: self.trim_after_close(),
-        }
     }
 
     fn trim_before_close(&self) -> bool {
