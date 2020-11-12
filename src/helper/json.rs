@@ -8,26 +8,26 @@ use crate::{
 
 use serde_json::{to_string, to_string_pretty, Value};
 
-/// The first argument is converted to a JSON string and returned.
+/// Convert to a JSON string,
 ///
-/// Accepts an optional second argument which when *truthy* will
-/// pretty print the value.
+/// Accepts a single argument which is converted to a JSON string and returned.
+///
+/// The optional hash parameter `pretty` when *truthy* will pretty print the value.
 #[derive(Clone)]
-pub struct JsonHelper;
+pub struct Json;
 
-impl Helper for JsonHelper {
+impl Helper for Json {
     fn call<'render, 'call>(
         &self,
         _rc: &mut Render<'render>,
         ctx: &Context<'call>,
         _template: Option<&'render Node<'render>>,
     ) -> HelperValue {
-        ctx.arity(1..3)?;
+        ctx.arity(1..1)?;
 
-        let args = ctx.arguments();
-        let target = args.get(0).unwrap();
-
-        let pretty = ctx.is_truthy(args.get(0).unwrap_or(&Value::Bool(false)));
+        let target = ctx.get(0).unwrap();
+        let pretty =
+            ctx.is_truthy(ctx.hash("pretty").unwrap_or(&Value::Bool(false)));
         let value = if pretty {
             Value::String(to_string_pretty(&target).map_err(HelperError::from)?)
         } else {

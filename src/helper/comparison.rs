@@ -1,4 +1,9 @@
 //! Helpers for numerical comparisons.
+//!
+//! Arguments must be numerical values otherwise a type assertion
+//! error is returned.
+//!
+//! Values are compared as `f64`.
 use crate::{
     error::HelperError,
     helper::{Helper, HelperValue},
@@ -8,12 +13,12 @@ use crate::{
 
 use serde_json::Value;
 
-fn cmp<'call, F>(
-    ctx: &Context<'call>,
-    cmp: F,
-) -> HelperValue where F: FnOnce(f64, f64) -> bool {
+fn cmp<'call, F>(ctx: &Context<'call>, cmp: F) -> HelperValue
+where
+    F: FnOnce(f64, f64) -> bool,
+{
     ctx.arity(2..2)?;
-    
+
     let lhs = ctx.try_get(0, &[Type::Number])?;
     let rhs = ctx.try_get(1, &[Type::Number])?;
 
@@ -22,10 +27,12 @@ fn cmp<'call, F>(
             if let (Some(lhs), Some(rhs)) = (lhs.as_f64(), rhs.as_f64()) {
                 Ok(Some(Value::Bool(cmp(lhs, rhs))))
             } else {
-                Err(HelperError::InvalidNumericalOperand(ctx.name().to_string()))
+                Err(HelperError::InvalidNumericalOperand(
+                    ctx.name().to_string(),
+                ))
             }
         }
-        _ => Err(HelperError::InvalidNumericalOperand(ctx.name().to_string()))
+        _ => Err(HelperError::InvalidNumericalOperand(ctx.name().to_string())),
     }
 }
 

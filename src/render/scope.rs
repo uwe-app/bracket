@@ -1,11 +1,11 @@
 //! Scopes define the evaluation context for variable paths.
 use serde_json::{Map, Value};
 
-/// A scope encapsulates a base value (lookup object) used when 
-/// resolving variable paths and a collection of local variables 
+/// A scope encapsulates a base value (lookup object) used when
+/// resolving variable paths and a collection of local variables
 /// which are prefixed using the `@` symbol.
 ///
-/// Helpers can create scopes and push and pop them from the scope 
+/// Helpers can create scopes and push and pop them from the scope
 /// stack to create new variable evaluation contexts.
 #[derive(Debug)]
 pub struct Scope {
@@ -14,7 +14,6 @@ pub struct Scope {
 }
 
 impl Scope {
-
     /// Create a new scope.
     pub fn new() -> Self {
         Self {
@@ -30,7 +29,7 @@ impl Scope {
 
     /// Set a named local variable.
     ///
-    /// The name does not need an `@` prefix it is automatically 
+    /// The name does not need an `@` prefix it is automatically
     /// prepended to the key.
     pub fn set_local(&mut self, name: &str, value: Value) {
         self.locals
@@ -48,8 +47,8 @@ impl Scope {
 
     /// Set the base value for the scope.
     ///
-    /// When the renderer resolves variables if they 
-    /// can be resolved using this value they are preferred 
+    /// When the renderer resolves variables if they
+    /// can be resolved using this value they are preferred
     /// over the root object.
     pub fn set_base_value(&mut self, value: Value) {
         self.value = Some(value);
@@ -64,7 +63,7 @@ impl Scope {
 /// Create a Scope from a locals map.
 impl From<Map<String, Value>> for Scope {
     fn from(map: Map<String, Value>) -> Self {
-        let mut scope = Scope::new(); 
+        let mut scope = Scope::new();
         scope.locals = Value::Object(map);
         scope
     }

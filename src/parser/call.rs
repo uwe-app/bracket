@@ -5,7 +5,7 @@ use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{Lexer, Parameters, StringLiteral, Token},
     parser::{
-        ast::{Call, CallTarget, ParameterValue, Element},
+        ast::{Call, CallTarget, Element, ParameterValue},
         path, ParseState,
     },
     SyntaxResult,

@@ -79,9 +79,7 @@ impl Helper for MissingBlockHelper {
 #[test]
 fn helper_value() -> Result<()> {
     let mut registry = Registry::new();
-    registry
-        .helpers_mut()
-        .register_helper("foo", Box::new(FooHelper {}));
+    registry.helpers_mut().insert("foo", Box::new(FooHelper {}));
     let value = r"{{foo}}";
     // NOTE: the helper takes precedence over the variable
     let data = json!({"foo": "qux"});
@@ -93,9 +91,7 @@ fn helper_value() -> Result<()> {
 #[test]
 fn helper_explicit_this() -> Result<()> {
     let mut registry = Registry::new();
-    registry
-        .helpers_mut()
-        .register_helper("foo", Box::new(FooHelper {}));
+    registry.helpers_mut().insert("foo", Box::new(FooHelper {}));
     let value = r"{{this.foo}}";
     // NOTE: explicit this causes the variable to take precedence
     let data = json!({"foo": "qux"});
@@ -107,9 +103,7 @@ fn helper_explicit_this() -> Result<()> {
 #[test]
 fn helper_explicit_this_dot_slash() -> Result<()> {
     let mut registry = Registry::new();
-    registry
-        .helpers_mut()
-        .register_helper("foo", Box::new(FooHelper {}));
+    registry.helpers_mut().insert("foo", Box::new(FooHelper {}));
     let value = r"{{./foo}}";
     // NOTE: explicit ./ causes the variable to take precedence
     let data = json!({"foo": "qux"});
@@ -123,7 +117,7 @@ fn helper_block() -> Result<()> {
     let mut registry = Registry::new();
     registry
         .helpers_mut()
-        .register_helper("block", Box::new(FooBlockHelper {}));
+        .insert("block", Box::new(FooBlockHelper {}));
     let value = r"{{#block}}{{foo}}{{/block}}";
     // NOTE: the helper takes precedence over the variable
     let data = json!({"foo": "qux"});
@@ -137,7 +131,7 @@ fn helper_missing() -> Result<()> {
     let mut registry = Registry::new();
     registry
         .helpers_mut()
-        .register_helper("helperMissing", Box::new(HelperMissing {}));
+        .insert("helperMissing", Box::new(HelperMissing {}));
     let value = r"{{baz}}";
     let data = json!({});
     let result = registry.once(NAME, value, &data)?;
@@ -151,7 +145,7 @@ fn helper_block_missing() -> Result<()> {
     let mut registry = Registry::new();
     registry
         .helpers_mut()
-        .register_helper("blockHelperMissing", Box::new(MissingBlockHelper {}));
+        .insert("blockHelperMissing", Box::new(MissingBlockHelper {}));
     let value = r"{{#block}}{{foo}}{{/block}}";
     // NOTE: the helper takes precedence over the variable
     let data = json!({"foo": "qux"});

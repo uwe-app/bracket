@@ -5,10 +5,10 @@ use crate::parser::ast::Node;
 /// from the node being rendered.
 #[derive(Clone, Copy, Default, Debug)]
 pub struct TrimState {
-    /// Whether the leading whitespace should be removed 
+    /// Whether the leading whitespace should be removed
     /// from the current output.
     pub start: bool,
-    /// Whether the trailing whitespace should be removed 
+    /// Whether the trailing whitespace should be removed
     /// from the current output.
     pub end: bool,
 }

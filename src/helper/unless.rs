@@ -6,9 +6,9 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct UnlessHelper;
+pub struct Unless;
 
-impl Helper for UnlessHelper {
+impl Helper for Unless {
     fn call<'render, 'call>(
         &self,
         rc: &mut Render<'render>,

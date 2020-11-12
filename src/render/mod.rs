@@ -50,7 +50,7 @@ pub struct Render<'render> {
 impl<'render> Render<'render> {
     /// Create a renderer.
     ///
-    /// You should not need to create a renderer directly, instead 
+    /// You should not need to create a renderer directly, instead
     /// use the functions provided by the `Registry`.
     pub fn new<T>(
         strict: bool,
@@ -351,7 +351,7 @@ impl<'render> Render<'render> {
     ) {
         if let Some(ref mut locals) = self.local_helpers {
             let registry = Rc::make_mut(locals);
-            registry.borrow_mut().register_helper(name, helper);
+            registry.borrow_mut().insert(name, helper);
         }
     }
 
@@ -362,7 +362,7 @@ impl<'render> Render<'render> {
     pub fn unregister_local_helper(&mut self, name: &'render str) {
         if let Some(ref mut locals) = self.local_helpers {
             let registry = Rc::make_mut(locals);
-            registry.borrow_mut().unregister_helper(name);
+            registry.borrow_mut().remove(name);
         }
     }
 

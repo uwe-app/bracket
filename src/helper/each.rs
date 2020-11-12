@@ -13,10 +13,26 @@ static LAST: &str = "last";
 static KEY: &str = "key";
 static INDEX: &str = "index";
 
+/// Iterate an array or object.
+///
+/// Accepts a single argument of the target to iterate, if the
+/// target is not an array or object this will return an error.
+///
+/// Each iteration sets a new scope with the local variables:
+///
+/// * `@first`: If this is the first iteration `true`.
+/// * `@last`: If this is the last iteration `true`.
+///
+/// Note that these variables are set even for objects where iteration order
+/// is not guaranteed which can be useful.
+///
+/// For objects the `@key` variable contains the name of the field; for
+/// arrays the `@index` variable contains the current zero-based index.
+///
 #[derive(Clone)]
-pub struct EachHelper;
+pub struct Each;
 
-impl Helper for EachHelper {
+impl Helper for Each {
     fn call<'render, 'call>(
         &self,
         rc: &mut Render<'render>,

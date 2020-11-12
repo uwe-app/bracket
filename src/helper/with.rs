@@ -6,9 +6,9 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct WithHelper;
+pub struct With;
 
-impl Helper for WithHelper {
+impl Helper for With {
     fn call<'render, 'call>(
         &self,
         rc: &mut Render<'render>,

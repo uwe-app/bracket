@@ -85,7 +85,7 @@ impl Loader {
 
 /// Collection of named templates.
 ///
-/// For partials to be resolved they must exist in a collection 
+/// For partials to be resolved they must exist in a collection
 /// that is used during a render.
 #[derive(Default)]
 pub struct Templates<'source> {
@@ -93,7 +93,6 @@ pub struct Templates<'source> {
 }
 
 impl<'source> Templates<'source> {
-
     /// Create an empty templates collection.
     pub fn new() -> Self {
         Self {
@@ -111,21 +110,14 @@ impl<'source> Templates<'source> {
 
     /// Add a named template.
     ///
-    /// If a template already exists with the given name 
+    /// If a template already exists with the given name
     /// it is overwritten.
-    pub fn insert(
-        &mut self,
-        name: &'source str,
-        template: Template<'source>,
-    ) {
+    pub fn insert(&mut self, name: &'source str, template: Template<'source>) {
         self.templates.insert(name, template);
     }
 
     /// Remove a named template.
-    pub fn remove(
-        &mut self,
-        name: &'source str,
-    ) -> Option<Template<'source>> {
+    pub fn remove(&mut self, name: &'source str) -> Option<Template<'source>> {
         self.templates.remove(name)
     }
 
@@ -158,7 +150,6 @@ pub struct Template<'source> {
 }
 
 impl<'source> Template<'source> {
-
     /// Create a new template.
     pub(crate) fn new(node: Node<'source>) -> Self {
         Self { node }

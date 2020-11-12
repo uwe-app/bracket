@@ -30,7 +30,7 @@ fn raw_block_helper() -> Result<()> {
     let mut registry = Registry::new();
     registry
         .helpers_mut()
-        .register_helper("raw-helper", Box::new(RawBlockHelper {}));
+        .insert("raw-helper", Box::new(RawBlockHelper {}));
     let value = r"{{{{raw-helper}}}}foo{{{{/raw-helper}}}}";
     let expected = r"foo";
     let data = json!({});

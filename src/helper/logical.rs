@@ -9,9 +9,9 @@ use serde_json::Value;
 
 /// Perform a logical AND on two arguments.
 #[derive(Clone)]
-pub struct AndHelper;
+pub struct And;
 
-impl Helper for AndHelper {
+impl Helper for And {
     fn call<'render, 'call>(
         &self,
         _rc: &mut Render<'render>,
@@ -29,9 +29,9 @@ impl Helper for AndHelper {
 
 /// Perform a logical OR on two arguments.
 #[derive(Clone)]
-pub struct OrHelper;
+pub struct Or;
 
-impl Helper for OrHelper {
+impl Helper for Or {
     fn call<'render, 'call>(
         &self,
         _rc: &mut Render<'render>,
@@ -49,9 +49,9 @@ impl Helper for OrHelper {
 
 /// Perform a logical NOT on an argument.
 #[derive(Clone)]
-pub struct NotHelper;
+pub struct Not;
 
-impl Helper for NotHelper {
+impl Helper for Not {
     fn call<'render, 'call>(
         &self,
         _rc: &mut Render<'render>,

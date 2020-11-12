@@ -3,7 +3,7 @@ use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{self, lex, Lexer, Token},
     parser::{
-        ast::{Block, CallTarget, Condition, Document, Node, Text, Element},
+        ast::{Block, CallTarget, Condition, Document, Element, Node, Text},
         call::CallParseContext,
     },
     SyntaxResult,
@@ -21,7 +21,7 @@ pub mod trim;
 
 /// Set the file name used in error messages.
 ///
-/// It is also possible to set the line and byte offsets if your template 
+/// It is also possible to set the line and byte offsets if your template
 /// is being extracted from a larger document.
 #[derive(Debug)]
 pub struct ParserOptions {
@@ -35,7 +35,6 @@ pub struct ParserOptions {
 }
 
 impl ParserOptions {
-
     /// Create parser options using the given `file_name`.
     pub fn new(file_name: String) -> Self {
         Self {
@@ -132,7 +131,7 @@ impl<'source> Parser<'source> {
 
     /// Parse the entire document into a node tree.
     ///
-    /// This iterates the parser until completion and adds 
+    /// This iterates the parser until completion and adds
     /// each node to a `Document` node which is returned.
     pub fn parse(&mut self) -> SyntaxResult<Node<'source>> {
         let mut doc = Document(&self.source, vec![]);

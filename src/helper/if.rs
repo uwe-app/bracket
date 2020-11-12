@@ -7,10 +7,19 @@ use crate::{
 
 use serde_json::Value;
 
+/// Evaluates arguments as *truthy*.
+///
+/// For block execution if the value is *truthy* the inner template
+/// is rendered otherwise each conditional is evaluated and
+/// the first one which returns a *truthy* value is rendered.
+///
+/// When executed in a statement this helper will accept any number
+/// of arguments and return `true` if all the arguments are *truthy*.
+///
 #[derive(Clone)]
-pub struct IfHelper;
+pub struct If;
 
-impl Helper for IfHelper {
+impl Helper for If {
     fn call<'render, 'call>(
         &self,
         rc: &mut Render<'render>,

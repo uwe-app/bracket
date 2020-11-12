@@ -7,9 +7,9 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct LookupHelper;
+pub struct Lookup;
 
-impl Helper for LookupHelper {
+impl Helper for Lookup {
     fn call<'render, 'call>(
         &self,
         _rc: &mut Render<'render>,

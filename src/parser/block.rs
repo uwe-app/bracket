@@ -3,7 +3,7 @@ use std::ops::Range;
 use crate::{
     lexer::{self, Lexer, Token},
     parser::{
-        ast::{Block, Node, Text, TextBlock, Element},
+        ast::{Block, Element, Node, Text, TextBlock},
         call::{self, CallParseContext},
         ParseState,
     },
@@ -92,7 +92,6 @@ pub(crate) fn raw<'source>(
 
     let maybe_node = text_until(source, lexer, state, end_span, &end, &wrap);
     if let Some((node, next_token)) = maybe_node {
-
         //let string = &node.source()[span.clone()];
 
         //println!("Got end raw block slice {:?}", string);
@@ -100,16 +99,10 @@ pub(crate) fn raw<'source>(
         let span = if let Some(token) = next_token {
             match token {
                 Token::Block(lex, span) => match lex {
-                    lexer::Block::EndRawBlock => {
-                        span
-                    }
-                    _ => {
-                        panic!("Expecting end raw block!")
-                    }
-                }
-                _ => {
-                    panic!("Expecting block token in end raw block!")
-                }
+                    lexer::Block::EndRawBlock => span,
+                    _ => panic!("Expecting end raw block!"),
+                },
+                _ => panic!("Expecting block token in end raw block!"),
             }
         } else {
             panic!("Unable to get end raw block span")

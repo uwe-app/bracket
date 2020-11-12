@@ -14,10 +14,9 @@ static WHITESPACE: &str = "~";
 static ROOT: &str = "@root";
 //pub static LEVEL: &str = "@level";
 
-/// Trait for nodes that reference a slice of the 
+/// Trait for nodes that reference a slice of the
 /// source template.
-pub trait Slice<'source> : fmt::Display + fmt::Debug {
-
+pub trait Slice<'source>: fmt::Display + fmt::Debug {
     /// Get a string slice of the full span for this node.
     fn as_str(&self) -> &'source str;
 
@@ -32,7 +31,7 @@ pub trait Element<'source> {
 
     /// Get the string for the close tag.
     ///
-    /// If no close span has been set which can happen if the 
+    /// If no close span has been set which can happen if the
     /// element has no end tag this should return the empty string.
     fn close(&self) -> &'source str;
 
@@ -194,7 +193,7 @@ impl fmt::Debug for Text<'_> {
     }
 }
 
-/// Text blocks encapsulate a text node with start and end 
+/// Text blocks encapsulate a text node with start and end
 /// ranges; used primarily for comments.
 #[derive(Eq, PartialEq)]
 pub struct TextBlock<'source> {
@@ -211,7 +210,12 @@ impl<'source> TextBlock<'source> {
         open: Range<usize>,
         close: Range<usize>,
     ) -> Self {
-        Self { source, text, open, close }
+        Self {
+            source,
+            text,
+            open,
+            close,
+        }
     }
 }
 
@@ -268,7 +272,6 @@ pub struct Component<'source>(
 );
 
 impl<'source> Component<'source> {
-
     /// Determine if this is the special `@root` component.
     pub fn is_root(&self) -> bool {
         self.as_str() == ROOT
@@ -284,7 +287,7 @@ impl<'source> Component<'source> {
         &self.2
     }
 
-    /// Determine if this component is a local identifier; begins 
+    /// Determine if this component is a local identifier; begins
     /// with an `@` symbol.
     pub fn is_local(&self) -> bool {
         &ComponentType::LocalIdentifier == self.kind()
@@ -295,17 +298,17 @@ impl<'source> Component<'source> {
         &ComponentType::Identifier == self.kind()
     }
 
-    /// Determine if this component uses an explicit this reference; 
+    /// Determine if this component uses an explicit this reference;
     /// the reference may be the keyword `this` or `./`.
     pub fn is_explicit(&self) -> bool {
         &ComponentType::ThisKeyword == self.kind()
             || self.is_explicit_dot_slash()
     }
 
-    /// Determine if this component uses and explicit dot slash (`./`) 
+    /// Determine if this component uses and explicit dot slash (`./`)
     /// reference.
     ///
-    /// This is used by the path parser to determine if the next expected 
+    /// This is used by the path parser to determine if the next expected
     /// token should be a path delimiter or identifier.
     pub fn is_explicit_dot_slash(&self) -> bool {
         &ComponentType::ThisDotSlash == self.kind()
@@ -417,7 +420,7 @@ impl<'source> Slice<'source> for Path<'source> {
     }
 
     fn source(&self) -> &'source str {
-        self.source 
+        self.source
     }
 }
 
@@ -485,10 +488,10 @@ impl Default for CallTarget<'_> {
     }
 }
 
-/// Call is a variable interpolation, helper invocation or partial 
+/// Call is a variable interpolation, helper invocation or partial
 /// render; they have zero or more arguments and optional hash parameters.
 ///
-/// The partial flag is used to indicate that this call should be 
+/// The partial flag is used to indicate that this call should be
 /// rendered as a partial.
 #[derive(Default, Eq, PartialEq)]
 pub struct Call<'source> {
@@ -504,10 +507,9 @@ pub struct Call<'source> {
 }
 
 impl<'source> Call<'source> {
-
     /// Create an open call.
     ///
-    /// If it is correctly terminated the parser will call `exit()` to terminate 
+    /// If it is correctly terminated the parser will call `exit()` to terminate
     /// the call statement.
     pub fn new(source: &'source str, open: Range<usize>) -> Self {
         Self {
@@ -601,7 +603,7 @@ impl<'source> Call<'source> {
 impl<'source> Slice<'source> for Call<'source> {
     fn as_str(&self) -> &'source str {
         //if let Some(ref close) = self.close {
-            //return &self.source[self.open.end..close.start];
+        //return &self.source[self.open.end..close.start];
         //}
 
         if let Some(ref close) = self.close {
@@ -664,7 +666,7 @@ impl fmt::Debug for Call<'_> {
     }
 }
 
-/// Documents are abstract nodes that encapsulate a collection 
+/// Documents are abstract nodes that encapsulate a collection
 /// of child nodes; they are used as the root node of a compiled template.
 #[derive(Eq, PartialEq)]
 pub struct Document<'source>(pub &'source str, pub Vec<Node<'source>>);
@@ -680,8 +682,12 @@ impl<'source> Document<'source> {
 }
 
 impl<'source> Slice<'source> for Document<'source> {
-    fn as_str(&self) -> &'source str { self.0 }
-    fn source(&self) -> &'source str { self.0 }
+    fn as_str(&self) -> &'source str {
+        self.0
+    }
+    fn source(&self) -> &'source str {
+        self.0
+    }
 }
 
 impl fmt::Display for Document<'_> {
@@ -786,6 +792,13 @@ impl fmt::Debug for Condition<'_> {
     }
 }
 
+/// Block encapsulates an inner template.
+///
+/// These nodes are rendered indirectly via registered helpers
+/// that should call back in to the renderer.
+///
+/// When a block has the raw flag set it should only contain a
+/// single `Text` child node.
 #[derive(Eq, PartialEq)]
 pub struct Block<'source> {
     source: &'source str,
@@ -798,6 +811,7 @@ pub struct Block<'source> {
 }
 
 impl<'source> Block<'source> {
+    /// Create a new block.
     pub fn new(source: &'source str, open: Range<usize>, raw: bool) -> Self {
         Self {
             source,
@@ -810,15 +824,20 @@ impl<'source> Block<'source> {
         }
     }
 
+    /// Get the call for the block.
     pub fn call(&self) -> &Call<'source> {
         &self.call
     }
 
+    /// Set the call for the block.
     pub fn set_call(&mut self, call: Call<'source>) {
         self.call = call;
     }
 
-    /// The name of this block.
+    /// The name of this block extracted from the call target.
+    ///
+    /// This will only be available if the call target is a path
+    /// and the path is a simple identifier.
     pub fn name(&self) -> Option<&'source str> {
         match self.call.target() {
             CallTarget::Path(ref path) => {
@@ -849,7 +868,7 @@ impl<'source> Block<'source> {
         &self.conditionals
     }
 
-    /// Add a node to this block; if this block has 
+    /// Add a node to this block; if this block has
     /// conditionals then the node is added to the last conditional.
     pub fn push(&mut self, node: Node<'source>) {
         if !self.conditionals.is_empty() {
@@ -924,15 +943,18 @@ impl<'source> Block<'source> {
             if close.len() > 5 {
                 let index = close.len() - 5;
                 close.len() > 4 && WHITESPACE == &close[index..index + 1]
-            } else { false }
+            } else {
+                false
+            }
         } else {
             if close.len() > 3 {
                 let index = close.len() - 3;
                 close.len() > 2 && WHITESPACE == &close[index..index + 1]
-            } else { false }
+            } else {
+                false
+            }
         }
     }
-
 }
 
 impl<'source> Slice<'source> for Block<'source> {
@@ -947,7 +969,6 @@ impl<'source> Slice<'source> for Block<'source> {
 }
 
 impl<'source> Element<'source> for Block<'source> {
-
     fn open(&self) -> &'source str {
         &self.source[self.open.start..self.open.end]
     }
@@ -989,7 +1010,6 @@ impl<'source> Element<'source> for Block<'source> {
 
         self.close = Some(span);
     }
-
 }
 
 impl fmt::Display for Block<'_> {

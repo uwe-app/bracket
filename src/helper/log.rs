@@ -10,6 +10,12 @@ use log::*;
 
 /// Helper that prints a log message.
 ///
+/// Multiple arguments are accepted and concatenated using a 
+/// space before being sent to the log output.
+///
+/// Values are coerced to strings before concatenation with 
+/// special handling for `Value::String` so that it is not quoted.
+///
 /// Use the `level` hash parameter to set the log level to one of:
 ///
 /// * trace
@@ -19,9 +25,9 @@ use log::*;
 /// * error
 ///
 #[derive(Clone)]
-pub struct LogHelper;
+pub struct Log;
 
-impl Helper for LogHelper {
+impl Helper for Log {
     fn call<'render, 'call>(
         &self,
         _rc: &mut Render<'render>,
