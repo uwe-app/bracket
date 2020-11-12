@@ -3,7 +3,7 @@ use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{self, lex, Lexer, Token},
     parser::{
-        ast::{Block, CallTarget, Condition, Document, Node, Text},
+        ast::{Block, CallTarget, Condition, Document, Node, Text, Element},
         call::CallParseContext,
     },
     SyntaxResult,

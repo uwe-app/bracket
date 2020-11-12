@@ -14,7 +14,7 @@ static WHITESPACE: &str = "~";
 static ROOT: &str = "@root";
 //pub static LEVEL: &str = "@level";
 
-/// Base trait for nodes that reference a slice of the 
+/// Trait for nodes that reference a slice of the 
 /// source template.
 pub trait Slice<'source> : fmt::Display + fmt::Debug {
 
@@ -25,12 +25,15 @@ pub trait Slice<'source> : fmt::Display + fmt::Debug {
     fn source(&self) -> &'source str;
 }
 
-/// Trait for nodes that have an optional close marker.
-pub trait Closable<'source> {
+/// Trait for elements that expect to be closed.
+pub trait Element<'source> {
     /// Get the string for the open tag.
     fn open(&self) -> &'source str;
 
     /// Get the string for the close tag.
+    ///
+    /// If no close span has been set which can happen if the 
+    /// element has no end tag this should return the empty string.
     fn close(&self) -> &'source str;
 
     /// Get the span for the open tag.
@@ -38,6 +41,12 @@ pub trait Closable<'source> {
 
     /// Get the span for the close tag.
     fn close_span(&self) -> &Option<Range<usize>>;
+
+    /// Determine if this element has been closed.
+    fn is_closed(&self) -> bool;
+
+    /// Mark this element as correctly terminated.
+    fn exit(&mut self, close: Range<usize>);
 }
 
 /// Enumeration of the different kinds of nodes.
@@ -156,6 +165,7 @@ impl fmt::Debug for Node<'_> {
     }
 }
 
+/// Text nodes refer to a consecutive range of bytes.
 #[derive(Eq, PartialEq)]
 pub struct Text<'source>(pub &'source str, pub Range<usize>);
 
@@ -237,6 +247,7 @@ impl fmt::Debug for TextBlock<'_> {
     }
 }
 
+/// Indicates the kind of path component.
 #[derive(Debug, Eq, PartialEq)]
 pub enum ComponentType {
     Parent,
@@ -248,6 +259,7 @@ pub enum ComponentType {
     ArrayAccess,
 }
 
+/// Components form part of a path.
 #[derive(Eq, PartialEq)]
 pub struct Component<'source>(
     pub &'source str,
@@ -256,37 +268,63 @@ pub struct Component<'source>(
 );
 
 impl<'source> Component<'source> {
+
+    /// Determine if this is the special `@root` component.
     pub fn is_root(&self) -> bool {
         self.as_str() == ROOT
     }
 
+    /// Get the kind of this component.
     pub fn kind(&self) -> &ComponentType {
         &self.1
     }
 
+    /// The span for this component.
     pub fn span(&self) -> &Range<usize> {
         &self.2
     }
 
+    /// Determine if this component is a local identifier; begins 
+    /// with an `@` symbol.
     pub fn is_local(&self) -> bool {
         &ComponentType::LocalIdentifier == self.kind()
     }
 
+    /// Determine if this component is an identifier.
     pub fn is_identifier(&self) -> bool {
         &ComponentType::Identifier == self.kind()
     }
 
+    /// Determine if this component uses an explicit this reference; 
+    /// the reference may be the keyword `this` or `./`.
     pub fn is_explicit(&self) -> bool {
         &ComponentType::ThisKeyword == self.kind()
             || self.is_explicit_dot_slash()
     }
 
+    /// Determine if this component uses and explicit dot slash (`./`) 
+    /// reference.
+    ///
+    /// This is used by the path parser to determine if the next expected 
+    /// token should be a path delimiter or identifier.
     pub fn is_explicit_dot_slash(&self) -> bool {
         &ComponentType::ThisDotSlash == self.kind()
     }
+}
 
-    pub fn as_str(&self) -> &'source str {
+impl<'source> Slice<'source> for Component<'source> {
+    fn as_str(&self) -> &'source str {
         &self.0[self.span().start..self.span().end]
+    }
+
+    fn source(&self) -> &'source str {
+        self.0
+    }
+}
+
+impl fmt::Display for Component<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
     }
 }
 
@@ -317,16 +355,6 @@ impl<'source> Path<'source> {
             parents: 0,
             explicit: false,
             root: false,
-        }
-    }
-
-    pub fn as_str(&self) -> &'source str {
-        if !self.components.is_empty() {
-            let first = self.components.first().unwrap();
-            let last = self.components.last().unwrap();
-            &self.source[first.span().start..last.span().end]
-        } else {
-            ""
         }
     }
 
@@ -377,6 +405,28 @@ impl<'source> Path<'source> {
     }
 }
 
+impl<'source> Slice<'source> for Path<'source> {
+    fn as_str(&self) -> &'source str {
+        if !self.components.is_empty() {
+            let first = self.components.first().unwrap();
+            let last = self.components.last().unwrap();
+            &self.source[first.span().start..last.span().end]
+        } else {
+            ""
+        }
+    }
+
+    fn source(&self) -> &'source str {
+        self.source 
+    }
+}
+
+impl fmt::Display for Path<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
 impl fmt::Debug for Path<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Path")
@@ -389,13 +439,20 @@ impl fmt::Debug for Path<'_> {
     }
 }
 
+/// Parameter values can be used as arguments or hash values.
 #[derive(Debug, Eq, PartialEq)]
 pub enum ParameterValue<'source> {
+    /// A parameter that should resolve to a runtime variable.
     Path(Path<'source>),
+    /// A literal JSON value.
     Json(Value),
+    /// A sub-expression to be invoked at runtime to determine the value.
     SubExpr(Call<'source>),
 }
 
+/// Call targets represent either a helper call, partial render or variable path.
+///
+/// To support dynamic partials call targets may also be sub-expressions.
 #[derive(Debug, Eq, PartialEq)]
 pub enum CallTarget<'source> {
     Path(Path<'source>),
@@ -428,6 +485,11 @@ impl Default for CallTarget<'_> {
     }
 }
 
+/// Call is a variable interpolation, helper invocation or partial 
+/// render; they have zero or more arguments and optional hash parameters.
+///
+/// The partial flag is used to indicate that this call should be 
+/// rendered as a partial.
 #[derive(Default, Eq, PartialEq)]
 pub struct Call<'source> {
     // Raw source input.
@@ -442,6 +504,11 @@ pub struct Call<'source> {
 }
 
 impl<'source> Call<'source> {
+
+    /// Create an open call.
+    ///
+    /// If it is correctly terminated the parser will call `exit()` to terminate 
+    /// the call statement.
     pub fn new(source: &'source str, open: Range<usize>) -> Self {
         Self {
             source,
@@ -453,10 +520,6 @@ impl<'source> Call<'source> {
             arguments: Vec::new(),
             hash: HashMap::new(),
         }
-    }
-
-    pub fn source(&self) -> &str {
-        self.source
     }
 
     pub fn is_empty(&self) -> bool {
@@ -495,22 +558,6 @@ impl<'source> Call<'source> {
         &self.hash
     }
 
-    pub fn exit(&mut self, close: Range<usize>) {
-        self.close = Some(close);
-    }
-
-    pub fn is_closed(&self) -> bool {
-        self.close.is_some()
-    }
-
-    pub fn open_span(&self) -> &Range<usize> {
-        &self.open
-    }
-
-    pub fn close_span(&self) -> &Option<Range<usize>> {
-        &self.close
-    }
-
     /// The full range for this call; if the call is not closed
     /// only the open span is returned.
     pub fn span(&self) -> Range<usize> {
@@ -521,29 +568,11 @@ impl<'source> Call<'source> {
         }
     }
 
-    pub fn as_str(&self) -> &'source str {
-        if let Some(ref close) = self.close {
-            return &self.source[self.open.end..close.start];
-        }
-        &self.source[self.open.start..self.open.end]
-    }
-
-    pub fn open(&self) -> &'source str {
-        &self.source[self.open.start..self.open.end]
-    }
-
-    pub fn close(&self) -> &'source str {
-        if let Some(ref close) = self.close {
-            return &self.source[close.start..close.end];
-        }
-        ""
-    }
-
-    pub fn trim_before(&self) -> bool {
+    fn trim_before(&self) -> bool {
         self.open().ends_with(WHITESPACE)
     }
 
-    pub fn trim_after(&self) -> bool {
+    fn trim_after(&self) -> bool {
         self.close().starts_with(WHITESPACE)
     }
 
@@ -564,7 +593,54 @@ impl<'source> Call<'source> {
     }
 
     pub fn is_escaped(&self) -> bool {
+        // FIXME: ensure this is not `true` for raw blocks!
         !self.open().starts_with("{{{")
+    }
+}
+
+impl<'source> Slice<'source> for Call<'source> {
+    fn as_str(&self) -> &'source str {
+        //if let Some(ref close) = self.close {
+            //return &self.source[self.open.end..close.start];
+        //}
+
+        if let Some(ref close) = self.close {
+            return &self.source[self.open.start..close.end];
+        }
+        &self.source[self.open.start..self.open.end]
+    }
+
+    fn source(&self) -> &'source str {
+        self.source
+    }
+}
+
+impl<'source> Element<'source> for Call<'source> {
+    fn open(&self) -> &'source str {
+        &self.source[self.open.start..self.open.end]
+    }
+
+    fn close(&self) -> &'source str {
+        if let Some(ref close) = self.close {
+            return &self.source[close.start..close.end];
+        }
+        ""
+    }
+
+    fn open_span(&self) -> &Range<usize> {
+        &self.open
+    }
+
+    fn close_span(&self) -> &Option<Range<usize>> {
+        &self.close
+    }
+
+    fn is_closed(&self) -> bool {
+        self.close.is_some()
+    }
+
+    fn exit(&mut self, close: Range<usize>) {
+        self.close = Some(close);
     }
 }
 
@@ -588,14 +664,12 @@ impl fmt::Debug for Call<'_> {
     }
 }
 
+/// Documents are abstract nodes that encapsulate a collection 
+/// of child nodes; they are used as the root node of a compiled template.
 #[derive(Eq, PartialEq)]
 pub struct Document<'source>(pub &'source str, pub Vec<Node<'source>>);
 
 impl<'source> Document<'source> {
-    pub fn as_str(&self) -> &'source str {
-        self.0
-    }
-
     pub fn nodes(&self) -> &Vec<Node<'source>> {
         &self.1
     }
@@ -605,9 +679,14 @@ impl<'source> Document<'source> {
     }
 }
 
+impl<'source> Slice<'source> for Document<'source> {
+    fn as_str(&self) -> &'source str { self.0 }
+    fn source(&self) -> &'source str { self.0 }
+}
+
 impl fmt::Display for Document<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "{}", self.as_str())
     }
 }
 
@@ -644,12 +723,6 @@ impl<'source> Condition<'source> {
         &self.nodes
     }
 
-    pub fn as_str(&self) -> &'source str {
-        let open = &self.call.open;
-        let close = self.close.as_ref().unwrap_or(open);
-        &self.source[open.start..close.end]
-    }
-
     pub fn close(&self) -> &'source str {
         if let Some(ref close) = self.close {
             &self.source[close.start..close.end]
@@ -658,30 +731,42 @@ impl<'source> Condition<'source> {
         }
     }
 
-    pub fn trim_before(&self) -> bool {
-        self.call.trim_before()
-    }
-
-    pub fn trim_after(&self) -> bool {
-        self.call.trim_after()
-    }
-
-    pub fn trim_before_close(&self) -> bool {
-        let close = self.close();
-        close.len() > 2 && WHITESPACE == &close[2..3]
-    }
-
-    pub fn trim_after_close(&self) -> bool {
-        let close = self.close();
-        let index = close.len() - 3;
-        close.len() > 2 && WHITESPACE == &close[index..index + 1]
-    }
-
     pub fn trim_close(&self) -> TrimHint {
         TrimHint {
             before: self.trim_before_close(),
             after: self.trim_after_close(),
         }
+    }
+
+    fn trim_before(&self) -> bool {
+        self.call.trim_before()
+    }
+
+    fn trim_after(&self) -> bool {
+        self.call.trim_after()
+    }
+
+    fn trim_before_close(&self) -> bool {
+        let close = self.close();
+        close.len() > 2 && WHITESPACE == &close[2..3]
+    }
+
+    fn trim_after_close(&self) -> bool {
+        let close = self.close();
+        let index = close.len() - 3;
+        close.len() > 2 && WHITESPACE == &close[index..index + 1]
+    }
+}
+
+impl<'source> Slice<'source> for Condition<'source> {
+    fn as_str(&self) -> &'source str {
+        let open = &self.call.open;
+        let close = self.close.as_ref().unwrap_or(open);
+        &self.source[open.start..close.end]
+    }
+
+    fn source(&self) -> &'source str {
+        self.source
     }
 }
 
@@ -753,28 +838,6 @@ impl<'source> Block<'source> {
         self.raw
     }
 
-    pub fn as_str(&self) -> &'source str {
-        let close = self.close.clone().unwrap_or(0..self.source.len());
-        &self.source[self.open.start..close.end]
-    }
-
-    /// Get a string of the open span.
-    pub fn open(&self) -> &'source str {
-        &self.source[self.open.start..self.open.end]
-    }
-
-    /// Get a string of the close span.
-    ///
-    /// If no close span has been set which can happen if the 
-    /// block has no end tag this will return the empty string.
-    pub fn close(&self) -> &'source str {
-        if let Some(ref close) = self.close {
-            &self.source[close.start..close.end]
-        } else {
-            ""
-        }
-    }
-
     /// Add a condition to this block.
     pub fn add_condition(&mut self, condition: Condition<'source>) {
         self.close_condition(condition.call.open.clone());
@@ -815,25 +878,6 @@ impl<'source> Block<'source> {
             before: self.trim_before_close(),
             after: self.trim_after_close(),
         }
-    }
-
-    /// Mark this block as closed and set the close span.
-    pub(crate) fn exit(&mut self, span: Range<usize>) {
-        // NOTE: close_condition() sets the span up until the next
-        // NOTE: block but when we exit a block node the last conditional
-        // NOTE: needs a close matching the end tag so that whitespace
-        // NOTE: trim logic is correct.
-        if !self.conditionals.is_empty() {
-            let mut last = self.conditionals.last_mut().unwrap();
-            match &mut last {
-                Node::Condition(ref mut condition) => {
-                    condition.close = Some(span.clone());
-                }
-                _ => {}
-            }
-        }
-
-        self.close = Some(span);
     }
 
     fn close_condition(&mut self, span: Range<usize>) {
@@ -887,6 +931,63 @@ impl<'source> Block<'source> {
                 close.len() > 2 && WHITESPACE == &close[index..index + 1]
             } else { false }
         }
+    }
+
+}
+
+impl<'source> Slice<'source> for Block<'source> {
+    fn as_str(&self) -> &'source str {
+        let close = self.close.clone().unwrap_or(0..self.source.len());
+        &self.source[self.open.start..close.end]
+    }
+
+    fn source(&self) -> &'source str {
+        self.source
+    }
+}
+
+impl<'source> Element<'source> for Block<'source> {
+
+    fn open(&self) -> &'source str {
+        &self.source[self.open.start..self.open.end]
+    }
+
+    fn close(&self) -> &'source str {
+        if let Some(ref close) = self.close {
+            &self.source[close.start..close.end]
+        } else {
+            ""
+        }
+    }
+
+    fn open_span(&self) -> &Range<usize> {
+        &self.open
+    }
+
+    fn close_span(&self) -> &Option<Range<usize>> {
+        &self.close
+    }
+
+    fn is_closed(&self) -> bool {
+        self.close.is_some()
+    }
+
+    fn exit(&mut self, span: Range<usize>) {
+        // NOTE: close_condition() sets the span up until the next
+        // NOTE: block but when we exit a block node the last conditional
+        // NOTE: needs a close matching the end tag so that whitespace
+        // NOTE: trim logic is correct.
+        if !self.conditionals.is_empty() {
+            let mut last = self.conditionals.last_mut().unwrap();
+            match &mut last {
+                Node::Condition(ref mut condition) => {
+                    condition.close = Some(span.clone());
+                }
+                _ => {}
+            }
+        }
+
+        self.close = Some(span);
     }
 
 }
