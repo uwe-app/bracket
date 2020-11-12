@@ -1,3 +1,4 @@
+//! Abstract syntax tree node types.
 use std::collections::HashMap;
 use std::fmt;
 use std::ops::Range;
@@ -10,10 +11,10 @@ use crate::parser::{
 };
 
 static WHITESPACE: &str = "~";
-
-pub static ROOT: &str = "@root";
+static ROOT: &str = "@root";
 //pub static LEVEL: &str = "@level";
 
+/// Enumeration of the different kinds of nodes.
 #[derive(Eq, PartialEq)]
 pub enum Node<'source> {
     Document(Document<'source>),

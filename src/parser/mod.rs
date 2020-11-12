@@ -19,6 +19,10 @@ mod iter;
 mod path;
 pub mod trim;
 
+/// Set the file name used in error messages.
+///
+/// It is also possible to set the line and byte offsets if your template 
+/// is being extracted from a larger document.
 #[derive(Debug)]
 pub struct ParserOptions {
     /// The name of a file for the template source being parsed.
@@ -31,6 +35,8 @@ pub struct ParserOptions {
 }
 
 impl ParserOptions {
+
+    /// Create parser options using the given `file_name`.
     pub fn new(file_name: String) -> Self {
         Self {
             file_name,
@@ -89,6 +95,18 @@ impl From<&ParserOptions> for ParseState {
     }
 }
 
+/// Convert a lexer token stream to AST nodes.
+///
+/// The `Parser` is an `Iterator` that yields `Node`:
+///
+/// ```ignore
+/// let content = "A {{var}} template.";
+/// let parser = Parser::new(content, Default::default());
+/// for node in parser {
+///     let node = node?;
+///     println!("{:#?}", node);
+/// }
+/// ```
 pub struct Parser<'source> {
     source: &'source str,
     lexer: Lexer<'source>,
@@ -98,6 +116,9 @@ pub struct Parser<'source> {
 }
 
 impl<'source> Parser<'source> {
+    /// Create a new Parser for the given source template.
+    ///
+    /// This will prepare a lexer and initial state for the iterator.
     pub fn new(source: &'source str, options: ParserOptions) -> Self {
         let lexer = lex(source);
         let state = ParseState::from(&options);
@@ -111,6 +132,9 @@ impl<'source> Parser<'source> {
     }
 
     /// Parse the entire document into a node tree.
+    ///
+    /// This iterates the parser until completion and adds 
+    /// each node to a `Document` node which is returned.
     pub fn parse(&mut self) -> SyntaxResult<Node<'source>> {
         let mut doc = Document(&self.source, vec![]);
         for node in self {

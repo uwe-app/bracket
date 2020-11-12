@@ -25,13 +25,14 @@ pub struct Loader {
 }
 
 impl Loader {
+    /// Create an empty loader.
     pub fn new() -> Self {
         Self {
             sources: HashMap::new(),
         }
     }
 
-    /// Get the map of template content.
+    /// Get the map of template source content.
     pub fn sources(&self) -> &HashMap<String, String> {
         &self.sources
     }
@@ -83,12 +84,17 @@ impl Loader {
 }
 
 /// Collection of named templates.
+///
+/// For partials to be resolved they must exist in a collection 
+/// that is used during a render.
 #[derive(Default)]
 pub struct Templates<'source> {
     templates: HashMap<&'source str, Template<'source>>,
 }
 
 impl<'source> Templates<'source> {
+
+    /// Create an empty templates collection.
     pub fn new() -> Self {
         Self {
             templates: HashMap::new(),
@@ -98,12 +104,16 @@ impl<'source> Templates<'source> {
     fn build(&mut self, loader: &'source Loader) -> Result<()> {
         for (k, v) in loader.sources() {
             let template = Templates::compile(v, Default::default())?;
-            self.register(k.as_str(), template);
+            self.insert(k.as_str(), template);
         }
         Ok(())
     }
 
-    pub fn register(
+    /// Add a named template.
+    ///
+    /// If a template already exists with the given name 
+    /// it is overwritten.
+    pub fn insert(
         &mut self,
         name: &'source str,
         template: Template<'source>,
@@ -111,17 +121,20 @@ impl<'source> Templates<'source> {
         self.templates.insert(name, template);
     }
 
-    pub fn unregister(
+    /// Remove a named template.
+    pub fn remove(
         &mut self,
         name: &'source str,
     ) -> Option<Template<'source>> {
         self.templates.remove(name)
     }
 
+    /// Get a named template from this collection.
     pub fn get(&self, name: &str) -> Option<&Template<'source>> {
         self.templates.get(name)
     }
 
+    /// Compile a string to a template.
     pub fn compile(s: &str, options: ParserOptions) -> Result<Template<'_>> {
         Ok(Template::compile(s, options).map_err(Error::from)?)
     }
@@ -145,10 +158,13 @@ pub struct Template<'source> {
 }
 
 impl<'source> Template<'source> {
-    pub fn new(node: Node<'source>) -> Self {
+
+    /// Create a new template.
+    pub(crate) fn new(node: Node<'source>) -> Self {
         Self { node }
     }
 
+    /// The document node for the template.
     pub fn node(&self) -> &'source Node {
         &self.node
     }

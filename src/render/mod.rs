@@ -48,6 +48,10 @@ pub struct Render<'render> {
 }
 
 impl<'render> Render<'render> {
+    /// Create a renderer.
+    ///
+    /// You should not need to create a renderer directly, instead 
+    /// use the functions provided by the `Registry`.
     pub fn new<T>(
         strict: bool,
         escape: &'render EscapeFn,
@@ -251,7 +255,7 @@ impl<'render> Render<'render> {
             if let Some(scope) = self.scopes.last() {
                 json::find_parts(
                     path.components().iter().map(|c| c.as_str()),
-                    scope.as_value(),
+                    scope.locals(),
                 )
             } else {
                 None
@@ -261,7 +265,7 @@ impl<'render> Render<'render> {
             // treated as a scope
             let mut all = vec![&self.root];
             let mut values: Vec<&'a Value> =
-                self.scopes.iter().map(|s| s.as_value()).collect();
+                self.scopes.iter().map(|s| s.locals()).collect();
             all.append(&mut values);
 
             if all.len() > path.parents() as usize {
@@ -282,7 +286,7 @@ impl<'render> Render<'render> {
             if let Some(scope) = self.scopes.last() {
                 json::find_parts(
                     path.components().iter().map(|c| c.as_str()),
-                    scope.as_value(),
+                    scope.locals(),
                 )
                 .or(json::find_parts(
                     path.components().iter().map(|c| c.as_str()),
@@ -517,7 +521,7 @@ impl<'render> Render<'render> {
 
         let node = template.node();
         let hash = self.hash(call)?;
-        let scope = Scope::new_locals(hash);
+        let scope = Scope::from(hash);
         self.scopes.push(scope);
         // WARN: We must iterate the document child nodes
         // WARN: when rendering partials otherwise the

@@ -11,11 +11,17 @@ use crate::{
 /// JSON types used for type assertions.
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum Type {
+    /// The `null` JSON type.
     Null,
+    /// The `boolean` JSON type.
     Bool,
+    /// The `number` JSON type.
     Number,
+    /// The `string` JSON type.
     String,
+    /// The `object` JSON type.
     Object,
+    /// The `array` JSON type.
     Array,
 }
 

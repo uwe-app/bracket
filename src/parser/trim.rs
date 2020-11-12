@@ -5,7 +5,11 @@ use crate::parser::ast::Node;
 /// from the node being rendered.
 #[derive(Clone, Copy, Default, Debug)]
 pub struct TrimState {
+    /// Whether the leading whitespace should be removed 
+    /// from the current output.
     pub start: bool,
+    /// Whether the trailing whitespace should be removed 
+    /// from the current output.
     pub end: bool,
 }
 
@@ -32,6 +36,8 @@ impl From<(bool, bool)> for TrimState {
 /// for nodes before and after the current node.
 #[derive(Clone, Copy, Default, Debug)]
 pub struct TrimHint {
+    /// Whether the previous node should have trailing whitespace removed.
     pub before: bool,
+    /// Whether the next node should have leading whitespace removed.
     pub after: bool,
 }
