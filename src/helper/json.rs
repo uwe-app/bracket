@@ -22,7 +22,7 @@ impl Helper for JsonHelper {
         ctx: &Context<'call>,
         _template: Option<&'render Node<'render>>,
     ) -> HelperValue {
-        ctx.arity(1..2)?;
+        ctx.arity(1..3)?;
 
         let args = ctx.arguments();
         let target = args.get(0).unwrap();
