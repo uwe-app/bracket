@@ -288,6 +288,8 @@ pub(crate) fn from_str<'source>(
     source: &'source str,
 ) -> SyntaxResult<Option<Path<'source>>> {
     let mut lexer = lex(source);
+    lexer.set_parameters_mode();
+
     let mut state: ParseState = ParseState::new();
 
     if let Some(token) = lexer.next() {
@@ -296,7 +298,7 @@ pub(crate) fn from_str<'source>(
                 let (path, _)= parse(source, &mut lexer, &mut state, (lex, span))?;
                 return Ok(path)
             }
-            _ => panic!("Parsing path from string got unexpected token")
+            _ => panic!("Parsing path from string got unexpected token {:?}", token)
         }
     }
 

@@ -281,6 +281,22 @@ pub struct Lexer<'source> {
     mode: Modes<'source>,
 }
 
+impl<'source> Lexer<'source> {
+
+    /// Utility for switching the lexer to parameters mode.
+    ///
+    /// Must be called immediately after creating the lexer otherwise 
+    /// it is not guaranteed to change the lexer mode.
+    pub(crate) fn set_parameters_mode(&mut self) {
+        match &mut self.mode {
+            Modes::Block(lexer) => {
+                self.mode = Modes::Parameters(lexer.to_owned().morph())
+            }
+            _ => {}
+        }
+    }
+}
+
 /// Clone lexers as we switch between modes.
 impl<'source> Iterator for Lexer<'source> {
     type Item = Token;
@@ -314,19 +330,6 @@ impl<'source> Iterator for Lexer<'source> {
                     None
                 }
             }
-            //Modes::RawBlock(lexer) => {
-            //let result = lexer.next();
-            //let span = lexer.span();
-
-            //if let Some(token) = result {
-            ////if Block::EndRawBlock == token {
-            ////self.mode = Modes::Parameters(lexer.to_owned().morph());
-            ////}
-            //Some(Token::RawBlock(token, span))
-            //} else {
-            //None
-            //}
-            //}
             Modes::RawComment(lexer) => {
                 let result = lexer.next();
                 let span = lexer.span();
