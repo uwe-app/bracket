@@ -18,6 +18,7 @@ The default features are batteries included but you can set `default-features = 
 * `json-helper`: Enable the `json` helper.
 * `conditional-helper`: Enable the `if` and `unless` helpers.
 * `logical-helper`: Enable the `and`, `or` and `not` helpers.
+* `comparison-helper`: Enable the `eq`, `ne`, `gt`, `lt`, `gte` and `lte` helpers.
 * `stream`: Enable the `stream` functions on the registry.
 * `fs`: Support loading templates from the filesystem.
 
