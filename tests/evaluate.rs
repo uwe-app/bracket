@@ -4,7 +4,7 @@ use bracket::{
     render::{Context, Render},
     Registry, Result,
 };
-use serde_json::{json, Value};
+use serde_json::json;
 
 static NAME: &str = "evaluate.rs";
 

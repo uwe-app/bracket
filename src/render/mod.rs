@@ -143,7 +143,7 @@ impl<'render> Render<'render> {
                 if !block.conditions().is_empty() {
                     for node in block.conditions().iter() {
                         match node {
-                            Node::Condition(clause) => {
+                            Node::Block(clause) => {
                                 // Got an else clause, last one wins!
                                 if clause.call().is_empty() {
                                     alt = Some(node);

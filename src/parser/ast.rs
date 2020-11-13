@@ -55,7 +55,7 @@ pub enum Node<'source> {
     Text(Text<'source>),
     Statement(Call<'source>),
     Block(Block<'source>),
-    Condition(Condition<'source>),
+    Condition(Block<'source>),
     RawStatement(TextBlock<'source>),
     RawComment(TextBlock<'source>),
     Comment(TextBlock<'source>),
@@ -702,6 +702,7 @@ impl fmt::Debug for Document<'_> {
     }
 }
 
+/*
 #[derive(Eq, PartialEq)]
 pub struct Condition<'source> {
     // Raw source input.
@@ -791,6 +792,7 @@ impl fmt::Debug for Condition<'_> {
             .finish()
     }
 }
+*/
 
 /// Block encapsulates an inner template.
 ///
@@ -858,9 +860,9 @@ impl<'source> Block<'source> {
     }
 
     /// Add a condition to this block.
-    pub fn add_condition(&mut self, condition: Condition<'source>) {
+    pub fn add_condition(&mut self, condition: Block<'source>) {
         self.close_condition(condition.call.open.clone());
-        self.conditionals.push(Node::Condition(condition));
+        self.conditionals.push(Node::Block(condition));
     }
 
     /// Get the list of conditional blocks.
@@ -874,7 +876,7 @@ impl<'source> Block<'source> {
         if !self.conditionals.is_empty() {
             let mut last = self.conditionals.last_mut().unwrap();
             match &mut last {
-                Node::Condition(ref mut condition) => {
+                Node::Block(ref mut condition) => {
                     condition.nodes.push(node);
                 }
                 _ => {}
@@ -1001,7 +1003,7 @@ impl<'source> Element<'source> for Block<'source> {
         if !self.conditionals.is_empty() {
             let mut last = self.conditionals.last_mut().unwrap();
             match &mut last {
-                Node::Condition(ref mut condition) => {
+                Node::Block(ref mut condition) => {
                     condition.close = Some(span.clone());
                 }
                 _ => {}

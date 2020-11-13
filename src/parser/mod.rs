@@ -3,7 +3,7 @@ use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{self, lex, Lexer, Token},
     parser::{
-        ast::{Block, CallTarget, Condition, Document, Element, Node, Text},
+        ast::{Block, CallTarget, Document, Element, Node, Text},
         call::CallParseContext,
     },
     SyntaxResult,
@@ -289,11 +289,13 @@ impl<'source> Parser<'source> {
                                             // NOTE: any conditions are present.
                                             Node::Statement(call) => {
                                                 if call.is_conditional() {
-                                                    let condition =
-                                                        Condition::new(
+                                                    let mut condition =
+                                                        Block::new(
                                                             self.source,
-                                                            call,
+                                                            call.open_span().clone(),
+                                                            false,
                                                         );
+                                                    condition.set_call(call);
                                                     current.add_condition(
                                                         condition,
                                                     );
