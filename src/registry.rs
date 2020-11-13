@@ -89,7 +89,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         name: &str,
         template: &'source str,
     ) -> Result<Template<'source>> {
-        self.compile(template, ParserOptions::new(name.to_string()))
+        self.compile(template, ParserOptions::new(name.to_string(), 0, 0))
     }
 
     /// Render a template without registering it and return
@@ -102,7 +102,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     {
         let mut writer = StringOutput::new();
         let template =
-            self.compile(source, ParserOptions::new(name.to_string()))?;
+            self.compile(source, ParserOptions::new(name.to_string(), 0, 0))?;
         template.render(
             self.strict(),
             self.escape(),

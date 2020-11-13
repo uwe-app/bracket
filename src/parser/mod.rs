@@ -36,11 +36,11 @@ pub struct ParserOptions {
 
 impl ParserOptions {
     /// Create parser options using the given `file_name`.
-    pub fn new(file_name: String) -> Self {
+    pub fn new(file_name: String, line_offset: usize, byte_offset: usize) -> Self {
         Self {
             file_name,
-            line_offset: 0,
-            byte_offset: 0,
+            line_offset,
+            byte_offset,
         }
     }
 }

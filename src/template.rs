@@ -102,7 +102,7 @@ impl<'source> Templates<'source> {
 
     fn build(&mut self, loader: &'source Loader) -> Result<()> {
         for (k, v) in loader.sources() {
-            let template = Templates::compile(v, ParserOptions::new(k.to_string()))?;
+            let template = Templates::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
             self.insert(k.as_str(), template);
         }
         Ok(())
