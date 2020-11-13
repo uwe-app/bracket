@@ -55,7 +55,6 @@ pub enum Node<'source> {
     Text(Text<'source>),
     Statement(Call<'source>),
     Block(Block<'source>),
-    Condition(Block<'source>),
     RawStatement(TextBlock<'source>),
     RawComment(TextBlock<'source>),
     Comment(TextBlock<'source>),
@@ -78,7 +77,6 @@ impl<'source> Node<'source> {
             | Self::Comment(_) => false,
             Self::Statement(ref n) => n.trim_before(),
             Self::Block(ref n) => n.trim_before(),
-            Self::Condition(ref n) => n.trim_before(),
         }
     }
 
@@ -91,7 +89,6 @@ impl<'source> Node<'source> {
             | Self::Comment(_) => false,
             Self::Statement(ref n) => n.trim_after(),
             Self::Block(ref n) => n.trim_after(),
-            Self::Condition(ref n) => n.trim_after(),
         }
     }
 
@@ -113,7 +110,6 @@ impl<'source> Slice<'source> for Node<'source> {
             Self::Text(ref n) => n.as_str(),
             Self::Statement(ref n) => n.as_str(),
             Self::Block(ref n) => n.as_str(),
-            Self::Condition(ref n) => n.as_str(),
             Self::RawStatement(ref n)
             | Self::RawComment(ref n)
             | Self::Comment(ref n) => n.as_str(),
@@ -129,7 +125,6 @@ impl<'source> Slice<'source> for Node<'source> {
             Self::Comment(ref n) => n.source(),
             Self::Statement(ref n) => n.source(),
             Self::Block(ref n) => n.source(),
-            Self::Condition(ref n) => n.source(),
         }
     }
 }
@@ -141,7 +136,6 @@ impl fmt::Display for Node<'_> {
             Self::Text(ref n) => n.fmt(f),
             Self::Statement(ref n) => n.fmt(f),
             Self::Block(ref n) => n.fmt(f),
-            Self::Condition(ref n) => n.fmt(f),
             Self::RawStatement(ref n)
             | Self::RawComment(ref n)
             | Self::Comment(ref n) => n.fmt(f),
@@ -155,7 +149,6 @@ impl fmt::Debug for Node<'_> {
             Self::Document(ref n) => fmt::Debug::fmt(n, f),
             Self::Text(ref n) => fmt::Debug::fmt(n, f),
             Self::Block(ref n) => fmt::Debug::fmt(n, f),
-            Self::Condition(ref n) => fmt::Debug::fmt(n, f),
             Self::Statement(ref n) => fmt::Debug::fmt(n, f),
             Self::RawStatement(ref n)
             | Self::RawComment(ref n)
@@ -702,98 +695,6 @@ impl fmt::Debug for Document<'_> {
     }
 }
 
-/*
-#[derive(Eq, PartialEq)]
-pub struct Condition<'source> {
-    // Raw source input.
-    source: &'source str,
-    call: Call<'source>,
-    nodes: Vec<Node<'source>>,
-    close: Option<Range<usize>>,
-}
-
-impl<'source> Condition<'source> {
-    pub fn new(source: &'source str, call: Call<'source>) -> Self {
-        Self {
-            source,
-            call,
-            nodes: Vec::new(),
-            close: None,
-        }
-    }
-
-    pub fn call(&self) -> &Call<'source> {
-        &self.call
-    }
-
-    pub fn nodes(&self) -> &Vec<Node<'source>> {
-        &self.nodes
-    }
-
-    pub fn close(&self) -> &'source str {
-        if let Some(ref close) = self.close {
-            &self.source[close.start..close.end]
-        } else {
-            ""
-        }
-    }
-
-    pub fn trim_close(&self) -> TrimHint {
-        TrimHint {
-            before: self.trim_before_close(),
-            after: self.trim_after_close(),
-        }
-    }
-
-    fn trim_before(&self) -> bool {
-        self.call.trim_before()
-    }
-
-    fn trim_after(&self) -> bool {
-        self.call.trim_after()
-    }
-
-    fn trim_before_close(&self) -> bool {
-        let close = self.close();
-        close.len() > 2 && WHITESPACE == &close[2..3]
-    }
-
-    fn trim_after_close(&self) -> bool {
-        let close = self.close();
-        let index = close.len() - 3;
-        close.len() > 2 && WHITESPACE == &close[index..index + 1]
-    }
-}
-
-impl<'source> Slice<'source> for Condition<'source> {
-    fn as_str(&self) -> &'source str {
-        let open = &self.call.open;
-        let close = self.close.as_ref().unwrap_or(open);
-        &self.source[open.start..close.end]
-    }
-
-    fn source(&self) -> &'source str {
-        self.source
-    }
-}
-
-impl fmt::Display for Condition<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.as_str())
-    }
-}
-
-impl fmt::Debug for Condition<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Condition")
-            .field("close", &self.close)
-            .field("call", &self.call)
-            .field("nodes", &self.nodes)
-            .finish()
-    }
-}
-*/
-
 /// Block encapsulates an inner template.
 ///
 /// These nodes are rendered indirectly via registered helpers
@@ -907,7 +808,7 @@ impl<'source> Block<'source> {
                 let close = span.start - 1..span.start;
                 let mut last = self.conditionals.last_mut().unwrap();
                 match &mut last {
-                    Node::Condition(ref mut condition) => {
+                    Node::Block(ref mut condition) => {
                         condition.close = Some(close);
                     }
                     _ => {}

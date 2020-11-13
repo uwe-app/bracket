@@ -60,7 +60,6 @@ impl<'source> Iterator for NodeIter<'source> {
         match *self.node {
             Node::Document(_) => Some(self.node),
             Node::Block(_) => Some(self.node),
-            Node::Condition(_) => Some(self.node),
             Node::Text(_) => Some(self.node),
             Node::Statement(_) => Some(self.node),
             Node::RawStatement(_) | Node::RawComment(_) | Node::Comment(_) => {
@@ -103,9 +102,6 @@ impl<'source> Iterator for BlockIter<'source> {
                 Some(self.children.get_or_insert(node.nodes().iter()))
             }
             Node::Block(ref node) => {
-                Some(self.children.get_or_insert(node.nodes().iter()))
-            }
-            Node::Condition(ref node) => {
                 Some(self.children.get_or_insert(node.nodes().iter()))
             }
             Node::Text(_) => None,

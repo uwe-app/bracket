@@ -190,13 +190,6 @@ impl<'render> Render<'render> {
 
             if event.last {
                 match node {
-                    Node::Condition(ref block) => {
-                        let last_hint = block.trim_close();
-                        if last_hint.before {
-                            trim.end = true;
-                        }
-                        hint = Some(last_hint);
-                    }
                     Node::Block(ref block) => {
                         let last_hint = block.trim_close();
                         if last_hint.before {
@@ -640,7 +633,6 @@ impl<'render> Render<'render> {
             Node::RawComment(_) => {}
             Node::Comment(_) => {}
             Node::Document(_) => {}
-            Node::Condition(_) => {}
             Node::Statement(ref call) => {
                 if let Some(ref value) = self.statement(call)? {
                     let val = json::stringify(value);
