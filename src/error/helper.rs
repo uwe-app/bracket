@@ -2,7 +2,7 @@
 //!
 //! The renderer will wrap these in `RenderError` so you only
 //! need to use this type when implementing helpers.
-use crate::error::{render::RenderError, IoError};
+use crate::error::{syntax::SyntaxError, render::RenderError, IoError};
 use thiserror::Error;
 
 #[derive(Error, Debug)]

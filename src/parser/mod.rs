@@ -16,7 +16,7 @@ pub mod ast;
 mod block;
 mod call;
 mod iter;
-mod path;
+pub(crate) mod path;
 pub mod trim;
 
 /// Set the file name used in error messages.
@@ -63,6 +63,16 @@ pub(crate) struct ParseState {
 }
 
 impl ParseState {
+
+    /// Create a parser state with an unknown file name.
+    pub fn new() -> Self {
+        Self {
+            file_name: UNKNOWN.to_string(),
+            line: 0,
+            byte: 0,
+        }
+    }
+
     pub fn file_name(&self) -> &str {
         &self.file_name
     }

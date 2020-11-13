@@ -2,11 +2,12 @@ use logos::Span;
 
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
-    lexer::{Lexer, Parameters, Token},
+    lexer::{lex, Lexer, Parameters, Token},
     parser::{
         ast::{Component, ComponentType, Path},
         ParseState,
     },
+    SyntaxResult,
 };
 
 fn is_path_component(lex: &Parameters) -> bool {
@@ -61,7 +62,7 @@ pub(crate) fn components<'source>(
     lexer: &mut Lexer<'source>,
     path: &mut Path<'source>,
     mut wants_delimiter: bool,
-) -> Result<Option<Token>, SyntaxError> {
+) -> SyntaxResult<Option<Token>> {
     while let Some(token) = lexer.next() {
         match token {
             Token::Parameters(lex, span) => {
@@ -187,7 +188,7 @@ pub(crate) fn parse<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     current: (Parameters, Span),
-) -> Result<(Option<Path<'source>>, Option<Token>), SyntaxError> {
+) -> SyntaxResult<(Option<Path<'source>>, Option<Token>)> {
     let (lex, span) = current;
     let mut path = Path::new(source);
 
@@ -281,4 +282,23 @@ pub(crate) fn parse<'source>(
     }
 
     Ok((None, next))
+}
+
+pub(crate) fn from_str<'source>(
+    source: &'source str,
+) -> SyntaxResult<Option<Path<'source>>> {
+    let mut lexer = lex(source);
+    let mut state: ParseState = ParseState::new();
+
+    if let Some(token) = lexer.next() {
+        match token {
+            Token::Parameters(lex, span) => {
+                let (path, _)= parse(source, &mut lexer, &mut state, (lex, span))?;
+                return Ok(path)
+            }
+            _ => panic!("Parsing path from string got unexpected token")
+        }
+    }
+
+    Ok(None)
 }

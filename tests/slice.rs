@@ -1,5 +1,4 @@
 use bracket::{Registry, Result, parser::ast::Slice};
-use serde_json::json;
 
 static NAME: &str = "slice.rs";
 

@@ -12,6 +12,7 @@ use crate::{
     output::Output,
     parser::{
         ast::{Call, CallTarget, Node, ParameterValue, Path, Slice},
+        path,
         trim::{TrimHint, TrimState},
     },
     template::Templates,
@@ -214,6 +215,21 @@ impl<'render> Render<'render> {
         self.end_tag_hint = hint;
 
         Ok(())
+    }
+
+    /// Evaluate a path and return the resolved value.
+    ///
+    /// Sub-expressions are not executed; this allows helpers to find 
+    /// variables in the template data.
+    pub fn evaluate<'a>(&'a self, value: &str) -> HelperResult<Option<&'a Value>> {
+        if let Some(path) = path::from_str(value).map_err(|_| {
+                HelperError::from(
+                    Box::new(
+                        RenderError::EvaluatePath(value.to_string()))) 
+            })? {
+            return Ok(self.lookup(&path)) 
+        }
+        Ok(None) 
     }
 
     /// Infallible variable lookup by path.

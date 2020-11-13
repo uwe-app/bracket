@@ -8,6 +8,8 @@ pub enum RenderError {
     PartialNotFound(String),
     #[error("Variable '{0}' not found, check the variable path and verify the template data")]
     VariableNotFound(String),
+    #[error("Syntax error while evaluating path '{0}'")]
+    EvaluatePath(String),
     #[error(transparent)]
     Helper(#[from] HelperError),
     #[error(transparent)]
