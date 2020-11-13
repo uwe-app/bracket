@@ -219,8 +219,16 @@ impl<'render> Render<'render> {
 
     /// Evaluate a path and return the resolved value.
     ///
-    /// Sub-expressions are not executed; this allows helpers to find 
-    /// variables in the template data.
+    /// This allows helpers to find variables in the template data 
+    /// using the familiar path syntax such as `@root.name`.
+    ///
+    /// Paths are evaluated using the current scope so local variables 
+    /// in the current scope will be resolved.
+    ///
+    /// Paths are dynamically evaluated so syntax errors are caught and 
+    /// returned wrapped as `HelperError`.
+    ///
+    /// Sub-expressions are not executed.
     pub fn evaluate<'a>(&'a self, value: &str) -> HelperResult<Option<&'a Value>> {
         if let Some(path) = path::from_str(value).map_err(|_| {
                 HelperError::from(
