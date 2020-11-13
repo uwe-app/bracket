@@ -49,6 +49,16 @@
 //! let options = ParserOptions::new(String::from("file-name.md"), 12, 2048);
 //! let template = registry.compile("{{foo}}", options).unwrap();
 //! ```
+//!
+//! ## Lint
+//!
+//! Sometimes it is useful to check whether a template is well-formed. The 
+//! `lint` function will return a list of syntax errors:
+//!
+//! ```ignore
+//! let registry = Registry::new();
+//! let errors = registry.lint("file-name.md", "{{.bad.path}}").unwrap();
+//! ```
 
 //#![deny(missing_docs)]
 //#![cfg_attr(test, deny(warnings))]
