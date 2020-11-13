@@ -23,7 +23,7 @@ fn render () -> Result<String> {
     loader.add("partial-named", PathBuf::from("examples/files/partial-named.md"))?;
     loader.add(
         "dynamic-partial",
-        PathBuf::from("examples/files/dynamic-partial.md"),
+        PathBuf::from("examples/files/partial-dynamic.md"),
     )?;
     loader.add(
         "partial-block",

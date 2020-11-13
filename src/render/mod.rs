@@ -33,6 +33,9 @@ pub mod scope;
 pub use context::{Context, Type};
 pub use scope::Scope;
 
+/// Maximum stack size for helper calls
+static STACK_MAX: usize = 32;
+
 /// Call site keeps track of calls so we can 
 /// detect cyclic calls and therefore prevent 
 /// stack overflows panics by returning a render 
@@ -435,7 +438,8 @@ impl<'render> Render<'render> {
             CallSite::Helper(name.to_string())
         };
 
-        if self.stack.contains(&site) {
+        let amount = self.stack.iter().filter(|&n| *n == site).count();
+        if amount >= STACK_MAX {
             return Err(RenderError::HelperCycle(site.into()))
         }
         self.stack.push(site);

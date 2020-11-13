@@ -2,4 +2,4 @@ This is a partial block it includes some content passed via the block content an
 
 {{@partial-block}}
 
-Like any other partial it also handles hash parameters: `{{message}}`.
+Like any other partial it also handles hash parameters: *{{message}}*.

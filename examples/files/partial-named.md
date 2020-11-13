@@ -1,3 +1,1 @@
-This is a named partial which received the message *{{message}}* via the hash parameters.
-
-{{> partial-named message="Hello partial!"~}}
+This is a named partial which received a message via the hash parameters: *{{message}}*.

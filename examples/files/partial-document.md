@@ -5,7 +5,7 @@
 A named partial which receives some data via hash parameters.
 
 ---
-{{> partial-named message="Hello partial!"~}}
+{{> partial-named message="Hello named partial!"~}}
 ---
 
 ## Dynamic Partial
@@ -13,9 +13,7 @@ A named partial which receives some data via hash parameters.
 A partial evaluated from the variable `partial-name` using a sub-expression.
 
 ---
-
-{{> (partial-name) message="Hello dynamic partial!"}}
-
+{{> (partial-name) message="Hello dynamic partial!"~}}
 ---
 
 ## Partial Block
@@ -23,9 +21,7 @@ A partial evaluated from the variable `partial-name` using a sub-expression.
 A partial block which renders a template passed using the special `@partial-block` variable.
 
 ---
-
 {{# > partial-block message="Hello partial block!"}}
-This is some content for the `@partial-block` variable.
+> This is the inner template rendered by the `@partial-block` variable.
 {{/partial-block}}
-
 ---
