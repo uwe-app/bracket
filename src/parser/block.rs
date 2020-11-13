@@ -45,7 +45,6 @@ pub(crate) fn text_until<'source>(
     let open = span;
     let (span, next_token) = until(lexer, state, text, end);
     if let Some(ref close) = next_token {
-        let last = span.clone();
         let block = TextBlock::new(
             source,
             Text(source, span),
