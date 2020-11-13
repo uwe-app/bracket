@@ -52,17 +52,3 @@ When we iterate objects we can also access the `@key` field:
 {{#each map}}
 * {{@key}} = {{this}}, Index: {{@index}}, First: {{@first}}, Last: {{@last~}}
 {{/each}}
-
-## Partial
-
-{{> partial message="Hello partial!"}}
-
-## Dynamic Partial
-
-{{> (partial-name) message="Hello dynamic partial!"}}
-
-## Partial Block
-
-{{# > partial-block message="Hello partial block!"}}
-This is some content for the `@partial-block` variable.
-{{/partial-block}}

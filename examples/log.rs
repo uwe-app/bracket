@@ -1,13 +1,10 @@
 extern crate log;
 extern crate pretty_env_logger;
 
-use std::convert::TryFrom;
-use std::path::PathBuf;
 use std::io::Write;
 
 use bracket::{
     registry::Registry,
-    template::{Loader, Templates},
     Result,
 };
 
@@ -18,8 +15,8 @@ fn main() -> Result<()> {
     pretty_env_logger::init();
 
     let content = include_str!("files/log.md");
-    let data = json!({"title": "Log"});
-    let mut registry = Registry::new();
+    let data = json!({"title": "Log Example"});
+    let registry = Registry::new();
     match registry.once("log.md", content, &data) {
         Ok(result) => {
             write!(std::io::stdout(), "{}", result)?;

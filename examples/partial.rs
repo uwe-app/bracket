@@ -13,24 +13,23 @@ use bracket::{
 use serde_json::json;
 
 fn render () -> Result<String> {
-    let name = "examples/files/document.md";
+    let name = "examples/files/partial-document.md";
     let data = json!({
-        "title": "Handlebars Test Document & Information",
-        "list": [1, 2, 3],
-        "map": {
-            "apples": 1,
-            "oranges": 2,
-            "pears": 3,
-        },
-        "foo": {
-            "bar": {
-                "qux": 42
-            }
-        },
+        "title": "Partial Example",
         "partial-name": "dynamic-partial"
     });
 
     let mut loader = Loader::new();
+    loader.add("partial-named", PathBuf::from("examples/files/partial-named.md"))?;
+    loader.add(
+        "dynamic-partial",
+        PathBuf::from("examples/files/dynamic-partial.md"),
+    )?;
+    loader.add(
+        "partial-block",
+        PathBuf::from("examples/files/partial-block.md"),
+    )?;
+
     // NOTE: Call load() to use the file path as the name
     loader.load(PathBuf::from(name))?;
 

@@ -1,8 +1,10 @@
 //! Render a template to output using the data.
-use serde::Serialize;
-use serde_json::{Map, Value};
+use std::fmt;
 use std::cell::RefCell;
 use std::rc::Rc;
+
+use serde::Serialize;
+use serde_json::{Map, Value};
 
 use crate::{
     error::{HelperError, RenderError},
@@ -31,6 +33,44 @@ pub mod scope;
 pub use context::{Context, Type};
 pub use scope::Scope;
 
+/// Call site keeps track of calls so we can 
+/// detect cyclic calls and therefore prevent 
+/// stack overflows panics by returning a render 
+/// error when a cycle is detected.
+///
+/// Note that we must distinguish between helper 
+/// types otherwise the `if` helper will not work 
+/// as expected as it returns values and handles 
+/// block templates.
+#[derive(Eq, PartialEq, Hash, Debug)]
+enum CallSite {
+    Partial(String),
+    Helper(String),
+    BlockHelper(String),
+}
+
+impl fmt::Display for CallSite {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", {
+            match *self {
+                CallSite::Partial(ref name) => format!("partial#{}", name),
+                CallSite::Helper(ref name) => format!("helper#{}", name),
+                CallSite::BlockHelper(ref name) => format!("block#{}", name),
+            }
+        })
+    }
+}
+
+impl Into<String> for CallSite {
+    fn into(self) -> String {
+        match self {
+            CallSite::Partial(name)
+            | CallSite::Helper(name)
+            | CallSite::BlockHelper(name) => name,
+        }
+    }
+}
+
 /// Render a template.
 pub struct Render<'render> {
     strict: bool,
@@ -46,6 +86,7 @@ pub struct Render<'render> {
     trim: TrimState,
     hint: Option<TrimHint>,
     end_tag_hint: Option<TrimHint>,
+    stack: Vec<CallSite>,
 }
 
 impl<'render> Render<'render> {
@@ -82,6 +123,7 @@ impl<'render> Render<'render> {
             trim: Default::default(),
             hint: None,
             end_tag_hint: None,
+            stack: Vec::new(),
         })
     }
 
@@ -386,6 +428,18 @@ impl<'render> Render<'render> {
         content: Option<&'render Node<'render>>,
         text: Option<&'render str>,
     ) -> RenderResult<HelperValue> {
+
+        let site = if content.is_some() {
+            CallSite::BlockHelper(name.to_string())
+        } else {
+            CallSite::Helper(name.to_string())
+        };
+
+        if self.stack.contains(&site) {
+            return Err(RenderError::HelperCycle(site.into()))
+        }
+        self.stack.push(site);
+
         let args = self.arguments(call)?;
         let hash = self.hash(call)?;
         let mut context = Context::new(call, name.to_owned(), args, hash, text);
@@ -412,6 +466,8 @@ impl<'render> Render<'render> {
 
         drop(local_helpers);
         self.local_helpers.take();
+
+        self.stack.pop();
 
         Ok(value)
     }
@@ -524,6 +580,13 @@ impl<'render> Render<'render> {
         partial_block: Option<&'render Node<'render>>,
     ) -> RenderResult<()> {
         let name = self.get_partial_name(call)?;
+
+        let site = CallSite::Partial(name.to_string());
+        if self.stack.contains(&site) {
+            return Err(RenderError::PartialCycle(site.into()))
+        }
+        self.stack.push(site);
+
         let template = self
             .templates
             .get(&name)
@@ -543,6 +606,9 @@ impl<'render> Render<'render> {
             self.render_node(event.node, event.trim)?;
         }
         self.scopes.pop();
+
+        self.stack.pop();
+
         Ok(())
     }
 
