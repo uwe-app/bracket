@@ -19,16 +19,6 @@ No title available
 The number is: {{list.[1]}}
 The lookup value is: {{lookup foo.bar "qux"}}
 
-## Log
-
-To help debug our templates we can use the `log` helper: `\{{log "Message to print"}}`.
-
-{{~log "Trace message" level="trace"~}}
-{{log "Debug message" level="debug"~}}
-{{log "Warn message" level="warn"~}}
-{{log "Info message"~}}
-{{log "Error message" level="error"}}
-
 ## JSON
 
 The `json` helper is useful for debugging template data, for example: `\{{json this}}` yields:
@@ -38,12 +28,6 @@ The `json` helper is useful for debugging template data, for example: `\{{json t
 ```
 
 If you want pretty output pass a *truthy* value for the `pretty` hash parameter: `\{{json this pretty=true}}`.
-
-## Debugging
-
-Use sub expressions to combine logging with JSON evaluation `\{{log (json this)}}`.
-
-{{log (json this)}}
 
 ## With
 

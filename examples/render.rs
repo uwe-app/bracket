@@ -12,12 +12,8 @@ use bracket::{
 
 use serde_json::json;
 
-fn main() -> Result<()> {
-    std::env::set_var("RUST_LOG", "trace");
-    pretty_env_logger::init();
-
-    let content = include_str!("files/document.md");
-    let name = "document";
+fn render () -> Result<String> {
+    let name = "examples/files/document.md";
     let data = json!({
         "title": "Handlebars Test Document & Information",
         "list": [1, 2, 3],
@@ -44,26 +40,22 @@ fn main() -> Result<()> {
         "partial-block",
         PathBuf::from("examples/files/partial-block.md"),
     )?;
-    loader.insert(name, content);
+
+    // NOTE: Call load() to use the file path as the name
+    loader.load(PathBuf::from("examples/files/document.md"))?;
 
     let templates = Templates::try_from(&loader)?;
-
-    //println!("{:#?}", templates.get(name));
-
-    //let template = templates.get(name)?;
-    //for node in template.node() {
-    //println!("{:?}", node);
-    //}
-
     let mut registry = Registry::from(templates);
-    registry.set_strict(false);
+    registry.render(name, &data)
+}
 
-    match registry.render(name, &data) {
-        Ok(result) => {
-            println!("{}", result);
-        }
-        Err(e) => log::error!("{}", e),
+fn main() {
+    std::env::set_var("RUST_LOG", "trace");
+    pretty_env_logger::init();
+
+    match render() {
+        Ok(result) => println!("{}", result),
+        // NOTE: Use Debug to print errors with source code snippets
+        Err(e) => log::error!("{:?}", e),
     }
-
-    Ok(())
 }

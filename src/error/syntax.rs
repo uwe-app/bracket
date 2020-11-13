@@ -44,7 +44,7 @@ pub enum SyntaxError {
 
 impl fmt::Debug for SyntaxError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "error: {}\n", self.to_string())?;
+        write!(f, "{}\n", self.to_string())?;
         match *self {
             Self::EmptyStatement(ref source)
             | Self::ExpectedIdentifier(ref source)

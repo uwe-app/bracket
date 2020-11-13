@@ -102,7 +102,7 @@ impl<'source> Templates<'source> {
 
     fn build(&mut self, loader: &'source Loader) -> Result<()> {
         for (k, v) in loader.sources() {
-            let template = Templates::compile(v, Default::default())?;
+            let template = Templates::compile(v, ParserOptions::new(k.to_string()))?;
             self.insert(k.as_str(), template);
         }
         Ok(())
@@ -146,13 +146,14 @@ impl<'source> TryFrom<&'source Loader> for Templates<'source> {
 /// Type that adds rendering capability to a document node.
 #[derive(Debug)]
 pub struct Template<'source> {
+    name: String,
     node: Node<'source>,
 }
 
 impl<'source> Template<'source> {
     /// Create a new template.
-    pub(crate) fn new(node: Node<'source>) -> Self {
-        Self { node }
+    pub(crate) fn new(name: String, node: Node<'source>) -> Self {
+        Self { name, node }
     }
 
     /// The document node for the template.
@@ -173,9 +174,10 @@ impl<'reg, 'source> Template<'source> {
         source: &'source str,
         options: ParserOptions,
     ) -> SyntaxResult<Template> {
+        let name = options.file_name.clone();
         let mut parser = Parser::new(source, options);
         let node = parser.parse()?;
-        Ok(Template::new(node))
+        Ok(Template::new(name, node))
     }
 
     /// Render this template to the given writer.
