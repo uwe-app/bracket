@@ -282,10 +282,9 @@ pub struct Lexer<'source> {
 }
 
 impl<'source> Lexer<'source> {
-
     /// Utility for switching the lexer to parameters mode.
     ///
-    /// Must be called immediately after creating the lexer otherwise 
+    /// Must be called immediately after creating the lexer otherwise
     /// it is not guaranteed to change the lexer mode.
     pub(crate) fn set_parameters_mode(&mut self) {
         match &mut self.mode {

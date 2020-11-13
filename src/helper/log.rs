@@ -10,10 +10,10 @@ use log::*;
 
 /// Helper that prints a log message.
 ///
-/// Multiple arguments are accepted and concatenated using a 
+/// Multiple arguments are accepted and concatenated using a
 /// space before being sent to the log output.
 ///
-/// Values are coerced to strings before concatenation with 
+/// Values are coerced to strings before concatenation with
 /// special handling for `Value::String` so that it is not quoted.
 ///
 /// Use the `level` hash parameter to set the log level to one of:

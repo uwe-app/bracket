@@ -12,7 +12,7 @@ use bracket::{
 
 use serde_json::json;
 
-fn render () -> Result<String> {
+fn render() -> Result<String> {
     let name = "examples/files/document.md";
     let data = json!({
         "title": "Handlebars Test Document & Information",

@@ -1,6 +1,6 @@
 //! Render a template to output using the data.
-use std::fmt;
 use std::cell::RefCell;
+use std::fmt;
 use std::rc::Rc;
 
 use serde::Serialize;
@@ -36,14 +36,14 @@ pub use scope::Scope;
 /// Maximum stack size for helper calls
 static STACK_MAX: usize = 32;
 
-/// Call site keeps track of calls so we can 
-/// detect cyclic calls and therefore prevent 
-/// stack overflows panics by returning a render 
+/// Call site keeps track of calls so we can
+/// detect cyclic calls and therefore prevent
+/// stack overflows panics by returning a render
 /// error when a cycle is detected.
 ///
-/// Note that we must distinguish between helper 
-/// types otherwise the `if` helper will not work 
-/// as expected as it returns values and handles 
+/// Note that we must distinguish between helper
+/// types otherwise the `if` helper will not work
+/// as expected as it returns values and handles
 /// block templates.
 #[derive(Eq, PartialEq, Hash, Debug)]
 enum CallSite {
@@ -257,21 +257,24 @@ impl<'render> Render<'render> {
 
     /// Evaluate a path and return the resolved value.
     ///
-    /// This allows helpers to find variables in the template data 
+    /// This allows helpers to find variables in the template data
     /// using the familiar path syntax such as `@root.name`.
     ///
-    /// Paths are evaluated using the current scope so local variables 
+    /// Paths are evaluated using the current scope so local variables
     /// in the current scope will be resolved.
     ///
-    /// Paths are dynamically evaluated so syntax errors are caught and 
+    /// Paths are dynamically evaluated so syntax errors are caught and
     /// returned wrapped as `HelperError`.
     ///
     /// Sub-expressions are not executed.
-    pub fn evaluate<'a>(&'a self, value: &str) -> HelperResult<Option<&'a Value>> {
+    pub fn evaluate<'a>(
+        &'a self,
+        value: &str,
+    ) -> HelperResult<Option<&'a Value>> {
         if let Some(path) = path::from_str(value)? {
-            return Ok(self.lookup(&path)) 
+            return Ok(self.lookup(&path));
         }
-        Ok(None) 
+        Ok(None)
     }
 
     /// Infallible variable lookup by path.
@@ -431,7 +434,6 @@ impl<'render> Render<'render> {
         content: Option<&'render Node<'render>>,
         text: Option<&'render str>,
     ) -> RenderResult<HelperValue> {
-
         let site = if content.is_some() {
             CallSite::BlockHelper(name.to_string())
         } else {
@@ -440,7 +442,7 @@ impl<'render> Render<'render> {
 
         let amount = self.stack.iter().filter(|&n| *n == site).count();
         if amount >= STACK_MAX {
-            return Err(RenderError::HelperCycle(site.into()))
+            return Err(RenderError::HelperCycle(site.into()));
         }
         self.stack.push(site);
 
@@ -587,7 +589,7 @@ impl<'render> Render<'render> {
 
         let site = CallSite::Partial(name.to_string());
         if self.stack.contains(&site) {
-            return Err(RenderError::PartialCycle(site.into()))
+            return Err(RenderError::PartialCycle(site.into()));
         }
         self.stack.push(site);
 

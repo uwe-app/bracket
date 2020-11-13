@@ -1,6 +1,6 @@
 //! Errors generated when rendering templates.
-use std::fmt;
 use crate::error::{HelperError, IoError};
+use std::fmt;
 use thiserror::Error;
 
 #[derive(Error)]

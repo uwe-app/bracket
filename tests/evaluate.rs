@@ -25,11 +25,12 @@ impl Helper for EvalHelper {
 #[test]
 fn helper_evaluate_path() -> Result<()> {
     let mut registry = Registry::new();
-    registry.helpers_mut().insert("eval", Box::new(EvalHelper {}));
+    registry
+        .helpers_mut()
+        .insert("eval", Box::new(EvalHelper {}));
     let value = r"{{eval}}";
     let data = json!({"foo": "bar"});
     let result = registry.once(NAME, value, &data)?;
     assert_eq!("bar", &result);
     Ok(())
 }
-

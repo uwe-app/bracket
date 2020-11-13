@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 #[cfg(feature = "fs")]
+use std::ffi::OsStr;
+#[cfg(feature = "fs")]
 use std::path::Path;
 
 use serde::Serialize;
@@ -71,6 +73,41 @@ impl Loader {
         Ok(())
     }
 
+    /// Load all the files in a target directory that match the
+    /// given extension.
+    ///
+    /// The generated name is the file stem; ie, the name of the file
+    /// once the extension has been removed.
+    ///
+    /// Requires the `fs` feature.
+    #[cfg(feature = "fs")]
+    pub fn read_dir<P: AsRef<Path>>(
+        &mut self,
+        file: P,
+        extension: &str,
+    ) -> std::io::Result<()> {
+        let ext = OsStr::new(extension);
+        for entry in std::fs::read_dir(file.as_ref())? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_file() {
+                if let Some(extension) = path.extension() {
+                    if extension == ext {
+                        let name = path
+                            .file_stem()
+                            .unwrap()
+                            .to_string_lossy()
+                            .to_owned()
+                            .to_string();
+                        let (_, content) = self.read(path)?;
+                        self.insert(name, &content);
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
     #[cfg(feature = "fs")]
     fn read<P: AsRef<Path>>(
         &mut self,
@@ -102,7 +139,8 @@ impl<'source> Templates<'source> {
 
     fn build(&mut self, loader: &'source Loader) -> Result<()> {
         for (k, v) in loader.sources() {
-            let template = Templates::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
+            let template =
+                Templates::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
             self.insert(k.as_str(), template);
         }
         Ok(())

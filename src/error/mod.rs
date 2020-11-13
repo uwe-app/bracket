@@ -19,7 +19,7 @@ pub enum Error {
     #[error(transparent)]
     Syntax(#[from] SyntaxError),
     #[error(transparent)]
-    Render(#[from ]RenderError),
+    Render(#[from] RenderError),
     #[error("Template not found '{0}'")]
     TemplateNotFound(String),
     #[error(transparent)]

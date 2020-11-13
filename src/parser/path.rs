@@ -295,10 +295,14 @@ pub(crate) fn from_str<'source>(
     if let Some(token) = lexer.next() {
         match token {
             Token::Parameters(lex, span) => {
-                let (path, _)= parse(source, &mut lexer, &mut state, (lex, span))?;
-                return Ok(path)
+                let (path, _) =
+                    parse(source, &mut lexer, &mut state, (lex, span))?;
+                return Ok(path);
             }
-            _ => panic!("Parsing path from string got unexpected token {:?}", token)
+            _ => panic!(
+                "Parsing path from string got unexpected token {:?}",
+                token
+            ),
         }
     }
 

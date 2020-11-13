@@ -18,19 +18,27 @@ pub enum SyntaxError {
     BlockIdentifier(String),
     #[error("Syntax error, statement not terminated")]
     OpenStatement(String),
-    #[error("Syntax error, new lines in string literals must be escaped (\\n)")]
+    #[error(
+        "Syntax error, new lines in string literals must be escaped (\\n)"
+    )]
     StringLiteralNewline(String),
-    #[error("Syntax error,explicit this reference must be at the start of a path ")]
+    #[error(
+        "Syntax error,explicit this reference must be at the start of a path "
+    )]
     UnexpectedPathExplicitThis(String),
     #[error("Syntax error, parent scopes must be at the start of a path")]
     UnexpectedPathParent(String),
-    #[error("Syntax error, local scope identifiers must be at the start of a path")]
+    #[error(
+        "Syntax error, local scope identifiers must be at the start of a path"
+    )]
     UnexpectedPathLocal(String),
     #[error("Syntax error, expected identifier but got path delimiter")]
     UnexpectedPathDelimiter(String),
     #[error("Syntax error, parent scopes and local identifiers are mutually exclusive")]
     UnexpectedPathParentWithLocal(String),
-    #[error("Syntax error, parent scopes and explicit this are mutually exclusive")]
+    #[error(
+        "Syntax error, parent scopes and explicit this are mutually exclusive"
+    )]
     UnexpectedPathParentWithExplicit(String),
     #[error("Syntax error, expected path delimiter (.)")]
     ExpectedPathDelimiter(String),

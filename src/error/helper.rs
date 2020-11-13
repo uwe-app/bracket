@@ -2,7 +2,7 @@
 //!
 //! The renderer will wrap these in `RenderError` so you only
 //! need to use this type when implementing helpers.
-use crate::error::{syntax::SyntaxError, render::RenderError, IoError};
+use crate::error::{render::RenderError, syntax::SyntaxError, IoError};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -36,7 +36,7 @@ pub enum HelperError {
 
     /// Proxy for syntax errors that occur via helpers.
     ///
-    /// For example when dynamically evaluating paths passed to 
+    /// For example when dynamically evaluating paths passed to
     /// the `evaluate()` function.
     #[error(transparent)]
     Syntax(#[from] SyntaxError),

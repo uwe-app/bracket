@@ -36,7 +36,11 @@ pub struct ParserOptions {
 
 impl ParserOptions {
     /// Create parser options using the given `file_name`.
-    pub fn new(file_name: String, line_offset: usize, byte_offset: usize) -> Self {
+    pub fn new(
+        file_name: String,
+        line_offset: usize,
+        byte_offset: usize,
+    ) -> Self {
         Self {
             file_name,
             line_offset,
@@ -63,7 +67,6 @@ pub(crate) struct ParseState {
 }
 
 impl ParseState {
-
     /// Create a parser state with an unknown file name.
     pub fn new() -> Self {
         Self {
@@ -292,7 +295,8 @@ impl<'source> Parser<'source> {
                                                     let mut condition =
                                                         Block::new(
                                                             self.source,
-                                                            call.open_span().clone(),
+                                                            call.open_span()
+                                                                .clone(),
                                                             false,
                                                         );
                                                     condition.set_call(call);
