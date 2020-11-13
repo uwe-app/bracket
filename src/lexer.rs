@@ -294,6 +294,20 @@ impl<'source> Lexer<'source> {
             _ => {}
         }
     }
+
+    /// Consume nodes until we can return to the top-level mode.
+    ///
+    /// This is used during *lint* mode to move back to the top-level 
+    /// parsing mode.
+    pub(crate) fn until_mode(&mut self) -> Option<Token> {
+        while let Some(token) = self.next() {
+            match token {
+                Token::Block(_, _) => return Some(token),
+                _ => {},
+            }
+        }
+        None
+    }
 }
 
 /// Clone lexers as we switch between modes.

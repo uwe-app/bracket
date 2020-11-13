@@ -5,7 +5,7 @@ use crate::{
     escape::{escape_html, EscapeFn},
     helper::HelperRegistry,
     output::{Output, StringOutput},
-    parser::ParserOptions,
+    parser::{Parser, ParserOptions},
     template::{Template, Templates},
     Error, Result,
 };
@@ -90,6 +90,19 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         template: &'source str,
     ) -> Result<Template<'source>> {
         self.compile(template, ParserOptions::new(name.to_string(), 0, 0))
+    }
+
+    /// Lint a template.
+    pub fn lint(
+        &self,
+        name: &str,
+        template: &'source str,
+    ) -> Result<Vec<Error>> {
+        let mut errors: Vec<Error> = Vec::new();
+        let mut parser = Parser::new(template, ParserOptions::new(name.to_string(), 0, 0));
+        parser.set_errors(&mut errors);
+        for _ in parser {}
+        Ok(errors)
     }
 
     /// Render a template without registering it and return

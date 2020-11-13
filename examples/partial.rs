@@ -13,7 +13,7 @@ use bracket::{
 use serde_json::json;
 
 fn render() -> Result<String> {
-    let name = "examples/files/partial-document.md";
+    let name = "examples/files/partial.md";
     let data = json!({
         "title": "Partial Example",
         "partial-name": "partial-dynamic"

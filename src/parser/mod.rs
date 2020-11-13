@@ -1,6 +1,6 @@
 //! Convert the lexer token stream to AST nodes.
 use crate::{
-    error::{ErrorInfo, SourcePos, SyntaxError},
+    error::{Error, ErrorInfo, SourcePos, SyntaxError},
     lexer::{self, lex, Lexer, Token},
     parser::{
         ast::{Block, CallTarget, Document, Element, Node, Text},
@@ -124,6 +124,7 @@ pub struct Parser<'source> {
     state: ParseState,
     stack: Vec<(&'source str, Block<'source>)>,
     next_token: Option<Token>,
+    errors: Option<&'source mut Vec<Error>>,
 }
 
 impl<'source> Parser<'source> {
@@ -139,7 +140,17 @@ impl<'source> Parser<'source> {
             state,
             stack: vec![],
             next_token: None,
+            errors: None,
         }
+    }
+
+    /// Set a list of errors that this parser should add 
+    /// compile time syntax errors to.
+    ///
+    /// Changes the behavior of this parser to be infallible to 
+    /// support a *lint* operation.
+    pub fn set_errors(&mut self, errors: &'source mut Vec<Error>) {
+        self.errors = Some(errors);
     }
 
     /// Parse the entire document into a node tree.
@@ -432,10 +443,20 @@ impl<'source> Iterator for Parser<'source> {
         if let Some(t) = self.token() {
             match self.advance(t) {
                 Ok(node) => return node.map(Ok),
-                Err(e) => return Some(Err(e)),
+                Err(e) => {
+                    if let Some(ref mut errors) = self.errors.as_mut() {
+                        errors.push(Error::from(e));
+                        // Consume tokens until we reach the top-level lexer mode
+                        self.next_token = self.lexer.until_mode();
+                        // NOTE: Try to advance to the next node or error 
+                        // NOTE: when collecting errors
+                        return self.next();
+                    } else {
+                        return Some(Err(e));
+                    }
+                }
             }
         }
-
         None
     }
 }
