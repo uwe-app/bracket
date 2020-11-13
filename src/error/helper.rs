@@ -34,6 +34,13 @@ pub enum HelperError {
     )]
     TypeAssert(String, String, String),
 
+    /// Proxy for syntax errors that occur via helpers.
+    ///
+    /// For example when dynamically evaluating paths passed to 
+    /// the `evaluate()` function.
+    #[error(transparent)]
+    Syntax(#[from] SyntaxError),
+
     /// Proxy for render errors that occur via helpers; for example
     /// when rendering inner templates.
     #[error(transparent)]

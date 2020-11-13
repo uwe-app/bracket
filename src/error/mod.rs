@@ -1,5 +1,6 @@
 //! Error types.
 use std::fmt;
+use thiserror::Error;
 
 pub mod helper;
 pub mod render;
@@ -13,25 +14,16 @@ pub use syntax::SyntaxError;
 
 /// Generic error type that wraps more specific types and is
 /// returned when using the `Registry`.
-#[derive(Eq, PartialEq)]
+#[derive(Error, Eq, PartialEq)]
 pub enum Error {
-    Syntax(SyntaxError),
-    Render(RenderError),
+    #[error(transparent)]
+    Syntax(#[from] SyntaxError),
+    #[error(transparent)]
+    Render(#[from ]RenderError),
+    #[error("Template not found '{0}'")]
     TemplateNotFound(String),
-    Io(IoError),
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match *self {
-            Self::Syntax(ref e) => fmt::Display::fmt(e, f),
-            Self::Render(ref e) => fmt::Display::fmt(e, f),
-            Self::TemplateNotFound(ref name) => {
-                write!(f, "Template not found '{}'", name)
-            }
-            Self::Io(ref e) => fmt::Display::fmt(e, f),
-        }
-    }
+    #[error(transparent)]
+    Io(#[from] IoError),
 }
 
 impl fmt::Debug for Error {
@@ -51,18 +43,6 @@ impl From<std::io::Error> for Error {
     }
 }
 
-impl From<RenderError> for Error {
-    fn from(err: RenderError) -> Self {
-        Self::Render(err)
-    }
-}
-
-impl From<SyntaxError> for Error {
-    fn from(err: SyntaxError) -> Self {
-        Self::Syntax(err)
-    }
-}
-
 /// Wrapper for IO errors that implements `PartialEq` to
 /// facilitate easier testing using `assert_eq!()`.
 #[derive(thiserror::Error, Debug)]
@@ -70,14 +50,6 @@ pub enum IoError {
     #[error(transparent)]
     Io(#[from] std::io::Error),
 }
-
-//impl fmt::Display for IoError {
-//fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//match *self {
-//Self::Io(ref e) => fmt::Debug::fmt(e, f),
-//}
-//}
-//}
 
 impl PartialEq for IoError {
     fn eq(&self, other: &Self) -> bool {

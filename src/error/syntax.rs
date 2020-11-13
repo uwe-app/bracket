@@ -1,77 +1,45 @@
 //! Errors generated when compiling templates.
 use std::fmt;
+use thiserror::Error;
 
-static SYNTAX_PREFIX: &str = "Syntax error";
-
-#[derive(Eq, PartialEq)]
+#[derive(Error, Eq, PartialEq)]
 pub enum SyntaxError {
+    #[error("Syntax error, statement is empty")]
     EmptyStatement(String),
+    #[error("Syntax error, expecting identifier")]
     ExpectedIdentifier(String),
+    #[error("Syntax error, expecting identifier not a path or sub-expression")]
     ExpectedSimpleIdentifier(String),
+    #[error("Syntax error, partial requires an identifier")]
     PartialIdentifier(String),
+    #[error("Syntax error, partial requires a simple identifier (not a path)")]
     PartialSimpleIdentifier(String),
+    #[error("Syntax error, block scope requires an identifier")]
     BlockIdentifier(String),
+    #[error("Syntax error, statement not terminated")]
     OpenStatement(String),
+    #[error("Syntax error, new lines in string literals must be escaped (\\n)")]
     StringLiteralNewline(String),
+    #[error("Syntax error,explicit this reference must be at the start of a path ")]
     UnexpectedPathExplicitThis(String),
+    #[error("Syntax error, parent scopes must be at the start of a path")]
     UnexpectedPathParent(String),
+    #[error("Syntax error, local scope identifiers must be at the start of a path")]
     UnexpectedPathLocal(String),
+    #[error("Syntax error, expected identifier but got path delimiter")]
     UnexpectedPathDelimiter(String),
+    #[error("Syntax error, parent scopes and local identifiers are mutually exclusive")]
     UnexpectedPathParentWithLocal(String),
+    #[error("Syntax error, parent scopes and explicit this are mutually exclusive")]
     UnexpectedPathParentWithExplicit(String),
+    #[error("Syntax error, expected path delimiter (.)")]
     ExpectedPathDelimiter(String),
+    #[error("Syntax error, sub-expression not terminated")]
     OpenSubExpression(String),
+    #[error("Syntax error, closing name does not match")]
     TagNameMismatch(String),
+    #[error("Syntax error, got a closing tag but no block is open")]
     BlockNotOpen(String),
-}
-
-impl SyntaxError {
-    fn message(&self) -> &'static str {
-        match *self {
-            Self::EmptyStatement(_) => "statement is empty",
-            Self::ExpectedIdentifier(_) => "expecting identifier",
-            Self::ExpectedSimpleIdentifier(_) => {
-                "expecting identifier not a path or sub-expression"
-            }
-            Self::PartialIdentifier(_) => "partial requires an identifier",
-            Self::PartialSimpleIdentifier(_) => {
-                "partial requires a simple identifier (not a path)"
-            }
-            Self::BlockIdentifier(_) => "block scope requires an identifier",
-            Self::OpenStatement(_) => "statement not terminated",
-            Self::StringLiteralNewline(_) => {
-                "new lines in string literals must be escaped (\\n)"
-            }
-            Self::UnexpectedPathExplicitThis(_) => {
-                "explicit this reference must be at the start of a path"
-            }
-            Self::UnexpectedPathParent(_) => {
-                "parent scopes must be at the start of a path"
-            }
-            Self::UnexpectedPathLocal(_) => {
-                "local scope identifiers must be at the start of a path"
-            }
-            Self::UnexpectedPathDelimiter(_) => {
-                "expected identifier but got path delimiter"
-            }
-            Self::UnexpectedPathParentWithLocal(_) => {
-                "parent scopes and local identifiers are mutually exclusive"
-            }
-            Self::UnexpectedPathParentWithExplicit(_) => {
-                "parent scopes and explicit this are mutually exclusive"
-            }
-            Self::ExpectedPathDelimiter(_) => "expected path delimiter (.)",
-            Self::OpenSubExpression(_) => "sub-expression not terminated",
-            Self::TagNameMismatch(_) => "closing name does not match",
-            Self::BlockNotOpen(_) => "got a closing tag but no block is open",
-        }
-    }
-}
-
-impl fmt::Display for SyntaxError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}, {}", SYNTAX_PREFIX, self.message())
-    }
 }
 
 impl fmt::Debug for SyntaxError {

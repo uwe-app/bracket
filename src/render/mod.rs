@@ -223,11 +223,7 @@ impl<'render> Render<'render> {
     ///
     /// Sub-expressions are not executed.
     pub fn evaluate<'a>(&'a self, value: &str) -> HelperResult<Option<&'a Value>> {
-        if let Some(path) = path::from_str(value).map_err(|_| {
-                HelperError::from(
-                    Box::new(
-                        RenderError::EvaluatePath(value.to_string()))) 
-            })? {
+        if let Some(path) = path::from_str(value)? {
             return Ok(self.lookup(&path)) 
         }
         Ok(None) 
