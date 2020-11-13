@@ -27,6 +27,7 @@ The default features are batteries included but you can set `default-features = 
 * `'reg` The lifetime of the registry; helpers, partials and escape functions.
 * `'source` The lifetime of a source template string.
 * `'render` The lifetime of a template render.
+* `'call` The lifetime of a helper call.
 
 [handlebars-rust]: https://github.com/sunng87/handlebars-rust/
 
