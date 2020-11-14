@@ -132,7 +132,7 @@ pub enum Parameters {
     HashKey,
 
     #[token("\"")]
-    StringLiteral,
+    DoubleQuoteString,
 
     // NOTE: Must have higher priority than identifier
     // NOTE: otherwise numbers become identifiers
@@ -176,7 +176,7 @@ pub enum Statement {
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
-pub enum StringLiteral {
+pub enum DoubleQuoteString {
     #[regex(r#"[^\\"\n]+"#)]
     Text,
 
@@ -207,7 +207,7 @@ pub enum Token {
     RawStatement(RawStatement, Span),
     Comment(Comment, Span),
     Parameters(Parameters, Span),
-    StringLiteral(StringLiteral, Span),
+    DoubleQuoteString(DoubleQuoteString, Span),
 }
 
 impl Token {
@@ -219,7 +219,7 @@ impl Token {
             Token::RawStatement(_, ref span) => span,
             Token::Comment(_, ref span) => span,
             Token::Parameters(_, ref span) => span,
-            Token::StringLiteral(_, ref span) => span,
+            Token::DoubleQuoteString(_, ref span) => span,
         }
     }
 
@@ -239,7 +239,7 @@ impl Token {
                 t == &Comment::Text || t == &Comment::Newline
             }
             Token::Parameters(_, _) => false,
-            Token::StringLiteral(_, _) => false,
+            Token::DoubleQuoteString(_, _) => false,
         }
     }
 
@@ -253,7 +253,7 @@ impl Token {
             Token::Parameters(ref lex, _) => lex == &Parameters::Newline,
             // NOTE: new lines are not allowed in string literals
             // NOTE: so we have special handling for this case
-            Token::StringLiteral(_, _) => false,
+            Token::DoubleQuoteString(_, _) => false,
         }
     }
 }
@@ -267,7 +267,7 @@ enum Modes<'source> {
     RawStatement(Lex<'source, RawStatement>),
     Comment(Lex<'source, Comment>),
     Parameters(Lex<'source, Parameters>),
-    StringLiteral(Lex<'source, StringLiteral>),
+    DoubleQuoteString(Lex<'source, DoubleQuoteString>),
 }
 
 impl<'source> Modes<'source> {
@@ -387,9 +387,9 @@ impl<'source> Iterator for Lexer<'source> {
                 let span = lexer.span();
 
                 if let Some(token) = result {
-                    if Parameters::StringLiteral == token {
+                    if Parameters::DoubleQuoteString == token {
                         self.mode =
-                            Modes::StringLiteral(lexer.to_owned().morph());
+                            Modes::DoubleQuoteString(lexer.to_owned().morph());
                     } else if Parameters::End == token {
                         self.mode = Modes::Block(lexer.to_owned().morph());
                     }
@@ -398,15 +398,15 @@ impl<'source> Iterator for Lexer<'source> {
                     None
                 }
             }
-            Modes::StringLiteral(lexer) => {
+            Modes::DoubleQuoteString(lexer) => {
                 let result = lexer.next();
                 let span = lexer.span();
 
                 if let Some(token) = result {
-                    if StringLiteral::End == token {
+                    if DoubleQuoteString::End == token {
                         self.mode = Modes::Parameters(lexer.to_owned().morph());
                     }
-                    Some(Token::StringLiteral(token, span))
+                    Some(Token::DoubleQuoteString(token, span))
                 } else {
                     None
                 }

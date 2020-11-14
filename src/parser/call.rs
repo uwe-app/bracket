@@ -3,7 +3,7 @@ use serde_json::{Number, Value};
 
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
-    lexer::{Lexer, Parameters, StringLiteral, Token},
+    lexer::{Lexer, Parameters, DoubleQuoteString, Token},
     parser::{
         ast::{Call, CallTarget, Element, ParameterValue},
         path, ParseState,
@@ -52,8 +52,8 @@ fn string_literal<'source>(
 
     while let Some(token) = lexer.next() {
         match token {
-            Token::StringLiteral(lex, span) => match &lex {
-                StringLiteral::End => {
+            Token::DoubleQuoteString(lex, span) => match &lex {
+                DoubleQuoteString::End => {
                     let str_value = &source[str_start..str_end];
                     return Ok(Value::String(str_value.to_string()));
                 }
@@ -84,7 +84,7 @@ fn json_literal<'source>(
             let num: Number = source[span].parse().unwrap();
             Value::Number(num)
         }
-        Parameters::StringLiteral => {
+        Parameters::DoubleQuoteString => {
             string_literal(source, lexer, state, (lex, span))?
         }
         _ => {
@@ -128,7 +128,7 @@ fn value<'source>(
             return Ok((ParameterValue::SubExpr(call), token));
         }
         // Literal components
-        Parameters::StringLiteral
+        Parameters::DoubleQuoteString
         | Parameters::Number
         | Parameters::True
         | Parameters::False
@@ -254,7 +254,7 @@ fn arguments<'source>(
                         );
                     }
                     // Literal components
-                    Parameters::StringLiteral
+                    Parameters::DoubleQuoteString
                     | Parameters::Number
                     | Parameters::True
                     | Parameters::False

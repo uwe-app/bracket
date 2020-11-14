@@ -428,7 +428,7 @@ impl<'source> Parser<'source> {
             Token::RawStatement(_, _) => {}
             Token::Comment(_, _) => {}
             Token::Parameters(_, _) => {}
-            Token::StringLiteral(_, _) => {}
+            Token::DoubleQuoteString(_, _) => {}
         }
 
         Ok(None)
