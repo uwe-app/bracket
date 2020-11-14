@@ -1,4 +1,40 @@
 //! Helper trait and types for the default set of helpers.
+//!
+//! The [Helper Trait](self::Helper) should be implemented 
+//! for custom helpers which can then be added to a registry.
+//!
+//! Helper `call()` functions accept three arguments:
+//!
+//! * [rc](crate::render::Render) The active renderer.
+//! * [ctx](crate::render::context::Context) Helper arguments and hash parameters.
+//! * [template](crate::parser::ast::Node) Inner template when called as a block.
+//!
+//! The renderer can be used to render inner templates when a helper 
+//! is called as a block and provides functions for writing to the output destination.
+//!
+//! The context is used to access the helper arguments and hash parameters and may also 
+//! be used for type assertions using the 
+//! [try_get()](crate::render::context::Context#method.try_get) and 
+//! [try_hash()](crate::render::context::Context#method.try_hash) methods. The 
+//! [arity()](crate::render::context::Context#method.arity) method can be used to 
+//! assert on argument length.
+//!
+//! When a helper is called as a block the optional template node will be `Some`. 
+//! Raw helpers can access the inner text using [text()](crate::render::context::Context#method.text).
+//!
+//! To determine the helper context:
+//!
+//! ```ignore
+//! if let Some(node) = template {
+//!     // Helper was invoked as a block `{{#helper}}...{{/helper}}`
+//! } else if let Some(text) = ctx.text() {
+//!     // Helper was invoked as a raw block `{{{{helper}}}}...{{{{/helper}}}}`
+//! } else {
+//!     // Helper was invoked as a statement `{{helper}}`
+//! }
+//! ```
+//!
+
 use dyn_clone::DynClone;
 use serde_json::Value;
 use std::collections::HashMap;

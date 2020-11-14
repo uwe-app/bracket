@@ -35,7 +35,7 @@ impl<'a> NodeEvent<'a> {
 
 /// Iterator for branch nodes.
 ///
-/// Descends into document and block nodes and yields the child 
+/// Descends into document and block nodes and yields the child
 /// nodes.
 pub struct BranchIter<'source> {
     node: &'source Node<'source>,
@@ -54,7 +54,7 @@ impl<'source> BranchIter<'source> {
     /// Create an iterator that adds trim state information
     /// to each node.
     ///
-    /// The input hint will be used to determine the trim state 
+    /// The input hint will be used to determine the trim state
     /// of the first node.
     pub fn event(self, hint: Option<TrimHint>) -> EventIter<'source> {
         EventIter::new(self, hint)
@@ -97,7 +97,7 @@ impl<'source> Iterator for BranchIter<'source> {
 /// whether the current node should have leading and trailing
 /// whitespace removed.
 ///
-/// They may also be seeded with a [TrimHint](crate::trim::TrimHint) from a 
+/// They may also be seeded with a [TrimHint](crate::trim::TrimHint) from a
 /// previous iteration.
 pub struct EventIter<'source> {
     iter: std::iter::Peekable<BranchIter<'source>>,
@@ -106,7 +106,6 @@ pub struct EventIter<'source> {
 }
 
 impl<'source> EventIter<'source> {
-
     /// Create a new event iterator.
     pub(crate) fn new(
         nodes: BranchIter<'source>,
@@ -153,8 +152,8 @@ impl<'source> Iterator for EventIter<'source> {
         if let Some(ref current) = node {
             self.prev_trim_after = Some(current.trim().after);
 
-            // NOTE: block nodes will determine the trim based 
-            // NOTE: on a close tag so we need to clear any 
+            // NOTE: block nodes will determine the trim based
+            // NOTE: on a close tag so we need to clear any
             // NOTE: previous trim state here
             let should_clear_trim = match current {
                 Node::Block(_) => true,

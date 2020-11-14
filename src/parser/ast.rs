@@ -5,10 +5,7 @@ use std::ops::Range;
 
 use serde_json::Value;
 
-use crate::{
-    parser::iter::BranchIter,
-    trim::TrimHint,
-};
+use crate::{parser::iter::BranchIter, trim::TrimHint};
 
 static WHITESPACE: &str = "~";
 static ROOT: &str = "@root";
@@ -60,7 +57,7 @@ pub trait Element<'source> {
 
 /// Nodes form the abstract syntax tree.
 ///
-/// Every node provides access to a [TrimHint](crate::trim::TrimHint) used 
+/// Every node provides access to a [TrimHint](crate::trim::TrimHint) used
 /// by the renderer to determine how whitespace should be handled.
 #[derive(Eq, PartialEq)]
 pub enum Node<'source> {
@@ -72,11 +69,11 @@ pub enum Node<'source> {
     Statement(Call<'source>),
     /// Blocks encapsulate an inner template.
     ///
-    /// Blocks have a `raw` flag which indicates that the content 
-    /// should not be interpreted. When the `raw` flag is set a block 
+    /// Blocks have a `raw` flag which indicates that the content
+    /// should not be interpreted. When the `raw` flag is set a block
     /// must only have a single `Text` child node.
     Block(Block<'source>),
-    /// Raw statement is a statement preceeded by a backslash 
+    /// Raw statement is a statement preceeded by a backslash
     /// that should not be interpreted.
     RawStatement(TextBlock<'source>),
     /// Raw comments may contain nested templates (`{{!-- comment --}}`).
@@ -86,7 +83,6 @@ pub enum Node<'source> {
 }
 
 impl<'source> Node<'source> {
-
     /// Get the trim hint for this node.
     pub fn trim(&self) -> TrimHint {
         TrimHint {
@@ -368,7 +364,6 @@ pub struct Path<'source> {
 }
 
 impl<'source> Path<'source> {
-
     /// Create a new path.
     pub fn new(source: &'source str) -> Self {
         Self {
@@ -693,7 +688,6 @@ impl<'source> Element<'source> for Call<'source> {
     fn exit(&mut self, close: Range<usize>) {
         self.close = Some(close);
     }
-
 }
 
 impl fmt::Display for Call<'_> {

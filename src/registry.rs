@@ -210,8 +210,8 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         Ok(writer.into())
     }
 
-    /// Render a compiled template without registering it and return
-    /// the result as a string.
+    /// Render a compiled template without registering it and 
+    /// buffer the result to a string.
     pub fn render_template<T>(
         &self,
         name: &str,

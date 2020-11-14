@@ -13,7 +13,7 @@ use serde_json::Value;
 /// is rendered otherwise each conditional is evaluated and
 /// the first one which returns a *truthy* value is rendered.
 ///
-/// When executed in a statement this helper returns whether it's 
+/// When executed in a statement this helper returns whether it's
 /// argument is *truthy*.
 ///
 #[derive(Clone)]

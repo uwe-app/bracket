@@ -3,7 +3,7 @@ use serde_json::{Number, Value};
 
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
-    lexer::{Lexer, Parameters, DoubleQuoteString, SingleQuoteString, Token},
+    lexer::{DoubleQuoteString, Lexer, Parameters, SingleQuoteString, Token},
     parser::{
         ast::{Call, CallTarget, Element, ParameterValue},
         path, ParseState,
@@ -57,40 +57,34 @@ fn string_literal<'source>(
     let mut str_end = span.end;
 
     while let Some(token) = lexer.next() {
-
         match string_type {
-            StringType::Double => {
-                match token {
-                    Token::DoubleQuoteString(lex, span) => match &lex {
-                        DoubleQuoteString::End => {
-                            let str_value = &source[str_start..str_end];
-                            return Ok(Value::String(str_value.to_string()));
-                        }
-                        _ => {
-                            *state.byte_mut() = span.end;
-                            str_end = span.end;
-                        }
-                    },
-                    _ => panic!("Expecting string literal token"),
-                }
-            }
-            StringType::Single => {
-                match token {
-                    Token::SingleQuoteString(lex, span) => match &lex {
-                        SingleQuoteString::End => {
-                            let str_value = &source[str_start..str_end];
-                            return Ok(Value::String(str_value.to_string()));
-                        }
-                        _ => {
-                            *state.byte_mut() = span.end;
-                            str_end = span.end;
-                        }
-                    },
-                    _ => panic!("Expecting string literal token"),
-                }
-            }
+            StringType::Double => match token {
+                Token::DoubleQuoteString(lex, span) => match &lex {
+                    DoubleQuoteString::End => {
+                        let str_value = &source[str_start..str_end];
+                        return Ok(Value::String(str_value.to_string()));
+                    }
+                    _ => {
+                        *state.byte_mut() = span.end;
+                        str_end = span.end;
+                    }
+                },
+                _ => panic!("Expecting string literal token"),
+            },
+            StringType::Single => match token {
+                Token::SingleQuoteString(lex, span) => match &lex {
+                    SingleQuoteString::End => {
+                        let str_value = &source[str_start..str_end];
+                        return Ok(Value::String(str_value.to_string()));
+                    }
+                    _ => {
+                        *state.byte_mut() = span.end;
+                        str_end = span.end;
+                    }
+                },
+                _ => panic!("Expecting string literal token"),
+            },
         }
-
     }
     panic!("Failed to parse string literal");
 }
@@ -111,12 +105,20 @@ fn json_literal<'source>(
             let num: Number = source[span].parse().unwrap();
             Value::Number(num)
         }
-        Parameters::DoubleQuoteString => {
-            string_literal(source, lexer, state, (lex, span), StringType::Double)?
-        }
-        Parameters::SingleQuoteString => {
-            string_literal(source, lexer, state, (lex, span), StringType::Single)?
-        }
+        Parameters::DoubleQuoteString => string_literal(
+            source,
+            lexer,
+            state,
+            (lex, span),
+            StringType::Double,
+        )?,
+        Parameters::SingleQuoteString => string_literal(
+            source,
+            lexer,
+            state,
+            (lex, span),
+            StringType::Single,
+        )?,
         _ => {
             // FIXME: how to handle this?
             panic!("Expecting JSON literal token.");

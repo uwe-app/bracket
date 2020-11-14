@@ -3,7 +3,7 @@ use std::ops::Range;
 use crate::{
     lexer::{self, Lexer, Token},
     parser::{
-        ast::{Block, Element, Node, Text, TextBlock, Slice},
+        ast::{Block, Element, Node, Slice, Text, TextBlock},
         call::{self, CallParseContext},
         ParseState,
     },

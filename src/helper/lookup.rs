@@ -8,10 +8,10 @@ use crate::{
 
 /// Lookup a field of an array of object.
 ///
-/// Requires exactly two arguments; the first is the target 
+/// Requires exactly two arguments; the first is the target
 /// value and the second is a string field name.
 ///
-/// If the target field could not be found this helper will 
+/// If the target field could not be found this helper will
 /// return an error.
 #[derive(Clone)]
 pub struct Lookup;
@@ -26,11 +26,7 @@ impl Helper for Lookup {
         ctx.arity(2..2)?;
 
         let target = ctx.get(0).unwrap();
-        let field = ctx
-            .try_get(1, &[Type::String])
-            .unwrap()
-            .as_str()
-            .unwrap();
+        let field = ctx.try_get(1, &[Type::String]).unwrap().as_str().unwrap();
 
         if let Some(result) = ctx.lookup(&target, field).cloned() {
             Ok(Some(result))

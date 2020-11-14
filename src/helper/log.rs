@@ -36,7 +36,8 @@ impl Helper for Log {
     ) -> HelperValue {
         ctx.arity(1..usize::MAX)?;
 
-        let message = ctx.arguments()
+        let message = ctx
+            .arguments()
             .iter()
             .map(|v| json::unquote(v))
             .collect::<Vec<String>>()
