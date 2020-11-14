@@ -17,7 +17,6 @@ mod block;
 mod call;
 mod iter;
 pub(crate) mod path;
-pub mod trim;
 
 /// Set the file name used in error messages.
 ///

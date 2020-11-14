@@ -1,5 +1,5 @@
-use crate::parser::{
-    ast::Node,
+use crate::{
+    parser::ast::Node,
     trim::{TrimHint, TrimState},
 };
 

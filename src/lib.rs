@@ -73,6 +73,7 @@ pub mod parser;
 pub mod registry;
 pub mod render;
 pub mod template;
+pub mod trim;
 
 /// Result type returned by the registry.
 pub type Result<T> = std::result::Result<T, error::Error>;

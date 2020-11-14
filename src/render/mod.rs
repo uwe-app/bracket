@@ -15,9 +15,9 @@ use crate::{
     parser::{
         ast::{Block, Call, CallTarget, Node, ParameterValue, Path, Slice},
         path,
-        trim::{TrimHint, TrimState},
     },
     template::Templates,
+    trim::{TrimHint, TrimState},
     RenderResult,
 };
 

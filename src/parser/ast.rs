@@ -5,8 +5,10 @@ use std::ops::Range;
 
 use serde_json::Value;
 
-use crate::parser::{
-    iter::{BlockIter, NodeIter},
+use crate::{
+    parser::{
+        iter::{BlockIter, NodeIter},
+    },
     trim::TrimHint,
 };
 
