@@ -54,8 +54,8 @@ impl<'source> BranchIter<'source> {
     /// Create an iterator that adds trim state information
     /// to each node.
     ///
-    /// The hint can be used to determine the start trim information
-    /// for the first node.
+    /// The input hint will be used to determine the trim state 
+    /// of the first node.
     pub fn event(self, hint: Option<TrimHint>) -> EventIter<'source> {
         EventIter::new(self, hint)
     }
