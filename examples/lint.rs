@@ -7,8 +7,6 @@ use bracket::{
     Result, Error,
 };
 
-use serde_json::json;
-
 fn render() -> Result<()> {
     let registry = Registry::new();
     let errors = registry.lint("examples/files/lint.md", include_str!("files/lint.md"))?;

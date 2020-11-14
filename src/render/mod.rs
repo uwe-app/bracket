@@ -630,8 +630,8 @@ impl<'render> Render<'render> {
                 CallTarget::Path(ref path) => {
                     if path.is_simple() {
 
-                        /// Extract text for raw blocks.
-                        let text: Option<&str> = match node {
+                        // Extract text for raw blocks.
+                        let mut text: Option<&str> = match node {
                             Node::Block(ref block) => {
                                 if block.is_raw() {
                                     // Raw block nodes should have a single Text child node
@@ -654,18 +654,35 @@ impl<'render> Render<'render> {
                             _ => None,
                         };
 
-                        self.invoke(path.as_str(), call, Some(node), text)?;
-
                         // Store the hint so we can remove leading whitespace
                         // after a raw block end tag
                         match node {
                             Node::Block(ref block) => {
                                 if block.is_raw() {
-                                    self.end_tag_hint = Some(block.trim_close());
+                                    let hint = block.trim_close();
+
+                                    // Trim leading inside a raw block
+                                    if node.trim().after {
+                                        if let Some(ref content) = text {
+                                            text = Some(content.trim_start());
+                                        } 
+                                    }
+
+                                    // Trim trailing inside a raw block
+                                    if hint.before {
+                                        if let Some(ref content) = text {
+                                            text = Some(content.trim_end());
+                                        } 
+                                    }
+
+                                    // Trim after the end tag
+                                    self.end_tag_hint = Some(hint);
                                 }
                             }
                             _ => {}
                         }
+
+                        self.invoke(path.as_str(), call, Some(node), text)?;
 
                     } else {
                         panic!(
