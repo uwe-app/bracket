@@ -6,9 +6,7 @@ use std::ops::Range;
 use serde_json::Value;
 
 use crate::{
-    parser::{
-        iter::{BlockIter, NodeIter},
-    },
+    parser::iter::BranchIter,
     trim::TrimHint,
 };
 
@@ -60,19 +58,36 @@ pub trait Element<'source> {
     }
 }
 
-/// Enumeration of the different kinds of nodes.
+/// Nodes form the abstract syntax tree.
+///
+/// Every node provides access to a [TrimHint](crate::trim::TrimHint) used 
+/// by the renderer to determine how whitespace should be handled.
 #[derive(Eq, PartialEq)]
 pub enum Node<'source> {
+    /// Document nodes encapsulate a collection of children.
     Document(Document<'source>),
+    /// Text nodes are a byte range.
     Text(Text<'source>),
+    /// Statement is a variable interpolation, partial render or helper call.
     Statement(Call<'source>),
+    /// Blocks encapsulate an inner template.
+    ///
+    /// Blocks have a `raw` flag which indicates that the content 
+    /// should not be interpreted. When the `raw` flag is set a block 
+    /// must only have a single `Text` child node.
     Block(Block<'source>),
+    /// Raw statement is a statement preceeded by a backslash 
+    /// that should not be interpreted.
     RawStatement(TextBlock<'source>),
+    /// Raw comments may contain nested templates (`{{!-- comment --}}`).
     RawComment(TextBlock<'source>),
+    /// Comments may **not** contain nested templates (`{{! comment }}`).
     Comment(TextBlock<'source>),
 }
 
 impl<'source> Node<'source> {
+
+    /// Get the trim hint for this node.
     pub fn trim(&self) -> TrimHint {
         TrimHint {
             before: self.trim_before(),
@@ -104,14 +119,9 @@ impl<'source> Node<'source> {
         }
     }
 
-    /// Iterate leaf nodes.
-    pub fn iter<'a>(&'a self) -> NodeIter<'a> {
-        NodeIter::new(self)
-    }
-
     /// Iterate descendants of documents and blocks.
-    pub fn block_iter<'a>(&'a self) -> BlockIter<'a> {
-        BlockIter::new(self)
+    pub fn into_iter<'a>(&'a self) -> BranchIter<'a> {
+        BranchIter::new(self)
     }
 }
 
@@ -209,6 +219,7 @@ pub struct TextBlock<'source> {
 }
 
 impl<'source> TextBlock<'source> {
+    /// Create a new text block.
     pub fn new(
         source: &'source str,
         text: Text<'source>,
@@ -357,6 +368,8 @@ pub struct Path<'source> {
 }
 
 impl<'source> Path<'source> {
+
+    /// Create a new path.
     pub fn new(source: &'source str) -> Self {
         Self {
             source,
@@ -367,47 +380,58 @@ impl<'source> Path<'source> {
         }
     }
 
+    /// Add a component to this path.
     pub fn add_component(&mut self, part: Component<'source>) {
         self.components.push(part);
     }
 
+    /// Get the path components.
     pub fn components(&self) -> &Vec<Component<'source>> {
         &self.components
     }
 
+    /// Get the number of parent references.
     pub fn parents(&self) -> u8 {
         self.parents
     }
 
+    /// Set the number of parent references.
     pub fn set_parents(&mut self, parents: u8) {
         self.parents = parents;
     }
 
-    pub fn set_root(&mut self, root: bool) {
-        self.root = root;
-    }
-
+    /// Flag this path as resolved relative to the root value.
     pub fn is_root(&self) -> bool {
         self.root
     }
 
-    pub fn set_explicit(&mut self, explicit: bool) {
-        self.explicit = explicit;
+    /// Set whether to resolve relative to a root value.
+    pub fn set_root(&mut self, root: bool) {
+        self.root = root;
     }
 
+    /// Flag this path as an explicit scope reference (eg: `this` or `./`).
     pub fn is_explicit(&self) -> bool {
         self.explicit
     }
 
+    /// Set whether this path is an explicit reference.
+    pub fn set_explicit(&mut self, explicit: bool) {
+        self.explicit = explicit;
+    }
+
+    /// Determine if the path components are empty.
     pub fn is_empty(&self) -> bool {
         self.components.is_empty()
     }
 
+    /// Determine if the first component if a local identifier.
     pub fn is_local(&self) -> bool {
         return !self.components.is_empty()
             && self.components.first().unwrap().is_local();
     }
 
+    /// Determine if this path is a simple identifier.
     pub fn is_simple(&self) -> bool {
         return self.components.len() == 1
             && self.components.first().unwrap().1 == ComponentType::Identifier;
@@ -464,27 +488,41 @@ pub enum ParameterValue<'source> {
 /// To support dynamic partials call targets may also be sub-expressions.
 #[derive(Debug, Eq, PartialEq)]
 pub enum CallTarget<'source> {
+    /// Path call target.
     Path(Path<'source>),
+    /// Sub expression call target.
     SubExpr(Box<Call<'source>>),
 }
 
 impl<'source> CallTarget<'source> {
-    pub fn as_str(&self) -> &'source str {
+    /// Determine if this call target is empty.
+    pub fn is_empty(&self) -> bool {
+        match *self {
+            Self::Path(ref path) => path.is_empty(),
+            Self::SubExpr(ref call) => call.is_empty(),
+        }
+    }
+}
+
+impl<'source> Slice<'source> for CallTarget<'source> {
+    fn as_str(&self) -> &'source str {
         match *self {
             Self::Path(ref path) => path.as_str(),
             Self::SubExpr(ref call) => call.as_str(),
         }
     }
 
-    // FIXME!
-    pub fn is_empty(&self) -> bool {
+    fn source(&self) -> &'source str {
         match *self {
-            Self::Path(ref path) => path.is_empty(),
-            Self::SubExpr(ref call) => {
-                //println!("Checking empty on sub expression...");
-                call.is_empty()
-            }
+            Self::Path(ref path) => path.source(),
+            Self::SubExpr(ref call) => call.source(),
         }
+    }
+}
+
+impl fmt::Display for CallTarget<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
     }
 }
 

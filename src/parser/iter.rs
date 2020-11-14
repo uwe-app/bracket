@@ -1,15 +1,19 @@
+//! Iterators for the AST nodes.
 use crate::{
     parser::ast::Node,
     trim::{TrimHint, TrimState},
 };
 
-/// Event for node iterators that also
-/// encapsulates the whitespace trim state.
+/// Event that encapsulates a node and whitespace trim state.
 #[derive(Debug)]
 pub struct NodeEvent<'a> {
+    /// The node being emitted.
     pub node: &'a Node<'a>,
+    /// The trim state for the node.
     pub trim: TrimState,
+    /// Whether this is the first event in the current iteration.
     pub first: bool,
+    /// Whether this is the last event in the current iteration.
     pub last: bool,
 }
 
@@ -29,53 +33,17 @@ impl<'a> NodeEvent<'a> {
     }
 }
 
-/// Iterator for leaf nodes.
+/// Iterator for branch nodes.
 ///
-/// Document and block nodes are yielded but child nodes
-/// are not iterated; to iterate child nodes use the block
-/// iterator.
-pub struct NodeIter<'source> {
-    node: &'source Node<'source>,
-}
-
-impl<'source> NodeIter<'source> {
-    pub fn new(node: &'source Node) -> Self {
-        Self { node }
-    }
-
-    /// Create an iterator that adds trim state information
-    /// to each node.
-    ///
-    /// The hint can be used to determine the start trim information
-    /// for the first node.
-    pub fn trim(self, hint: Option<TrimHint>) -> TrimIter<'source> {
-        TrimIter::new(Box::new(self), hint)
-    }
-}
-
-impl<'source> Iterator for NodeIter<'source> {
-    type Item = &'source Node<'source>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match *self.node {
-            Node::Document(_) => Some(self.node),
-            Node::Block(_) => Some(self.node),
-            Node::Text(_) => Some(self.node),
-            Node::Statement(_) => Some(self.node),
-            Node::RawStatement(_) | Node::RawComment(_) | Node::Comment(_) => {
-                Some(self.node)
-            }
-        }
-    }
-}
-
-/// Iterator for branch nodes; documents, blocks and conditionals.
-pub struct BlockIter<'source> {
+/// Descends into document and block nodes and yields the child 
+/// nodes.
+pub struct BranchIter<'source> {
     node: &'source Node<'source>,
     children: Option<std::slice::Iter<'source, Node<'source>>>,
 }
 
-impl<'source> BlockIter<'source> {
+impl<'source> BranchIter<'source> {
+    /// Create a new branch iterator.
     pub fn new(node: &'source Node) -> Self {
         Self {
             node,
@@ -88,12 +56,12 @@ impl<'source> BlockIter<'source> {
     ///
     /// The hint can be used to determine the start trim information
     /// for the first node.
-    pub fn trim(self, hint: Option<TrimHint>) -> TrimIter<'source> {
-        TrimIter::new(Box::new(self), hint)
+    pub fn trim(self, hint: Option<TrimHint>) -> EventIter<'source> {
+        EventIter::new(Box::new(self), hint)
     }
 }
 
-impl<'source> Iterator for BlockIter<'source> {
+impl<'source> Iterator for BranchIter<'source> {
     type Item = &'source Node<'source>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -123,10 +91,15 @@ impl<'source> Iterator for BlockIter<'source> {
     }
 }
 
-/// Iterator that yields nodes with trim flags that indicate
+/// Iterator that yields node events.
+///
+/// Node events contain the underlying node and a trim state that indicates
 /// whether the current node should have leading and trailing
 /// whitespace removed.
-pub struct TrimIter<'source> {
+///
+/// They may also be seeded with a [TrimHint](crate::trim::TrimHint) from a 
+/// previous iteration.
+pub struct EventIter<'source> {
     iter: std::iter::Peekable<
         Box<dyn Iterator<Item = &'source Node<'source>> + 'source>,
     >,
@@ -134,8 +107,10 @@ pub struct TrimIter<'source> {
     hint: Option<TrimHint>,
 }
 
-impl<'source> TrimIter<'source> {
-    pub fn new(
+impl<'source> EventIter<'source> {
+
+    /// Create a new event iterator.
+    pub(crate) fn new(
         nodes: Box<dyn Iterator<Item = &'source Node<'source>> + 'source>,
         hint: Option<TrimHint>,
     ) -> Self {
@@ -148,7 +123,7 @@ impl<'source> TrimIter<'source> {
     }
 }
 
-impl<'source> Iterator for TrimIter<'source> {
+impl<'source> Iterator for EventIter<'source> {
     type Item = NodeEvent<'source>;
 
     fn next(&mut self) -> Option<Self::Item> {

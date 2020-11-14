@@ -15,7 +15,7 @@ static UNKNOWN: &str = "unknown";
 pub mod ast;
 mod block;
 mod call;
-mod iter;
+pub mod iter;
 pub(crate) mod path;
 
 /// Set the file name used in error messages.

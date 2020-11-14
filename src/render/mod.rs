@@ -223,7 +223,7 @@ impl<'render> Render<'render> {
         node: &'render Node<'render>,
     ) -> Result<(), HelperError> {
         let mut hint: Option<TrimHint> = None;
-        for event in node.block_iter().trim(self.hint) {
+        for event in node.into_iter().trim(self.hint) {
             let mut trim = event.trim;
 
             if event.first {
@@ -605,7 +605,7 @@ impl<'render> Render<'render> {
         // WARN: We must iterate the document child nodes
         // WARN: when rendering partials otherwise the
         // WARN: rendering process will halt after the first partial!
-        for event in node.block_iter().trim(self.hint) {
+        for event in node.into_iter().trim(self.hint) {
             self.render_node(event.node, event.trim)?;
         }
         self.scopes.pop();
