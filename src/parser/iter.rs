@@ -56,7 +56,7 @@ impl<'source> BranchIter<'source> {
     ///
     /// The hint can be used to determine the start trim information
     /// for the first node.
-    pub fn trim(self, hint: Option<TrimHint>) -> EventIter<'source> {
+    pub fn event(self, hint: Option<TrimHint>) -> EventIter<'source> {
         EventIter::new(Box::new(self), hint)
     }
 }
