@@ -57,7 +57,7 @@ impl<'source> BranchIter<'source> {
     /// The hint can be used to determine the start trim information
     /// for the first node.
     pub fn event(self, hint: Option<TrimHint>) -> EventIter<'source> {
-        EventIter::new(Box::new(self), hint)
+        EventIter::new(self, hint)
     }
 }
 
@@ -100,9 +100,7 @@ impl<'source> Iterator for BranchIter<'source> {
 /// They may also be seeded with a [TrimHint](crate::trim::TrimHint) from a 
 /// previous iteration.
 pub struct EventIter<'source> {
-    iter: std::iter::Peekable<
-        Box<dyn Iterator<Item = &'source Node<'source>> + 'source>,
-    >,
+    iter: std::iter::Peekable<BranchIter<'source>>,
     prev_trim_after: Option<bool>,
     hint: Option<TrimHint>,
 }
@@ -111,7 +109,7 @@ impl<'source> EventIter<'source> {
 
     /// Create a new event iterator.
     pub(crate) fn new(
-        nodes: Box<dyn Iterator<Item = &'source Node<'source>> + 'source>,
+        nodes: BranchIter<'source>,
         hint: Option<TrimHint>,
     ) -> Self {
         let iter = nodes.peekable();
