@@ -36,17 +36,14 @@ impl Helper for Log {
     ) -> HelperValue {
         ctx.arity(1..usize::MAX)?;
 
-        let args = ctx.arguments();
-        let hash = ctx.parameters();
-
-        let message = args
+        let message = ctx.arguments()
             .iter()
             .map(|v| json::unquote(v))
             .collect::<Vec<String>>()
             .join(" ");
 
-        let level = hash
-            .get("level")
+        let level = ctx
+            .hash("level")
             .map(|v| v.as_str())
             .unwrap_or(Some("info"))
             .unwrap();

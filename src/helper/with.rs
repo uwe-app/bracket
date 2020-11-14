@@ -18,11 +18,9 @@ impl Helper for With {
         ctx.arity(1..1)?;
 
         if let Some(template) = template {
-            let args = ctx.arguments();
-            let target = args.get(0).unwrap();
             rc.push_scope(Scope::new());
             if let Some(ref mut scope) = rc.scope_mut() {
-                scope.set_base_value(target.clone());
+                scope.set_base_value(ctx.get(0).cloned().unwrap());
             }
             rc.template(template)?;
             rc.pop_scope();
