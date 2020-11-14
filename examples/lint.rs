@@ -4,12 +4,13 @@ extern crate pretty_env_logger;
 use bracket::{
     registry::Registry,
     template::{Loader, Templates},
-    Result, Error,
+    Error, Result,
 };
 
 fn render() -> Result<()> {
     let registry = Registry::new();
-    let errors = registry.lint("examples/files/lint.md", include_str!("files/lint.md"))?;
+    let errors = registry
+        .lint("examples/files/lint.md", include_str!("files/lint.md"))?;
     for e in errors {
         log::warn!("{:?}", e);
     }
@@ -22,6 +23,6 @@ fn main() {
 
     match render() {
         Err(e) => log::error!("Unexpected lint error: {:?}", e),
-        _ => {},
+        _ => {}
     }
 }

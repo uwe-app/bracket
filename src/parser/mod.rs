@@ -144,10 +144,10 @@ impl<'source> Parser<'source> {
         }
     }
 
-    /// Set a list of errors that this parser should add 
+    /// Set a list of errors that this parser should add
     /// compile time syntax errors to.
     ///
-    /// Changes the behavior of this parser to be infallible to 
+    /// Changes the behavior of this parser to be infallible to
     /// support a *lint* operation.
     pub fn set_errors(&mut self, errors: &'source mut Vec<Error>) {
         self.errors = Some(errors);
@@ -448,7 +448,7 @@ impl<'source> Iterator for Parser<'source> {
                         errors.push(Error::from(e));
                         // Consume tokens until we reach the top-level lexer mode
                         self.next_token = self.lexer.until_mode();
-                        // NOTE: Try to advance to the next node or error 
+                        // NOTE: Try to advance to the next node or error
                         // NOTE: when collecting errors
                         return self.next();
                     } else {

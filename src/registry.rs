@@ -99,7 +99,8 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         template: &'source str,
     ) -> Result<Vec<Error>> {
         let mut errors: Vec<Error> = Vec::new();
-        let mut parser = Parser::new(template, ParserOptions::new(name.to_string(), 0, 0));
+        let mut parser =
+            Parser::new(template, ParserOptions::new(name.to_string(), 0, 0));
         parser.set_errors(&mut errors);
         for _ in parser {}
         Ok(errors)

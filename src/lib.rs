@@ -52,7 +52,7 @@
 //!
 //! ## Lint
 //!
-//! Sometimes it is useful to check whether a template is well-formed. The 
+//! Sometimes it is useful to check whether a template is well-formed. The
 //! `lint` function will return a list of syntax errors:
 //!
 //! ```ignore

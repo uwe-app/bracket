@@ -334,6 +334,7 @@ impl fmt::Debug for Component<'_> {
     }
 }
 
+/// Path to a variable.
 #[derive(Eq, PartialEq)]
 pub struct Path<'source> {
     source: &'source str,
@@ -482,7 +483,9 @@ impl Default for CallTarget<'_> {
 }
 
 /// Call is a variable interpolation, helper invocation or partial
-/// render; they have zero or more arguments and optional hash parameters.
+/// render.
+///
+/// A call has zero or more arguments and optional hash parameters.
 ///
 /// The partial flag is used to indicate that this call should be
 /// rendered as a partial.
@@ -660,7 +663,9 @@ impl fmt::Debug for Call<'_> {
 }
 
 /// Documents are abstract nodes that encapsulate a collection
-/// of child nodes; they are used as the root node of a compiled template.
+/// of child nodes.
+///
+/// They are used as the root node of a compiled template.
 #[derive(Eq, PartialEq)]
 pub struct Document<'source>(pub &'source str, pub Vec<Node<'source>>);
 

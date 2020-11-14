@@ -13,7 +13,7 @@ use crate::{
     json,
     output::Output,
     parser::{
-        ast::{Call, CallTarget, Node, ParameterValue, Path, Slice},
+        ast::{Block, Call, CallTarget, Node, ParameterValue, Path, Slice},
         path,
         trim::{TrimHint, TrimState},
     },
@@ -245,7 +245,9 @@ impl<'render> Render<'render> {
                     _ => {}
                 }
             }
-            self.render_from_helper(event.node, trim)?;
+
+            self.render_node(event.node, trim)
+                .map_err(|e| HelperError::Render(Box::new(e)))?;
         }
 
         // Store the hint so we can remove leading whitespace
@@ -462,11 +464,6 @@ impl<'render> Render<'render> {
             //if let Some(helper) = self.helpers.get(name) {
             helper.call(self, &mut context, content)?
         } else {
-            // Handling a raw block without a corresponding helper
-            // so we just write out the content
-            if let Some(text) = text {
-                self.write_str(text, false)?;
-            }
             None
         };
 
@@ -621,37 +618,27 @@ impl<'render> Render<'render> {
     fn block(
         &mut self,
         node: &'render Node<'render>,
-        call: &Call<'_>,
+        block: &'render Block<'render>,
     ) -> RenderResult<()> {
+        let call = block.call();
+        let raw = block.is_raw();
+
         if call.is_partial() {
             self.render_partial(call, Some(node))?;
         } else {
             match call.target() {
                 CallTarget::Path(ref path) => {
                     if path.is_simple() {
-
-                        // Extract text for raw blocks.
-                        let mut text: Option<&str> = match node {
-                            Node::Block(ref block) => {
-                                if block.is_raw() {
-                                    // Raw block nodes should have a single Text child node
-                                    if !block.nodes().is_empty() {
-                                        Some(
-                                            block
-                                                .nodes()
-                                                .get(0)
-                                                .unwrap()
-                                                .as_str(),
-                                        )
-                                    // Empty raw block should be treated as the empty string
-                                    } else {
-                                        Some("")
-                                    }
-                                } else {
-                                    None
-                                }
+                        let mut text: Option<&str> = if raw {
+                            // Raw block nodes should have a single Text child node
+                            if !block.nodes().is_empty() {
+                                Some(block.nodes().get(0).unwrap().as_str())
+                            // Empty raw block should be treated as the empty string
+                            } else {
+                                Some("")
                             }
-                            _ => None,
+                        } else {
+                            None
                         };
 
                         // Store the hint so we can remove leading whitespace
@@ -665,14 +652,14 @@ impl<'render> Render<'render> {
                                     if node.trim().after {
                                         if let Some(ref content) = text {
                                             text = Some(content.trim_start());
-                                        } 
+                                        }
                                     }
 
                                     // Trim trailing inside a raw block
                                     if hint.before {
                                         if let Some(ref content) = text {
                                             text = Some(content.trim_end());
-                                        } 
+                                        }
                                     }
 
                                     // Trim after the end tag
@@ -682,8 +669,50 @@ impl<'render> Render<'render> {
                             _ => {}
                         }
 
-                        self.invoke(path.as_str(), call, Some(node), text)?;
-
+                        if self.has_helper(path.as_str()) {
+                            self.invoke(path.as_str(), call, Some(node), text)?;
+                        } else {
+                            // Handling a raw block without a corresponding helper
+                            // so we just write out the content
+                            if raw {
+                                if let Some(text) = text {
+                                    self.write_str(text, false)?;
+                                }
+                            } else {
+                                match call.target() {
+                                    CallTarget::Path(ref path) => {
+                                        if let Some(_value) = self.lookup(path)
+                                        {
+                                            if self.has_helper(
+                                                BLOCK_HELPER_MISSING,
+                                            ) {
+                                                // TODO: pass the path and value to the missing
+                                                // helper
+                                                self.invoke(
+                                                    BLOCK_HELPER_MISSING,
+                                                    call,
+                                                    None,
+                                                    None,
+                                                )?;
+                                            } else {
+                                                // Default behavior is to just render the block
+                                                self.template(node)?;
+                                            }
+                                        } else if self
+                                            .has_helper(HELPER_MISSING)
+                                        {
+                                            self.invoke(
+                                                HELPER_MISSING,
+                                                call,
+                                                None,
+                                                None,
+                                            )?;
+                                        }
+                                    }
+                                    _ => {}
+                                }
+                            }
+                        }
                     } else {
                         panic!(
                             "Block helpers identifiers must be simple paths"
@@ -695,16 +724,6 @@ impl<'render> Render<'render> {
             }
         }
         Ok(())
-    }
-
-    /// Render and return a helper result wrapping the underlying render error.
-    pub(crate) fn render_from_helper(
-        &mut self,
-        node: &'render Node<'render>,
-        trim: TrimState,
-    ) -> HelperResult<()> {
-        self.render_node(node, trim)
-            .map_err(|e| HelperError::Render(Box::new(e)))
     }
 
     pub(crate) fn render_node(
@@ -741,7 +760,7 @@ impl<'render> Render<'render> {
                 }
             }
             Node::Block(ref block) => {
-                self.block(node, block.call())?;
+                self.block(node, block)?;
             }
         }
 

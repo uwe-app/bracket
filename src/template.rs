@@ -137,15 +137,6 @@ impl<'source> Templates<'source> {
         }
     }
 
-    fn build(&mut self, loader: &'source Loader) -> Result<()> {
-        for (k, v) in loader.sources() {
-            let template =
-                Templates::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
-            self.insert(k.as_str(), template);
-        }
-        Ok(())
-    }
-
     /// Add a named template.
     ///
     /// If a template already exists with the given name
@@ -176,7 +167,13 @@ impl<'source> TryFrom<&'source Loader> for Templates<'source> {
         loader: &'source Loader,
     ) -> std::result::Result<Self, Self::Error> {
         let mut tpl = Templates::new();
-        tpl.build(loader)?;
+
+        for (k, v) in loader.sources() {
+            let template =
+                Templates::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
+            tpl.insert(k.as_str(), template);
+        }
+
         Ok(tpl)
     }
 }
