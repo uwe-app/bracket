@@ -3,7 +3,7 @@ use serde_json::{Number, Value};
 
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
-    lexer::{Lexer, Parameters, DoubleQuoteString, Token},
+    lexer::{Lexer, Parameters, DoubleQuoteString, SingleQuoteString, Token},
     parser::{
         ast::{Call, CallTarget, Element, ParameterValue},
         path, ParseState,
@@ -39,31 +39,58 @@ enum CallContext {
     SubExpr,
 }
 
+enum StringType {
+    Double,
+    Single,
+}
+
 /// Parse a quoted string literal value.
 fn string_literal<'source>(
     source: &'source str,
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     current: (Parameters, Span),
+    string_type: StringType,
 ) -> SyntaxResult<Value> {
     let (_lex, span) = current;
     let str_start = span.end;
     let mut str_end = span.end;
 
     while let Some(token) = lexer.next() {
-        match token {
-            Token::DoubleQuoteString(lex, span) => match &lex {
-                DoubleQuoteString::End => {
-                    let str_value = &source[str_start..str_end];
-                    return Ok(Value::String(str_value.to_string()));
+
+        match string_type {
+            StringType::Double => {
+                match token {
+                    Token::DoubleQuoteString(lex, span) => match &lex {
+                        DoubleQuoteString::End => {
+                            let str_value = &source[str_start..str_end];
+                            return Ok(Value::String(str_value.to_string()));
+                        }
+                        _ => {
+                            *state.byte_mut() = span.end;
+                            str_end = span.end;
+                        }
+                    },
+                    _ => panic!("Expecting string literal token"),
                 }
-                _ => {
-                    *state.byte_mut() = span.end;
-                    str_end = span.end;
+            }
+            StringType::Single => {
+                match token {
+                    Token::SingleQuoteString(lex, span) => match &lex {
+                        SingleQuoteString::End => {
+                            let str_value = &source[str_start..str_end];
+                            return Ok(Value::String(str_value.to_string()));
+                        }
+                        _ => {
+                            *state.byte_mut() = span.end;
+                            str_end = span.end;
+                        }
+                    },
+                    _ => panic!("Expecting string literal token"),
                 }
-            },
-            _ => panic!("Expecting string literal token"),
+            }
         }
+
     }
     panic!("Failed to parse string literal");
 }
@@ -85,7 +112,10 @@ fn json_literal<'source>(
             Value::Number(num)
         }
         Parameters::DoubleQuoteString => {
-            string_literal(source, lexer, state, (lex, span))?
+            string_literal(source, lexer, state, (lex, span), StringType::Double)?
+        }
+        Parameters::SingleQuoteString => {
+            string_literal(source, lexer, state, (lex, span), StringType::Single)?
         }
         _ => {
             // FIXME: how to handle this?
@@ -129,6 +159,7 @@ fn value<'source>(
         }
         // Literal components
         Parameters::DoubleQuoteString
+        | Parameters::SingleQuoteString
         | Parameters::Number
         | Parameters::True
         | Parameters::False
@@ -255,6 +286,7 @@ fn arguments<'source>(
                     }
                     // Literal components
                     Parameters::DoubleQuoteString
+                    | Parameters::SingleQuoteString
                     | Parameters::Number
                     | Parameters::True
                     | Parameters::False

@@ -429,6 +429,7 @@ impl<'source> Parser<'source> {
             Token::Comment(_, _) => {}
             Token::Parameters(_, _) => {}
             Token::DoubleQuoteString(_, _) => {}
+            Token::SingleQuoteString(_, _) => {}
         }
 
         Ok(None)

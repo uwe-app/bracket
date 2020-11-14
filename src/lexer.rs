@@ -134,6 +134,9 @@ pub enum Parameters {
     #[token("\"")]
     DoubleQuoteString,
 
+    #[token("'")]
+    SingleQuoteString,
+
     // NOTE: Must have higher priority than identifier
     // NOTE: otherwise numbers become identifiers
     #[regex(r"-?([0-9]+\.)?[0-9]+((e|E)[+-]?[0-9]+)?", priority = 3)]
@@ -198,6 +201,28 @@ pub enum DoubleQuoteString {
     Error,
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
+#[logos(extras = Extras)]
+pub enum SingleQuoteString {
+    #[regex(r#"[^'\n]+"#)]
+    Text,
+
+    #[token("\\n")]
+    EscapedNewline,
+
+    #[token(r#"\'"#)]
+    EscapedQuote,
+
+    #[token("'")]
+    End,
+
+    #[token("\n")]
+    Newline,
+
+    #[error]
+    Error,
+}
+
 /// Type emitted by the iterator.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Token {
@@ -208,6 +233,7 @@ pub enum Token {
     Comment(Comment, Span),
     Parameters(Parameters, Span),
     DoubleQuoteString(DoubleQuoteString, Span),
+    SingleQuoteString(SingleQuoteString, Span),
 }
 
 impl Token {
@@ -220,6 +246,7 @@ impl Token {
             Token::Comment(_, ref span) => span,
             Token::Parameters(_, ref span) => span,
             Token::DoubleQuoteString(_, ref span) => span,
+            Token::SingleQuoteString(_, ref span) => span,
         }
     }
 
@@ -240,6 +267,7 @@ impl Token {
             }
             Token::Parameters(_, _) => false,
             Token::DoubleQuoteString(_, _) => false,
+            Token::SingleQuoteString(_, _) => false,
         }
     }
 
@@ -254,6 +282,7 @@ impl Token {
             // NOTE: new lines are not allowed in string literals
             // NOTE: so we have special handling for this case
             Token::DoubleQuoteString(_, _) => false,
+            Token::SingleQuoteString(_, _) => false,
         }
     }
 }
@@ -268,6 +297,7 @@ enum Modes<'source> {
     Comment(Lex<'source, Comment>),
     Parameters(Lex<'source, Parameters>),
     DoubleQuoteString(Lex<'source, DoubleQuoteString>),
+    SingleQuoteString(Lex<'source, SingleQuoteString>),
 }
 
 impl<'source> Modes<'source> {
@@ -390,6 +420,9 @@ impl<'source> Iterator for Lexer<'source> {
                     if Parameters::DoubleQuoteString == token {
                         self.mode =
                             Modes::DoubleQuoteString(lexer.to_owned().morph());
+                    } else if Parameters::SingleQuoteString == token {
+                        self.mode =
+                            Modes::SingleQuoteString(lexer.to_owned().morph());
                     } else if Parameters::End == token {
                         self.mode = Modes::Block(lexer.to_owned().morph());
                     }
@@ -407,6 +440,19 @@ impl<'source> Iterator for Lexer<'source> {
                         self.mode = Modes::Parameters(lexer.to_owned().morph());
                     }
                     Some(Token::DoubleQuoteString(token, span))
+                } else {
+                    None
+                }
+            }
+            Modes::SingleQuoteString(lexer) => {
+                let result = lexer.next();
+                let span = lexer.span();
+
+                if let Some(token) = result {
+                    if SingleQuoteString::End == token {
+                        self.mode = Modes::Parameters(lexer.to_owned().morph());
+                    }
+                    Some(Token::SingleQuoteString(token, span))
                 } else {
                     None
                 }
