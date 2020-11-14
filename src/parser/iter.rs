@@ -132,6 +132,7 @@ impl<'source> Iterator for EventIter<'source> {
 
         // Trim the start of the current node.
         let start = if let Some(trim_after) = self.prev_trim_after.take() {
+            //println!("Iterator setting start from prev trim after");
             trim_after
         } else {
             if let Some(hint) = self.hint.take() {
@@ -151,6 +152,18 @@ impl<'source> Iterator for EventIter<'source> {
 
         if let Some(ref current) = node {
             self.prev_trim_after = Some(current.trim().after);
+
+            // NOTE: block nodes will determine the trim based 
+            // NOTE: on a close tag so we need to clear any 
+            // NOTE: previous trim state here
+            let should_clear_trim = match current {
+                Node::Block(_) => true,
+                _ => false,
+            };
+
+            if should_clear_trim {
+                self.prev_trim_after = None;
+            }
         }
 
         let state = TrimState::from((start, end));

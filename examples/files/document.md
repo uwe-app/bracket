@@ -28,27 +28,3 @@ The `json` helper is useful for debugging template data, for example: `\{{json t
 ```
 
 If you want pretty output pass a *truthy* value for the `pretty` hash parameter: `\{{json this pretty=true}}`.
-
-## With
-
-Use the `with` helper to change the current scope, here we select the `list` variable:
-
-{{#with list}}
-```json
-{{json this}}
-```
-{{/with}}
-
-## Each
-
-The `each` helper can be used to iterate arrays or objects. First let's iterate a list of numbers:
-
-{{#each list}}
-* Item: {{this}}, Index: {{@index}}, First: {{@first}}, Last: {{@last~}}
-{{/each}}
-
-When we iterate objects we can also access the `@key` field:
-
-{{#each map}}
-* {{@key}} = {{this}}, Index: {{@index}}, First: {{@first}}, Last: {{@last~}}
-{{/each}}

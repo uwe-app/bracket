@@ -45,7 +45,7 @@ impl From<std::io::Error> for Error {
 
 /// Wrapper for IO errors that implements `PartialEq` to
 /// facilitate easier testing using `assert_eq!()`.
-#[derive(thiserror::Error, Debug)]
+#[derive(thiserror::Error)]
 pub enum IoError {
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -60,3 +60,11 @@ impl PartialEq for IoError {
 }
 
 impl Eq for IoError {}
+
+impl fmt::Debug for IoError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            Self::Io(ref e) => fmt::Display::fmt(e, f),
+        }
+    }
+}

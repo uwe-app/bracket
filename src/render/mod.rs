@@ -734,16 +734,17 @@ impl<'render> Render<'render> {
         self.trim = trim;
         self.hint = Some(node.trim());
 
-        //println!("Current trim {:?}", &self.trim);
-
         if let Some(hint) = self.end_tag_hint.take() {
             if hint.after {
                 self.trim.start = true;
             }
         }
 
+        //println!("Current trim {:?}", &self.trim);
+
         match node {
             Node::Text(ref n) => {
+                //println!("Writing text {}", n.as_str());
                 self.write_str(n.as_str(), false)?;
             }
             Node::RawStatement(ref n) => {
