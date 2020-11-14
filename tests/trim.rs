@@ -100,3 +100,15 @@ fn trim_condition_else() -> Result<()> {
     assert_eq!("bar", &result);
     Ok(())
 }
+
+#[test]
+fn trim_raw_block_outside() -> Result<()> {
+    let registry = Registry::new();
+    let value = r"
+{{{{~raw}}}}bar{{{{/raw~}}}}
+";
+    let data = json!({});
+    let result = registry.once(NAME, value, &data)?;
+    assert_eq!("bar", &result);
+    Ok(())
+}

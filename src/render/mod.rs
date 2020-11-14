@@ -629,6 +629,8 @@ impl<'render> Render<'render> {
             match call.target() {
                 CallTarget::Path(ref path) => {
                     if path.is_simple() {
+
+                        /// Extract text for raw blocks.
                         let text: Option<&str> = match node {
                             Node::Block(ref block) => {
                                 if block.is_raw() {
@@ -653,6 +655,18 @@ impl<'render> Render<'render> {
                         };
 
                         self.invoke(path.as_str(), call, Some(node), text)?;
+
+                        // Store the hint so we can remove leading whitespace
+                        // after a raw block end tag
+                        match node {
+                            Node::Block(ref block) => {
+                                if block.is_raw() {
+                                    self.end_tag_hint = Some(block.trim_close());
+                                }
+                            }
+                            _ => {}
+                        }
+
                     } else {
                         panic!(
                             "Block helpers identifiers must be simple paths"
@@ -660,7 +674,7 @@ impl<'render> Render<'render> {
                     }
                 }
                 //CallTarget::SubExpr(ref sub) => self.call(sub),
-                _ => todo!("Handle block sub expression for cal target"),
+                _ => todo!("Handle block sub expression for call target"),
             }
         }
         Ok(())
@@ -683,6 +697,8 @@ impl<'render> Render<'render> {
     ) -> RenderResult<()> {
         self.trim = trim;
         self.hint = Some(node.trim());
+
+        //println!("Current trim {:?}", &self.trim);
 
         if let Some(hint) = self.end_tag_hint.take() {
             if hint.after {
