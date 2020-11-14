@@ -1,3 +1,6 @@
+//#![deny(missing_docs)]
+//#![cfg_attr(test, deny(warnings))]
+
 //! Bracket is a fast and correct implementation of the handlebars
 //! general purpose template engine.
 //!
@@ -38,7 +41,7 @@
 //!
 //! ```ignore
 //! let registry = Registry::new();
-//! let template = registry.parse("file-name.md", "{{foo}}").unwrap();
+//! let template = registry.parse("file-name.md", "{{foo}}")?;
 //! ```
 //!
 //! If you are extracting a template from a larger document use
@@ -47,7 +50,23 @@
 //! ```ignore
 //! let registry = Registry::new();
 //! let options = ParserOptions::new(String::from("file-name.md"), 12, 2048);
-//! let template = registry.compile("{{foo}}", options).unwrap();
+//! let template = registry.compile("{{foo}}", options)?;
+//! ```
+//!
+//! To load files from disc requires the `fs` feature which is enabled by default; 
+//! first load some files and assign them to a templates collection which is used
+//! to create the registry:
+//!
+//! ```ignore
+//! let mut loader = Loader::new();
+//! // Template name is derived from the file stem
+//! loader.read_dir(PathBuf::from("partials/"), "hbs")?;
+//! // Explicit template name
+//! loader.add("info", PathBuf::from("documents/info.md"))?;
+//! // Template name is the file path
+//! loader.load(PathBuf::from("documents/page.md"))?;
+//! let templates = Templates::try_from(&loader)?;
+//! let registry = Registry::from(templates);
 //! ```
 //!
 //! ## Lint
@@ -57,11 +76,8 @@
 //!
 //! ```ignore
 //! let registry = Registry::new();
-//! let errors = registry.lint("file-name.md", "{{.bad.path}}").unwrap();
+//! let errors = registry.lint("file-name.md", "{{.bad.path}}")?;
 //! ```
-
-//#![deny(missing_docs)]
-//#![cfg_attr(test, deny(warnings))]
 
 pub mod error;
 pub mod escape;

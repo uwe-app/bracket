@@ -48,6 +48,16 @@ pub trait Element<'source> {
 
     /// Mark this element as correctly terminated.
     fn exit(&mut self, close: Range<usize>);
+
+    /// The full byte range for this element; if the element is not closed
+    /// only the open span is returned.
+    fn span(&self) -> Range<usize> {
+        if let Some(ref close) = self.close_span() {
+            self.open_span().start..close.end
+        } else {
+            self.open_span().clone()
+        }
+    }
 }
 
 /// Enumeration of the different kinds of nodes.
@@ -522,30 +532,37 @@ impl<'source> Call<'source> {
         }
     }
 
+    /// Determine if the target for this call is empty.
     pub fn is_empty(&self) -> bool {
         self.target.is_empty()
     }
 
+    /// Get the call target.
     pub fn target(&self) -> &CallTarget<'source> {
         &self.target
     }
 
+    /// Determine if a call target is available.
     pub fn has_target(&self) -> bool {
         self.target.as_str() != ""
     }
 
+    /// Set the call target.
     pub fn set_target(&mut self, target: CallTarget<'source>) {
         self.target = target;
     }
 
+    /// Add an argument to this call.
     pub fn add_argument(&mut self, arg: ParameterValue<'source>) {
         self.arguments.push(arg);
     }
 
+    /// Get the list of arguments.
     pub fn arguments(&self) -> &Vec<ParameterValue<'source>> {
         &self.arguments
     }
 
+    /// Add a hash parameter to this call.
     pub fn add_hash(
         &mut self,
         key: &'source str,
@@ -554,18 +571,35 @@ impl<'source> Call<'source> {
         self.hash.insert(key, val);
     }
 
+    /// Get the map of hash parameters.
     pub fn hash(&self) -> &HashMap<&'source str, ParameterValue<'source>> {
         &self.hash
     }
 
-    /// The full range for this call; if the call is not closed
-    /// only the open span is returned.
-    pub fn span(&self) -> Range<usize> {
-        if let Some(ref close) = self.close {
-            self.open.start..close.end
-        } else {
-            self.open.clone()
-        }
+    /// Determine if this call has the partial flag.
+    pub fn is_partial(&self) -> bool {
+        self.partial
+    }
+
+    /// Set the partial flag.
+    pub fn set_partial(&mut self, partial: bool) {
+        self.partial = partial;
+    }
+
+    /// Determine if this call has a conditional flag (the `else` keyword).
+    pub fn is_conditional(&self) -> bool {
+        self.conditional
+    }
+
+    /// Set the conditional flag.
+    pub fn set_conditional(&mut self, conditional: bool) {
+        self.conditional = conditional;
+    }
+
+    /// Determine if the content of this call should be escaped.
+    pub fn is_escaped(&self) -> bool {
+        // FIXME: ensure this is not `true` for raw blocks!
+        !self.open().starts_with("{{{")
     }
 
     fn trim_before(&self) -> bool {
@@ -574,27 +608,6 @@ impl<'source> Call<'source> {
 
     fn trim_after(&self) -> bool {
         self.close().starts_with(WHITESPACE)
-    }
-
-    pub fn is_partial(&self) -> bool {
-        self.partial
-    }
-
-    pub fn set_partial(&mut self, partial: bool) {
-        self.partial = partial;
-    }
-
-    pub fn is_conditional(&self) -> bool {
-        self.conditional
-    }
-
-    pub fn set_conditional(&mut self, conditional: bool) {
-        self.conditional = conditional;
-    }
-
-    pub fn is_escaped(&self) -> bool {
-        // FIXME: ensure this is not `true` for raw blocks!
-        !self.open().starts_with("{{{")
     }
 }
 
@@ -642,6 +655,7 @@ impl<'source> Element<'source> for Call<'source> {
     fn exit(&mut self, close: Range<usize>) {
         self.close = Some(close);
     }
+
 }
 
 impl fmt::Display for Call<'_> {
@@ -672,10 +686,12 @@ impl fmt::Debug for Call<'_> {
 pub struct Document<'source>(pub &'source str, pub Vec<Node<'source>>);
 
 impl<'source> Document<'source> {
+    /// List of child nodes.
     pub fn nodes(&self) -> &Vec<Node<'source>> {
         &self.1
     }
 
+    /// Mutable list of child nodes.
     pub fn nodes_mut(&mut self) -> &mut Vec<Node<'source>> {
         &mut self.1
     }
