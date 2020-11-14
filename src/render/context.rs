@@ -204,7 +204,7 @@ impl<'call> Context<'call> {
     ///
     /// If the target value is not an object or array then this
     /// will yield `None`.
-    pub fn field<'a, S: AsRef<str>>(
+    pub fn lookup<'a, S: AsRef<str>>(
         &self,
         target: &'a Value,
         field: S,

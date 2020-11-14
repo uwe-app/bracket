@@ -3,9 +3,16 @@ use crate::{
     error::HelperError,
     helper::{Helper, HelperValue},
     parser::ast::Node,
-    render::{Context, Render},
+    render::{Context, Render, Type},
 };
 
+/// Lookup a field of an array of object.
+///
+/// Requires exactly two arguments; the first is the target 
+/// value and the second is a string field name.
+///
+/// If the target field could not be found this helper will 
+/// return an error.
 #[derive(Clone)]
 pub struct Lookup;
 
@@ -18,26 +25,20 @@ impl Helper for Lookup {
     ) -> HelperValue {
         ctx.arity(2..2)?;
 
-        let name = ctx.name();
-        let args = ctx.arguments();
-        let target = args.get(0).unwrap();
-
-        let field = args
-            .get(1)
-            .ok_or_else(|| HelperError::ArityExact(name.to_string(), 2))?
+        let target = ctx.get(0).unwrap();
+        let field = ctx
+            .try_get(1, &[Type::String])
+            .unwrap()
             .as_str()
-            .ok_or_else(|| {
-                HelperError::ArgumentTypeString(name.to_string(), 1)
-            })?;
+            .unwrap();
 
-        let result = ctx.field(&target, field).cloned();
-        if result.is_none() {
+        if let Some(result) = ctx.lookup(&target, field).cloned() {
+            Ok(Some(result))
+        } else {
             Err(HelperError::LookupField(
-                name.to_string(),
+                ctx.name().to_string(),
                 field.to_string(),
             ))
-        } else {
-            Ok(result)
         }
     }
 }
