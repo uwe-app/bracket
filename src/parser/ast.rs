@@ -433,7 +433,7 @@ impl<'source> Path<'source> {
         self.components.is_empty()
     }
 
-    /// Determine if the first component if a local identifier.
+    /// Determine if the first component is a local identifier.
     pub fn is_local(&self) -> bool {
         return !self.components.is_empty()
             && self.components.first().unwrap().is_local();

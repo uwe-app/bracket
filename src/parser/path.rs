@@ -70,8 +70,6 @@ pub(crate) fn components<'source>(
     mut wants_delimiter: bool,
 ) -> SyntaxResult<Option<Token>> {
     while let Some(token) = lexer.next() {
-        println!("Path components {:?}", &token);
-
         match token {
             Token::Parameters(lex, mut span) => {
                 *state.byte_mut() = span.start;

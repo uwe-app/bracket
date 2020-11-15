@@ -39,7 +39,7 @@ fn partial_sub_expr() -> Result<()> {
 #[test]
 fn partial_block() -> Result<()> {
     let mut loader = Loader::new();
-    loader.insert("foo", "{{@partial-block}}".to_string());
+    loader.insert("foo", "{{> @partial-block}}".to_string());
     let templates = Templates::try_from(&loader)?;
 
     let registry = Registry::from(templates);

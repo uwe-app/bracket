@@ -1,5 +1,6 @@
 //! Render a template to output using the data.
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::fmt;
 use std::rc::Rc;
 
@@ -81,11 +82,11 @@ pub struct Render<'render> {
     helpers: &'render HelperRegistry<'render>,
     local_helpers: Option<Rc<RefCell<HelperRegistry<'render>>>>,
     templates: &'render Templates<'render>,
+    partials: HashMap<String, &'render Node<'render>>,
     name: &'render str,
     root: Value,
     writer: Box<&'render mut dyn Output>,
     scopes: Vec<Scope>,
-    partial_block: Option<&'render Node<'render>>,
     trim: TrimState,
     hint: Option<TrimHint>,
     end_tag_hint: Option<TrimHint>,
@@ -118,11 +119,11 @@ impl<'render> Render<'render> {
             helpers,
             local_helpers: None,
             templates,
+            partials: HashMap::new(),
             name,
             root,
             writer,
             scopes,
-            partial_block: None,
             trim: Default::default(),
             hint: None,
             end_tag_hint: None,
@@ -508,16 +509,6 @@ impl<'render> Render<'render> {
                 // Explicit paths should resolve to a lookup
                 if path.is_explicit() {
                     Ok(self.lookup(path).cloned())
-
-                // Handle @partial-block variables!
-                } else if path.components().len() == 1
-                    && path.components().get(0).unwrap().as_str()
-                        == PARTIAL_BLOCK
-                {
-                    if let Some(node) = self.partial_block.take() {
-                        self.template(node)?;
-                    }
-                    Ok(None)
                 // Simple paths may be helpers
                 } else if path.is_simple() {
                     if self.has_helper(path.as_str()) {
@@ -567,7 +558,9 @@ impl<'render> Render<'render> {
     ) -> RenderResult<String> {
         match call.target() {
             CallTarget::Path(ref path) => {
-                if path.is_simple() {
+                if path.as_str() == PARTIAL_BLOCK {
+                    return Ok(PARTIAL_BLOCK.to_string());
+                } else if path.is_simple() {
                     return Ok(path.as_str().to_string());
                 } else {
                     panic!("Partials must be simple identifiers");
@@ -593,15 +586,21 @@ impl<'render> Render<'render> {
         }
         self.stack.push(site);
 
-        let template = self
-            .templates
-            .get(&name)
-            .ok_or_else(|| RenderError::PartialNotFound(name))?;
+        if let Some(node) = partial_block {
+            self.partials.insert(PARTIAL_BLOCK.to_string(), node);
+        }
 
-        // Store the partial block so it can be resolved
-        self.partial_block = partial_block;
+        let node = if let Some(local_partial) = self.partials.get(&name) {
+            local_partial
+        } else {
+            let template = self
+                .templates
+                .get(&name)
+                .ok_or_else(|| RenderError::PartialNotFound(name))?;
 
-        let node = template.node();
+            template.node()
+        };
+
         let hash = self.hash(call)?;
         let scope = Scope::from(hash);
         self.scopes.push(scope);
