@@ -36,7 +36,7 @@
 //!
 //! ## Local Helpers
 //!
-//! Local helpers are defined on [rc](crate::render::Render) using [register_local_helper()](crate::render::Render#method.register_local_helper)
+//! Local helpers are defined on [rc](crate::render::Render) using [register_local_helper()](crate::render::Render#method.register_local_helper) and live for the lifetime of the parent helper call.
 //!
 //! ## Clone
 //!

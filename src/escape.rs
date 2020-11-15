@@ -6,7 +6,7 @@
 pub type EscapeFn = Box<dyn Fn(&str) -> String + Send + Sync>;
 
 /// Escape for HTML output.
-pub fn escape_html(s: &str) -> String {
+pub fn html(s: &str) -> String {
     let mut output = String::new();
     for c in s.chars() {
         match c {
@@ -24,6 +24,6 @@ pub fn escape_html(s: &str) -> String {
 }
 
 /// Do not escape output.
-pub fn escape_noop(s: &str) -> String {
+pub fn noop(s: &str) -> String {
     s.to_owned()
 }

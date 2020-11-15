@@ -98,7 +98,6 @@
 //! `lint` function will return a list of syntax errors:
 //!
 //! ```ignore
-//! let registry = Registry::new();
 //! let errors = registry.lint("file-name.md", "{{.bad.path}}")?;
 //! ```
 //!
@@ -110,8 +109,8 @@
 //! For example to disable escaping:
 //!
 //! ```ignore
-//! use bracket::escape::escape_noop;
-//! registry.set_escape(escape_noop);
+//! use bracket::escape;
+//! registry.set_escape(escape::noop);
 //! ```
 //! ## Strict Mode
 //!
