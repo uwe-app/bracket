@@ -12,7 +12,7 @@
 //! The renderer can be used to render inner templates when a helper 
 //! is called as a block and provides functions for writing to the output destination.
 //!
-//! The context is used to access the helper arguments and hash parameters and may also 
+//! The context is used to access the arguments and hash parameters and may also 
 //! be used for type assertions using the 
 //! [try_get()](crate::render::context::Context#method.try_get) and 
 //! [try_hash()](crate::render::context::Context#method.try_hash) methods. The 
@@ -22,7 +22,8 @@
 //! When a helper is called as a block the optional template node will be `Some`. 
 //! Raw helpers can access the inner text using [text()](crate::render::context::Context#method.text).
 //!
-//! To determine the helper context:
+//! To determine how a helper was invoked requires checking for an inner template 
+//! or raw text; if neither is available it is a statement:
 //!
 //! ```ignore
 //! if let Some(node) = template {
@@ -33,6 +34,17 @@
 //!     // Helper was invoked as a statement `{{helper}}`
 //! }
 //! ```
+//!
+//! ## Return Values
+//!
+//! The signature for helper return values is [HelperValue](HelperValue) which requires 
+//! that the `call()` function returns an optional [Value](serde_json::Value).
+//!
+//! A return value is useful when a helper is invoked as a statement; when invoked as 
+//! a block return `Ok(None)`.
+//!
+//! If a statement helper is used for side-effects (such as the [Log](log::Log) helper) then 
+//! return `Ok(None)`.
 //!
 //! ## Local Helpers
 //!

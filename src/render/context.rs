@@ -53,8 +53,20 @@ impl From<&Value> for Type {
     }
 }
 
+/// Property represents a key/value pair.
+///
+/// This is used so that `blockHelperMissing` handlers have access 
+/// to the resolved property.
+#[derive(Debug)]
+pub struct Property {
+    /// The path to the property.
+    pub name: String,
+    /// The resolved property value.
+    pub value: Value,
+}
+
 /// Context for the call to a helper exposes immutable access to
-/// the arguments and hash parameters for the helper.
+/// the arguments and hash parameters.
 ///
 /// It also provides some useful functions for asserting on argument
 /// arity and type.
@@ -65,6 +77,7 @@ pub struct Context<'call> {
     arguments: Vec<Value>,
     parameters: Map<String, Value>,
     text: Option<&'call str>,
+    property: Option<Property>,
 }
 
 impl<'call> Context<'call> {
@@ -74,6 +87,7 @@ impl<'call> Context<'call> {
         arguments: Vec<Value>,
         parameters: Map<String, Value>,
         text: Option<&'call str>,
+        property: Option<Property>,
     ) -> Self {
         Self {
             call,
@@ -81,6 +95,7 @@ impl<'call> Context<'call> {
             arguments,
             parameters,
             text,
+            property,
         }
     }
 
@@ -141,9 +156,16 @@ impl<'call> Context<'call> {
 
     /// Get the text for this context.
     ///
-    /// Only available for raw block helpers.
+    /// Only available when invoked as a raw block.
     pub fn text(&self) -> &Option<&'call str> {
         &self.text
+    }
+
+    /// Get a resolved property.
+    ///
+    /// Only available to `blockHelperMissing` handlers.
+    pub fn property(&self) -> &Option<Property> {
+        &self.property
     }
 
     /// Assert that the call arguments have a valid arity.

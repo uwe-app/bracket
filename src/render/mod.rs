@@ -30,7 +30,7 @@ type HelperValue = Option<Value>;
 pub mod context;
 pub mod scope;
 
-pub use context::{Context, Type};
+pub use context::{Context, Type, Property};
 pub use scope::Scope;
 
 /// Maximum stack size for helper calls
@@ -435,6 +435,7 @@ impl<'render> Render<'render> {
         call: &Call<'_>,
         content: Option<&'render Node<'render>>,
         text: Option<&'render str>,
+        property: Option<Property>,
     ) -> RenderResult<HelperValue> {
         let site = if content.is_some() {
             CallSite::BlockHelper(name.to_string())
@@ -450,7 +451,7 @@ impl<'render> Render<'render> {
 
         let args = self.arguments(call)?;
         let hash = self.hash(call)?;
-        let mut context = Context::new(call, name.to_owned(), args, hash, text);
+        let mut context = Context::new(call, name.to_owned(), args, hash, text, property);
 
         //println!("Invoke a helper with the name: {}", name);
         let locals = self
@@ -519,7 +520,7 @@ impl<'render> Render<'render> {
                 // Simple paths may be helpers
                 } else if path.is_simple() {
                     if self.has_helper(path.as_str()) {
-                        self.invoke(path.as_str(), call, None, None)
+                        self.invoke(path.as_str(), call, None, None, None)
                     } else {
                         let value = self.lookup(path).cloned();
                         if let None = value {
@@ -527,6 +528,7 @@ impl<'render> Render<'render> {
                                 return self.invoke(
                                     HELPER_MISSING,
                                     call,
+                                    None,
                                     None,
                                     None,
                                 );
@@ -670,7 +672,7 @@ impl<'render> Render<'render> {
                         }
 
                         if self.has_helper(path.as_str()) {
-                            self.invoke(path.as_str(), call, Some(node), text)?;
+                            self.invoke(path.as_str(), call, Some(node), text, None)?;
                         } else {
                             // Handling a raw block without a corresponding helper
                             // so we just write out the content
@@ -681,18 +683,18 @@ impl<'render> Render<'render> {
                             } else {
                                 match call.target() {
                                     CallTarget::Path(ref path) => {
-                                        if let Some(_value) = self.lookup(path)
+                                        if let Some(value) = self.lookup(path).cloned()
                                         {
                                             if self.has_helper(
                                                 BLOCK_HELPER_MISSING,
                                             ) {
-                                                // TODO: pass the path and value to the missing
-                                                // helper
+                                                let prop = Property {name: path.as_str().to_string(), value};
                                                 self.invoke(
                                                     BLOCK_HELPER_MISSING,
                                                     call,
                                                     None,
                                                     None,
+                                                    Some(prop)
                                                 )?;
                                             } else {
                                                 // Default behavior is to just render the block
@@ -704,6 +706,7 @@ impl<'render> Render<'render> {
                                             self.invoke(
                                                 HELPER_MISSING,
                                                 call,
+                                                None,
                                                 None,
                                                 None,
                                             )?;
