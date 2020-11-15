@@ -298,6 +298,11 @@ pub struct Component<'source> {
 
 impl<'source> Component<'source> {
 
+    /// Create a new component path.
+    ///
+    /// If a component path contains escape sequences an 
+    /// owned value should be given otherwise the component 
+    /// path will use the supplied span.
     pub fn new(
         source: &'source str,
         kind: ComponentType,
@@ -350,6 +355,16 @@ impl<'source> Component<'source> {
     }
 
     /// Get the underlying value for the path component.
+    ///
+    /// If an owned value has been given to this path component 
+    /// (which is necessary when the path component includes escape sequences) 
+    /// then a reference to the owned value is returned otherwise 
+    /// a string slice into the original template for the span 
+    /// assigned to this component path is returned.
+    ///
+    /// When performing lookup of values using a path a caller must use 
+    /// this function and **not** `as_str()` otherwise literal strings 
+    /// with escape sequences will not be respected.
     pub fn as_value(&self) -> &str {
         if let Some(ref value) = self.value {
             return value;
@@ -359,7 +374,6 @@ impl<'source> Component<'source> {
 }
 
 impl<'source> Slice<'source> for Component<'source> {
-
     fn as_str(&self) -> &'source str {
         &self.source[self.span().start..self.span().end]
     }
