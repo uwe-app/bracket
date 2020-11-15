@@ -1,7 +1,7 @@
 //#![deny(missing_docs)]
 //#![cfg_attr(test, deny(warnings))]
 
-//! Bracket is a fast and correct implementation of the handlebars
+//! Bracket is a fast and correct implementation of the [handlebars](https://handlebarsjs.com)
 //! general purpose template engine.
 //!
 //! It is designed to keep allocations to a minimum by using pointers
@@ -53,7 +53,7 @@
 //!
 //! ```ignore
 //! let registry = Registry::new();
-//! let options = ParserOptions::new(String::from("file-name.md"), 12, 2048);
+//! let options = ParserOptions::new(String::from("module.rs"), 12, 2048);
 //! let template = registry.compile("{{foo}}", options)?;
 //! ```
 //!
