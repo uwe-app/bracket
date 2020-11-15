@@ -1,5 +1,6 @@
 use bracket::lexer::{
-    collect as lex, Block, Comment, Parameters, RawComment, RawStatement, Token,
+    collect as lex, Block, Comment, DoubleQuoteString, Parameters, RawComment,
+    RawStatement, SingleQuoteString, Token,
 };
 
 #[test]
@@ -7,6 +8,34 @@ fn lex_text_only() {
     let value = "foo bar baz";
     let tokens = lex(value, true);
     let expect = vec![Token::Block(Block::Text, 0..11)];
+    assert_eq!(expect, tokens);
+}
+
+#[test]
+fn lex_double_quote_string() {
+    let value = r#"{{"foo"}}"#;
+    let tokens = lex(value, true);
+    let expect = vec![
+        Token::Block(Block::StartStatement, 0..2),
+        Token::Parameters(Parameters::DoubleQuoteString, 2..3),
+        Token::DoubleQuoteString(DoubleQuoteString::Text, 3..6),
+        Token::DoubleQuoteString(DoubleQuoteString::End, 6..7),
+        Token::Parameters(Parameters::End, 7..9),
+    ];
+    assert_eq!(expect, tokens);
+}
+
+#[test]
+fn lex_single_quote_string() {
+    let value = "{{'foo'}}";
+    let tokens = lex(value, true);
+    let expect = vec![
+        Token::Block(Block::StartStatement, 0..2),
+        Token::Parameters(Parameters::SingleQuoteString, 2..3),
+        Token::SingleQuoteString(SingleQuoteString::Text, 3..6),
+        Token::SingleQuoteString(SingleQuoteString::End, 6..7),
+        Token::Parameters(Parameters::End, 7..9),
+    ];
     assert_eq!(expect, tokens);
 }
 

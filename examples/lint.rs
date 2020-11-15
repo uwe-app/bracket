@@ -3,8 +3,7 @@ extern crate pretty_env_logger;
 
 use bracket::{
     registry::Registry,
-    template::{Loader, Templates},
-    Error, Result,
+    Result,
 };
 
 fn render() -> Result<()> {

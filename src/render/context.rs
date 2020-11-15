@@ -55,7 +55,7 @@ impl From<&Value> for Type {
 
 /// Property represents a key/value pair.
 ///
-/// This is used so that `blockHelperMissing` handlers have access 
+/// This is used so that `blockHelperMissing` handlers have access
 /// to the resolved property.
 #[derive(Debug)]
 pub struct Property {

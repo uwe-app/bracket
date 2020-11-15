@@ -30,7 +30,7 @@ type HelperValue = Option<Value>;
 pub mod context;
 pub mod scope;
 
-pub use context::{Context, Type, Property};
+pub use context::{Context, Property, Type};
 pub use scope::Scope;
 
 /// Maximum stack size for helper calls
@@ -451,7 +451,8 @@ impl<'render> Render<'render> {
 
         let args = self.arguments(call)?;
         let hash = self.hash(call)?;
-        let mut context = Context::new(call, name.to_owned(), args, hash, text, property);
+        let mut context =
+            Context::new(call, name.to_owned(), args, hash, text, property);
 
         //println!("Invoke a helper with the name: {}", name);
         let locals = self
@@ -672,7 +673,13 @@ impl<'render> Render<'render> {
                         }
 
                         if self.has_helper(path.as_str()) {
-                            self.invoke(path.as_str(), call, Some(node), text, None)?;
+                            self.invoke(
+                                path.as_str(),
+                                call,
+                                Some(node),
+                                text,
+                                None,
+                            )?;
                         } else {
                             // Handling a raw block without a corresponding helper
                             // so we just write out the content
@@ -683,18 +690,24 @@ impl<'render> Render<'render> {
                             } else {
                                 match call.target() {
                                     CallTarget::Path(ref path) => {
-                                        if let Some(value) = self.lookup(path).cloned()
+                                        if let Some(value) =
+                                            self.lookup(path).cloned()
                                         {
                                             if self.has_helper(
                                                 BLOCK_HELPER_MISSING,
                                             ) {
-                                                let prop = Property {name: path.as_str().to_string(), value};
+                                                let prop = Property {
+                                                    name: path
+                                                        .as_str()
+                                                        .to_string(),
+                                                    value,
+                                                };
                                                 self.invoke(
                                                     BLOCK_HELPER_MISSING,
                                                     call,
                                                     None,
                                                     None,
-                                                    Some(prop)
+                                                    Some(prop),
                                                 )?;
                                             } else {
                                                 // Default behavior is to just render the block

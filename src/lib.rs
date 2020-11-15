@@ -7,8 +7,8 @@
 //! It is designed to keep allocations to a minimum by using pointers
 //! and string slices into the underlying template wherever possible.
 //!
-//! It detects cyclic partials and helper calls and returns an error 
-//! rather than overflow the stack so should be robust when used with 
+//! It detects cyclic partials and helper calls and returns an error
+//! rather than overflow the stack so should be robust when used with
 //! untrusted input.
 //!
 //! The lexer generates a stream of tokens which are consumed by a
@@ -103,7 +103,7 @@
 //!
 //! ## Escape
 //!
-//! By default templates are escaped for HTML output; you can call `set_escape()` 
+//! By default templates are escaped for HTML output; you can call `set_escape()`
 //! on a registry with an escape function to change this behaviour.
 //!
 //! For example to disable escaping:
@@ -114,8 +114,8 @@
 //! ```
 //! ## Strict Mode
 //!
-//! By default the handlebars behaviour for variable interpolation is a noop 
-//! when a variable cannot be found; to always error when a variable or helper 
+//! By default the handlebars behaviour for variable interpolation is a noop
+//! when a variable cannot be found; to always error when a variable or helper
 //! is missing enable strict mode:
 //!
 //! ```ignore
@@ -124,10 +124,10 @@
 //!
 //! ## Helpers
 //!
-//! Helper functions are what make handlebars a versatile template engine; all 
-//! helpers are enabled by default but can be disabled via feature flags if 
+//! Helper functions are what make handlebars a versatile template engine; all
+//! helpers are enabled by default but can be disabled via feature flags if
 //! you need to.
-//! 
+//!
 //! By default all the built-in helpers are enabled:
 //!
 //! * [log](helper::log::Log) Print log messages.
@@ -152,7 +152,7 @@
 //! * [gt](helper::comparison::GreaterThan) Test for greater than.
 //! * [lte](helper::comparison::LessThanEqual) Test for less than or equal to.
 //! * [gte](helper::comparison::GreaterThanEqual) Test for greater than or equal to.
-//! 
+//!
 //! To add a helper to the registry use `helpers_mut()`:
 //!
 //! ```ignore
@@ -164,7 +164,7 @@
 //! {{custom "Hello world!" param=true}}
 //! ```
 //!
-//! See the [Helper Module](helper) to learn more about creating your own 
+//! See the [Helper Module](helper) to learn more about creating your own
 //! helpers.
 //!
 

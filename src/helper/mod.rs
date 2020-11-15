@@ -1,6 +1,6 @@
 //! Helper trait and types for the default set of helpers.
 //!
-//! The [Helper Trait](self::Helper) should be implemented 
+//! The [Helper Trait](self::Helper) should be implemented
 //! for custom helpers which can then be added to a registry.
 //!
 //! Helper `call()` functions accept three arguments:
@@ -9,20 +9,20 @@
 //! * [ctx](crate::render::context::Context) Helper arguments and hash parameters.
 //! * [template](crate::parser::ast::Node) Inner template when called as a block.
 //!
-//! The renderer can be used to render inner templates when a helper 
+//! The renderer can be used to render inner templates when a helper
 //! is called as a block and provides functions for writing to the output destination.
 //!
-//! The context is used to access the arguments and hash parameters and may also 
-//! be used for type assertions using the 
-//! [try_get()](crate::render::context::Context#method.try_get) and 
-//! [try_hash()](crate::render::context::Context#method.try_hash) methods. The 
-//! [arity()](crate::render::context::Context#method.arity) method can be used to 
+//! The context is used to access the arguments and hash parameters and may also
+//! be used for type assertions using the
+//! [try_get()](crate::render::context::Context#method.try_get) and
+//! [try_hash()](crate::render::context::Context#method.try_hash) methods. The
+//! [arity()](crate::render::context::Context#method.arity) method can be used to
 //! assert on argument length.
 //!
-//! When a helper is called as a block the optional template node will be `Some`. 
+//! When a helper is called as a block the optional template node will be `Some`.
 //! Raw helpers can access the inner text using [text()](crate::render::context::Context#method.text).
 //!
-//! To determine how a helper was invoked requires checking for an inner template 
+//! To determine how a helper was invoked requires checking for an inner template
 //! or raw text; if neither is available it is a statement:
 //!
 //! ```ignore
@@ -37,13 +37,13 @@
 //!
 //! ## Return Values
 //!
-//! The signature for helper return values is [HelperValue](HelperValue) which requires 
+//! The signature for helper return values is [HelperValue](HelperValue) which requires
 //! that the `call()` function returns an optional [Value](serde_json::Value).
 //!
-//! A return value is useful when a helper is invoked as a statement; when invoked as 
+//! A return value is useful when a helper is invoked as a statement; when invoked as
 //! a block return `Ok(None)`.
 //!
-//! If a statement helper is used for side-effects (such as the [Log](log::Log) helper) then 
+//! If a statement helper is used for side-effects (such as the [Log](log::Log) helper) then
 //! return `Ok(None)`.
 //!
 //! ## Local Helpers

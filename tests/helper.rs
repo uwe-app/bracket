@@ -67,7 +67,7 @@ impl Helper for BlockHelperMissing {
         &self,
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
-        template: Option<&'render Node<'render>>,
+        _template: Option<&'render Node<'render>>,
     ) -> HelperValue {
         // Get the property value and write it out
         let prop = ctx.property().as_ref().unwrap();
