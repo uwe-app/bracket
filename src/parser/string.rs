@@ -1,6 +1,5 @@
 use logos::Span;
 use serde_json::Value;
-use std::borrow::Cow;
 
 use crate::{
     //error::{ErrorInfo, SourcePos, SyntaxError},
@@ -34,21 +33,21 @@ impl RawLiteral {
         self.newline || self.delimiter 
     }
 
-    pub fn into_value<'a>(&self, value: &'a str) -> Cow<'a, str> {
-        let mut val = Cow::from(value);
+    pub fn into_owned<'a>(&self, value: &'a str) -> String {
+        let mut val = value.to_string();
         if self.newline {
-            val = Cow::from(val.to_mut().replace("\\n", "\n"));
+            val = val.replace("\\n", "\n");
         }
         if self.delimiter {
             match self.literal_type {
                 RawLiteralType::Double => {
-                    val = Cow::from(val.to_mut().replace(r#"\""#, r#"""#));
+                    val = val.replace(r#"\""#, r#"""#);
                 }
                 RawLiteralType::Single => {
-                    val = Cow::from(val.to_mut().replace(r"\'", "'"));
+                    val = val.replace(r"\'", "'");
                 }
                 RawLiteralType::Array => {
-                    val = Cow::from(val.to_mut().replace(r"\]", "]"));
+                    val = val.replace(r"\]", "]");
                 }
             }
         }
@@ -143,6 +142,10 @@ pub(crate) fn literal<'source>(
     string_type: RawLiteralType,
 ) -> SyntaxResult<Value> {
     let (span, flags) = parse(source, lexer, state, current, string_type)?;
-    let value = flags.into_value(&source[span.start..span.end]);
-    return Ok(Value::String(value.into_owned().to_string()));
+    let value = if flags.has_escape_sequences()  {
+        flags.into_owned(&source[span.start..span.end])
+    } else {
+        source[span.start..span.end].to_string()
+    };
+    return Ok(Value::String(value));
 }

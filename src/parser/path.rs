@@ -60,7 +60,7 @@ fn to_component<'source>(
     let value = if let Some(ref raw) = raw_id {
         if raw.has_escape_sequences() {
             println!("Create component with raw id value {:?}", raw);
-            Some(raw.into_value(&source[span.clone()]).into_owned().to_string())
+            Some(raw.into_owned(&source[span.clone()]))
         } else { None }
     } else {
         None
