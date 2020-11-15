@@ -226,7 +226,7 @@ pub enum SingleQuoteString {
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
-pub enum Array{
+pub enum Array {
     #[regex(r#"[^\]]+"#)]
     Text,
 
@@ -440,8 +440,7 @@ impl<'source> Iterator for Lexer<'source> {
                         self.mode =
                             Modes::SingleQuoteString(lexer.to_owned().morph());
                     } else if Parameters::StartArray == token {
-                        self.mode =
-                            Modes::Array(lexer.to_owned().morph());
+                        self.mode = Modes::Array(lexer.to_owned().morph());
                     } else if Parameters::End == token {
                         self.mode = Modes::Block(lexer.to_owned().morph());
                     }

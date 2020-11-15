@@ -617,6 +617,57 @@ impl<'render> Render<'render> {
         Ok(())
     }
 
+    fn block_helper_missing(
+        &mut self,
+        node: &'render Node<'render>,
+        block: &'render Block<'render>,
+        call: &'render Call<'render>,
+        text: Option<&str>,
+        raw: bool,
+    ) -> RenderResult<()> {
+        // Handling a raw block without a corresponding helper
+        // so we just write out the content
+        if raw {
+            if let Some(text) = text {
+                self.write_str(text, false)?;
+            }
+        } else {
+            match call.target() {
+                CallTarget::Path(ref path) => {
+                    if let Some(value) = self.lookup(path).cloned() {
+                        if self.has_helper(BLOCK_HELPER_MISSING) {
+                            let prop = Property {
+                                name: path.as_str().to_string(),
+                                value,
+                            };
+                            self.invoke(
+                                BLOCK_HELPER_MISSING,
+                                call,
+                                Some(node),
+                                None,
+                                Some(prop),
+                            )?;
+                        } else {
+                            // Default behavior is to just render the block
+                            self.template(node)?;
+                        }
+                    } else if self.has_helper(HELPER_MISSING) {
+                        self.invoke(HELPER_MISSING, call, None, None, None)?;
+                    } else {
+                        if self.strict {
+                            return Err(RenderError::HelperNotFound(
+                                path.as_str().to_string(),
+                            ));
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
+    }
+
     fn block(
         &mut self,
         node: &'render Node<'render>,
@@ -678,59 +729,9 @@ impl<'render> Render<'render> {
                                 None,
                             )?;
                         } else {
-                            // Handling a raw block without a corresponding helper
-                            // so we just write out the content
-                            if raw {
-                                if let Some(text) = text {
-                                    self.write_str(text, false)?;
-                                }
-                            } else {
-                                match call.target() {
-                                    CallTarget::Path(ref path) => {
-                                        if let Some(value) =
-                                            self.lookup(path).cloned()
-                                        {
-                                            if self.has_helper(
-                                                BLOCK_HELPER_MISSING,
-                                            ) {
-                                                let prop = Property {
-                                                    name: path
-                                                        .as_str()
-                                                        .to_string(),
-                                                    value,
-                                                };
-                                                self.invoke(
-                                                    BLOCK_HELPER_MISSING,
-                                                    call,
-                                                    None,
-                                                    None,
-                                                    Some(prop),
-                                                )?;
-                                            } else {
-                                                // Default behavior is to just render the block
-                                                self.template(node)?;
-                                            }
-                                        } else if self
-                                            .has_helper(HELPER_MISSING)
-                                        {
-                                            self.invoke(
-                                                HELPER_MISSING,
-                                                call,
-                                                None,
-                                                None,
-                                                None,
-                                            )?;
-                                        } else {
-                                            if self.strict {
-                                                return Err(
-                                                    RenderError::HelperNotFound(path.as_str().to_string()) 
-                                                )
-                                            }
-                                        }
-                                    }
-                                    _ => {}
-                                }
-                            }
+                            return self.block_helper_missing(
+                                node, block, call, text, raw,
+                            );
                         }
                     } else {
                         panic!(

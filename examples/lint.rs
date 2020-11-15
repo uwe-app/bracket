@@ -1,10 +1,7 @@
 extern crate log;
 extern crate pretty_env_logger;
 
-use bracket::{
-    registry::Registry,
-    Result,
-};
+use bracket::{registry::Registry, Result};
 
 fn render() -> Result<()> {
     let registry = Registry::new();

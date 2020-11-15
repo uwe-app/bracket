@@ -4,7 +4,7 @@ use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{lex, Lexer, Parameters, Token},
     parser::{
-        ast::{Component, ComponentType, RawIdType, Path},
+        ast::{Component, ComponentType, Path, RawIdType},
         string, ParseState,
     },
     SyntaxResult,
@@ -35,9 +35,15 @@ fn component_type(lex: &Parameters) -> ComponentType {
         Parameters::Identifier => ComponentType::Identifier,
         Parameters::LocalIdentifier => ComponentType::LocalIdentifier,
         Parameters::PathDelimiter => ComponentType::Delimiter,
-        Parameters::SingleQuoteString => ComponentType::RawIdentifier(RawIdType::Single),
-        Parameters::DoubleQuoteString => ComponentType::RawIdentifier(RawIdType::Double),
-        Parameters::StartArray => ComponentType::RawIdentifier(RawIdType::Array),
+        Parameters::SingleQuoteString => {
+            ComponentType::RawIdentifier(RawIdType::Single)
+        }
+        Parameters::DoubleQuoteString => {
+            ComponentType::RawIdentifier(RawIdType::Double)
+        }
+        Parameters::StartArray => {
+            ComponentType::RawIdentifier(RawIdType::Array)
+        }
 
         //Parameters::ArrayAccess => ComponentType::ArrayAccess,
         _ => panic!("Expecting component parameter in parser"),
@@ -136,7 +142,6 @@ pub(crate) fn components<'source>(
                                 (lex, span),
                                 string::Type::Single,
                             )?;
-
                         }
                         Parameters::DoubleQuoteString => {
                             // Override the span to the inner string value

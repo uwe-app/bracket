@@ -263,7 +263,7 @@ impl fmt::Debug for TextBlock<'_> {
     }
 }
 
-/// Indicates the kind of escaping using for raw 
+/// Indicates the kind of escaping using for raw
 /// identifiers.
 #[derive(Debug, Eq, PartialEq)]
 pub enum RawIdType {

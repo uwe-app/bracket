@@ -3,7 +3,9 @@ use serde_json::Value;
 
 use crate::{
     //error::{ErrorInfo, SourcePos, SyntaxError},
-    lexer::{DoubleQuoteString, Lexer, Parameters, SingleQuoteString, Token, Array},
+    lexer::{
+        Array, DoubleQuoteString, Lexer, Parameters, SingleQuoteString, Token,
+    },
     parser::ParseState,
     SyntaxResult,
 };
@@ -14,7 +16,7 @@ pub(crate) enum Type {
     Array,
 }
 
-/// Parse a quoted string literal and return a span 
+/// Parse a quoted string literal and return a span
 /// that matches the inner value without quotes.
 pub(crate) fn parse<'source>(
     source: &'source str,

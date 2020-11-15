@@ -6,7 +6,7 @@ use crate::{
     lexer::{Lexer, Parameters, Token},
     parser::{
         ast::{Call, CallTarget, Element, ParameterValue},
-        path, ParseState, string,
+        path, string, ParseState,
     },
     SyntaxResult,
 };
@@ -210,7 +210,7 @@ fn arguments<'source>(
                     }
                     Parameters::ElseKeyword => {}
                     //Parameters::StartArray => {
-                        //todo!("Parse argument as JSON literal array")
+                    //todo!("Parse argument as JSON literal array")
                     //}
                     // Path components
                     Parameters::ExplicitThisKeyword

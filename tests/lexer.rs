@@ -1,6 +1,6 @@
 use bracket::lexer::{
-    collect as lex, Block, Comment, DoubleQuoteString, Parameters, RawComment,
-    RawStatement, SingleQuoteString, Token, Array,
+    collect as lex, Array, Block, Comment, DoubleQuoteString, Parameters,
+    RawComment, RawStatement, SingleQuoteString, Token,
 };
 
 #[test]
