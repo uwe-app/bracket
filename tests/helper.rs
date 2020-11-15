@@ -59,22 +59,23 @@ impl Helper for HelperMissing {
     }
 }
 
-/*
 #[derive(Clone)]
-pub struct MissingBlockHelper;
+pub struct BlockHelperMissing;
 
-impl Helper for MissingBlockHelper {
+impl Helper for BlockHelperMissing {
     fn call<'render, 'call>(
         &self,
         rc: &mut Render<'render>,
         ctx: &Context<'call>,
         template: Option<&'render Node<'render>>,
     ) -> HelperValue {
-        rc.write("bar")?;
+        // Get the property value and write it out
+        let prop = ctx.property().as_ref().unwrap();
+        let value = prop.value.as_str().unwrap();
+        rc.write(value)?;
         Ok(None)
     }
 }
-*/
 
 #[test]
 fn helper_value() -> Result<()> {
@@ -139,18 +140,16 @@ fn helper_missing() -> Result<()> {
     Ok(())
 }
 
-/*
 #[test]
 fn helper_block_missing() -> Result<()> {
     let mut registry = Registry::new();
     registry
         .helpers_mut()
-        .insert("blockHelperMissing", Box::new(MissingBlockHelper {}));
+        .insert("blockHelperMissing", Box::new(BlockHelperMissing {}));
     let value = r"{{#block}}{{foo}}{{/block}}";
-    // NOTE: the helper takes precedence over the variable
-    let data = json!({"foo": "qux"});
+    // NOTE: the variable must exist for `blockHelperMissing` to fire
+    let data = json!({"block": "bar"});
     let result = registry.once(NAME, value, &data)?;
     assert_eq!("bar", &result);
     Ok(())
 }
-*/
