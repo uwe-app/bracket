@@ -60,21 +60,21 @@ fn json_literal<'source>(
             lexer,
             state,
             (lex, span),
-            string::Type::Double,
+            string::RawLiteralType::Double,
         )?,
         Parameters::SingleQuoteString => string::literal(
             source,
             lexer,
             state,
             (lex, span),
-            string::Type::Single,
+            string::RawLiteralType::Single,
         )?,
         Parameters::StartArray => string::literal(
             source,
             lexer,
             state,
             (lex, span),
-            string::Type::Array,
+            string::RawLiteralType::Array,
         )?,
         _ => {
             // FIXME: how to handle this?

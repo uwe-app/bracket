@@ -5,7 +5,7 @@ use crate::{
     lexer::{lex, Lexer, Parameters, Token},
     parser::{
         ast::{Component, ComponentType, Path, RawIdType},
-        string, ParseState,
+        string::{self, RawLiteral}, ParseState,
     },
     SyntaxResult,
 };
@@ -27,7 +27,7 @@ fn is_path_component(lex: &Parameters) -> bool {
     }
 }
 
-fn component_type(lex: &Parameters) -> ComponentType {
+fn component_type<'source>(lex: &Parameters) -> ComponentType {
     match lex {
         Parameters::ExplicitThisKeyword => ComponentType::ThisKeyword,
         Parameters::ExplicitThisDotSlash => ComponentType::ThisDotSlash,
@@ -48,6 +48,33 @@ fn component_type(lex: &Parameters) -> ComponentType {
         //Parameters::ArrayAccess => ComponentType::ArrayAccess,
         _ => panic!("Expecting component parameter in parser"),
     }
+}
+
+fn to_component<'source>(
+    source: &'source str,
+    lex: &Parameters,
+    span: Span,
+    raw_id: Option<RawLiteral>,
+) -> Component<'source> {
+
+    let value = if let Some(ref raw) = raw_id {
+        if raw.has_escape_sequences() {
+            println!("Create component with raw id value {:?}", raw);
+            Some(raw.into_value(&source[span.clone()]).into_owned().to_string())
+        } else { None }
+    } else {
+        None
+    };
+
+    
+    let mut component = Component::new(
+        source,
+        component_type(lex),
+        span,
+        value,
+    );
+
+    component
 }
 
 fn parents<'source>(
@@ -81,6 +108,8 @@ pub(crate) fn components<'source>(
         match token {
             Token::Parameters(lex, mut span) => {
                 *state.byte_mut() = span.start;
+
+                let mut raw_id: Option<RawLiteral> = None;
 
                 if lex == Parameters::End {
                     return Ok(Some(Token::Parameters(lex, span)));
@@ -135,33 +164,42 @@ pub(crate) fn components<'source>(
                         }
                         Parameters::SingleQuoteString => {
                             // Override the span to the inner string value
-                            span = string::parse(
+                            let (inner, flags) = string::parse(
                                 source,
                                 lexer,
                                 state,
                                 (lex, span),
-                                string::Type::Single,
+                                string::RawLiteralType::Single,
                             )?;
+
+                            span = inner;
+                            raw_id = Some(flags);
                         }
                         Parameters::DoubleQuoteString => {
                             // Override the span to the inner string value
-                            span = string::parse(
+                            let (inner, flags) = string::parse(
                                 source,
                                 lexer,
                                 state,
                                 (lex, span),
-                                string::Type::Double,
+                                string::RawLiteralType::Double,
                             )?;
+
+                            span = inner;
+                            raw_id = Some(flags);
                         }
                         Parameters::StartArray => {
                             // Override the span to the inner string value
-                            span = string::parse(
+                            let (inner, flags) = string::parse(
                                 source,
                                 lexer,
                                 state,
                                 (lex, span),
-                                string::Type::Array,
+                                string::RawLiteralType::Array,
                             )?;
+
+                            span = inner;
+                            raw_id = Some(flags);
                         }
                         _ => {}
                     }
@@ -211,10 +249,11 @@ pub(crate) fn components<'source>(
                         }
                     }
 
-                    path.add_component(Component(
+                    path.add_component(to_component(
                         source,
-                        component_type(&lex),
+                        &lex,
                         span,
+                        raw_id,
                     ));
                     wants_delimiter = true;
                 } else {
@@ -263,8 +302,7 @@ pub(crate) fn parse<'source>(
                 *state.byte_mut() = span.start;
 
                 if is_path_component(&lex) {
-                    let component =
-                        Component(source, component_type(&lex), span);
+                    let component = to_component(source, &lex, span, None);
                     // Flag as a path that should be resolved from the root object
                     if path.is_empty() && component.is_root() {
                         path.set_root(true);

@@ -232,7 +232,7 @@ fn parse_arg_string() -> Result<()> {
                     assert_eq!(1, args.len());
                     assert_eq!(
                         &ParameterValue::Json(Value::String(String::from(
-                            r"bar\nbaz"
+                            "bar\nbaz"
                         ))),
                         args.first().unwrap()
                     );

@@ -285,18 +285,28 @@ pub enum ComponentType {
     LocalIdentifier,
     RawIdentifier(RawIdType),
     Delimiter,
-    //ArrayAccess,
 }
 
 /// Components form part of a path.
 #[derive(Eq, PartialEq)]
-pub struct Component<'source>(
-    pub &'source str,
-    pub ComponentType,
-    pub Range<usize>,
-);
+pub struct Component<'source> {
+    source: &'source str,
+    kind: ComponentType,
+    span: Range<usize>,
+    value: Option<String>,
+}
 
 impl<'source> Component<'source> {
+
+    pub fn new(
+        source: &'source str,
+        kind: ComponentType,
+        span: Range<usize>,
+        value: Option<String>,
+    ) -> Self {
+        Self {source, kind, span, value}
+    }
+
     /// Determine if this is the special `@root` component.
     pub fn is_root(&self) -> bool {
         self.as_str() == ROOT
@@ -304,12 +314,12 @@ impl<'source> Component<'source> {
 
     /// Get the kind of this component.
     pub fn kind(&self) -> &ComponentType {
-        &self.1
+        &self.kind
     }
 
     /// The span for this component.
     pub fn span(&self) -> &Range<usize> {
-        &self.2
+        &self.span
     }
 
     /// Determine if this component is a local identifier; begins
@@ -338,15 +348,24 @@ impl<'source> Component<'source> {
     pub fn is_explicit_dot_slash(&self) -> bool {
         &ComponentType::ThisDotSlash == self.kind()
     }
+
+    /// Get the underlying value for the path component.
+    pub fn as_value(&self) -> &str {
+        if let Some(ref value) = self.value {
+            return value;
+        }
+        self.as_str()
+    }
 }
 
 impl<'source> Slice<'source> for Component<'source> {
+
     fn as_str(&self) -> &'source str {
-        &self.0[self.span().start..self.span().end]
+        &self.source[self.span().start..self.span().end]
     }
 
     fn source(&self) -> &'source str {
-        self.0
+        self.source
     }
 }
 
@@ -360,8 +379,8 @@ impl fmt::Debug for Component<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Component")
             .field("source", &self.as_str())
-            .field("kind", &self.1)
-            .field("span", &self.2)
+            .field("kind", &self.kind)
+            .field("span", &self.span)
             .finish()
     }
 }
@@ -442,7 +461,7 @@ impl<'source> Path<'source> {
     /// Determine if this path is a simple identifier.
     pub fn is_simple(&self) -> bool {
         return self.components.len() == 1
-            && self.components.first().unwrap().1 == ComponentType::Identifier;
+            && self.components.first().unwrap().kind == ComponentType::Identifier;
     }
 }
 

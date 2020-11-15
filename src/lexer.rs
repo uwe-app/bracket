@@ -187,10 +187,8 @@ pub enum DoubleQuoteString {
     #[token("\\n")]
     EscapedNewline,
 
-    //#[regex(r"\\u\{[^}]*\}")]
-    //EscapedCodepoint,
     #[token(r#"\""#)]
-    EscapedQuote,
+    Escaped,
 
     #[token("\"")]
     End,
@@ -205,14 +203,14 @@ pub enum DoubleQuoteString {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 pub enum SingleQuoteString {
-    #[regex(r#"[^'\n]+"#)]
+    #[regex(r#"[^\\'\n]+"#)]
     Text,
 
     #[token("\\n")]
     EscapedNewline,
 
     #[token(r#"\'"#)]
-    EscapedQuote,
+    Escaped,
 
     #[token("'")]
     End,
@@ -229,6 +227,12 @@ pub enum SingleQuoteString {
 pub enum Array {
     #[regex(r#"[^\]]+"#)]
     Text,
+
+    //#[token("\\n")]
+    //EscapedNewline,
+
+    #[token(r#"\]"#)]
+    Escaped,
 
     #[token("]")]
     End,

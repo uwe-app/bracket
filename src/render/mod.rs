@@ -288,7 +288,7 @@ impl<'render> Render<'render> {
         // Handle explicit `@root` reference
         if path.is_root() {
             json::find_parts(
-                path.components().iter().skip(1).map(|c| c.as_str()),
+                path.components().iter().skip(1).map(|c| c.as_value()),
                 &self.root,
             )
         // Handle explicit this
@@ -309,7 +309,7 @@ impl<'render> Render<'render> {
             // Otherwise lookup in this context
             } else {
                 json::find_parts(
-                    path.components().iter().skip(1).map(|c| c.as_str()),
+                    path.components().iter().skip(1).map(|c| c.as_value()),
                     value,
                 )
             }
@@ -318,7 +318,7 @@ impl<'render> Render<'render> {
         } else if path.is_local() {
             if let Some(scope) = self.scopes.last() {
                 json::find_parts(
-                    path.components().iter().map(|c| c.as_str()),
+                    path.components().iter().map(|c| c.as_value()),
                     scope.locals(),
                 )
             } else {
@@ -336,7 +336,7 @@ impl<'render> Render<'render> {
                 let index: usize = all.len() - (path.parents() as usize + 1);
                 if let Some(value) = all.get(index) {
                     json::find_parts(
-                        path.components().iter().map(|c| c.as_str()),
+                        path.components().iter().map(|c| c.as_value()),
                         value,
                     )
                 } else {
@@ -349,17 +349,17 @@ impl<'render> Render<'render> {
             // Lookup in the current scope
             if let Some(scope) = self.scopes.last() {
                 json::find_parts(
-                    path.components().iter().map(|c| c.as_str()),
+                    path.components().iter().map(|c| c.as_value()),
                     scope.locals(),
                 )
                 .or(json::find_parts(
-                    path.components().iter().map(|c| c.as_str()),
+                    path.components().iter().map(|c| c.as_value()),
                     &self.root,
                 ))
             // Lookup in the root scope
             } else {
                 json::find_parts(
-                    path.components().iter().map(|c| c.as_str()),
+                    path.components().iter().map(|c| c.as_value()),
                     &self.root,
                 )
             }

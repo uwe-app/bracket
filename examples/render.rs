@@ -25,9 +25,11 @@ fn render() -> Result<String> {
         "foo": {
             "b.r": {
                 "qux": 42
+            },
+            "q'x": {
+                "bar": 76
             }
-        },
-        "partial-name": "dynamic-partial"
+        }
     });
 
     let mut loader = Loader::new();

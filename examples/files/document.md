@@ -19,6 +19,7 @@ No title available
 The number is: {{list.[1]}}
 The lookup value is: {{lookup foo.'b.r' "qux"}}
 The lookup value is: {{lookup foo."b.r" "qux"}}
+The lookup value is: {{lookup foo.'q\'x' "bar"}}
 
 The title is: {{this.[title]}}
 
