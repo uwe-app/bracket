@@ -631,23 +631,21 @@ impl<'render> Render<'render> {
             match call.target() {
                 CallTarget::Path(ref path) => {
                     if path.is_simple() {
-                        let mut text: Option<&str> = if raw {
+                        let mut text: Option<&str> = None;
+
+                        if raw {
                             // Raw block nodes should have a single Text child node
-                            if !block.nodes().is_empty() {
+                            text = if !block.nodes().is_empty() {
                                 Some(block.nodes().get(0).unwrap().as_str())
                             // Empty raw block should be treated as the empty string
                             } else {
                                 Some("")
-                            }
-                        } else {
-                            None
-                        };
+                            };
 
-                        // Store the hint so we can remove leading whitespace
-                        // after a raw block end tag
-                        match node {
-                            Node::Block(ref block) => {
-                                if block.is_raw() {
+                            // Store the hint so we can remove leading whitespace
+                            // after a raw block end tag
+                            match node {
+                                Node::Block(ref block) => {
                                     let hint = block.trim_close();
 
                                     // Trim leading inside a raw block
@@ -667,8 +665,8 @@ impl<'render> Render<'render> {
                                     // Trim after the end tag
                                     self.end_tag_hint = Some(hint);
                                 }
+                                _ => {}
                             }
-                            _ => {}
                         }
 
                         if self.has_helper(path.as_str()) {
@@ -722,6 +720,12 @@ impl<'render> Render<'render> {
                                                 None,
                                                 None,
                                             )?;
+                                        } else {
+                                            if self.strict {
+                                                return Err(
+                                                    RenderError::HelperNotFound(path.as_str().to_string()) 
+                                                )
+                                            }
                                         }
                                     }
                                     _ => {}
