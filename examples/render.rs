@@ -23,7 +23,7 @@ fn render() -> Result<String> {
             "pears": 3,
         },
         "foo": {
-            "bar": {
+            "b.r": {
                 "qux": 42
             }
         },

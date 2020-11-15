@@ -4,8 +4,8 @@ use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{lex, Lexer, Parameters, Token},
     parser::{
-        ast::{Component, ComponentType, Path},
-        ParseState,
+        ast::{Component, ComponentType, RawIdType, Path},
+        string, ParseState,
     },
     SyntaxResult,
 };
@@ -18,6 +18,9 @@ fn is_path_component(lex: &Parameters) -> bool {
         | Parameters::Identifier
         | Parameters::LocalIdentifier
         | Parameters::PathDelimiter
+        | Parameters::SingleQuoteString
+        | Parameters::DoubleQuoteString
+
         | Parameters::ArrayAccess => true,
         _ => false,
     }
@@ -31,6 +34,9 @@ fn component_type(lex: &Parameters) -> ComponentType {
         Parameters::Identifier => ComponentType::Identifier,
         Parameters::LocalIdentifier => ComponentType::LocalIdentifier,
         Parameters::PathDelimiter => ComponentType::Delimiter,
+        Parameters::SingleQuoteString => ComponentType::RawIdentifier(RawIdType::Single),
+        Parameters::DoubleQuoteString => ComponentType::RawIdentifier(RawIdType::Double),
+
         Parameters::ArrayAccess => ComponentType::ArrayAccess,
         _ => panic!("Expecting component parameter in parser"),
     }
@@ -64,8 +70,10 @@ pub(crate) fn components<'source>(
     mut wants_delimiter: bool,
 ) -> SyntaxResult<Option<Token>> {
     while let Some(token) = lexer.next() {
+        println!("Path components {:?}", &token);
+
         match token {
-            Token::Parameters(lex, span) => {
+            Token::Parameters(lex, mut span) => {
                 *state.byte_mut() = span.start;
 
                 if lex == Parameters::End {
@@ -119,6 +127,27 @@ pub(crate) fn components<'source>(
                                 .into(),
                             ));
                         }
+                        Parameters::SingleQuoteString => {
+                            // Override the span to the inner string value
+                            span = string::parse(
+                                source,
+                                lexer,
+                                state,
+                                (lex, span),
+                                string::Type::Single,
+                            )?;
+
+                        }
+                        Parameters::DoubleQuoteString => {
+                            // Override the span to the inner string value
+                            span = string::parse(
+                                source,
+                                lexer,
+                                state,
+                                (lex, span),
+                                string::Type::Double,
+                            )?;
+                        }
                         _ => {}
                     }
 
@@ -166,6 +195,7 @@ pub(crate) fn components<'source>(
                             _ => {}
                         }
                     }
+
                     path.add_component(Component(
                         source,
                         component_type(&lex),

@@ -263,6 +263,18 @@ impl fmt::Debug for TextBlock<'_> {
     }
 }
 
+/// Indicates the kind of escaping using for raw 
+/// identifiers.
+#[derive(Debug, Eq, PartialEq)]
+pub enum RawIdType {
+    /// Raw identifier in single quotes.
+    Single,
+    /// Raw identifier in double quotes.
+    Double,
+    /// Raw identifier in square brackets.
+    Square,
+}
+
 /// Indicates the kind of path component.
 #[derive(Debug, Eq, PartialEq)]
 pub enum ComponentType {
@@ -271,6 +283,7 @@ pub enum ComponentType {
     ThisDotSlash,
     Identifier,
     LocalIdentifier,
+    RawIdentifier(RawIdType),
     Delimiter,
     ArrayAccess,
 }

@@ -3,10 +3,10 @@ use serde_json::{Number, Value};
 
 use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
-    lexer::{DoubleQuoteString, Lexer, Parameters, SingleQuoteString, Token},
+    lexer::{Lexer, Parameters, Token},
     parser::{
         ast::{Call, CallTarget, Element, ParameterValue},
-        path, ParseState,
+        path, ParseState, string,
     },
     SyntaxResult,
 };
@@ -39,56 +39,6 @@ enum CallContext {
     SubExpr,
 }
 
-enum StringType {
-    Double,
-    Single,
-}
-
-/// Parse a quoted string literal value.
-fn string_literal<'source>(
-    source: &'source str,
-    lexer: &mut Lexer<'source>,
-    state: &mut ParseState,
-    current: (Parameters, Span),
-    string_type: StringType,
-) -> SyntaxResult<Value> {
-    let (_lex, span) = current;
-    let str_start = span.end;
-    let mut str_end = span.end;
-
-    while let Some(token) = lexer.next() {
-        match string_type {
-            StringType::Double => match token {
-                Token::DoubleQuoteString(lex, span) => match &lex {
-                    DoubleQuoteString::End => {
-                        let str_value = &source[str_start..str_end];
-                        return Ok(Value::String(str_value.to_string()));
-                    }
-                    _ => {
-                        *state.byte_mut() = span.end;
-                        str_end = span.end;
-                    }
-                },
-                _ => panic!("Expecting string literal token"),
-            },
-            StringType::Single => match token {
-                Token::SingleQuoteString(lex, span) => match &lex {
-                    SingleQuoteString::End => {
-                        let str_value = &source[str_start..str_end];
-                        return Ok(Value::String(str_value.to_string()));
-                    }
-                    _ => {
-                        *state.byte_mut() = span.end;
-                        str_end = span.end;
-                    }
-                },
-                _ => panic!("Expecting string literal token"),
-            },
-        }
-    }
-    panic!("Failed to parse string literal");
-}
-
 /// Parse a JSON literal value.
 fn json_literal<'source>(
     source: &'source str,
@@ -105,19 +55,19 @@ fn json_literal<'source>(
             let num: Number = source[span].parse().unwrap();
             Value::Number(num)
         }
-        Parameters::DoubleQuoteString => string_literal(
+        Parameters::DoubleQuoteString => string::literal(
             source,
             lexer,
             state,
             (lex, span),
-            StringType::Double,
+            string::Type::Double,
         )?,
-        Parameters::SingleQuoteString => string_literal(
+        Parameters::SingleQuoteString => string::literal(
             source,
             lexer,
             state,
             (lex, span),
-            StringType::Single,
+            string::Type::Single,
         )?,
         _ => {
             // FIXME: how to handle this?

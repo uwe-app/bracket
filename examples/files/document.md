@@ -17,7 +17,8 @@ No title available
 {{ /if}}
 
 The number is: {{list.[1]}}
-The lookup value is: {{lookup foo.bar "qux"}}
+The lookup value is: {{lookup foo.'b.r' "qux"}}
+The lookup value is: {{lookup foo."b.r" "qux"}}
 
 ## JSON
 
