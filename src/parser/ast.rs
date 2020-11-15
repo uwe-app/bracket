@@ -272,7 +272,7 @@ pub enum RawIdType {
     /// Raw identifier in double quotes.
     Double,
     /// Raw identifier in square brackets.
-    Square,
+    Array,
 }
 
 /// Indicates the kind of path component.
@@ -285,7 +285,7 @@ pub enum ComponentType {
     LocalIdentifier,
     RawIdentifier(RawIdType),
     Delimiter,
-    ArrayAccess,
+    //ArrayAccess,
 }
 
 /// Components form part of a path.

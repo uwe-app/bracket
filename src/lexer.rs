@@ -119,8 +119,9 @@ pub enum Parameters {
     #[regex(r"[./]")]
     PathDelimiter,
 
-    #[regex(r"\[\d+\]+")]
-    ArrayAccess,
+    //#[regex(r"\[\d+\]+")]
+    #[token("[")]
+    StartArray,
 
     #[token("(", priority = 3)]
     StartSubExpression,
@@ -223,28 +224,44 @@ pub enum SingleQuoteString {
     Error,
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
+#[logos(extras = Extras)]
+pub enum Array{
+    #[regex(r#"[^\]]+"#)]
+    Text,
+
+    #[token("]")]
+    End,
+
+    #[token("\n")]
+    Newline,
+
+    #[error]
+    Error,
+}
+
 /// Type emitted by the iterator.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Token {
     Block(Block, Span),
-    //RawBlock(Block, Span),
     RawComment(RawComment, Span),
     RawStatement(RawStatement, Span),
     Comment(Comment, Span),
     Parameters(Parameters, Span),
     DoubleQuoteString(DoubleQuoteString, Span),
     SingleQuoteString(SingleQuoteString, Span),
+    Array(Array, Span),
 }
 
 impl Token {
     pub fn span(&self) -> &Span {
         match self {
             Token::Block(_, ref span) => span,
-            //Token::RawBlock(_, ref span) => span,
             Token::RawComment(_, ref span) => span,
             Token::RawStatement(_, ref span) => span,
             Token::Comment(_, ref span) => span,
             Token::Parameters(_, ref span) => span,
+            Token::Array(_, ref span) => span,
             Token::DoubleQuoteString(_, ref span) => span,
             Token::SingleQuoteString(_, ref span) => span,
         }
@@ -253,9 +270,6 @@ impl Token {
     pub fn is_text(&self) -> bool {
         match self {
             Token::Block(ref t, _) => t == &Block::Text || t == &Block::Newline,
-            //Token::RawBlock(ref t, _) => {
-            //t == &Block::Text || t == &Block::Newline
-            //}
             Token::RawComment(ref t, _) => {
                 t == &RawComment::Text || t == &RawComment::Newline
             }
@@ -266,6 +280,7 @@ impl Token {
                 t == &Comment::Text || t == &Comment::Newline
             }
             Token::Parameters(_, _) => false,
+            Token::Array(_, _) => false,
             Token::DoubleQuoteString(_, _) => false,
             Token::SingleQuoteString(_, _) => false,
         }
@@ -279,6 +294,7 @@ impl Token {
             //Token::RawBlock(ref lex, _) => lex == &Block::Newline,
             Token::Block(ref lex, _) => lex == &Block::Newline,
             Token::Parameters(ref lex, _) => lex == &Parameters::Newline,
+            Token::Array(ref lex, _) => lex == &Array::Newline,
             // NOTE: new lines are not allowed in string literals
             // NOTE: so we have special handling for this case
             Token::DoubleQuoteString(_, _) => false,
@@ -291,13 +307,13 @@ impl Token {
 
 enum Modes<'source> {
     Block(Lex<'source, Block>),
-    //RawBlock(Lex<'source, Block>),
     RawComment(Lex<'source, RawComment>),
     RawStatement(Lex<'source, RawStatement>),
     Comment(Lex<'source, Comment>),
     Parameters(Lex<'source, Parameters>),
     DoubleQuoteString(Lex<'source, DoubleQuoteString>),
     SingleQuoteString(Lex<'source, SingleQuoteString>),
+    Array(Lex<'source, Array>),
 }
 
 impl<'source> Modes<'source> {
@@ -423,6 +439,9 @@ impl<'source> Iterator for Lexer<'source> {
                     } else if Parameters::SingleQuoteString == token {
                         self.mode =
                             Modes::SingleQuoteString(lexer.to_owned().morph());
+                    } else if Parameters::StartArray == token {
+                        self.mode =
+                            Modes::Array(lexer.to_owned().morph());
                     } else if Parameters::End == token {
                         self.mode = Modes::Block(lexer.to_owned().morph());
                     }
@@ -453,6 +472,19 @@ impl<'source> Iterator for Lexer<'source> {
                         self.mode = Modes::Parameters(lexer.to_owned().morph());
                     }
                     Some(Token::SingleQuoteString(token, span))
+                } else {
+                    None
+                }
+            }
+            Modes::Array(lexer) => {
+                let result = lexer.next();
+                let span = lexer.span();
+
+                if let Some(token) = result {
+                    if Array::End == token {
+                        self.mode = Modes::Parameters(lexer.to_owned().morph());
+                    }
+                    Some(Token::Array(token, span))
                 } else {
                     None
                 }

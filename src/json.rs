@@ -61,14 +61,7 @@ pub(crate) fn find_field<'b, S: AsRef<str>>(
             }
         }
         Value::Array(ref list) => {
-            let name = field.as_ref();
-            // Support for square-bracket notation, eg: `list.[1]`
-            let value = if name.starts_with("[") && name.ends_with("]") {
-                &name[1..name.len() - 1]
-            } else {
-                name
-            };
-            if let Ok(index) = value.parse::<usize>() {
+            if let Ok(index) = field.as_ref().parse::<usize>() {
                 return list.get(index);
             }
         }

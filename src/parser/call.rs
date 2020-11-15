@@ -69,6 +69,13 @@ fn json_literal<'source>(
             (lex, span),
             string::Type::Single,
         )?,
+        Parameters::StartArray => string::literal(
+            source,
+            lexer,
+            state,
+            (lex, span),
+            string::Type::Array,
+        )?,
         _ => {
             // FIXME: how to handle this?
             panic!("Expecting JSON literal token.");
@@ -92,8 +99,7 @@ fn value<'source>(
         | Parameters::ExplicitThisDotSlash
         | Parameters::Identifier
         | Parameters::LocalIdentifier
-        | Parameters::ParentRef
-        | Parameters::ArrayAccess => {
+        | Parameters::ParentRef => {
             let (mut path, token) =
                 path::parse(source, lexer, state, (lex, span))?;
             if let Some(path) = path.take() {
@@ -112,6 +118,7 @@ fn value<'source>(
         // Literal components
         Parameters::DoubleQuoteString
         | Parameters::SingleQuoteString
+        | Parameters::StartArray
         | Parameters::Number
         | Parameters::True
         | Parameters::False
@@ -202,13 +209,16 @@ fn arguments<'source>(
                         panic!("Partial indicator (>) must be the first part of a call statement");
                     }
                     Parameters::ElseKeyword => {}
+                    //Parameters::StartArray => {
+                        //todo!("Parse argument as JSON literal array")
+                    //}
                     // Path components
                     Parameters::ExplicitThisKeyword
                     | Parameters::ExplicitThisDotSlash
                     | Parameters::Identifier
                     | Parameters::LocalIdentifier
-                    | Parameters::ParentRef
-                    | Parameters::ArrayAccess => {
+                    | Parameters::StartArray
+                    | Parameters::ParentRef => {
                         // Handle path arguments values
                         let (value, token) =
                             value(source, lexer, state, (lex, span))?;
@@ -263,7 +273,7 @@ fn arguments<'source>(
                         }
                     }
                     Parameters::Error => {
-                        panic!("Unexpected token");
+                        panic!("Unexpected parameters error token");
                     }
                     Parameters::End => {
                         call.exit(span);
@@ -307,7 +317,6 @@ fn target<'source>(
                     | Parameters::Identifier
                     | Parameters::LocalIdentifier
                     | Parameters::ParentRef
-                    | Parameters::ArrayAccess
                     | Parameters::PathDelimiter => {
                         let (mut path, token) =
                             path::parse(source, lexer, state, (lex, span))?;

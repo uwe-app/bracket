@@ -3,7 +3,7 @@ use serde_json::Value;
 
 use crate::{
     //error::{ErrorInfo, SourcePos, SyntaxError},
-    lexer::{DoubleQuoteString, Lexer, Parameters, SingleQuoteString, Token},
+    lexer::{DoubleQuoteString, Lexer, Parameters, SingleQuoteString, Token, Array},
     parser::ParseState,
     SyntaxResult,
 };
@@ -11,6 +11,7 @@ use crate::{
 pub(crate) enum Type {
     Double,
     Single,
+    Array,
 }
 
 /// Parse a quoted string literal and return a span 
@@ -43,6 +44,18 @@ pub(crate) fn parse<'source>(
             Type::Single => match token {
                 Token::SingleQuoteString(lex, span) => match &lex {
                     SingleQuoteString::End => {
+                        return Ok(str_start..str_end);
+                    }
+                    _ => {
+                        *state.byte_mut() = span.end;
+                        str_end = span.end;
+                    }
+                },
+                _ => panic!("Expecting string literal token"),
+            },
+            Type::Array => match token {
+                Token::Array(lex, span) => match &lex {
+                    Array::End => {
                         return Ok(str_start..str_end);
                     }
                     _ => {

@@ -1,6 +1,6 @@
 use bracket::lexer::{
     collect as lex, Block, Comment, DoubleQuoteString, Parameters, RawComment,
-    RawStatement, SingleQuoteString, Token,
+    RawStatement, SingleQuoteString, Token, Array,
 };
 
 #[test]
@@ -35,6 +35,22 @@ fn lex_single_quote_string() {
         Token::SingleQuoteString(SingleQuoteString::Text, 3..6),
         Token::SingleQuoteString(SingleQuoteString::End, 6..7),
         Token::Parameters(Parameters::End, 7..9),
+    ];
+    assert_eq!(expect, tokens);
+}
+
+#[test]
+fn lex_array_string() {
+    let value = "{{this.[1]}}";
+    let tokens = lex(value, true);
+    let expect = vec![
+        Token::Block(Block::StartStatement, 0..2),
+        Token::Parameters(Parameters::ExplicitThisKeyword, 2..6),
+        Token::Parameters(Parameters::PathDelimiter, 6..7),
+        Token::Parameters(Parameters::StartArray, 7..8),
+        Token::Array(Array::Text, 8..9),
+        Token::Array(Array::End, 9..10),
+        Token::Parameters(Parameters::End, 10..12),
     ];
     assert_eq!(expect, tokens);
 }

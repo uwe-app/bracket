@@ -18,10 +18,11 @@ fn is_path_component(lex: &Parameters) -> bool {
         | Parameters::Identifier
         | Parameters::LocalIdentifier
         | Parameters::PathDelimiter
+        | Parameters::StartArray
         | Parameters::SingleQuoteString
-        | Parameters::DoubleQuoteString
+        | Parameters::DoubleQuoteString => true,
 
-        | Parameters::ArrayAccess => true,
+        //| Parameters::ArrayAccess => true,
         _ => false,
     }
 }
@@ -36,8 +37,9 @@ fn component_type(lex: &Parameters) -> ComponentType {
         Parameters::PathDelimiter => ComponentType::Delimiter,
         Parameters::SingleQuoteString => ComponentType::RawIdentifier(RawIdType::Single),
         Parameters::DoubleQuoteString => ComponentType::RawIdentifier(RawIdType::Double),
+        Parameters::StartArray => ComponentType::RawIdentifier(RawIdType::Array),
 
-        Parameters::ArrayAccess => ComponentType::ArrayAccess,
+        //Parameters::ArrayAccess => ComponentType::ArrayAccess,
         _ => panic!("Expecting component parameter in parser"),
     }
 }
@@ -144,6 +146,16 @@ pub(crate) fn components<'source>(
                                 state,
                                 (lex, span),
                                 string::Type::Double,
+                            )?;
+                        }
+                        Parameters::StartArray => {
+                            // Override the span to the inner string value
+                            span = string::parse(
+                                source,
+                                lexer,
+                                state,
+                                (lex, span),
+                                string::Type::Array,
                             )?;
                         }
                         _ => {}

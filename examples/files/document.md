@@ -20,6 +20,8 @@ The number is: {{list.[1]}}
 The lookup value is: {{lookup foo.'b.r' "qux"}}
 The lookup value is: {{lookup foo."b.r" "qux"}}
 
+The title is: {{this.[title]}}
+
 ## JSON
 
 The `json` helper is useful for debugging template data, for example: `\{{json this}}` yields:
