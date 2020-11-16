@@ -16,7 +16,6 @@ use serde_json::Value;
 /// When executed in a statement this helper returns whether it's
 /// argument is *truthy*.
 ///
-#[derive(Clone)]
 pub struct If;
 
 impl Helper for If {

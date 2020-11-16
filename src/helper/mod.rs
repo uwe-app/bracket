@@ -71,7 +71,7 @@ pub type HelperResult<T> = std::result::Result<T, HelperError>;
 pub type HelperValue = HelperResult<Option<Value>>;
 
 /// Trait for helpers.
-pub trait Helper: Send + Sync + DynClone {
+pub trait Helper: Send + Sync {
     fn call<'render, 'call>(
         &self,
         rc: &mut Render<'render>,
@@ -80,7 +80,10 @@ pub trait Helper: Send + Sync + DynClone {
     ) -> HelperValue;
 }
 
-dyn_clone::clone_trait_object!(Helper);
+/// Trait for local helpers which must implement `Clone`.
+pub trait LocalHelper: Helper + DynClone {}
+
+dyn_clone::clone_trait_object!(LocalHelper);
 
 #[cfg(feature = "comparison-helper")]
 pub mod comparison;
@@ -101,8 +104,10 @@ pub mod unless;
 #[cfg(feature = "with-helper")]
 pub mod with;
 
+pub mod fluent;
+
 /// Collection of helpers.
-#[derive(Clone, Default)]
+#[derive(Default)]
 pub struct HelperRegistry<'reg> {
     helpers: HashMap<&'reg str, Box<dyn Helper + 'reg>>,
 }

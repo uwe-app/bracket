@@ -37,7 +37,6 @@ where
 }
 
 /// Perform an equality comparison.
-#[derive(Clone)]
 pub struct Equal;
 
 impl Helper for Equal {
@@ -52,7 +51,6 @@ impl Helper for Equal {
 }
 
 /// Perform a negated equality comparison.
-#[derive(Clone)]
 pub struct NotEqual;
 
 impl Helper for NotEqual {
@@ -67,7 +65,6 @@ impl Helper for NotEqual {
 }
 
 /// Perform a numerical greater than comparison.
-#[derive(Clone)]
 pub struct GreaterThan;
 
 impl Helper for GreaterThan {
@@ -82,7 +79,6 @@ impl Helper for GreaterThan {
 }
 
 /// Perform a numerical greater than or equal comparison.
-#[derive(Clone)]
 pub struct GreaterThanEqual;
 
 impl Helper for GreaterThanEqual {
@@ -97,7 +93,6 @@ impl Helper for GreaterThanEqual {
 }
 
 /// Perform a numerical less than comparison.
-#[derive(Clone)]
 pub struct LessThan;
 
 impl Helper for LessThan {
@@ -112,7 +107,6 @@ impl Helper for LessThan {
 }
 
 /// Perform a numerical less than comparison.
-#[derive(Clone)]
 pub struct LessThanEqual;
 
 impl Helper for LessThanEqual {

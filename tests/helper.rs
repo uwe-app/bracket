@@ -22,6 +22,8 @@ impl Helper for FooHelper {
     }
 }
 
+impl LocalHelper for FooHelper {}
+
 #[derive(Clone)]
 pub struct FooBlockHelper;
 

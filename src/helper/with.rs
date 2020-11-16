@@ -5,7 +5,6 @@ use crate::{
     render::{Context, Render, Scope},
 };
 
-#[derive(Clone)]
 pub struct With;
 
 impl Helper for With {

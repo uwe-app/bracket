@@ -24,7 +24,6 @@ use log::*;
 /// * warn
 /// * error
 ///
-#[derive(Clone)]
 pub struct Log;
 
 impl Helper for Log {

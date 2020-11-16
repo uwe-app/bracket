@@ -8,7 +8,6 @@ use crate::{
 use serde_json::Value;
 
 /// Perform a logical AND on two arguments.
-#[derive(Clone)]
 pub struct And;
 
 impl Helper for And {

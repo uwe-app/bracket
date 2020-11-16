@@ -13,7 +13,6 @@ use serde_json::{to_string, to_string_pretty, Value};
 /// Accepts a single argument which is converted to a JSON string and returned.
 ///
 /// The optional hash parameter `pretty` when *truthy* will pretty print the value.
-#[derive(Clone)]
 pub struct Json;
 
 impl Helper for Json {

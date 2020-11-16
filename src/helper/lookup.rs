@@ -13,7 +13,6 @@ use crate::{
 ///
 /// If the target field could not be found this helper will
 /// return an error.
-#[derive(Clone)]
 pub struct Lookup;
 
 impl Helper for Lookup {

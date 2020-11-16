@@ -10,7 +10,7 @@ use serde_json::{Map, Value};
 use crate::{
     error::{HelperError, RenderError},
     escape::EscapeFn,
-    helper::{Helper, HelperRegistry, HelperResult},
+    helper::{Helper, LocalHelper, HelperRegistry, HelperResult},
     json,
     output::Output,
     parser::{
@@ -80,7 +80,7 @@ pub struct Render<'render> {
     strict: bool,
     escape: &'render EscapeFn,
     helpers: &'render HelperRegistry<'render>,
-    local_helpers: Option<Rc<RefCell<HelperRegistry<'render>>>>,
+    local_helpers: Option<Rc<RefCell<HashMap<String, Box<dyn LocalHelper + 'render>>>>>,
     templates: &'render Templates<'render>,
     partials: HashMap<String, &'render Node<'render>>,
     name: &'render str,
@@ -411,11 +411,11 @@ impl<'render> Render<'render> {
     pub fn register_local_helper(
         &mut self,
         name: &'render str,
-        helper: Box<dyn Helper + 'render>,
+        helper: Box<dyn LocalHelper + 'render>,
     ) {
         if let Some(ref mut locals) = self.local_helpers {
             let registry = Rc::make_mut(locals);
-            registry.borrow_mut().insert(name, helper);
+            registry.borrow_mut().insert(name.to_string(), helper);
         }
     }
 
@@ -461,10 +461,13 @@ impl<'render> Render<'render> {
             .get_or_insert(Rc::new(RefCell::new(Default::default())));
         let local_helpers = Rc::clone(locals);
 
+        
+
         let value: Option<Value> = if let Some(helper) =
-            local_helpers.borrow().get(name).or(self.helpers.get(name))
+            local_helpers.borrow().get(name)
         {
-            //if let Some(helper) = self.helpers.get(name) {
+            helper.call(self, &mut context, content)?
+        } else if let Some(helper) = self.helpers.get(name) {
             helper.call(self, &mut context, content)?
         } else {
             None

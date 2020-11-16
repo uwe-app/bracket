@@ -5,7 +5,6 @@ use crate::{
     render::{Context, Render},
 };
 
-#[derive(Clone)]
 pub struct Unless;
 
 impl Helper for Unless {

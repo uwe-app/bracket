@@ -29,7 +29,6 @@ static INDEX: &str = "index";
 /// For objects the `@key` variable contains the name of the field; for
 /// arrays the `@index` variable contains the current zero-based index.
 ///
-#[derive(Clone)]
 pub struct Each;
 
 impl Helper for Each {
