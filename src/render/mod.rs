@@ -80,7 +80,7 @@ pub struct Render<'render> {
     strict: bool,
     escape: &'render EscapeFn,
     helpers: &'render HelperRegistry<'render>,
-    local_helpers: Option<Rc<RefCell<HashMap<String, Box<dyn LocalHelper + 'render>>>>>,
+    local_helpers: Rc<RefCell<HashMap<String, Box<dyn LocalHelper + 'render>>>>,
     templates: &'render Templates<'render>,
     partials: HashMap<String, &'render Node<'render>>,
     name: &'render str,
@@ -117,7 +117,7 @@ impl<'render> Render<'render> {
             strict,
             escape,
             helpers,
-            local_helpers: None,
+            local_helpers: Rc::new(RefCell::new(HashMap::new())),
             templates,
             partials: HashMap::new(),
             name,
@@ -413,10 +413,8 @@ impl<'render> Render<'render> {
         name: &'render str,
         helper: Box<dyn LocalHelper + 'render>,
     ) {
-        if let Some(ref mut locals) = self.local_helpers {
-            let registry = Rc::make_mut(locals);
-            registry.borrow_mut().insert(name.to_string(), helper);
-        }
+        let registry = Rc::make_mut(&mut self.local_helpers);
+        registry.borrow_mut().insert(name.to_string(), helper);
     }
 
     /// Remove a local helper.
@@ -424,10 +422,8 @@ impl<'render> Render<'render> {
     /// Local helpers will be removed once a helper call has finished
     /// but you can call this if you want to be explicit.
     pub fn unregister_local_helper(&mut self, name: &'render str) {
-        if let Some(ref mut locals) = self.local_helpers {
-            let registry = Rc::make_mut(locals);
-            registry.borrow_mut().remove(name);
-        }
+        let registry = Rc::make_mut(&mut self.local_helpers);
+        registry.borrow_mut().remove(name);
     }
 
     fn invoke(
@@ -455,13 +451,7 @@ impl<'render> Render<'render> {
         let mut context =
             Context::new(call, name.to_owned(), args, hash, text, property);
 
-        //println!("Invoke a helper with the name: {}", name);
-        let locals = self
-            .local_helpers
-            .get_or_insert(Rc::new(RefCell::new(Default::default())));
-        let local_helpers = Rc::clone(locals);
-
-        
+        let local_helpers = Rc::clone(&self.local_helpers);
 
         let value: Option<Value> = if let Some(helper) =
             local_helpers.borrow().get(name)
@@ -474,7 +464,6 @@ impl<'render> Render<'render> {
         };
 
         drop(local_helpers);
-        self.local_helpers.take();
 
         self.stack.pop();
 
@@ -482,10 +471,7 @@ impl<'render> Render<'render> {
     }
 
     fn has_helper(&mut self, name: &str) -> bool {
-        let locals = self
-            .local_helpers
-            .get_or_insert(Rc::new(RefCell::new(Default::default())));
-        locals.borrow().get(name).is_some() || self.helpers.get(name).is_some()
+        self.local_helpers.borrow().get(name).is_some() || self.helpers.get(name).is_some()
     }
 
     // Fallible version of path lookup.
