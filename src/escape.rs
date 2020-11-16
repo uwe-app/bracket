@@ -15,8 +15,6 @@ pub fn html(s: &str) -> String {
             '"' => output.push_str("&quot;"),
             '&' => output.push_str("&amp;"),
             '\'' => output.push_str("&#x27;"),
-            '`' => output.push_str("&#x60;"),
-            '=' => output.push_str("&#x3D;"),
             _ => output.push(c),
         }
     }
