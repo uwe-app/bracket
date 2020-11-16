@@ -104,8 +104,6 @@ pub mod unless;
 #[cfg(feature = "with-helper")]
 pub mod with;
 
-pub mod fluent;
-
 /// Collection of helpers.
 #[derive(Default)]
 pub struct HelperRegistry<'reg> {
