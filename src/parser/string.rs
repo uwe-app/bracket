@@ -28,9 +28,8 @@ pub struct RawLiteral {
 }
 
 impl RawLiteral {
-
     pub fn has_escape_sequences(&self) -> bool {
-        self.newline || self.delimiter 
+        self.newline || self.delimiter
     }
 
     pub fn into_owned<'a>(&self, value: &'a str) -> String {
@@ -71,7 +70,7 @@ pub(crate) fn parse<'source>(
     let mut flags = RawLiteral {
         literal_type: string_type,
         newline: false,
-        delimiter: false
+        delimiter: false,
     };
 
     while let Some(token) = lexer.next() {
@@ -142,7 +141,7 @@ pub(crate) fn literal<'source>(
     string_type: RawLiteralType,
 ) -> SyntaxResult<Value> {
     let (span, flags) = parse(source, lexer, state, current, string_type)?;
-    let value = if flags.has_escape_sequences()  {
+    let value = if flags.has_escape_sequences() {
         flags.into_owned(&source[span.start..span.end])
     } else {
         source[span.start..span.end].to_string()

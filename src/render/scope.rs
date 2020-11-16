@@ -7,7 +7,7 @@ use serde_json::{Map, Value};
 ///
 /// Helpers can create scopes and push and pop them from the scope
 /// stack to create new variable evaluation contexts.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Scope {
     value: Option<Value>,
     locals: Value,

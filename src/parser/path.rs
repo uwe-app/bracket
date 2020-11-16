@@ -5,7 +5,8 @@ use crate::{
     lexer::{lex, Lexer, Parameters, Token},
     parser::{
         ast::{Component, ComponentType, Path, RawIdType},
-        string::{self, RawLiteral}, ParseState,
+        string::{self, RawLiteral},
+        ParseState,
     },
     SyntaxResult,
 };
@@ -56,23 +57,19 @@ fn to_component<'source>(
     span: Span,
     raw_id: Option<RawLiteral>,
 ) -> Component<'source> {
-
     let value = if let Some(ref raw) = raw_id {
         if raw.has_escape_sequences() {
             println!("Create component with raw id value {:?}", raw);
             Some(raw.into_owned(&source[span.clone()]))
-        } else { None }
+        } else {
+            None
+        }
     } else {
         None
     };
 
-    
-    let mut component = Component::new(
-        source,
-        component_type(lex),
-        span,
-        value,
-    );
+    let mut component =
+        Component::new(source, component_type(lex), span, value);
 
     component
 }
@@ -250,10 +247,7 @@ pub(crate) fn components<'source>(
                     }
 
                     path.add_component(to_component(
-                        source,
-                        &lex,
-                        span,
-                        raw_id,
+                        source, &lex, span, raw_id,
                     ));
                     wants_delimiter = true;
                 } else {

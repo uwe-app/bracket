@@ -10,9 +10,9 @@ use serde_json::{Map, Value};
 use crate::{
     error::{HelperError, RenderError},
     escape::EscapeFn,
-    helper::{Helper, LocalHelper, HelperRegistry, HelperResult},
+    helper::{Helper, HelperRegistry, HelperResult, LocalHelper},
     json,
-    output::Output,
+    output::{Output, StringOutput},
     parser::{
         ast::{Block, Call, CallTarget, Node, ParameterValue, Path, Slice},
         path,
@@ -46,7 +46,7 @@ static STACK_MAX: usize = 32;
 /// types otherwise the `if` helper will not work
 /// as expected as it returns values and handles
 /// block templates.
-#[derive(Eq, PartialEq, Hash, Debug)]
+#[derive(Eq, PartialEq, Hash, Debug, Clone)]
 enum CallSite {
     Partial(String),
     Helper(String),
@@ -129,6 +129,16 @@ impl<'render> Render<'render> {
             end_tag_hint: None,
             stack: Vec::new(),
         })
+    }
+
+    /// Render a node by iterating it's children.
+    ///
+    /// The supplied node should be a document or block node.
+    pub fn render(&mut self, node: &'render Node<'render>) -> RenderResult<()> {
+        for event in node.into_iter().event(Default::default()) {
+            self.render_node(event.node, event.trim)?;
+        }
+        Ok(())
     }
 
     /// Get a mutable reference to the output destination.
@@ -256,6 +266,37 @@ impl<'render> Render<'render> {
         self.end_tag_hint = hint;
 
         Ok(())
+    }
+
+    /// Render a node and buffer the result to a string.
+    ///
+    /// The call stack and scopes are inherited from this renderer.
+    ///
+    /// The supplied node should be a document or block node.
+    pub fn buffer(&mut self, node: &'render Node<'render>) -> RenderResult<String> {
+
+        let mut writer = StringOutput::new();
+        let mut rc = Render::new(
+            self.strict,
+            self.escape,
+            self.helpers,
+            self.templates,
+            self.name,
+            &self.root,
+            Box::new(&mut writer),
+        )?;
+
+        // Inherit the stack and scope from this renderer
+        rc.stack = self.stack.clone();
+        rc.scopes = self.scopes.clone();
+        //rc.local_helpers = Rc::clone(&self.local_helpers);
+
+        rc.render(node)?;
+
+        // Must drop the renderer to take ownership of the string buffer
+        drop(rc);
+
+        Ok(writer.into())
     }
 
     /// Evaluate a path and return the resolved value.
@@ -453,15 +494,14 @@ impl<'render> Render<'render> {
 
         let local_helpers = Rc::clone(&self.local_helpers);
 
-        let value: Option<Value> = if let Some(helper) =
-            local_helpers.borrow().get(name)
-        {
-            helper.call(self, &mut context, content)?
-        } else if let Some(helper) = self.helpers.get(name) {
-            helper.call(self, &mut context, content)?
-        } else {
-            None
-        };
+        let value: Option<Value> =
+            if let Some(helper) = local_helpers.borrow().get(name) {
+                helper.call(self, &mut context, content)?
+            } else if let Some(helper) = self.helpers.get(name) {
+                helper.call(self, &mut context, content)?
+            } else {
+                None
+            };
 
         drop(local_helpers);
 
@@ -471,7 +511,8 @@ impl<'render> Render<'render> {
     }
 
     fn has_helper(&mut self, name: &str) -> bool {
-        self.local_helpers.borrow().get(name).is_some() || self.helpers.get(name).is_some()
+        self.local_helpers.borrow().get(name).is_some()
+            || self.helpers.get(name).is_some()
     }
 
     // Fallible version of path lookup.

@@ -230,7 +230,6 @@ pub enum Array {
 
     //#[token("\\n")]
     //EscapedNewline,
-
     #[token(r#"\]"#)]
     Escaped,
 

@@ -297,11 +297,10 @@ pub struct Component<'source> {
 }
 
 impl<'source> Component<'source> {
-
     /// Create a new component path.
     ///
-    /// If a component path contains escape sequences an 
-    /// owned value should be given otherwise the component 
+    /// If a component path contains escape sequences an
+    /// owned value should be given otherwise the component
     /// path will use the supplied span.
     pub fn new(
         source: &'source str,
@@ -309,7 +308,12 @@ impl<'source> Component<'source> {
         span: Range<usize>,
         value: Option<String>,
     ) -> Self {
-        Self {source, kind, span, value}
+        Self {
+            source,
+            kind,
+            span,
+            value,
+        }
     }
 
     /// Determine if this is the special `@root` component.
@@ -356,14 +360,14 @@ impl<'source> Component<'source> {
 
     /// Get the underlying value for the path component.
     ///
-    /// If an owned value has been given to this path component 
-    /// (which is necessary when the path component includes escape sequences) 
-    /// then a reference to the owned value is returned otherwise 
-    /// a string slice into the original template for the span 
+    /// If an owned value has been given to this path component
+    /// (which is necessary when the path component includes escape sequences)
+    /// then a reference to the owned value is returned otherwise
+    /// a string slice into the original template for the span
     /// assigned to this component path is returned.
     ///
-    /// When performing lookup of values using a path a caller must use 
-    /// this function and **not** `as_str()` otherwise literal strings 
+    /// When performing lookup of values using a path a caller must use
+    /// this function and **not** `as_str()` otherwise literal strings
     /// with escape sequences will not be respected.
     pub fn as_value(&self) -> &str {
         if let Some(ref value) = self.value {
@@ -475,7 +479,8 @@ impl<'source> Path<'source> {
     /// Determine if this path is a simple identifier.
     pub fn is_simple(&self) -> bool {
         return self.components.len() == 1
-            && self.components.first().unwrap().kind == ComponentType::Identifier;
+            && self.components.first().unwrap().kind
+                == ComponentType::Identifier;
     }
 }
 
