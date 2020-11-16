@@ -290,6 +290,7 @@ impl<'render> Render<'render> {
         rc.stack = self.stack.clone();
         rc.scopes = self.scopes.clone();
         rc.trim = self.trim.clone();
+        rc.hint = self.hint.clone();
         //rc.local_helpers = Rc::clone(&self.local_helpers);
 
         rc.render(node).map_err(Box::new)?;
