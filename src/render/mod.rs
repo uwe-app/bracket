@@ -273,7 +273,7 @@ impl<'render> Render<'render> {
     /// The call stack and scopes are inherited from this renderer.
     ///
     /// The supplied node should be a document or block node.
-    pub fn buffer(&mut self, node: &'render Node<'render>) -> RenderResult<String> {
+    pub fn buffer(&self, node: &'render Node<'render>) -> Result<String, HelperError> {
 
         let mut writer = StringOutput::new();
         let mut rc = Render::new(
@@ -284,14 +284,14 @@ impl<'render> Render<'render> {
             self.name,
             &self.root,
             Box::new(&mut writer),
-        )?;
+        ).map_err(Box::new)?;
 
         // Inherit the stack and scope from this renderer
         rc.stack = self.stack.clone();
         rc.scopes = self.scopes.clone();
         //rc.local_helpers = Rc::clone(&self.local_helpers);
 
-        rc.render(node)?;
+        rc.render(node).map_err(Box::new)?;
 
         // Must drop the renderer to take ownership of the string buffer
         drop(rc);
