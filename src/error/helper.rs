@@ -55,6 +55,13 @@ pub enum HelperError {
     Json(#[from] serde_json::Error),
 }
 
+impl HelperError {
+    /// Create a new helper error with the given message.
+    pub fn new(msg: &str) -> Self {
+        HelperError::Message(msg.to_string()) 
+    }
+}
+
 impl From<std::io::Error> for HelperError {
     fn from(err: std::io::Error) -> Self {
         Self::Io(IoError::Io(err))
