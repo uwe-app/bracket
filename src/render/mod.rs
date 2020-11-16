@@ -289,16 +289,26 @@ impl<'render> Render<'render> {
         // Inherit the stack and scope from this renderer
         rc.stack = self.stack.clone();
         rc.scopes = self.scopes.clone();
-        rc.trim = self.trim.clone();
-        rc.hint = self.hint.clone();
-        //rc.local_helpers = Rc::clone(&self.local_helpers);
 
         rc.render(node).map_err(Box::new)?;
 
         // Must drop the renderer to take ownership of the string buffer
         drop(rc);
 
-        Ok(writer.into())
+        let mut value: String = writer.into();
+
+        if node.trim().after {
+            value = value.trim_start().to_string();
+        }
+
+        if let Node::Block(ref block) = node {
+
+            if block.trim_close().before {
+                value = value.trim_end().to_string();
+            }
+        }
+
+        Ok(value)
     }
 
     /// Evaluate a path and return the resolved value.
