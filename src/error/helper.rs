@@ -57,8 +57,8 @@ pub enum HelperError {
 
 impl HelperError {
     /// Create a new helper error with the given message.
-    pub fn new(msg: &str) -> Self {
-        HelperError::Message(msg.to_string()) 
+    pub fn new<S: AsRef<str>>(msg: S) -> Self {
+        HelperError::Message(msg.as_ref().to_string()) 
     }
 }
 
