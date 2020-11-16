@@ -290,25 +290,14 @@ impl<'render> Render<'render> {
         rc.stack = self.stack.clone();
         rc.scopes = self.scopes.clone();
 
-        rc.render(node).map_err(Box::new)?;
+        // NOTE: call `template()` not `render()` so trim settings
+        // NOTE: on the parent node are respected!
+        rc.template(node)?;
 
         // Must drop the renderer to take ownership of the string buffer
         drop(rc);
 
-        let mut value: String = writer.into();
-
-        if node.trim().after {
-            value = value.trim_start().to_string();
-        }
-
-        if let Node::Block(ref block) = node {
-
-            if block.trim_close().before {
-                value = value.trim_end().to_string();
-            }
-        }
-
-        Ok(value)
+        Ok(writer.into())
     }
 
     /// Evaluate a path and return the resolved value.
