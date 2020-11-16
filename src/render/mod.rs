@@ -289,6 +289,7 @@ impl<'render> Render<'render> {
         // Inherit the stack and scope from this renderer
         rc.stack = self.stack.clone();
         rc.scopes = self.scopes.clone();
+        rc.trim = self.trim.clone();
         //rc.local_helpers = Rc::clone(&self.local_helpers);
 
         rc.render(node).map_err(Box::new)?;
