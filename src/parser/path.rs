@@ -49,6 +49,7 @@ fn component_type<'source>(lex: &Parameters) -> ComponentType {
 
 fn to_component<'source>(
     source: &'source str,
+    state: &mut ParseState,
     lex: &Parameters,
     span: Span,
     raw_id: Option<RawLiteral>,
@@ -62,7 +63,7 @@ fn to_component<'source>(
     } else {
         None
     };
-    Component::new(source, component_type(lex), span, value)
+    Component::new(source, component_type(lex), span, value, state.line_range())
 }
 
 fn parents<'source>(
@@ -96,7 +97,8 @@ pub(crate) fn components<'source>(
 
         if token.is_newline() {
             *state.line_mut() += 1;
-            continue;
+            // Paths are terminated if we hit a newline!
+            return Ok(lexer.next())
         }
 
         match token {
@@ -204,7 +206,7 @@ pub(crate) fn components<'source>(
                     }
 
                     path.add_component(to_component(
-                        source, &lex, span, raw_id,
+                        source, state, &lex, span, raw_id,
                     ));
                     wants_delimiter = true;
                 } else {
@@ -249,7 +251,7 @@ pub(crate) fn parse<'source>(
                 *state.byte_mut() = span.start;
 
                 if is_path_component(&lex) {
-                    let component = to_component(source, &lex, span, None);
+                    let component = to_component(source, state, &lex, span, None);
                     // Flag as a path that should be resolved from the root object
                     if path.is_empty() && component.is_root() {
                         path.set_root(true);
@@ -287,6 +289,10 @@ pub(crate) fn parse<'source>(
                     )?;
 
                     path.lines_end(state.line());
+
+                    if path.is_empty() {
+                        panic!("Empty path encountered!!!");
+                    }
 
                     return Ok((Some(path), next));
                 }

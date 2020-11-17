@@ -300,6 +300,12 @@ fn target<'source>(
     context: CallContext,
 ) -> SyntaxResult<Option<Token>> {
     while let Some(token) = next {
+
+        //if token.is_newline() {
+            //*state.line_mut() += 1;
+            //continue;
+        //}
+
         match token {
             Token::Parameters(lex, span) => {
                 match &lex {

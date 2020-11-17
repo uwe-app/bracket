@@ -1,4 +1,4 @@
-use bracket::{parser::ast::{Node, Lines}, Registry, Result};
+use bracket::{parser::ast::{Node, Lines, CallTarget}, Registry, Result};
 
 static NAME: &str = "lines.rs";
 
@@ -48,16 +48,22 @@ This is a raw comment that spans multiple lines.
 fn lines_call_single() -> Result<()> {
     let registry = Registry::new();
     let value = r"{{
-foo.
-bar.
-qux
+foo.bar.qux
 }}";
     let template = registry.parse(NAME, value)?;
     let node = template.node().into_iter().next().unwrap();
     if let Node::Statement(call) = node {
-        assert_eq!(0..5, call.lines().clone());
+        assert_eq!(0..3, call.lines().clone());
         let target = call.target();
-        assert_eq!(1..5, target.lines().clone());
+        assert_eq!(1..3, target.lines().clone());
+        if let CallTarget::Path(ref path) = target {
+            let c1 = path.components().get(0).unwrap();
+            let c2 = path.components().get(1).unwrap();
+            let c3 = path.components().get(2).unwrap();
+            assert_eq!(1..2, c1.lines().clone());
+            assert_eq!(1..2, c2.lines().clone());
+            assert_eq!(1..2, c3.lines().clone());
+        }
     }
     Ok(())
 }
@@ -65,13 +71,15 @@ qux
 #[test]
 fn lines_call_multi() -> Result<()> {
     let registry = Registry::new();
-    let value = r"{{foo
-bar
-qux}}";
+    let value = r#"{{
+foo
+"message"
+true
+}}"#;
     let template = registry.parse(NAME, value)?;
     let node = template.node().into_iter().next().unwrap();
     if let Node::Statement(call) = node {
-        assert_eq!(0..3, call.lines().clone());
+        assert_eq!(0..5, call.lines().clone());
     }
     Ok(())
 }
