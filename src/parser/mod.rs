@@ -248,15 +248,7 @@ impl<'source> Parser<'source> {
 
                     let name = block.name().ok_or_else(|| {
                         return SyntaxError::ExpectedIdentifier(
-                            ErrorInfo::new(
-                                self.source,
-                                self.state.file_name(),
-                                SourcePos::from((
-                                    self.state.line(),
-                                    self.state.byte(),
-                                )),
-                            )
-                            .into(),
+                            ErrorInfo::from((self.source, &mut self.state)).into(),
                         );
                     })?;
 
@@ -265,15 +257,7 @@ impl<'source> Parser<'source> {
                             if !path.is_simple() {
                                 return Err(
                                     SyntaxError::ExpectedSimpleIdentifier(
-                                        ErrorInfo::new(
-                                            self.source,
-                                            self.state.file_name(),
-                                            SourcePos::from((
-                                                self.state.line(),
-                                                self.state.byte(),
-                                            )),
-                                        )
-                                        .into(),
+                                        ErrorInfo::from((self.source, &mut self.state)).into(),
                                     ),
                                 );
                             }
@@ -351,16 +335,7 @@ impl<'source> Parser<'source> {
                         *self.state.byte_mut() = span.start;
 
                         return Err(SyntaxError::BlockNotOpen(
-                            ErrorInfo::new_notes(
-                                self.source,
-                                self.state.file_name(),
-                                SourcePos::from((
-                                    self.state.line(),
-                                    self.state.byte(),
-                                )),
-                                notes,
-                            )
-                            .into(),
+                            ErrorInfo::from((self.source, &mut self.state, notes)).into(),
                         ));
                         //panic!("Got close block with no open block!");
                     }
@@ -369,20 +344,12 @@ impl<'source> Parser<'source> {
 
                     if let Some(close_name) = temp.name() {
                         if open_name != close_name {
+                            let notes = vec![format!(
+                                "opening name is '{}'",
+                                open_name
+                            )];
                             return Err(SyntaxError::TagNameMismatch(
-                                ErrorInfo::new_notes(
-                                    self.source,
-                                    self.state.file_name(),
-                                    SourcePos::from((
-                                        self.state.line(),
-                                        self.state.byte(),
-                                    )),
-                                    vec![format!(
-                                        "opening name is '{}'",
-                                        open_name
-                                    )],
-                                )
-                                .into(),
+                                ErrorInfo::from((self.source, &mut self.state, notes)).into(),
                             ));
                         }
 
@@ -396,15 +363,7 @@ impl<'source> Parser<'source> {
                         return Ok(Some(Node::Block(block)));
                     } else {
                         return Err(SyntaxError::ExpectedIdentifier(
-                            ErrorInfo::new(
-                                self.source,
-                                self.state.file_name(),
-                                SourcePos::from((
-                                    self.state.line(),
-                                    self.state.byte(),
-                                )),
-                            )
-                            .into(),
+                            ErrorInfo::from((self.source, &mut self.state)).into(),
                         ));
                     }
                 }

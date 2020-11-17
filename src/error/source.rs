@@ -2,6 +2,8 @@
 use std::fmt;
 use unicode_width::UnicodeWidthStr;
 
+use crate::parser::ParseState;
+
 /// Map a position for syntax errors.
 #[derive(Debug, Eq, PartialEq)]
 pub struct SourcePos(pub usize, pub usize);
@@ -36,44 +38,14 @@ impl<'source> ErrorInfo<'source> {
         source: &'source str,
         file_name: &str,
         source_pos: SourcePos,
+        notes: Vec<String>,
     ) -> Self {
         Self {
             source,
             file_name: file_name.to_string(),
             source_pos,
-            notes: vec![],
+            notes,
         }
-    }
-
-    pub fn new_notes(
-        source: &'source str,
-        file_name: &str,
-        source_pos: SourcePos,
-        notes: Vec<String>,
-    ) -> Self {
-        let mut info = ErrorInfo::new(source, file_name, source_pos);
-        info.notes = notes;
-        info
-    }
-
-    #[deprecated]
-    pub fn file_name(&self) -> &str {
-        &self.file_name
-    }
-
-    #[deprecated]
-    pub fn notes(&self) -> &Vec<String> {
-        &self.notes
-    }
-
-    #[deprecated]
-    pub fn source(&self) -> &'source str {
-        self.source
-    }
-
-    #[deprecated]
-    pub fn position(&self) -> &SourcePos {
-        &self.source_pos
     }
 
     fn find_prev_line_offset(&self, s: &str, pos: &SourcePos) -> Option<usize> {
@@ -100,6 +72,34 @@ impl<'source> ErrorInfo<'source> {
             counter += 1;
         }
         None
+    }
+}
+
+impl<'source> From<(&'source str, &mut ParseState)> for ErrorInfo<'source> {
+    fn from(source: (&'source str, &mut ParseState)) -> Self {
+        ErrorInfo::new(
+            source.0,
+            source.1.file_name(),
+            SourcePos::from((
+                source.1.line(),
+                source.1.byte(),
+            )),
+            vec![],
+        )
+    }
+}
+
+impl<'source> From<(&'source str, &mut ParseState, Vec<String>)> for ErrorInfo<'source> {
+    fn from(source: (&'source str, &mut ParseState, Vec<String>)) -> Self {
+        ErrorInfo::new(
+            source.0,
+            source.1.file_name(),
+            SourcePos::from((
+                source.1.line(),
+                source.1.byte(),
+            )),
+            source.2,
+        )
     }
 }
 

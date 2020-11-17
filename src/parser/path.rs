@@ -59,7 +59,6 @@ fn to_component<'source>(
 ) -> Component<'source> {
     let value = if let Some(ref raw) = raw_id {
         if raw.has_escape_sequences() {
-            println!("Create component with raw id value {:?}", raw);
             Some(raw.into_owned(&source[span.clone()]))
         } else {
             None
@@ -67,11 +66,7 @@ fn to_component<'source>(
     } else {
         None
     };
-
-    let mut component =
-        Component::new(source, component_type(lex), span, value);
-
-    component
+    Component::new(source, component_type(lex), span, value)
 }
 
 fn parents<'source>(
@@ -119,44 +114,20 @@ pub(crate) fn components<'source>(
                             *state.byte_mut() = span.start;
                             return Err(
                                 SyntaxError::UnexpectedPathExplicitThis(
-                                    ErrorInfo::new(
-                                        source,
-                                        state.file_name(),
-                                        SourcePos::from((
-                                            state.line(),
-                                            state.byte(),
-                                        )),
-                                    )
-                                    .into(),
+                                    ErrorInfo::from((source, state)).into(),
                                 ),
                             );
                         }
                         Parameters::ParentRef => {
                             *state.byte_mut() = span.start;
                             return Err(SyntaxError::UnexpectedPathParent(
-                                ErrorInfo::new(
-                                    source,
-                                    state.file_name(),
-                                    SourcePos::from((
-                                        state.line(),
-                                        state.byte(),
-                                    )),
-                                )
-                                .into(),
+                                ErrorInfo::from((source, state)).into(),
                             ));
                         }
                         Parameters::LocalIdentifier => {
                             *state.byte_mut() = span.start;
                             return Err(SyntaxError::UnexpectedPathLocal(
-                                ErrorInfo::new(
-                                    source,
-                                    state.file_name(),
-                                    SourcePos::from((
-                                        state.line(),
-                                        state.byte(),
-                                    )),
-                                )
-                                .into(),
+                                ErrorInfo::from((source, state)).into(),
                             ));
                         }
                         Parameters::SingleQuoteString => {
@@ -211,15 +182,7 @@ pub(crate) fn components<'source>(
                                 *state.byte_mut() = span.start;
                                 return Err(
                                     SyntaxError::ExpectedPathDelimiter(
-                                        ErrorInfo::new(
-                                            source,
-                                            state.file_name(),
-                                            SourcePos::from((
-                                                state.line(),
-                                                state.byte(),
-                                            )),
-                                        )
-                                        .into(),
+                                        ErrorInfo::from((source, state)).into(),
                                     ),
                                 );
                             }
@@ -230,15 +193,7 @@ pub(crate) fn components<'source>(
                                 *state.byte_mut() = span.start;
                                 return Err(
                                     SyntaxError::UnexpectedPathDelimiter(
-                                        ErrorInfo::new(
-                                            source,
-                                            state.file_name(),
-                                            SourcePos::from((
-                                                state.line(),
-                                                state.byte(),
-                                            )),
-                                        )
-                                        .into(),
+                                        ErrorInfo::from((source, state)).into(),
                                     ),
                                 );
                             }
@@ -275,12 +230,7 @@ pub(crate) fn parse<'source>(
         // Cannot start with a path delimiter
         Parameters::PathDelimiter => {
             return Err(SyntaxError::UnexpectedPathDelimiter(
-                ErrorInfo::new(
-                    source,
-                    state.file_name(),
-                    SourcePos::from((state.line(), state.byte())),
-                )
-                .into(),
+                ErrorInfo::from((source, state)).into(),
             ));
         }
         // Count parent references
@@ -309,15 +259,7 @@ pub(crate) fn parse<'source>(
                     if component.is_local() && path.parents() > 0 {
                         return Err(
                             SyntaxError::UnexpectedPathParentWithLocal(
-                                ErrorInfo::new(
-                                    source,
-                                    state.file_name(),
-                                    SourcePos::from((
-                                        state.line(),
-                                        state.byte(),
-                                    )),
-                                )
-                                .into(),
+                                ErrorInfo::from((source, state)).into(),
                             ),
                         );
                     }
@@ -325,15 +267,7 @@ pub(crate) fn parse<'source>(
                     if component.is_explicit() && path.parents() > 0 {
                         return Err(
                             SyntaxError::UnexpectedPathParentWithExplicit(
-                                ErrorInfo::new(
-                                    source,
-                                    state.file_name(),
-                                    SourcePos::from((
-                                        state.line(),
-                                        state.byte(),
-                                    )),
-                                )
-                                .into(),
+                                ErrorInfo::from((source, state)).into(),
                             ),
                         );
                     }

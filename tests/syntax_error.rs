@@ -13,7 +13,7 @@ fn err_empty_statement() -> Result<()> {
         Err(e) => {
             println!("{:?}", e);
             let pos = SourcePos(0, 2);
-            let info = ErrorInfo::new(value, "unknown", pos);
+            let info = ErrorInfo::new(value, "unknown", pos, vec![]);
             assert_eq!(
                 Error::Syntax(SyntaxError::EmptyStatement(info.into())),
                 e

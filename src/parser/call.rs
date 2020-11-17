@@ -343,15 +343,7 @@ fn target<'source>(
                         if !call.has_target() && !call.is_conditional() {
                             //panic!("Got end of statement with no call target...");
                             return Err(SyntaxError::EmptyStatement(
-                                ErrorInfo::new(
-                                    source,
-                                    state.file_name(),
-                                    SourcePos::from((
-                                        state.line(),
-                                        state.byte(),
-                                    )),
-                                )
-                                .into(),
+                                ErrorInfo::from((source, state)).into(),
                             ));
                         }
                         call.exit(span);
