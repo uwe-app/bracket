@@ -195,7 +195,7 @@ impl<'source> Parser<'source> {
                 &|t: &Token| !t.is_text(),
             );
             self.next_token = next;
-            return Ok(Some(Node::Text(Text(self.source, span))));
+            return Ok(Some(Node::Text(Text::new(self.source, span))));
         }
 
         //println!("Advance token {:?}", &next);

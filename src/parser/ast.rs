@@ -193,15 +193,27 @@ impl fmt::Debug for Node<'_> {
 
 /// Text nodes refer to a consecutive range of bytes.
 #[derive(Eq, PartialEq)]
-pub struct Text<'source>(pub &'source str, pub Range<usize>);
+pub struct Text<'source> {
+    source: &'source str,
+    span: Range<usize>,
+}
+
+impl<'source> Text<'source> {
+    pub fn new(
+        source: &'source str,
+        span: Range<usize>,
+        ) -> Self {
+        Self {source, span} 
+    }
+}
 
 impl<'source> Slice<'source> for Text<'source> {
     fn as_str(&self) -> &'source str {
-        &self.0[self.1.start..self.1.end]
+        &self.source[self.span.start..self.span.end]
     }
 
     fn source(&self) -> &'source str {
-        self.0
+        self.source
     }
 }
 
@@ -215,7 +227,7 @@ impl fmt::Debug for Text<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Text")
             .field("source", &self.as_str())
-            .field("range", &self.1)
+            .field("range", &self.span)
             .finish()
     }
 }
