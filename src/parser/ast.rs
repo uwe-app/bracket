@@ -30,11 +30,6 @@ pub trait Lines {
 
     /// Mutable reference to the line range for the node.
     fn lines_mut(&mut self) -> &mut Range<usize>;
-
-    /// Mutable reference to the end of the line range.
-    fn line_end_mut(&mut self) -> &mut usize {
-        &mut self.lines_mut().end
-    }
 }
 
 /// Trait for elements that expect to be closed.
@@ -196,14 +191,22 @@ impl fmt::Debug for Node<'_> {
 pub struct Text<'source> {
     source: &'source str,
     span: Range<usize>,
+    line: Range<usize>,
 }
 
 impl<'source> Text<'source> {
-    pub fn new(
-        source: &'source str,
-        span: Range<usize>,
-        ) -> Self {
-        Self {source, span} 
+    pub fn new(source: &'source str, span: Range<usize>, line: Range<usize>) -> Self {
+        Self {source, span, line} 
+    }
+}
+
+impl<'source> Lines for Text<'source> {
+    fn lines(&self) -> &Range<usize> {
+        &self.line
+    }
+
+    fn lines_mut(&mut self) -> &mut Range<usize> {
+        &mut self.line
     }
 }
 
@@ -266,6 +269,16 @@ impl<'source> Slice<'source> for TextBlock<'source> {
 
     fn source(&self) -> &'source str {
         self.source
+    }
+}
+
+impl<'source> Lines for TextBlock<'source> {
+    fn lines(&self) -> &Range<usize> {
+        self.text.lines()
+    }
+
+    fn lines_mut(&mut self) -> &mut Range<usize> {
+        self.text.lines_mut()
     }
 }
 

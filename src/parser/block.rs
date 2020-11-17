@@ -43,11 +43,13 @@ pub(crate) fn text_until<'source>(
 ) -> Option<(Node<'source>, Option<Token>)> {
     let text = span.end..span.end;
     let open = span;
+    let mut line_range = state.line().clone()..state.line().clone() + 1;
     let (span, next_token) = until(lexer, state, text, end);
     if let Some(ref close) = next_token {
+        line_range.end = state.line().clone() + 1;
         let block = TextBlock::new(
             source,
-            Text::new(source, span),
+            Text::new(source, span, line_range),
             open,
             close.span().clone(),
         );

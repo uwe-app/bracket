@@ -188,6 +188,7 @@ impl<'source> Parser<'source> {
 
         // Normalize consecutive text nodes
         if next.is_text() {
+            let mut line_range = self.state.line().clone()..self.state.line().clone() + 1;
             let (span, next) = block::until(
                 &mut self.lexer,
                 &mut self.state,
@@ -195,7 +196,8 @@ impl<'source> Parser<'source> {
                 &|t: &Token| !t.is_text(),
             );
             self.next_token = next;
-            return Ok(Some(Node::Text(Text::new(self.source, span))));
+            line_range.end = self.state.line() + 1;
+            return Ok(Some(Node::Text(Text::new(self.source, span, line_range))));
         }
 
         //println!("Advance token {:?}", &next);
