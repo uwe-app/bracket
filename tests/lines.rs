@@ -17,6 +17,34 @@ so we can check the line range.";
 }
 
 #[test]
+fn lines_comment() -> Result<()> {
+    let registry = Registry::new();
+    let value = r"{{!
+This is a comment that spans multiple lines.
+}}";
+    let template = registry.parse(NAME, value)?;
+    let node = template.node().into_iter().next().unwrap();
+    if let Node::Comment(text) = node {
+        assert_eq!(0..3, text.lines().clone());
+    }
+    Ok(())
+}
+
+#[test]
+fn lines_raw_comment() -> Result<()> {
+    let registry = Registry::new();
+    let value = r"{{!--
+This is a raw comment that spans multiple lines.
+--}}";
+    let template = registry.parse(NAME, value)?;
+    let node = template.node().into_iter().next().unwrap();
+    if let Node::RawComment(text) = node {
+        assert_eq!(0..3, text.lines().clone());
+    }
+    Ok(())
+}
+
+#[test]
 fn lines_call_single() -> Result<()> {
     let registry = Registry::new();
     let value = r"{{foo}}";
