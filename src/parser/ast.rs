@@ -230,7 +230,8 @@ impl fmt::Debug for Text<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Text")
             .field("source", &self.as_str())
-            .field("range", &self.span)
+            .field("span", &self.span)
+            .field("line", &self.line)
             .finish()
     }
 }
