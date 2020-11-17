@@ -4,7 +4,7 @@ use crate::{
     error::{ErrorInfo, SyntaxError},
     lexer::{lex, Lexer, Parameters, Token},
     parser::{
-        ast::{Component, ComponentType, Path, RawIdType},
+        ast::{Component, ComponentType, Path, RawIdType, Lines},
         string::{self, RawLiteral},
         ParseState,
     },
@@ -66,7 +66,7 @@ fn to_component<'source>(
 }
 
 fn parents<'source>(
-    _state: &mut ParseState,
+    state: &mut ParseState,
     lexer: &mut Lexer<'source>,
     path: &mut Path,
 ) -> Option<Token> {
@@ -93,6 +93,12 @@ pub(crate) fn components<'source>(
     mut wants_delimiter: bool,
 ) -> SyntaxResult<Option<Token>> {
     while let Some(token) = lexer.next() {
+
+        if token.is_newline() {
+            *state.line_mut() += 1;
+            continue;
+        }
+
         match token {
             Token::Parameters(lex, mut span) => {
                 *state.byte_mut() = span.start;
@@ -219,7 +225,7 @@ pub(crate) fn parse<'source>(
     current: (Parameters, Span),
 ) -> SyntaxResult<(Option<Path<'source>>, Option<Token>)> {
     let (lex, span) = current;
-    let mut path = Path::new(source);
+    let mut path = Path::new(source, state.line_range());
 
     let mut next: Option<Token> = Some(Token::Parameters(lex, span));
     match &lex {
@@ -237,6 +243,7 @@ pub(crate) fn parse<'source>(
     }
 
     while let Some(token) = next {
+
         match token {
             Token::Parameters(lex, span) => {
                 *state.byte_mut() = span.start;
@@ -278,6 +285,8 @@ pub(crate) fn parse<'source>(
                         &mut path,
                         wants_delimiter,
                     )?;
+
+                    path.lines_end(state.line());
 
                     return Ok((Some(path), next));
                 }

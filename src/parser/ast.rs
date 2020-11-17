@@ -306,6 +306,7 @@ impl fmt::Debug for TextBlock<'_> {
             .field("source", &self.as_str())
             .field("open", &self.open)
             .field("close", &self.close)
+            .field("line", self.lines())
             .finish()
     }
 }
@@ -458,17 +459,19 @@ pub struct Path<'source> {
     parents: u8,
     explicit: bool,
     root: bool,
+    line: Range<usize>,
 }
 
 impl<'source> Path<'source> {
     /// Create a new path.
-    pub fn new(source: &'source str) -> Self {
+    pub fn new(source: &'source str, line: Range<usize>) -> Self {
         Self {
             source,
             components: Vec::new(),
             parents: 0,
             explicit: false,
             root: false,
+            line,
         }
     }
 
@@ -547,6 +550,16 @@ impl<'source> Slice<'source> for Path<'source> {
     }
 }
 
+impl<'source> Lines for Path<'source> {
+    fn lines(&self) -> &Range<usize> {
+        &self.line
+    }
+
+    fn lines_mut(&mut self) -> &mut Range<usize> {
+        &mut self.line
+    }
+}
+
 impl fmt::Display for Path<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.as_str())
@@ -561,6 +574,7 @@ impl fmt::Debug for Path<'_> {
             .field("parents", &self.parents)
             .field("explicit", &self.explicit)
             .field("root", &self.root)
+            .field("line", &self.line)
             .finish()
     }
 }
@@ -613,6 +627,22 @@ impl<'source> Slice<'source> for CallTarget<'source> {
     }
 }
 
+impl<'source> Lines for CallTarget<'source> {
+    fn lines(&self) -> &Range<usize> {
+        match *self {
+            Self::Path(ref path) => path.lines(),
+            Self::SubExpr(ref call) => call.lines(),
+        }
+    }
+
+    fn lines_mut(&mut self) -> &mut Range<usize> {
+        match *self {
+            Self::Path(ref mut path) => path.lines_mut(),
+            Self::SubExpr(ref mut call) => call.lines_mut(),
+        }
+    }
+}
+
 impl fmt::Display for CallTarget<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.as_str())
@@ -621,7 +651,7 @@ impl fmt::Display for CallTarget<'_> {
 
 impl Default for CallTarget<'_> {
     fn default() -> Self {
-        CallTarget::Path(Path::new(""))
+        CallTarget::Path(Path::new("", 0..0))
     }
 }
 
@@ -658,7 +688,7 @@ impl<'source> Call<'source> {
             conditional: false,
             open,
             close: None,
-            target: CallTarget::Path(Path::new(source)),
+            target: CallTarget::Path(Path::new(source, 0..0)),
             arguments: Vec::new(),
             hash: HashMap::new(),
             line,
@@ -1104,6 +1134,7 @@ impl fmt::Display for Block<'_> {
 impl fmt::Debug for Block<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Block")
+            .field("line", &self.line)
             .field("open", &self.open)
             .field("close", &self.close)
             .field("call", &self.call)

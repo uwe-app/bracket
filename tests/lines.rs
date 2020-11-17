@@ -47,11 +47,17 @@ This is a raw comment that spans multiple lines.
 #[test]
 fn lines_call_single() -> Result<()> {
     let registry = Registry::new();
-    let value = r"{{foo}}";
+    let value = r"{{
+foo.
+bar.
+qux
+}}";
     let template = registry.parse(NAME, value)?;
     let node = template.node().into_iter().next().unwrap();
     if let Node::Statement(call) = node {
-        assert_eq!(0..1, call.lines().clone());
+        assert_eq!(0..5, call.lines().clone());
+        let target = call.target();
+        assert_eq!(1..5, target.lines().clone());
     }
     Ok(())
 }
