@@ -66,7 +66,7 @@ pub(crate) fn raw<'source>(
     state: &mut ParseState,
     span: Range<usize>,
 ) -> SyntaxResult<Node<'source>> {
-    let mut block = Block::new(source, span.clone(), true);
+    let mut block = Block::new(source, span.clone(), true, state.line_range());
 
     let call =
         call::parse(source, lexer, state, span.clone(), CallParseContext::Raw)?;
@@ -131,6 +131,8 @@ pub(crate) fn raw<'source>(
                 start_name, end_name
             );
         }
+
+        block.lines_end(state.line());
 
         Ok(Node::Block(block))
     } else {
@@ -221,7 +223,7 @@ pub(crate) fn scope<'source>(
     state: &mut ParseState,
     span: Range<usize>,
 ) -> SyntaxResult<Block<'source>> {
-    let mut block = Block::new(source, span.clone(), false);
+    let mut block = Block::new(source, span.clone(), false, state.line_range());
     let call =
         call::parse(source, lexer, state, span, CallParseContext::Block)?;
     block.set_call(call);

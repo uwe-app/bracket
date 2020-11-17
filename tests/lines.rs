@@ -69,3 +69,33 @@ qux}}";
     }
     Ok(())
 }
+
+#[test]
+fn lines_raw_block() -> Result<()> {
+    let registry = Registry::new();
+    let value = r"{{{{raw}}}}
+This is some text in a raw block.
+{{{{/raw}}}}";
+    let template = registry.parse(NAME, value)?;
+    let node = template.node().into_iter().next().unwrap();
+    if let Node::Block(block) = node {
+        assert_eq!(0..3, block.lines().clone());
+    }
+    Ok(())
+}
+
+#[test]
+fn lines_block() -> Result<()> {
+    let registry = Registry::new();
+    let value = r"{{#block}}
+This is some text in a block statement.
+
+If can have other {{foo}} statements.
+{{/block}}";
+    let template = registry.parse(NAME, value)?;
+    let node = template.node().into_iter().next().unwrap();
+    if let Node::Block(block) = node {
+        assert_eq!(0..5, block.lines().clone());
+    }
+    Ok(())
+}

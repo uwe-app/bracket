@@ -876,11 +876,12 @@ pub struct Block<'source> {
     close: Option<Range<usize>>,
     call: Call<'source>,
     conditionals: Vec<Node<'source>>,
+    line: Range<usize>,
 }
 
 impl<'source> Block<'source> {
     /// Create a new block.
-    pub fn new(source: &'source str, open: Range<usize>, raw: bool) -> Self {
+    pub fn new(source: &'source str, open: Range<usize>, raw: bool, line: Range<usize>) -> Self {
         Self {
             source,
             nodes: Vec::new(),
@@ -889,6 +890,7 @@ impl<'source> Block<'source> {
             close: None,
             call: Default::default(),
             conditionals: Vec::new(),
+            line,
         }
     }
 
@@ -1033,6 +1035,16 @@ impl<'source> Slice<'source> for Block<'source> {
 
     fn source(&self) -> &'source str {
         self.source
+    }
+}
+
+impl<'source> Lines for Block<'source> {
+    fn lines(&self) -> &Range<usize> {
+        &self.line
+    }
+
+    fn lines_mut(&mut self) -> &mut Range<usize> {
+        &mut self.line
     }
 }
 

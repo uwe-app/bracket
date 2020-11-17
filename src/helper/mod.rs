@@ -50,9 +50,9 @@
 //!
 //! Local helpers are defined on [rc](crate::render::Render) using [register_local_helper()](crate::render::Render#method.register_local_helper) and live for the lifetime of the parent helper call.
 //!
-//! ## Clone
+//! They must implement the [LocalHelper Trait](LocalHelper) which has an additional bounds on
+//! `Clone`.
 //!
-//! Helpers must implement `Clone` so that we can support local helpers.
 
 use dyn_clone::DynClone;
 use serde_json::Value;

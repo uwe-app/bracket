@@ -1,10 +1,10 @@
 //! Convert the lexer token stream to AST nodes.
 use std::ops::Range;
 use crate::{
-    error::{Error, ErrorInfo, SourcePos, SyntaxError},
+    error::{Error, ErrorInfo, SyntaxError},
     lexer::{self, lex, Lexer, Token},
     parser::{
-        ast::{Block, CallTarget, Document, Element, Node, Text},
+        ast::{Block, CallTarget, Document, Element, Node, Text, Lines},
         call::CallParseContext,
     },
     SyntaxResult,
@@ -301,6 +301,7 @@ impl<'source> Parser<'source> {
                                                             call.open_span()
                                                                 .clone(),
                                                             false,
+                                                            self.state.line_range(),
                                                         );
                                                     condition.set_call(call);
                                                     current.add_condition(
@@ -367,6 +368,8 @@ impl<'source> Parser<'source> {
                             span.end = end_tag_close.end;
                         }
                         block.exit(span);
+
+                        block.lines_end(self.state.line());
 
                         return Ok(Some(Node::Block(block)));
                     } else {

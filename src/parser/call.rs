@@ -2,7 +2,7 @@ use logos::Span;
 use serde_json::{Number, Value};
 
 use crate::{
-    error::{ErrorInfo, SourcePos, SyntaxError},
+    error::{ErrorInfo, SyntaxError},
     lexer::{Lexer, Parameters, Token},
     parser::{
         ast::{Call, CallTarget, Element, ParameterValue, Lines},

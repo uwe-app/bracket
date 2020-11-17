@@ -1,7 +1,7 @@
 use logos::Span;
 
 use crate::{
-    error::{ErrorInfo, SourcePos, SyntaxError},
+    error::{ErrorInfo, SyntaxError},
     lexer::{lex, Lexer, Parameters, Token},
     parser::{
         ast::{Component, ComponentType, Path, RawIdType},

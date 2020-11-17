@@ -10,7 +10,7 @@ use serde_json::{Map, Value};
 use crate::{
     error::{HelperError, RenderError},
     escape::EscapeFn,
-    helper::{Helper, HelperRegistry, HelperResult, LocalHelper},
+    helper::{HelperRegistry, HelperResult, LocalHelper},
     json,
     output::{Output, StringOutput},
     parser::{
