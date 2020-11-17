@@ -21,6 +21,22 @@ pub trait Slice<'source>: fmt::Display + fmt::Debug {
     fn source(&self) -> &'source str;
 }
 
+/// Trait for nodes that track line numbers.
+///
+/// Line numbers begin at index zero.
+pub trait Lines {
+    /// Reference to the line range for the node.
+    fn lines(&self) -> &Range<usize>;
+
+    /// Mutable reference to the line range for the node.
+    fn lines_mut(&mut self) -> &mut Range<usize>;
+
+    /// Mutable reference to the end of the line range.
+    fn line_end_mut(&mut self) -> &mut usize {
+        &mut self.lines_mut().end
+    }
+}
+
 /// Trait for elements that expect to be closed.
 pub trait Element<'source> {
     /// Get the string for the open tag.

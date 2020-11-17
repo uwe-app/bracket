@@ -22,8 +22,6 @@ fn is_path_component(lex: &Parameters) -> bool {
         | Parameters::StartArray
         | Parameters::SingleQuoteString
         | Parameters::DoubleQuoteString => true,
-
-        //| Parameters::ArrayAccess => true,
         _ => false,
     }
 }
@@ -45,8 +43,6 @@ fn component_type<'source>(lex: &Parameters) -> ComponentType {
         Parameters::StartArray => {
             ComponentType::RawIdentifier(RawIdType::Array)
         }
-
-        //Parameters::ArrayAccess => ComponentType::ArrayAccess,
         _ => panic!("Expecting component parameter in parser"),
     }
 }
