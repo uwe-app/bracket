@@ -1,4 +1,5 @@
 //! Convert the lexer token stream to AST nodes.
+use std::ops::Range;
 use crate::{
     error::{Error, ErrorInfo, SourcePos, SyntaxError},
     lexer::{self, lex, Lexer, Token},
@@ -95,6 +96,11 @@ impl ParseState {
     pub fn byte_mut(&mut self) -> &mut usize {
         &mut self.byte
     }
+
+    /// Get an initial line range for this parse state.
+    pub fn line_range(&self) -> Range<usize> {
+        self.line.clone()..self.line.clone() + 1 
+    }
 }
 
 impl From<&ParserOptions> for ParseState {
@@ -188,7 +194,7 @@ impl<'source> Parser<'source> {
 
         // Normalize consecutive text nodes
         if next.is_text() {
-            let mut line_range = self.state.line().clone()..self.state.line().clone() + 1;
+            let mut line_range = self.state.line_range();
             let (span, next) = block::until(
                 &mut self.lexer,
                 &mut self.state,

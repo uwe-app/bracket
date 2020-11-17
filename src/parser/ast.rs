@@ -30,6 +30,11 @@ pub trait Lines {
 
     /// Mutable reference to the line range for the node.
     fn lines_mut(&mut self) -> &mut Range<usize>;
+
+    /// Set the end of the lines range.
+    fn lines_end(&mut self, line: &usize) {
+        self.lines_mut().end = line.clone() + 1;
+    } 
 }
 
 /// Trait for elements that expect to be closed.
@@ -638,6 +643,7 @@ pub struct Call<'source> {
     target: CallTarget<'source>,
     arguments: Vec<ParameterValue<'source>>,
     hash: HashMap<&'source str, ParameterValue<'source>>,
+    line: Range<usize>,
 }
 
 impl<'source> Call<'source> {
@@ -645,7 +651,7 @@ impl<'source> Call<'source> {
     ///
     /// If it is correctly terminated the parser will call `exit()` to terminate
     /// the call statement.
-    pub fn new(source: &'source str, open: Range<usize>) -> Self {
+    pub fn new(source: &'source str, open: Range<usize>, line: Range<usize>) -> Self {
         Self {
             source,
             partial: false,
@@ -655,6 +661,7 @@ impl<'source> Call<'source> {
             target: CallTarget::Path(Path::new(source)),
             arguments: Vec::new(),
             hash: HashMap::new(),
+            line,
         }
     }
 
@@ -751,6 +758,16 @@ impl<'source> Slice<'source> for Call<'source> {
 
     fn source(&self) -> &'source str {
         self.source
+    }
+}
+
+impl<'source> Lines for Call<'source> {
+    fn lines(&self) -> &Range<usize> {
+        &self.line
+    }
+
+    fn lines_mut(&mut self) -> &mut Range<usize> {
+        &mut self.line
     }
 }
 

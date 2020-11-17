@@ -15,3 +15,29 @@ so we can check the line range.";
     }
     Ok(())
 }
+
+#[test]
+fn lines_call_single() -> Result<()> {
+    let registry = Registry::new();
+    let value = r"{{foo}}";
+    let template = registry.parse(NAME, value)?;
+    let node = template.node().into_iter().next().unwrap();
+    if let Node::Statement(call) = node {
+        assert_eq!(0..1, call.lines().clone());
+    }
+    Ok(())
+}
+
+#[test]
+fn lines_call_multi() -> Result<()> {
+    let registry = Registry::new();
+    let value = r"{{foo
+bar
+qux}}";
+    let template = registry.parse(NAME, value)?;
+    let node = template.node().into_iter().next().unwrap();
+    if let Node::Statement(call) = node {
+        assert_eq!(0..3, call.lines().clone());
+    }
+    Ok(())
+}

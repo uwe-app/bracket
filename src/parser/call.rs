@@ -5,7 +5,7 @@ use crate::{
     error::{ErrorInfo, SourcePos, SyntaxError},
     lexer::{Lexer, Parameters, Token},
     parser::{
-        ast::{Call, CallTarget, Element, ParameterValue},
+        ast::{Call, CallTarget, Element, ParameterValue, Lines},
         path, string, ParseState,
     },
     SyntaxResult,
@@ -408,7 +408,7 @@ pub(crate) fn sub_expr<'source>(
 ) -> SyntaxResult<(Call<'source>, Option<Token>)> {
     *state.byte_mut() = open.end;
 
-    let mut call = Call::new(source, open);
+    let mut call = Call::new(source, open, state.line_range());
     let next = lexer.next();
     let next =
         target(source, lexer, state, &mut call, next, CallContext::SubExpr)?;
@@ -417,6 +417,9 @@ pub(crate) fn sub_expr<'source>(
     if !call.is_closed() {
         panic!("Sub expression statement was not terminated");
     }
+
+    call.lines_end(state.line());
+
     Ok((call, next))
 }
 
@@ -430,7 +433,7 @@ pub(crate) fn parse<'source>(
 ) -> SyntaxResult<Call<'source>> {
     *state.byte_mut() = open.end;
 
-    let mut call = Call::new(source, open);
+    let mut call = Call::new(source, open, state.line_range());
     let next = lexer.next();
     let next = flags(source, lexer, state, &mut call, next)?;
 
@@ -448,5 +451,8 @@ pub(crate) fn parse<'source>(
         //println!("{:?}", call);
         panic!("Call statement was not terminated");
     }
+
+    call.lines_end(state.line());
+
     Ok(call)
 }

@@ -3,7 +3,7 @@ use std::ops::Range;
 use crate::{
     lexer::{self, Lexer, Token},
     parser::{
-        ast::{Block, Element, Node, Slice, Text, TextBlock},
+        ast::{Block, Element, Node, Slice, Text, TextBlock, Lines},
         call::{self, CallParseContext},
         ParseState,
     },
@@ -43,13 +43,14 @@ pub(crate) fn text_until<'source>(
 ) -> Option<(Node<'source>, Option<Token>)> {
     let text = span.end..span.end;
     let open = span;
-    let mut line_range = state.line().clone()..state.line().clone() + 1;
+    let mut line_range = state.line_range();
     let (span, next_token) = until(lexer, state, text, end);
     if let Some(ref close) = next_token {
-        line_range.end = state.line().clone() + 1;
+        let mut text = Text::new(source, span, line_range);
+        text.lines_end(state.line());
         let block = TextBlock::new(
             source,
-            Text::new(source, span, line_range),
+            text,
             open,
             close.span().clone(),
         );
