@@ -55,14 +55,9 @@ foo.bar.qux
     if let Node::Statement(call) = node {
         assert_eq!(0..3, call.lines().clone());
         let target = call.target();
-        assert_eq!(1..3, target.lines().clone());
+        assert_eq!(1..2, target.lines().clone());
         if let CallTarget::Path(ref path) = target {
-            let c1 = path.components().get(0).unwrap();
-            let c2 = path.components().get(1).unwrap();
-            let c3 = path.components().get(2).unwrap();
-            assert_eq!(1..2, c1.lines().clone());
-            assert_eq!(1..2, c2.lines().clone());
-            assert_eq!(1..2, c3.lines().clone());
+            assert_eq!(1..2, path.lines().clone());
         }
     }
     Ok(())

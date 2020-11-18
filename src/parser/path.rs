@@ -63,7 +63,7 @@ fn to_component<'source>(
     } else {
         None
     };
-    Component::new(source, component_type(lex), span, value, state.line_range())
+    Component::new(source, component_type(lex), span, value)
 }
 
 fn parents<'source>(
@@ -287,8 +287,6 @@ pub(crate) fn parse<'source>(
                         &mut path,
                         wants_delimiter,
                     )?;
-
-                    path.lines_end(state.line());
 
                     if path.is_empty() {
                         panic!("Empty path encountered!!!");

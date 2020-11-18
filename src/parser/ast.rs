@@ -342,7 +342,6 @@ pub struct Component<'source> {
     kind: ComponentType,
     span: Range<usize>,
     value: Option<String>,
-    line: Range<usize>,
 }
 
 impl<'source> Component<'source> {
@@ -356,14 +355,12 @@ impl<'source> Component<'source> {
         kind: ComponentType,
         span: Range<usize>,
         value: Option<String>,
-    line: Range<usize>,
     ) -> Self {
         Self {
             source,
             kind,
             span,
             value,
-            line,
         }
     }
 
@@ -438,16 +435,6 @@ impl<'source> Slice<'source> for Component<'source> {
     }
 }
 
-impl<'source> Lines for Component<'source> {
-    fn lines(&self) -> &Range<usize> {
-        &self.line
-    }
-
-    fn lines_mut(&mut self) -> &mut Range<usize> {
-        &mut self.line
-    }
-}
-
 impl fmt::Display for Component<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.as_str())
@@ -460,7 +447,6 @@ impl fmt::Debug for Component<'_> {
             .field("source", &self.as_str())
             .field("kind", &self.kind)
             .field("span", &self.span)
-            .field("line", &self.line)
             .finish()
     }
 }
