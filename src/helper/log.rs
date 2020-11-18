@@ -43,7 +43,7 @@ impl Helper for Log {
             .join(" ");
 
         let level = ctx
-            .hash("level")
+            .param("level")
             .map(|v| v.as_str())
             .unwrap_or(Some("info"))
             .unwrap();

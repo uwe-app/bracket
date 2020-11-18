@@ -26,7 +26,7 @@ impl Helper for Json {
 
         let target = ctx.get(0).unwrap();
         let pretty =
-            ctx.is_truthy(ctx.hash("pretty").unwrap_or(&Value::Bool(false)));
+            ctx.is_truthy(ctx.param("pretty").unwrap_or(&Value::Bool(false)));
         let value = if pretty {
             Value::String(to_string_pretty(&target).map_err(HelperError::from)?)
         } else {

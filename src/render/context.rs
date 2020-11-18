@@ -120,7 +120,7 @@ impl<'call> Context<'call> {
     }
 
     /// Get a hash parameter for the name.
-    pub fn hash(&self, name: &str) -> Option<&Value> {
+    pub fn param(&self, name: &str) -> Option<&Value> {
         self.parameters.get(name)
     }
 
@@ -147,7 +147,7 @@ impl<'call> Context<'call> {
     /// If no parameter exists for the given name the value is
     /// treated as null and type assertion is performed on the
     /// null value.
-    pub fn try_hash(&self, name: &str, kinds: &[Type]) -> HelperResult<&Value> {
+    pub fn try_param(&self, name: &str, kinds: &[Type]) -> HelperResult<&Value> {
         let value = self.parameters.get(name).or(Some(&Value::Null)).unwrap();
         // TODO: print ErrorInfo code snippet
         self.assert(value, kinds)?;

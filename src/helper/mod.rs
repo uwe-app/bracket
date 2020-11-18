@@ -13,11 +13,7 @@
 //! is called as a block and provides functions for writing to the output destination.
 //!
 //! The context is used to access the arguments and hash parameters and may also
-//! be used for type assertions using the
-//! [try_get()](crate::render::context::Context#method.try_get) and
-//! [try_hash()](crate::render::context::Context#method.try_hash) methods. The
-//! [arity()](crate::render::context::Context#method.arity) method can be used to
-//! assert on argument length.
+//! be used for type assertions.
 //!
 //! When a helper is called as a block the optional template node will be `Some`.
 //! Raw helpers can access the inner text using [text()](crate::render::context::Context#method.text).
@@ -34,6 +30,20 @@
 //!     // Helper was invoked as a statement `{{helper}}`
 //! }
 //! ```
+//!
+//! ## Type Assertions
+//!
+//! Type assertions let us verify the type of helper arguments and hash parameters before we 
+//! use them.
+//!
+//! The [arity()](crate::render::context::Context#method.arity) method is used to
+//! assert on argument length.
+//!
+//! Use [try_get()](crate::render::context::Context#method.try_get) to get an argument and verify 
+//! it is an expected type.
+//!
+//! Use [try_param()](crate::render::context::Context#method.try_param) to get a hash parameter 
+//! and verify it is an expected type.
 //!
 //! ## Return Values
 //!
@@ -52,6 +62,26 @@
 //!
 //! They must implement the [LocalHelper Trait](LocalHelper) which has an additional bounds on
 //! `Clone`.
+//!
+//! ## Render
+//!
+//! To render an inner template when a helper is called as a block use 
+//! [template()](crate::render::Render#method.template) which will respect the current whitespace
+//! trim hints:
+//!
+//! ```ignore
+//! if let Some(node) = template {
+//!    rc.template(node)?; 
+//! }
+//! ```
+//!
+//! To [buffer()](crate::render::Render#method.template) the content of an inner template into a string:
+//!
+//! ```ignore
+//! if let Some(node) = template {
+//!    let content = rc.buffer(node)?;
+//! }
+//! ```
 //!
 
 use dyn_clone::DynClone;
@@ -81,6 +111,24 @@ pub trait Helper: Send + Sync {
 }
 
 /// Trait for local helpers which must implement `Clone`.
+///
+/// To create a local helper implement `Helper`, derive `Clone` and 
+/// add `LocalHelper` as a marker trait.
+///
+/// ```ignore
+/// #[derive(Clone)]
+/// pub struct LocalExample;
+/// 
+/// impl Helper for LocalExample {
+///     fn call<'render, 'call>(
+///         &self,
+///         _rc: &mut Render<'render>,
+///         _ctx: &Context<'call>,
+///         _template: Option<&'render Node<'render>>,
+///     ) -> HelperValue { Ok(None) }
+/// }
+/// impl LocalHelper for LocalExample {}
+/// ```
 pub trait LocalHelper: Helper + DynClone {}
 
 dyn_clone::clone_trait_object!(LocalHelper);
