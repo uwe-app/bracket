@@ -28,7 +28,7 @@
 //! which will include the source code that generated the error.
 //!
 //! ```ignore
-//! Syntax error, statement is empty
+//! Syntax error, expecting identifier
 //!  --> examples/files/document.md:3:3
 //!   |
 //! 3 | {{}}

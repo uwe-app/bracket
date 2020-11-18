@@ -43,7 +43,7 @@ pub(crate) fn text_until<'source>(
 ) -> Option<(Node<'source>, Option<Token>)> {
     let text = span.end..span.end;
     let open = span;
-    let mut line_range = state.line_range();
+    let line_range = state.line_range();
     let (span, next_token) = until(lexer, state, text, end);
     if let Some(ref close) = next_token {
         let mut text = Text::new(source, span, line_range);

@@ -4,8 +4,6 @@ use thiserror::Error;
 
 #[derive(Error, Eq, PartialEq)]
 pub enum SyntaxError {
-    #[error("Syntax error, statement is empty")]
-    EmptyStatement(String),
     #[error("Syntax error, expecting identifier")]
     ExpectedIdentifier(String),
     #[error("Syntax error, expecting identifier not a path or sub-expression")]
@@ -54,8 +52,7 @@ impl fmt::Debug for SyntaxError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}\n", self.to_string())?;
         match *self {
-            Self::EmptyStatement(ref source)
-            | Self::ExpectedIdentifier(ref source)
+            Self::ExpectedIdentifier(ref source)
             | Self::ExpectedSimpleIdentifier(ref source)
             | Self::PartialIdentifier(ref source)
             | Self::PartialSimpleIdentifier(ref source)

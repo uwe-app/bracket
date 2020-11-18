@@ -3,19 +3,39 @@ use bracket::{
     Registry, Result,
 };
 
+static NAME: &str = "syntax_error.rs";
+
 #[test]
-fn err_empty_statement() -> Result<()> {
+fn syntax_err_empty_statement() -> Result<()> {
     let registry = Registry::new();
     let value = r"{{}}";
-
-    match registry.compile(value, Default::default()) {
+    match registry.parse(NAME, value) {
         Ok(_) => panic!("Empty statement error expected"),
         Err(e) => {
             println!("{:?}", e);
             let pos = SourcePos(0, 2);
-            let info = ErrorInfo::new(value, "unknown", pos, vec![]);
+            let info = ErrorInfo::new(value, NAME, pos, vec![]);
             assert_eq!(
-                Error::Syntax(SyntaxError::EmptyStatement(info.into())),
+                Error::Syntax(SyntaxError::ExpectedIdentifier(info.into())),
+                e
+            );
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn syntax_err_identifier_expected() -> Result<()> {
+    let registry = Registry::new();
+    let value = r#"{{# }}"#;
+    match registry.parse(NAME, value) {
+        Ok(_) => panic!("Identifier expected error expected"),
+        Err(e) => {
+            println!("{:?}", e);
+            let pos = SourcePos(0, 4);
+            let info = ErrorInfo::new(value, NAME, pos, vec![]);
+            assert_eq!(
+                Error::Syntax(SyntaxError::ExpectedIdentifier(info.into())),
                 e
             );
         }
