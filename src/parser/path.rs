@@ -4,7 +4,7 @@ use crate::{
     error::{ErrorInfo, SyntaxError},
     lexer::{lex, Lexer, Parameters, Token},
     parser::{
-        ast::{Component, ComponentType, Path, RawIdType, Lines},
+        ast::{Component, ComponentType, Path, RawIdType},
         string::{self, RawLiteral},
         ParseState,
     },

@@ -139,12 +139,12 @@ pub(crate) fn literal<'source>(
     state: &mut ParseState,
     current: (Parameters, Span),
     string_type: RawLiteralType,
-) -> SyntaxResult<Value> {
+) -> SyntaxResult<(Value, Span)> {
     let (span, flags) = parse(source, lexer, state, current, string_type)?;
     let value = if flags.has_escape_sequences() {
         flags.into_owned(&source[span.start..span.end])
     } else {
         source[span.start..span.end].to_string()
     };
-    return Ok(Value::String(value));
+    return Ok((Value::String(value), span));
 }

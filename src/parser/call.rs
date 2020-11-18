@@ -45,6 +45,7 @@ fn json_literal<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     current: (Parameters, Span),
+    range: &mut Span,
 ) -> SyntaxResult<Value> {
     let (lex, span) = current;
     let value = match lex {
@@ -55,27 +56,43 @@ fn json_literal<'source>(
             let num: Number = source[span].parse().unwrap();
             Value::Number(num)
         }
-        Parameters::DoubleQuoteString => string::literal(
-            source,
-            lexer,
-            state,
-            (lex, span),
-            string::RawLiteralType::Double,
-        )?,
-        Parameters::SingleQuoteString => string::literal(
-            source,
-            lexer,
-            state,
-            (lex, span),
-            string::RawLiteralType::Single,
-        )?,
-        Parameters::StartArray => string::literal(
-            source,
-            lexer,
-            state,
-            (lex, span),
-            string::RawLiteralType::Array,
-        )?,
+        // NOTE: For string literal values we need to add one 
+        // NOTE: to the end value as the returned span is the 
+        // NOTE: inner span and we require the outer span 
+        // NOTE: (including quotes) for the AST data.
+        Parameters::DoubleQuoteString => {
+            let (value, span) = string::literal(
+                source,
+                lexer,
+                state,
+                (lex, span),
+                string::RawLiteralType::Double,
+            )?;
+            range.end = span.end + 1;
+            value
+        }
+        Parameters::SingleQuoteString => {
+            let (value, span) = string::literal(
+                source,
+                lexer,
+                state,
+                (lex, span),
+                string::RawLiteralType::Single,
+            )?;
+            range.end = span.end + 1;
+            value
+        }
+        Parameters::StartArray => {
+            let (value, span) = string::literal(
+                source,
+                lexer,
+                state,
+                (lex, span),
+                string::RawLiteralType::Array,
+            )?;
+            range.end = span.end + 1;
+            value
+        }
         _ => {
             // FIXME: how to handle this?
             panic!("Expecting JSON literal token.");
@@ -123,8 +140,9 @@ fn value<'source>(
         | Parameters::True
         | Parameters::False
         | Parameters::Null => {
-            let value = json_literal(source, lexer, state, (lex, span))?;
-            return Ok((ParameterValue::Json {value}, lexer.next()));
+            let mut range = span.clone();
+            let value = json_literal(source, lexer, state, (lex, span), &mut range)?;
+            return Ok((ParameterValue::Json {value, span: range}, lexer.next()));
         }
         _ => panic!("Unexpected token while parsing value! {:?}", lex),
     }
