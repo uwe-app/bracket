@@ -585,9 +585,15 @@ pub enum ParameterValue<'source> {
     /// A parameter that should resolve to a runtime variable.
     Path(Path<'source>),
     /// A literal JSON value.
-    Json(Value),
+    Json { value: Value },
     /// A sub-expression to be invoked at runtime to determine the value.
     SubExpr(Call<'source>),
+}
+
+impl<'source> From<Value> for ParameterValue<'source> {
+    fn from(value: Value) -> Self {
+        ParameterValue::Json {value} 
+    }
 }
 
 /// Call targets represent either a helper call, partial render or variable path.

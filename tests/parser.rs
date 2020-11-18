@@ -231,7 +231,7 @@ fn parse_arg_string() -> Result<()> {
                     let args = call.arguments();
                     assert_eq!(1, args.len());
                     assert_eq!(
-                        &ParameterValue::Json(Value::String(String::from(
+                        &ParameterValue::from(Value::String(String::from(
                             "bar\nbaz"
                         ))),
                         args.first().unwrap()
@@ -261,7 +261,7 @@ fn parse_hash_string() -> Result<()> {
                     let hash = call.hash();
                     assert_eq!(1, hash.len());
                     assert_eq!(
-                        &ParameterValue::Json(Value::String(String::from(
+                        &ParameterValue::from(Value::String(String::from(
                             r"baz"
                         ))),
                         hash.get("bar").unwrap()
@@ -291,7 +291,7 @@ fn parse_arg_bool_true() -> Result<()> {
                     let args = call.arguments();
                     assert_eq!(1, args.len());
                     assert_eq!(
-                        &ParameterValue::Json(Value::Bool(true)),
+                        &ParameterValue::from(Value::Bool(true)),
                         args.first().unwrap()
                     );
                 }
@@ -319,7 +319,7 @@ fn parse_arg_bool_false() -> Result<()> {
                     let args = call.arguments();
                     assert_eq!(1, args.len());
                     assert_eq!(
-                        &ParameterValue::Json(Value::Bool(false)),
+                        &ParameterValue::from(Value::Bool(false)),
                         args.first().unwrap()
                     );
                 }
@@ -347,7 +347,7 @@ fn parse_arg_null() -> Result<()> {
                     let args = call.arguments();
                     assert_eq!(1, args.len());
                     assert_eq!(
-                        &ParameterValue::Json(Value::Null),
+                        &ParameterValue::from(Value::Null),
                         args.first().unwrap()
                     );
                 }
@@ -376,7 +376,7 @@ fn parse_arg_num_int() -> Result<()> {
                     let expected = Number::from(10);
                     assert_eq!(1, args.len());
                     assert_eq!(
-                        &ParameterValue::Json(Value::Number(expected)),
+                        &ParameterValue::from(Value::Number(expected)),
                         args.first().unwrap()
                     );
                 }
@@ -405,7 +405,7 @@ fn parse_arg_num_int_signed() -> Result<()> {
                     let expected = Number::from(-10);
                     assert_eq!(1, args.len());
                     assert_eq!(
-                        &ParameterValue::Json(Value::Number(expected)),
+                        &ParameterValue::from(Value::Number(expected)),
                         args.first().unwrap()
                     );
                 }
@@ -434,7 +434,7 @@ fn parse_arg_num_int_signed_exponent() -> Result<()> {
                     let expected: Number = "-2e+2".parse().unwrap();
                     assert_eq!(1, args.len());
                     assert_eq!(
-                        &ParameterValue::Json(Value::Number(expected)),
+                        &ParameterValue::from(Value::Number(expected)),
                         args.first().unwrap()
                     );
                 }
@@ -463,7 +463,7 @@ fn parse_arg_num_float() -> Result<()> {
                     let expected: Number = "3.14".parse().unwrap();
                     assert_eq!(1, args.len());
                     assert_eq!(
-                        &ParameterValue::Json(Value::Number(expected)),
+                        &ParameterValue::from(Value::Number(expected)),
                         args.first().unwrap()
                     );
                 }
@@ -492,7 +492,7 @@ fn parse_arg_num_float_signed() -> Result<()> {
                     let expected: Number = "-0.5".parse().unwrap();
                     assert_eq!(1, args.len());
                     assert_eq!(
-                        &ParameterValue::Json(Value::Number(expected)),
+                        &ParameterValue::from(Value::Number(expected)),
                         args.first().unwrap()
                     );
                 }
@@ -520,7 +520,7 @@ fn parse_arg_num_float_signed_exponent() -> Result<()> {
                     let expected: Number = "-0.5E-2".parse().unwrap();
                     assert_eq!(1, args.len());
                     assert_eq!(
-                        &ParameterValue::Json(Value::Number(expected)),
+                        &ParameterValue::from(Value::Number(expected)),
                         args.first().unwrap()
                     );
                 }

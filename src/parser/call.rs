@@ -124,7 +124,7 @@ fn value<'source>(
         | Parameters::False
         | Parameters::Null => {
             let value = json_literal(source, lexer, state, (lex, span))?;
-            return Ok((ParameterValue::Json(value), lexer.next()));
+            return Ok((ParameterValue::Json {value}, lexer.next()));
         }
         _ => panic!("Unexpected token while parsing value! {:?}", lex),
     }

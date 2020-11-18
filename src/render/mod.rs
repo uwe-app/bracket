@@ -413,7 +413,7 @@ impl<'render> Render<'render> {
         let mut out: Vec<Value> = Vec::new();
         for p in call.arguments() {
             let arg = match p {
-                ParameterValue::Json(val) => val.clone(),
+                ParameterValue::Json {ref value} => value.clone(),
                 ParameterValue::Path(ref path) => {
                     self.lookup(path).cloned().unwrap_or(Value::Null)
                 }
@@ -431,7 +431,7 @@ impl<'render> Render<'render> {
         let mut out = Map::new();
         for (k, p) in call.hash() {
             let (key, value) = match p {
-                ParameterValue::Json(val) => (k.to_string(), val.clone()),
+                ParameterValue::Json {ref value} => (k.to_string(), value.clone()),
                 ParameterValue::Path(ref path) => {
                     let val = self.lookup(path).cloned().unwrap_or(Value::Null);
                     (k.to_string(), val)
