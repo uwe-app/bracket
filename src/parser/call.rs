@@ -141,8 +141,10 @@ fn value<'source>(
         | Parameters::False
         | Parameters::Null => {
             let mut range = span.clone();
+            let line_range = state.line_range();
             let value = json_literal(source, lexer, state, (lex, span), &mut range)?;
-            return Ok((ParameterValue::Json {value, span: range}, lexer.next()));
+            return Ok((ParameterValue::Json {
+                value, span: range, line: line_range}, lexer.next()));
         }
         _ => panic!("Unexpected token while parsing value! {:?}", lex),
     }

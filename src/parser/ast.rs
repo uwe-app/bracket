@@ -585,14 +585,15 @@ pub enum ParameterValue<'source> {
     /// A parameter that should resolve to a runtime variable.
     Path(Path<'source>),
     /// A literal JSON value.
-    Json { value: Value, span: Range<usize> },
+    Json { value: Value, span: Range<usize>, line: Range<usize> },
     /// A sub-expression to be invoked at runtime to determine the value.
     SubExpr(Call<'source>),
 }
 
-impl<'source> From<(Value, Range<usize>)> for ParameterValue<'source> {
-    fn from(value: (Value, Range<usize>)) -> Self {
-        ParameterValue::Json {value: value.0, span: value.1} 
+impl<'source> From<(Value, Range<usize>, Range<usize>)> for ParameterValue<'source> {
+    fn from(value: (Value, Range<usize>, Range<usize>)) -> Self {
+        ParameterValue::Json {
+            value: value.0, span: value.1, line: value.2} 
     }
 }
 
@@ -600,7 +601,7 @@ impl<'source> Lines for ParameterValue<'source> {
     fn lines(&self) -> &Range<usize> {
         match *self {
             ParameterValue::Path(ref path) => path.lines(),
-            ParameterValue::Json{value: _, span: _} => todo!("Json lines"),
+            ParameterValue::Json{value: _, span: _, ref line} => line,
             ParameterValue::SubExpr(ref call) => call.lines(),
         }
     }
@@ -608,7 +609,7 @@ impl<'source> Lines for ParameterValue<'source> {
     fn lines_mut(&mut self) -> &mut Range<usize> {
         match *self {
             ParameterValue::Path(ref mut path) => path.lines_mut(),
-            ParameterValue::Json{value: _, span: _} => todo!("Json lines mut"),
+            ParameterValue::Json{value: _, span: _, ref mut line} => line,
             ParameterValue::SubExpr(ref mut call) => call.lines_mut(),
         }
     }
