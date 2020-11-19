@@ -27,6 +27,9 @@ pub enum Block {
     #[regex(r"\{\{\~?[\t ]*#[\t ]*")]
     StartBlockScope,
 
+    #[token("[[")]
+    StartLink,
+
     #[regex(r"\{\{\~?[\t ]*/")]
     EndBlockScope,
 
@@ -243,6 +246,28 @@ pub enum Array {
     Error,
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
+#[logos(extras = Extras)]
+pub enum Link {
+    #[regex(r#"[^\\|]+"#)]
+    Text,
+
+    #[token("|")]
+    Pipe,
+
+    #[token(r#"\|"#)]
+    Escaped,
+
+    #[token("]]")]
+    End,
+
+    #[token("\n")]
+    Newline,
+
+    #[error]
+    Error,
+}
+
 /// Type emitted by the iterator.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Token {
@@ -254,6 +279,7 @@ pub enum Token {
     DoubleQuoteString(DoubleQuoteString, Span),
     SingleQuoteString(SingleQuoteString, Span),
     Array(Array, Span),
+    Link(Link, Span),
 }
 
 impl Token {
@@ -264,9 +290,10 @@ impl Token {
             Token::RawStatement(_, ref span) => span,
             Token::Comment(_, ref span) => span,
             Token::Parameters(_, ref span) => span,
-            Token::Array(_, ref span) => span,
             Token::DoubleQuoteString(_, ref span) => span,
             Token::SingleQuoteString(_, ref span) => span,
+            Token::Array(_, ref span) => span,
+            Token::Link(_, ref span) => span,
         }
     }
 
@@ -283,9 +310,10 @@ impl Token {
                 t == &Comment::Text || t == &Comment::Newline
             }
             Token::Parameters(_, _) => false,
-            Token::Array(_, _) => false,
             Token::DoubleQuoteString(_, _) => false,
             Token::SingleQuoteString(_, _) => false,
+            Token::Array(_, _) => false,
+            Token::Link(_, _) => false,
         }
     }
 
@@ -297,11 +325,10 @@ impl Token {
             //Token::RawBlock(ref lex, _) => lex == &Block::Newline,
             Token::Block(ref lex, _) => lex == &Block::Newline,
             Token::Parameters(ref lex, _) => lex == &Parameters::Newline,
+            Token::DoubleQuoteString(ref lex, _) => lex == &DoubleQuoteString::Newline,
+            Token::SingleQuoteString(ref lex, _) => lex == &SingleQuoteString::Newline,
             Token::Array(ref lex, _) => lex == &Array::Newline,
-            // NOTE: new lines are not allowed in string literals
-            // NOTE: so we have special handling for this case
-            Token::DoubleQuoteString(_, _) => false,
-            Token::SingleQuoteString(_, _) => false,
+            Token::Link(ref lex, _) => lex == &Link::Newline,
         }
     }
 }
@@ -317,6 +344,7 @@ enum Modes<'source> {
     DoubleQuoteString(Lex<'source, DoubleQuoteString>),
     SingleQuoteString(Lex<'source, SingleQuoteString>),
     Array(Lex<'source, Array>),
+    Link(Lex<'source, Link>),
 }
 
 impl<'source> Modes<'source> {
@@ -386,6 +414,8 @@ impl<'source> Iterator for Lexer<'source> {
                         self.mode = Modes::Parameters(lexer.to_owned().morph());
                     } else if Block::EndBlockScope == token {
                         self.mode = Modes::Parameters(lexer.to_owned().morph());
+                    } else if Block::StartLink == token {
+                        self.mode = Modes::Link(lexer.to_owned().morph());
                     }
                     Some(Token::Block(token, span))
                 } else {
@@ -487,6 +517,19 @@ impl<'source> Iterator for Lexer<'source> {
                         self.mode = Modes::Parameters(lexer.to_owned().morph());
                     }
                     Some(Token::Array(token, span))
+                } else {
+                    None
+                }
+            }
+            Modes::Link(lexer) => {
+                let result = lexer.next();
+                let span = lexer.span();
+
+                if let Some(token) = result {
+                    if Link::End == token {
+                        self.mode = Modes::Block(lexer.to_owned().morph());
+                    }
+                    Some(Token::Link(token, span))
                 } else {
                     None
                 }
