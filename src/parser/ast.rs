@@ -96,6 +96,8 @@ pub enum Node<'source> {
     RawComment(TextBlock<'source>),
     /// Comments may **not** contain nested templates (`{{! comment }}`).
     Comment(TextBlock<'source>),
+    /// Link nodes are parsed from wiki-style links.
+    Link(Link<'source>),
 }
 
 impl<'source> Node<'source> {
@@ -113,7 +115,8 @@ impl<'source> Node<'source> {
             | Self::Text(_)
             | Self::RawStatement(_)
             | Self::RawComment(_)
-            | Self::Comment(_) => false,
+            | Self::Comment(_)
+            | Self::Link(_) => false,
             Self::Statement(ref n) => n.trim_before(),
             Self::Block(ref n) => n.trim_before(),
         }
@@ -125,7 +128,8 @@ impl<'source> Node<'source> {
             | Self::Text(_)
             | Self::RawStatement(_)
             | Self::RawComment(_)
-            | Self::Comment(_) => false,
+            | Self::Comment(_)
+            | Self::Link(_) => false,
             Self::Statement(ref n) => n.trim_after(),
             Self::Block(ref n) => n.trim_after(),
         }
@@ -144,6 +148,7 @@ impl<'source> Slice<'source> for Node<'source> {
             Self::Text(ref n) => n.as_str(),
             Self::Statement(ref n) => n.as_str(),
             Self::Block(ref n) => n.as_str(),
+            Self::Link(ref n) => n.as_str(),
             Self::RawStatement(ref n)
             | Self::RawComment(ref n)
             | Self::Comment(ref n) => n.as_str(),
@@ -159,6 +164,7 @@ impl<'source> Slice<'source> for Node<'source> {
             Self::Comment(ref n) => n.source(),
             Self::Statement(ref n) => n.source(),
             Self::Block(ref n) => n.source(),
+            Self::Link(ref n) => n.source(),
         }
     }
 }
@@ -170,6 +176,7 @@ impl fmt::Display for Node<'_> {
             Self::Text(ref n) => n.fmt(f),
             Self::Statement(ref n) => n.fmt(f),
             Self::Block(ref n) => n.fmt(f),
+            Self::Link(ref n) => n.fmt(f),
             Self::RawStatement(ref n)
             | Self::RawComment(ref n)
             | Self::Comment(ref n) => n.fmt(f),
@@ -182,8 +189,9 @@ impl fmt::Debug for Node<'_> {
         match *self {
             Self::Document(ref n) => fmt::Debug::fmt(n, f),
             Self::Text(ref n) => fmt::Debug::fmt(n, f),
-            Self::Block(ref n) => fmt::Debug::fmt(n, f),
             Self::Statement(ref n) => fmt::Debug::fmt(n, f),
+            Self::Block(ref n) => fmt::Debug::fmt(n, f),
+            Self::Link(ref n) => fmt::Debug::fmt(n, f),
             Self::RawStatement(ref n)
             | Self::RawComment(ref n)
             | Self::Comment(ref n) => fmt::Debug::fmt(n, f),
@@ -697,7 +705,7 @@ pub struct Call<'source> {
     close: Option<Range<usize>>,
     target: CallTarget<'source>,
     arguments: Vec<ParameterValue<'source>>,
-    hash: HashMap<&'source str, ParameterValue<'source>>,
+    parameters: HashMap<&'source str, ParameterValue<'source>>,
     line: Range<usize>,
 }
 
@@ -715,7 +723,7 @@ impl<'source> Call<'source> {
             close: None,
             target: CallTarget::Path(Path::new(source, 0..0)),
             arguments: Vec::new(),
-            hash: HashMap::new(),
+            parameters: HashMap::new(),
             line,
         }
     }
@@ -751,17 +759,17 @@ impl<'source> Call<'source> {
     }
 
     /// Add a hash parameter to this call.
-    pub fn add_hash(
+    pub fn add_parameter(
         &mut self,
         key: &'source str,
         val: ParameterValue<'source>,
     ) {
-        self.hash.insert(key, val);
+        self.parameters.insert(key, val);
     }
 
     /// Get the map of hash parameters.
-    pub fn hash(&self) -> &HashMap<&'source str, ParameterValue<'source>> {
-        &self.hash
+    pub fn parameters(&self) -> &HashMap<&'source str, ParameterValue<'source>> {
+        &self.parameters
     }
 
     /// Determine if this call has the partial flag.
@@ -870,7 +878,7 @@ impl fmt::Debug for Call<'_> {
             .field("close", &self.close)
             .field("target", &self.target)
             .field("arguments", &self.arguments)
-            .field("hash", &self.hash)
+            .field("parameters", &self.parameters)
             .finish()
     }
 }
@@ -1169,10 +1177,12 @@ impl fmt::Debug for Block<'_> {
 }
 
 /// Link node for wiki-style links.
+#[derive(Eq, PartialEq)]
 pub struct Link<'source> {
     source: &'source str,
     open: Range<usize>,
     close: Option<Range<usize>>,
+    line: Range<usize>,
     href_span: Range<usize>,
     label_span: Range<usize>,
 
@@ -1183,16 +1193,52 @@ pub struct Link<'source> {
 
 impl<'source> Link<'source> {
     /// Create a new link.
-    pub fn new(source: &'source str, open: Range<usize>) -> Self {
+    pub fn new(source: &'source str, open: Range<usize>, line: Range<usize>) -> Self {
         Self {
             source,
             href_span: open.clone(),
             label_span: open.clone(),
             open,
+            line,
             close: None,
             href: None,
             label: None,
         }
+    }
+
+    /// Get the link href.
+    ///
+    /// If an owned value has been set it is preferred.
+    pub fn href(&self) -> &str {
+        if let Some(ref href) = self.href {
+            return href;
+        }
+        &self.source[self.href_span.start..self.href_span.end]
+    }
+
+    /// Get the link label.
+    ///
+    /// If the label is the empty string the href will be used instead.
+    ///
+    /// If an owned value has been set it is preferred.
+    pub fn label(&self) -> &str {
+        let lbl = if let Some(ref label) = self.label {
+            return label;
+        } else {
+            &self.source[self.label_span.start..self.label_span.end]
+        };
+
+        if lbl.is_empty() { self.href() } else { lbl }
+    }
+
+    /// Get the span for the href.
+    pub fn href_span(&self) -> &Range<usize> {
+        &self.href_span
+    }
+
+    /// Get the span for the label.
+    pub fn label_span(&self) -> &Range<usize> {
+        &self.label_span
     }
 
     /// Update the end of the href span.
@@ -1230,6 +1276,16 @@ impl<'source> Slice<'source> for Link<'source> {
 
     fn source(&self) -> &'source str {
         self.source
+    }
+}
+
+impl<'source> Lines for Link<'source> {
+    fn lines(&self) -> &Range<usize> {
+        &self.line
+    }
+
+    fn lines_mut(&mut self) -> &mut Range<usize> {
+        &mut self.line
     }
 }
 

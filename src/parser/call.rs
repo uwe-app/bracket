@@ -168,7 +168,7 @@ fn key_value<'source>(
         match token {
             Token::Parameters(lex, span) => {
                 let (value, token) = value(source, lexer, state, (lex, span))?;
-                call.add_hash(key, value);
+                call.add_parameter(key, value);
                 next = token;
             }
             _ => panic!("Expecting parameter token for key/value pair!"),

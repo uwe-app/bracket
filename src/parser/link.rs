@@ -94,7 +94,11 @@ fn href<'source>(
                 match lex {
                     lexer::Link::Newline => {
                         *state.line_mut() += 1;
-                        todo!("Newlines not allowed in links...");
+                        // NOTE: newlines are not allowed in links
+                        // NOTE: by returning early the link will 
+                        // NOTE: never be closed and we should generate
+                        // NOTE: an unclosed link error.
+                        return Ok(())
                     }
                     lexer::Link::Text => {
                         link.href_end(span.end);
@@ -140,13 +144,15 @@ pub(crate) fn parse<'source>(
 ) -> SyntaxResult<Link<'source>> {
     *state.byte_mut() = open.end;
 
-    let mut link = Link::new(source, open);
+    let mut link = Link::new(source, open, state.line_range());
 
     href(source, lexer, state, &mut link)?;
 
     if !link.is_closed() {
         panic!("Link was not closed...");
     }
+
+    link.lines_end(state.line());
 
     Ok(link)
 }

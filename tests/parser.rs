@@ -258,7 +258,7 @@ fn parse_hash_string() -> Result<()> {
             let node = doc.nodes().first().unwrap();
             match node {
                 Node::Statement(ref call) => {
-                    let hash = call.hash();
+                    let hash = call.parameters();
                     assert_eq!(1, hash.len());
                     assert_eq!(
                         &ParameterValue::from((Value::String(String::from(

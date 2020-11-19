@@ -14,7 +14,7 @@ use crate::{
     json,
     output::{Output, StringOutput},
     parser::{
-        ast::{Block, Call, CallTarget, Node, ParameterValue, Path, Slice},
+        ast::{Block, Call, CallTarget, Node, ParameterValue, Path, Slice, Link, Element, Lines},
         path,
     },
     template::Templates,
@@ -25,6 +25,7 @@ use crate::{
 static PARTIAL_BLOCK: &str = "@partial-block";
 static HELPER_MISSING: &str = "helperMissing";
 static BLOCK_HELPER_MISSING: &str = "blockHelperMissing";
+static HELPER_LINK: &str = "link";
 
 type HelperValue = Option<Value>;
 
@@ -429,7 +430,7 @@ impl<'render> Render<'render> {
     /// Create the context hash parameters.
     fn hash(&mut self, call: &Call<'_>) -> RenderResult<Map<String, Value>> {
         let mut out = Map::new();
-        for (k, p) in call.hash() {
+        for (k, p) in call.parameters() {
             let (key, value) = match p {
                 ParameterValue::Json {ref value, span: _, line: _} => (k.to_string(), value.clone()),
                 ParameterValue::Path(ref path) => {
@@ -777,6 +778,32 @@ impl<'render> Render<'render> {
         Ok(())
     }
 
+    // Try to call a link helper.
+    fn link(
+        &mut self,
+        node: &'render Node<'render>,
+        link: &'render Link<'render>,
+    ) -> RenderResult<()> {
+
+        let lines = link.lines();
+        let href = Value::String(link.href().to_string());
+        let label = Value::String(link.label().to_string());
+
+        // Build a call so that the helper invocation flows 
+        // through the standard logic.
+        let mut call = Call::new(link.source(), 0..0, 0..0);
+        call.add_argument(ParameterValue::from(
+            (href, link.href_span().clone(), lines.clone()))
+        );
+        call.add_argument(ParameterValue::from(
+            (label, link.label_span().clone(), lines.clone()))
+        );
+
+        self.invoke(HELPER_LINK, &call, None, None, None)?;
+
+        Ok(())
+    }
+
     pub(crate) fn render_node(
         &mut self,
         node: &'render Node<'render>,
@@ -791,16 +818,20 @@ impl<'render> Render<'render> {
             }
         }
 
-        //println!("Current trim {:?}", &self.trim);
-
         match node {
             Node::Text(ref n) => {
-                //println!("Writing text {}", n.as_str());
                 self.write_str(n.as_str(), false)?;
             }
             Node::RawStatement(ref n) => {
                 let raw = &n.as_str()[1..];
                 self.write_str(raw, false)?;
+            }
+            Node::Link(ref n) => {
+                if self.has_helper(HELPER_LINK) {
+                    self.link(node, n)?;        
+                } else {
+                    self.write_str(n.as_str(), false)?;
+                }
             }
             Node::RawComment(_) => {}
             Node::Comment(_) => {}

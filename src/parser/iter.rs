@@ -72,9 +72,12 @@ impl<'source> Iterator for BranchIter<'source> {
             Node::Block(ref node) => {
                 Some(self.children.get_or_insert(node.nodes().iter()))
             }
-            Node::Text(_) => None,
-            Node::Statement(_) => None,
-            Node::RawStatement(_) | Node::RawComment(_) | Node::Comment(_) => {
+            Node::Text(_)
+                | Node::Link(_)
+                | Node::Statement(_)
+                | Node::RawStatement(_)
+                | Node::RawComment(_)
+                | Node::Comment(_) => {
                 None
             }
         };
