@@ -13,17 +13,21 @@ use crate::{
 
 #[derive(Debug, Default)]
 struct EscapeFlags {
+    newline: bool,
     pipe: bool,
     bracket: bool,
 }
 
 impl EscapeFlags {
     fn has_escape_sequences(&self) -> bool {
-        self.pipe || self.bracket
+        self.newline || self.pipe || self.bracket
     }
 
     fn into_owned<'a>(&self, value: &'a str) -> String {
         let mut val = value.to_string();
+        if self.newline {
+            val = val.replace("\\n", "\n");
+        }
         if self.pipe {
             val = val.replace("\\|", "|");
         }
@@ -58,6 +62,9 @@ fn label<'source>(
                         // NOTE: part of the label, later we may want to support
                         // NOTE: a `title` using another pipe.
                         link.label_end(span.end);
+                    }
+                    lexer::Link::EscapedNewline => {
+                        flags.newline = true;
                     }
                     lexer::Link::EscapedPipe => {
                         flags.pipe = true;
@@ -116,6 +123,9 @@ fn href<'source>(
                         }
                         link.label_start(span.end);
                         return label(source, lexer, state, link);
+                    }
+                    lexer::Link::EscapedNewline => {
+                        flags.newline = true;
                     }
                     lexer::Link::EscapedPipe => {
                         flags.pipe = true;

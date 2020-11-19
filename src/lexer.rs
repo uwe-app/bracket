@@ -255,6 +255,9 @@ pub enum Link {
     #[token("|")]
     Pipe,
 
+    #[token("\\n")]
+    EscapedNewline,
+
     #[token(r#"\|"#)]
     EscapedPipe,
 

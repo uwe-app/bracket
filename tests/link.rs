@@ -92,3 +92,28 @@ fn link_escaped_bracket_label() -> Result<()> {
     assert_eq!(r#"<a href="Some]Target">Label]Info</a>"#, &result);
     Ok(())
 }
+
+#[test]
+fn link_escaped_newline() -> Result<()> {
+    let mut registry = Registry::new();
+    registry.helpers_mut().insert("link", Box::new(LinkHelper {}));
+    let value = r"[[Some\nTarget|Label & Info]]";
+    let data = json!({});
+    let result = registry.once(NAME, value, &data)?;
+    assert_eq!(r#"<a href="Some
+Target">Label &amp; Info</a>"#, &result);
+    Ok(())
+}
+
+#[test]
+fn link_escaped_newline_label() -> Result<()> {
+    let mut registry = Registry::new();
+    registry.helpers_mut().insert("link", Box::new(LinkHelper {}));
+    let value = r"[[Some\nTarget|Label\nInfo]]";
+    let data = json!({});
+    let result = registry.once(NAME, value, &data)?;
+    assert_eq!(r#"<a href="Some
+Target">Label
+Info</a>"#, &result);
+    Ok(())
+}
