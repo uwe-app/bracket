@@ -49,7 +49,7 @@ fn component_type<'source>(lex: &Parameters) -> ComponentType {
 
 fn to_component<'source>(
     source: &'source str,
-    state: &mut ParseState,
+    _state: &mut ParseState,
     lex: &Parameters,
     span: Range<usize>,
     raw_id: Option<RawLiteral>,
@@ -67,7 +67,7 @@ fn to_component<'source>(
 }
 
 fn parents<'source>(
-    state: &mut ParseState,
+    _state: &mut ParseState,
     lexer: &mut Lexer<'source>,
     path: &mut Path,
 ) -> Option<Token> {

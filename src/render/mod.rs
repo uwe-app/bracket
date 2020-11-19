@@ -14,7 +14,7 @@ use crate::{
     json,
     output::{Output, StringOutput},
     parser::{
-        ast::{Block, Call, CallTarget, Node, ParameterValue, Path, Slice, Link, Element, Lines},
+        ast::{Block, Call, CallTarget, Node, ParameterValue, Path, Slice, Link, Lines},
         path,
     },
     template::Templates,
@@ -786,7 +786,6 @@ impl<'render> Render<'render> {
     // Try to call a link helper.
     fn link(
         &mut self,
-        node: &'render Node<'render>,
         link: &'render Link<'render>,
     ) -> RenderResult<()> {
 
@@ -832,8 +831,12 @@ impl<'render> Render<'render> {
                 self.write_str(raw, false)?;
             }
             Node::Link(ref n) => {
-                if self.has_helper(HELPER_LINK) {
-                    self.link(node, n)?;        
+                if cfg!(feature = "links") {
+                    if self.has_helper(HELPER_LINK) {
+                        self.link(n)?;        
+                    } else {
+                        self.write_str(n.as_str(), false)?;
+                    }
                 } else {
                     self.write_str(n.as_str(), false)?;
                 }

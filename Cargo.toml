@@ -21,7 +21,7 @@ dyn-clone = "^1.0"
 pretty_env_logger = "0.4"
 
 [features]
-default = ["helpers", "fs"]
+default = ["helpers", "fs", "links"]
 helpers = [
   "log-helper",
   "json-helper",
@@ -42,6 +42,7 @@ conditional-helper = []
 comparison-helper = []
 #stream = []
 fs = []
+links = []
 
 [package.metadata.docs.rs]
 all-features = true

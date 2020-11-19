@@ -1,12 +1,10 @@
 use std::ops::Range;
-use serde_json::{Number, Value};
 
 use crate::{
-    error::{ErrorInfo, SyntaxError},
-    lexer::{self, Lexer, Parameters, Token},
+    lexer::{self, Lexer, Token},
     parser::{
         ast::{Link, Lines, Element},
-        path, string, ParseState,
+        ParseState,
     },
     SyntaxResult,
 };

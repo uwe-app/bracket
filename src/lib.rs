@@ -167,6 +167,24 @@
 //! See the [Helper Module](helper) to learn more about creating your own
 //! helpers.
 //!
+//! ## Links
+//!
+//! The `links` feature which is enabled by default parses wiki-style links 
+//! into a [Link](parser::ast::Link) node. When this feature is enabled the renderer will look 
+//! for a helper named `link` and if present it will be invoked with the link 
+//! `href` and `label` as arguments to the helper.
+//!
+//! Such that a wiki-style link such as `[[https://example.com|Example Website]]`.
+//!
+//! Would call the `link` helper with the first argument as the website URL and 
+//! the second argument as the label (*Example Website*).
+//!
+//! If this feature is disabled or no `link` helper is defined the link is 
+//! rendered to the output as text.
+//!
+//! Links do not accept new lines; to include a new line, vertical pipe or right square bracket 
+//! it must be preceeded by a backslash, eg: `\n`, `\|` or `\]`.
+//!
 
 pub mod error;
 pub mod escape;
