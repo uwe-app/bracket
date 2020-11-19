@@ -66,6 +66,11 @@ fn label<'source>(
                         flags.bracket = true;
                     }
                     lexer::Link::End => {
+                        if flags.has_escape_sequences() {
+                            let value = flags
+                                .into_owned(&source[link.label_span().start..span.start]);
+                            link.set_label(value);
+                        }
                         link.exit(span);
                         return Ok(());
                     }
@@ -109,6 +114,7 @@ fn href<'source>(
                                 .into_owned(&source[link.open_span().end..span.start]);
                             link.set_href(value);
                         }
+                        link.label_start(span.end);
                         return label(source, lexer, state, link);
                     }
                     lexer::Link::EscapedPipe => {

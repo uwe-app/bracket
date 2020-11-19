@@ -151,6 +151,11 @@ impl<'render> Render<'render> {
         &mut self.writer
     }
 
+    /// Escape a value using the current escape function.
+    pub fn escape(&self, val: &str) -> String {
+        (self.escape)(val)
+    }
+
     /// Write a string to the output destination.
     pub fn write(&mut self, s: &str) -> HelperResult<usize> {
         self.write_str(s, false)

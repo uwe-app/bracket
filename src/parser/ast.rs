@@ -1196,8 +1196,8 @@ impl<'source> Link<'source> {
     pub fn new(source: &'source str, open: Range<usize>, line: Range<usize>) -> Self {
         Self {
             source,
-            href_span: open.clone(),
-            label_span: open.clone(),
+            href_span: open.end..open.end,
+            label_span: open.end..open.end,
             open,
             line,
             close: None,
@@ -1244,6 +1244,11 @@ impl<'source> Link<'source> {
     /// Update the end of the href span.
     pub fn href_end(&mut self, end: usize) {
         self.href_span.end = end;
+    }
+
+    /// Update the start of the label span.
+    pub fn label_start(&mut self, start: usize) {
+        self.label_span.start = start;
     }
 
     /// Update the end of the label span.

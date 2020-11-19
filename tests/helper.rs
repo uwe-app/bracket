@@ -10,7 +10,6 @@ static NAME: &str = "helper.rs";
 
 #[derive(Clone)]
 pub struct FooHelper;
-
 impl Helper for FooHelper {
     fn call<'render, 'call>(
         &self,
@@ -21,12 +20,9 @@ impl Helper for FooHelper {
         Ok(Some(Value::String("bar".to_string())))
     }
 }
-
 impl LocalHelper for FooHelper {}
 
-#[derive(Clone)]
 pub struct FooBlockHelper;
-
 impl Helper for FooBlockHelper {
     fn call<'render, 'call>(
         &self,
@@ -46,9 +42,7 @@ impl Helper for FooBlockHelper {
     }
 }
 
-#[derive(Clone)]
 pub struct HelperMissing;
-
 impl Helper for HelperMissing {
     fn call<'render, 'call>(
         &self,
@@ -61,9 +55,7 @@ impl Helper for HelperMissing {
     }
 }
 
-#[derive(Clone)]
 pub struct BlockHelperMissing;
-
 impl Helper for BlockHelperMissing {
     fn call<'render, 'call>(
         &self,

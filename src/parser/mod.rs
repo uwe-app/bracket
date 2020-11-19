@@ -394,6 +394,16 @@ impl<'source> Parser<'source> {
                     )?;
                     return Ok(Some(Node::Statement(call)));
                 }
+
+                lexer::Block::StartLink => {
+                    let link = link::parse(
+                        self.source,
+                        &mut self.lexer,
+                        &mut self.state,
+                        span,
+                    )?;
+                    return Ok(Some(Node::Link(link)));
+                }
                 _ => {}
             },
             Token::Link(_, _) => {}
