@@ -249,16 +249,19 @@ pub enum Array {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 pub enum Link {
-    #[regex(r#"[^\\|]+"#)]
+    #[regex(r#"[^\\|\]]+"#)]
     Text,
 
     #[token("|")]
     Pipe,
 
     #[token(r#"\|"#)]
+    EscapedPipe,
+
+    #[token(r#"\]"#)]
     Escaped,
 
-    #[token("]]")]
+    #[token(r"]]")]
     End,
 
     #[token("\n")]

@@ -1,6 +1,6 @@
 use bracket::lexer::{
     collect as lex, Array, Block, Comment, DoubleQuoteString, Parameters,
-    RawComment, RawStatement, SingleQuoteString, Token,
+    RawComment, RawStatement, SingleQuoteString, Token, Link,
 };
 
 #[test]
@@ -335,3 +335,18 @@ fn lex_block_scope_partial() {
     ];
     assert_eq!(expect, tokens);
 }
+
+#[test]
+fn lex_link() {
+    let value = "[[/foo/bar|label]]";
+    let tokens = lex(value, true);
+    let expect = vec![
+        Token::Block(Block::StartLink, 0..2),
+        Token::Link(Link::Text, 2..10),
+        Token::Link(Link::Pipe, 10..11),
+        Token::Link(Link::Text, 11..16),
+        Token::Link(Link::End, 16..18),
+    ];
+    assert_eq!(expect, tokens);
+}
+
