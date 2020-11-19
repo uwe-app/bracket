@@ -1,4 +1,4 @@
-use logos::Span;
+use std::ops::Range;
 use serde_json::Value;
 
 use crate::{
@@ -60,9 +60,9 @@ pub(crate) fn parse<'source>(
     source: &'source str,
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
-    current: (Parameters, Span),
+    current: (Parameters, Range<usize>),
     string_type: RawLiteralType,
-) -> SyntaxResult<(Span, RawLiteral)> {
+) -> SyntaxResult<(Range<usize>, RawLiteral)> {
     let (_lex, span) = current;
     let str_start = span.end;
     let mut str_end = span.end;
@@ -137,9 +137,9 @@ pub(crate) fn literal<'source>(
     source: &'source str,
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
-    current: (Parameters, Span),
+    current: (Parameters, Range<usize>),
     string_type: RawLiteralType,
-) -> SyntaxResult<(Value, Span)> {
+) -> SyntaxResult<(Value, Range<usize>)> {
     let (span, flags) = parse(source, lexer, state, current, string_type)?;
     let value = if flags.has_escape_sequences() {
         flags.into_owned(&source[span.start..span.end])

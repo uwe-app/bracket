@@ -1167,3 +1167,83 @@ impl fmt::Debug for Block<'_> {
             .finish()
     }
 }
+
+/// Link node for wiki-style links.
+pub struct Link<'source> {
+    source: &'source str,
+    open: Range<usize>,
+    close: Option<Range<usize>>,
+    href: Range<usize>,
+    label: Range<usize>,
+}
+
+impl<'source> Link<'source> {
+    /// Create a new link.
+    pub fn new(source: &'source str, open: Range<usize>) -> Self {
+        Self {
+            source,
+            href: open.clone(),
+            label: open.clone(),
+            open,
+            close: None,
+        }
+    }
+}
+
+impl<'source> Slice<'source> for Link<'source> {
+    fn as_str(&self) -> &'source str {
+        let close = self.close.clone().unwrap_or(0..self.open.len());
+        &self.source[self.open.start..close.end]
+    }
+
+    fn source(&self) -> &'source str {
+        self.source
+    }
+}
+
+impl<'source> Element<'source> for Link<'source> {
+    fn open(&self) -> &'source str {
+        &self.source[self.open.start..self.open.end]
+    }
+
+    fn close(&self) -> &'source str {
+        if let Some(ref close) = self.close {
+            &self.source[close.start..close.end]
+        } else {
+            ""
+        }
+    }
+
+    fn open_span(&self) -> &Range<usize> {
+        &self.open
+    }
+
+    fn close_span(&self) -> &Option<Range<usize>> {
+        &self.close
+    }
+
+    fn is_closed(&self) -> bool {
+        self.close.is_some()
+    }
+
+    fn exit(&mut self, span: Range<usize>) {
+        self.close = Some(span);
+    }
+}
+
+impl fmt::Display for Link<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
+impl fmt::Debug for Link<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Link")
+            .field("open", &self.open)
+            .field("close", &self.close)
+            .field("href", &self.href)
+            .field("label", &self.label)
+            .finish()
+    }
+}

@@ -1,4 +1,4 @@
-use logos::Span;
+use std::ops::Range;
 use serde_json::{Number, Value};
 
 use crate::{
@@ -44,8 +44,8 @@ fn json_literal<'source>(
     source: &'source str,
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
-    current: (Parameters, Span),
-    range: &mut Span,
+    current: (Parameters, Range<usize>),
+    range: &mut Range<usize>,
 ) -> SyntaxResult<Value> {
     let (lex, span) = current;
     let value = match lex {
@@ -106,7 +106,7 @@ fn value<'source>(
     source: &'source str,
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
-    current: (Parameters, Span),
+    current: (Parameters, Range<usize>),
 ) -> SyntaxResult<(ParameterValue<'source>, Option<Token>)> {
     let (lex, span) = current;
 
@@ -157,7 +157,7 @@ fn key_value<'source>(
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     call: &mut Call<'source>,
-    current: (Parameters, Span),
+    current: (Parameters, Range<usize>),
 ) -> SyntaxResult<Option<Token>> {
     let (_lex, span) = current;
     let key = &source[span.start..span.end - 1];
@@ -430,7 +430,7 @@ pub(crate) fn sub_expr<'source>(
     source: &'source str,
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
-    open: Span,
+    open: Range<usize>,
 ) -> SyntaxResult<(Call<'source>, Option<Token>)> {
     *state.byte_mut() = open.end;
 
@@ -453,7 +453,7 @@ pub(crate) fn parse<'source>(
     source: &'source str,
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
-    open: Span,
+    open: Range<usize>,
     // TODO: use this to determine whether `else` keyword is legal
     _parse_context: CallParseContext,
 ) -> SyntaxResult<Call<'source>> {

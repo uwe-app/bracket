@@ -1,4 +1,4 @@
-use logos::Span;
+use std::ops::Range;
 
 use crate::{
     error::{ErrorInfo, SyntaxError},
@@ -51,7 +51,7 @@ fn to_component<'source>(
     source: &'source str,
     state: &mut ParseState,
     lex: &Parameters,
-    span: Span,
+    span: Range<usize>,
     raw_id: Option<RawLiteral>,
 ) -> Component<'source> {
     let value = if let Some(ref raw) = raw_id {
@@ -224,7 +224,7 @@ pub(crate) fn parse<'source>(
     source: &'source str,
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
-    current: (Parameters, Span),
+    current: (Parameters, Range<usize>),
 ) -> SyntaxResult<(Option<Path<'source>>, Option<Token>)> {
     let (lex, span) = current;
     let mut path = Path::new(source, state.line_range());
