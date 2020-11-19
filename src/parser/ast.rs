@@ -1173,8 +1173,12 @@ pub struct Link<'source> {
     source: &'source str,
     open: Range<usize>,
     close: Option<Range<usize>>,
-    href: Range<usize>,
-    label: Range<usize>,
+    href_span: Range<usize>,
+    label_span: Range<usize>,
+
+    // Owned value when escape sequences are detected
+    href: Option<String>,
+    label: Option<String>,
 }
 
 impl<'source> Link<'source> {
@@ -1182,11 +1186,39 @@ impl<'source> Link<'source> {
     pub fn new(source: &'source str, open: Range<usize>) -> Self {
         Self {
             source,
-            href: open.clone(),
-            label: open.clone(),
+            href_span: open.clone(),
+            label_span: open.clone(),
             open,
             close: None,
+            href: None,
+            label: None,
         }
+    }
+
+    /// Update the end of the href span.
+    pub fn href_end(&mut self, end: usize) {
+        self.href_span.end = end;
+    }
+
+    /// Update the end of the label span.
+    pub fn label_end(&mut self, end: usize) {
+        self.label_span.end = end;
+    }
+
+    /// Set an owned value for the href.
+    ///
+    /// Only available when the parser detects escape sequences 
+    /// in the input.
+    pub fn set_href(&mut self, value: String) {
+        self.href = Some(value);    
+    }
+
+    /// Set an owned value for the label.
+    ///
+    /// Only available when the parser detects escape sequences 
+    /// in the input.
+    pub fn set_label(&mut self, value: String) {
+        self.label = Some(value);    
     }
 }
 
