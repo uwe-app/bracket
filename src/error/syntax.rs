@@ -53,6 +53,10 @@ pub enum SyntaxError {
     LinkNotTerminated(String),
     #[error("Syntax error, block target sub expressions are only supported for partials")]
     BlockTargetSubExpr(String),
+    #[error("Syntax error, path is empty")]
+    EmptyPath(String),
+    #[error("Syntax error, path component type could not be identified")]
+    ComponentType(String),
 
     #[error("Syntax error, expecting JSON literal token")]
     TokenJsonLiteral(String),
@@ -66,6 +70,8 @@ pub enum SyntaxError {
     TokenArrayLiteral(String),
     #[error("Syntax error, unexpected token parsing link")]
     TokenLink(String),
+    #[error("Syntax error, unexpected token parsing path")]
+    TokenParameterPath(String),
 }
 
 impl fmt::Debug for SyntaxError {
@@ -91,12 +97,15 @@ impl fmt::Debug for SyntaxError {
             | Self::SubExpressionNotTerminated(ref source)
             | Self::LinkNotTerminated(ref source)
             | Self::BlockTargetSubExpr(ref source)
+            | Self::EmptyPath(ref source)
+            | Self::ComponentType(ref source)
             | Self::TokenJsonLiteral(ref source)
             | Self::TokenRawLiteral(ref source)
             | Self::TokenDoubleQuoteLiteral(ref source)
             | Self::TokenSingleQuoteLiteral(ref source)
             | Self::TokenArrayLiteral(ref source)
             | Self::TokenLink(ref source)
+            | Self::TokenParameterPath(ref source)
             | Self::BlockNotOpen(ref source) => write!(f, "{}", source)?,
         }
         Ok(())

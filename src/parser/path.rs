@@ -26,8 +26,24 @@ fn is_path_component(lex: &Parameters) -> bool {
     }
 }
 
-fn component_type<'source>(lex: &Parameters) -> ComponentType {
-    match lex {
+fn to_component<'source>(
+    source: &'source str,
+    state: &mut ParseState,
+    lex: &Parameters,
+    span: Range<usize>,
+    raw_id: Option<RawLiteral>,
+) -> SyntaxResult<Component<'source>> {
+    let value = if let Some(ref raw) = raw_id {
+        if raw.has_escape_sequences() {
+            Some(raw.into_owned(&source[span.clone()]))
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    let kind = match &lex {
         Parameters::ExplicitThisKeyword => ComponentType::ThisKeyword,
         Parameters::ExplicitThisDotSlash => ComponentType::ThisDotSlash,
         Parameters::ParentRef => ComponentType::Parent,
@@ -43,27 +59,12 @@ fn component_type<'source>(lex: &Parameters) -> ComponentType {
         Parameters::StartArray => {
             ComponentType::RawIdentifier(RawIdType::Array)
         }
-        _ => panic!("Expecting component parameter in parser"),
-    }
-}
-
-fn to_component<'source>(
-    source: &'source str,
-    _state: &mut ParseState,
-    lex: &Parameters,
-    span: Range<usize>,
-    raw_id: Option<RawLiteral>,
-) -> Component<'source> {
-    let value = if let Some(ref raw) = raw_id {
-        if raw.has_escape_sequences() {
-            Some(raw.into_owned(&source[span.clone()]))
-        } else {
-            None
-        }
-    } else {
-        None
+        _ => return Err(
+            SyntaxError::ComponentType(
+                ErrorInfo::from((source, state)).into()))
     };
-    Component::new(source, component_type(lex), span, value)
+
+    Ok(Component::new(source, kind, span, value))
 }
 
 fn parents<'source>(
@@ -207,7 +208,7 @@ pub(crate) fn components<'source>(
 
                     path.add_component(to_component(
                         source, state, &lex, span, raw_id,
-                    ));
+                    )?);
                     wants_delimiter = true;
                 } else {
                     return Ok(Some(Token::Parameters(lex, span)));
@@ -251,7 +252,7 @@ pub(crate) fn parse<'source>(
                 *state.byte_mut() = span.start;
 
                 if is_path_component(&lex) {
-                    let component = to_component(source, state, &lex, span, None);
+                    let component = to_component(source, state, &lex, span, None)?;
                     // Flag as a path that should be resolved from the root object
                     if path.is_empty() && component.is_root() {
                         path.set_root(true);
@@ -289,13 +290,17 @@ pub(crate) fn parse<'source>(
                     )?;
 
                     if path.is_empty() {
-                        panic!("Empty path encountered!!!");
+                        return Err(
+                            SyntaxError::EmptyPath(
+                                ErrorInfo::from((source, state)).into()))
                     }
 
                     return Ok((Some(path), next));
                 }
             }
-            _ => panic!("Expected parameter token"),
+            _ => return Err(
+                SyntaxError::TokenParameterPath(
+                    ErrorInfo::from((source, state)).into()))
         }
 
         next = lexer.next();
@@ -319,10 +324,9 @@ pub(crate) fn from_str<'source>(
                     parse(source, &mut lexer, &mut state, (lex, span))?;
                 return Ok(path);
             }
-            _ => panic!(
-                "Parsing path from string got unexpected token {:?}",
-                token
-            ),
+            _ => return Err(
+                SyntaxError::TokenParameterPath(
+                    ErrorInfo::from((source, &mut state)).into()))
         }
     }
 
