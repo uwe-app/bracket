@@ -40,7 +40,7 @@ static STACK_MAX: usize = 32;
 
 /// Call site keeps track of calls so we can
 /// detect cyclic calls and therefore prevent a
-/// stack overflow panic by returning a render
+/// stack overflow by returning a render
 /// error when a cycle is detected.
 ///
 /// Note that we must distinguish between helper

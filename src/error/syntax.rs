@@ -51,6 +51,8 @@ pub enum SyntaxError {
     SubExpressionNotTerminated(String),
     #[error("Syntax error, link was not terminated")]
     LinkNotTerminated(String),
+    #[error("Syntax error, block target sub expressions are only supported for partials")]
+    BlockTargetSubExpr(String),
 
     #[error("Syntax error, expecting JSON literal token")]
     TokenJsonLiteral(String),
@@ -88,6 +90,7 @@ impl fmt::Debug for SyntaxError {
             | Self::TagNameMismatch(ref source)
             | Self::SubExpressionNotTerminated(ref source)
             | Self::LinkNotTerminated(ref source)
+            | Self::BlockTargetSubExpr(ref source)
             | Self::TokenJsonLiteral(ref source)
             | Self::TokenRawLiteral(ref source)
             | Self::TokenDoubleQuoteLiteral(ref source)

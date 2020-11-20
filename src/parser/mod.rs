@@ -273,7 +273,11 @@ impl<'source> Parser<'source> {
                         }
                         CallTarget::SubExpr(_) => {
                             if !block.call().is_partial() {
-                                panic!("Sub expression block targets are only evaluated for partials");
+                                return Err(
+                                    SyntaxError::BlockTargetSubExpr(
+                                        ErrorInfo::from((self.source, &mut self.state)).into(),
+                                    ),
+                                );
                             }
                         }
                     }
