@@ -57,6 +57,10 @@ pub enum SyntaxError {
     EmptyPath(String),
     #[error("Syntax error, path component type could not be identified")]
     ComponentType(String),
+    #[error("Syntax error, partials and conditionals may not be combined")]
+    MixedPartialConditional(String),
+    #[error("Syntax error, raw block open tag was not terminated")]
+    RawBlockOpenNotTerminated(String),
 
     #[error("Syntax error, expecting JSON literal token")]
     TokenJsonLiteral(String),
@@ -99,6 +103,8 @@ impl fmt::Debug for SyntaxError {
             | Self::BlockTargetSubExpr(ref source)
             | Self::EmptyPath(ref source)
             | Self::ComponentType(ref source)
+            | Self::MixedPartialConditional(ref source)
+            | Self::RawBlockOpenNotTerminated(ref source)
             | Self::TokenJsonLiteral(ref source)
             | Self::TokenRawLiteral(ref source)
             | Self::TokenDoubleQuoteLiteral(ref source)

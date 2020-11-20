@@ -1,6 +1,7 @@
 use std::ops::Range;
 
 use crate::{
+    error::{ErrorInfo, SyntaxError},
     lexer::{self, Lexer, Token},
     parser::{
         ast::{Block, Element, Node, Slice, Text, TextBlock, Lines},
@@ -72,7 +73,9 @@ pub(crate) fn raw<'source>(
         call::parse(source, lexer, state, span.clone(), CallParseContext::Raw)?;
 
     if !call.is_closed() {
-        panic!("Raw block start tag was not terminated");
+        return Err(
+            SyntaxError::RawBlockOpenNotTerminated(
+                ErrorInfo::from((source, state)).into()))
     }
 
     let start_name = call.target().as_str();
@@ -94,10 +97,6 @@ pub(crate) fn raw<'source>(
 
     let maybe_node = text_until(source, lexer, state, end_span, &end, &wrap);
     if let Some((node, next_token)) = maybe_node {
-        //let string = &node.source()[span.clone()];
-
-        //println!("Got end raw block slice {:?}", string);
-
         let span = if let Some(token) = next_token {
             match token {
                 Token::Block(lex, span) => match lex {

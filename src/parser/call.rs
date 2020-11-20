@@ -210,6 +210,11 @@ fn arguments<'source>(
     if let Some(token) = next {
         match token {
             Token::Parameters(lex, span) => {
+
+                //match &lex {
+                    //_ => *state.byte_mut() = span.end - 1,
+                //}
+
                 match &lex {
                     Parameters::WhiteSpace | Parameters::Newline => {
                         if lex == Parameters::Newline {
@@ -320,6 +325,11 @@ fn target<'source>(
 
         match token {
             Token::Parameters(lex, span) => {
+
+                //match &lex {
+                    //_ => *state.byte_mut() = span.end - 1,
+                //}
+
                 match &lex {
                     Parameters::WhiteSpace | Parameters::Newline => {
                         if lex == Parameters::Newline {
@@ -460,7 +470,9 @@ pub(crate) fn parse<'source>(
     let next = flags(source, lexer, state, &mut call, next)?;
 
     if call.is_partial() && call.is_conditional() {
-        panic!("Partials and conditionals may not be combined.");
+        return Err(
+            SyntaxError::MixedPartialConditional(
+                ErrorInfo::from((source, state)).into()));
     }
 
     let next =
@@ -468,8 +480,9 @@ pub(crate) fn parse<'source>(
     let _next =
         arguments(source, lexer, state, &mut call, next, CallContext::Call)?;
 
-    /*
     // FIXME: we should return the next token here so it is consumed ???
+
+    /*
     if !call.is_closed() {
         //println!("{:?}", call);
         panic!("Call statement was not terminated");

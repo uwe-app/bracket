@@ -82,3 +82,23 @@ fn syntax_err_link() -> Result<()> {
     }
     Ok(())
 }
+
+#[test]
+fn syntax_err_raw_block_open() -> Result<()> {
+    let registry = Registry::new();
+    let value = r#"{{{{raw"#;
+    match registry.parse(NAME, value) {
+        Ok(_) => panic!("Raw block open error expected"),
+        Err(e) => {
+            println!("{:?}", e);
+            let pos = SourcePos(0, 4);
+            let info = ErrorInfo::new(value, NAME, pos, vec![]);
+            assert_eq!(
+                Error::Syntax(
+                    SyntaxError::RawBlockOpenNotTerminated(info.into())),
+                e
+            );
+        }
+    }
+    Ok(())
+}
