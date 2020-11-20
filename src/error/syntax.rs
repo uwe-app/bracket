@@ -6,22 +6,14 @@ use thiserror::Error;
 pub enum SyntaxError {
     #[error("Syntax error, expecting identifier")]
     ExpectedIdentifier(String),
-    #[error("Syntax error, block name must be identifier")]
+    #[error("Syntax error, block name must be an identifier")]
     BlockName(String),
-    #[error("Syntax error, partial requires an identifier")]
-    PartialIdentifier(String),
-    #[error("Syntax error, partial requires a simple identifier (not a path)")]
-    PartialSimpleIdentifier(String),
-    #[error("Syntax error, block scope requires an identifier")]
-    BlockIdentifier(String),
-    #[error("Syntax error, statement not terminated")]
-    OpenStatement(String),
     #[error(
-        "Syntax error, new lines in string literals must be escaped (\\n)"
+        "Syntax error, new lines in raw literals must be escaped (\\n)"
     )]
-    StringLiteralNewline(String),
+    LiteralNewline(String),
     #[error(
-        "Syntax error,explicit this reference must be at the start of a path "
+        "Syntax error, explicit this reference must be at the start of a path"
     )]
     UnexpectedPathExplicitThis(String),
     #[error("Syntax error, parent scopes must be at the start of a path")]
@@ -84,11 +76,7 @@ impl fmt::Debug for SyntaxError {
         match *self {
             Self::ExpectedIdentifier(ref source)
             | Self::BlockName(ref source)
-            | Self::PartialIdentifier(ref source)
-            | Self::PartialSimpleIdentifier(ref source)
-            | Self::BlockIdentifier(ref source)
-            | Self::OpenStatement(ref source)
-            | Self::StringLiteralNewline(ref source)
+            | Self::LiteralNewline(ref source)
             | Self::UnexpectedPathExplicitThis(ref source)
             | Self::UnexpectedPathParent(ref source)
             | Self::UnexpectedPathLocal(ref source)

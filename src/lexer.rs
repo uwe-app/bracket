@@ -228,7 +228,7 @@ pub enum SingleQuoteString {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 pub enum Array {
-    #[regex(r#"[^\]]+"#)]
+    #[regex(r#"[^\]\n]+"#)]
     Text,
 
     //#[token("\\n")]

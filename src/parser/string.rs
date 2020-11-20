@@ -77,6 +77,11 @@ pub(crate) fn parse<'source>(
         match string_type {
             RawLiteralType::Double => match token {
                 Token::DoubleQuoteString(lex, span) => match &lex {
+                    DoubleQuoteString::Newline => {
+                        return Err(
+                            SyntaxError::LiteralNewline(
+                                ErrorInfo::from((source, state)).into())) 
+                    }
                     DoubleQuoteString::EscapedNewline => {
                         flags.newline = true;
                     }
@@ -87,7 +92,7 @@ pub(crate) fn parse<'source>(
                         return Ok((str_start..str_end, flags));
                     }
                     _ => {
-                        *state.byte_mut() = span.end;
+                        *state.byte_mut() = span.end - 1;
                         str_end = span.end;
                     }
                 },
@@ -99,6 +104,11 @@ pub(crate) fn parse<'source>(
             },
             RawLiteralType::Single => match token {
                 Token::SingleQuoteString(lex, span) => match &lex {
+                    SingleQuoteString::Newline => {
+                        return Err(
+                            SyntaxError::LiteralNewline(
+                                ErrorInfo::from((source, state)).into())) 
+                    }
                     SingleQuoteString::EscapedNewline => {
                         flags.newline = true;
                     }
@@ -109,7 +119,7 @@ pub(crate) fn parse<'source>(
                         return Ok((str_start..str_end, flags));
                     }
                     _ => {
-                        *state.byte_mut() = span.end;
+                        *state.byte_mut() = span.end - 1;
                         str_end = span.end;
                     }
                 },
@@ -120,7 +130,13 @@ pub(crate) fn parse<'source>(
                 }
             },
             RawLiteralType::Array => match token {
+
                 Token::Array(lex, span) => match &lex {
+                    Array::Newline => {
+                        return Err(
+                            SyntaxError::LiteralNewline(
+                                ErrorInfo::from((source, state)).into())) 
+                    }
                     Array::Escaped => {
                         flags.delimiter = true;
                     }
@@ -128,7 +144,7 @@ pub(crate) fn parse<'source>(
                         return Ok((str_start..str_end, flags));
                     }
                     _ => {
-                        *state.byte_mut() = span.end;
+                        *state.byte_mut() = span.end - 1;
                         str_end = span.end;
                     }
                 },

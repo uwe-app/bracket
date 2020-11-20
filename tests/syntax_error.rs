@@ -63,6 +63,66 @@ fn syntax_err_block_name() -> Result<()> {
 }
 
 #[test]
+fn syntax_err_literal_newline_double() -> Result<()> {
+    let registry = Registry::new();
+    let value = r#"{{ foo."bar
+qux" }}"#;
+    match registry.parse(NAME, value) {
+        Ok(_) => panic!("Literal newline error expected"),
+        Err(e) => {
+            println!("{:?}", e);
+            let pos = SourcePos(0, 10);
+            let info = ErrorInfo::new(value, NAME, pos, vec![]);
+            assert_eq!(
+                Error::Syntax(SyntaxError::LiteralNewline(info.into())),
+                e
+            );
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn syntax_err_literal_newline_single() -> Result<()> {
+    let registry = Registry::new();
+    let value = r#"{{ foo.'bar
+qux' }}"#;
+    match registry.parse(NAME, value) {
+        Ok(_) => panic!("Literal newline error expected"),
+        Err(e) => {
+            println!("{:?}", e);
+            let pos = SourcePos(0, 10);
+            let info = ErrorInfo::new(value, NAME, pos, vec![]);
+            assert_eq!(
+                Error::Syntax(SyntaxError::LiteralNewline(info.into())),
+                e
+            );
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn syntax_err_literal_newline_array() -> Result<()> {
+    let registry = Registry::new();
+    let value = r#"{{ foo.[bar
+qux] }}"#;
+    match registry.parse(NAME, value) {
+        Ok(_) => panic!("Literal newline error expected"),
+        Err(e) => {
+            println!("{:?}", e);
+            let pos = SourcePos(0, 10);
+            let info = ErrorInfo::new(value, NAME, pos, vec![]);
+            assert_eq!(
+                Error::Syntax(SyntaxError::LiteralNewline(info.into())),
+                e
+            );
+        }
+    }
+    Ok(())
+}
+
+#[test]
 fn syntax_err_sub_expr() -> Result<()> {
     let registry = Registry::new();
     let value = r#"{{#> (foo}}"#;
