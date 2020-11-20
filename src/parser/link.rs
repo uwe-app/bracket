@@ -1,6 +1,7 @@
 use std::ops::Range;
 
 use crate::{
+    error::{ErrorInfo, SyntaxError},
     lexer::{self, Lexer, Token},
     parser::{
         ast::{Link, Lines, Element},
@@ -48,6 +49,11 @@ fn label<'source>(
     while let Some(token) = lexer.next() {
         match token {
             Token::Link(lex, span) => {
+
+                match &lex {
+                    _ => *state.byte_mut() = span.end - 1,
+                }
+
                 match lex {
                     lexer::Link::Newline => {
                         *state.line_mut() += 1;
@@ -79,10 +85,12 @@ fn label<'source>(
                         link.exit(span);
                         return Ok(());
                     }
-                    _ => panic!("Unexpected link token"),
+                    _ => return Err(
+                        SyntaxError::TokenLink(ErrorInfo::from((source, state)).into()))
                 } 
             }
-            _ => panic!("Expecting a link token"),
+            _ => return Err(
+                SyntaxError::TokenLink(ErrorInfo::from((source, state)).into()))
         }
     }
 
@@ -101,6 +109,11 @@ fn href<'source>(
     while let Some(token) = lexer.next() {
         match token {
             Token::Link(lex, span) => {
+
+                match &lex {
+                    _ => *state.byte_mut() = span.end - 1,
+                }
+
                 match lex {
                     lexer::Link::Newline => {
                         *state.line_mut() += 1;
@@ -140,10 +153,12 @@ fn href<'source>(
                         link.exit(span);
                         return Ok(());
                     }
-                    _ => panic!("Unexpected link token"),
+                    _ => return Err(
+                        SyntaxError::TokenLink(ErrorInfo::from((source, state)).into()))
                 } 
             }
-            _ => panic!("Expecting a link token"),
+            _ => return Err(
+                SyntaxError::TokenLink(ErrorInfo::from((source, state)).into()))
         }
     }
 
@@ -159,15 +174,14 @@ pub(crate) fn parse<'source>(
     *state.byte_mut() = open.end;
 
     let mut link = Link::new(source, open, state.line_range());
-
     href(source, lexer, state, &mut link)?;
 
     if !link.is_closed() {
-        panic!("Link was not closed...");
+        Err(SyntaxError::LinkNotTerminated(
+            ErrorInfo::from((source, state)).into()))
+    } else {
+        link.lines_end(state.line());
+        Ok(link)
     }
-
-    link.lines_end(state.line());
-
-    Ok(link)
 }
 

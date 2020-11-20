@@ -49,21 +49,21 @@ pub enum SyntaxError {
 
     #[error("Syntax error, sub-expression was not terminated")]
     SubExpressionNotTerminated(String),
+    #[error("Syntax error, link was not terminated")]
+    LinkNotTerminated(String),
 
     #[error("Syntax error, expecting JSON literal token")]
     TokenJsonLiteral(String),
-
     #[error("Syntax error, expecting raw literal token")]
     TokenRawLiteral(String),
-
     #[error("Syntax error, unexpected token parsing quoted literal (\"\")")]
     TokenDoubleQuoteLiteral(String),
-
     #[error("Syntax error, unexpected token parsing quoted literal ('')")]
     TokenSingleQuoteLiteral(String),
-
     #[error("Syntax error, unexpected token parsing quoted literal ([])")]
     TokenArrayLiteral(String),
+    #[error("Syntax error, unexpected token parsing link")]
+    TokenLink(String),
 }
 
 impl fmt::Debug for SyntaxError {
@@ -87,11 +87,13 @@ impl fmt::Debug for SyntaxError {
             | Self::OpenSubExpression(ref source)
             | Self::TagNameMismatch(ref source)
             | Self::SubExpressionNotTerminated(ref source)
+            | Self::LinkNotTerminated(ref source)
             | Self::TokenJsonLiteral(ref source)
             | Self::TokenRawLiteral(ref source)
             | Self::TokenDoubleQuoteLiteral(ref source)
             | Self::TokenSingleQuoteLiteral(ref source)
             | Self::TokenArrayLiteral(ref source)
+            | Self::TokenLink(ref source)
             | Self::BlockNotOpen(ref source) => write!(f, "{}", source)?,
         }
         Ok(())

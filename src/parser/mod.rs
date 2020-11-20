@@ -347,7 +347,6 @@ impl<'source> Parser<'source> {
                         return Err(SyntaxError::BlockNotOpen(
                             ErrorInfo::from((self.source, &mut self.state, notes)).into(),
                         ));
-                        //panic!("Got close block with no open block!");
                     }
 
                     let (open_name, mut block) = self.stack.pop().unwrap();

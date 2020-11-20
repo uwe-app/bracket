@@ -62,3 +62,23 @@ fn syntax_err_sub_expr() -> Result<()> {
     }
     Ok(())
 }
+
+#[test]
+fn syntax_err_link() -> Result<()> {
+    let registry = Registry::new();
+    let value = r#"[[SomeLink|Page"#;
+    match registry.parse(NAME, value) {
+        Ok(_) => panic!("Link not terminated error expected"),
+        Err(e) => {
+            println!("{:?}", e);
+            let pos = SourcePos(0, 14);
+            let info = ErrorInfo::new(value, NAME, pos, vec![]);
+            assert_eq!(
+                Error::Syntax(
+                    SyntaxError::LinkNotTerminated(info.into())),
+                e
+            );
+        }
+    }
+    Ok(())
+}
