@@ -42,3 +42,23 @@ fn syntax_err_identifier_expected() -> Result<()> {
     }
     Ok(())
 }
+
+#[test]
+fn syntax_err_sub_expr() -> Result<()> {
+    let registry = Registry::new();
+    let value = r#"{{#> (foo}}"#;
+    match registry.parse(NAME, value) {
+        Ok(_) => panic!("Sub expression not terminated error expected"),
+        Err(e) => {
+            println!("{:?}", e);
+            let pos = SourcePos(0, 9);
+            let info = ErrorInfo::new(value, NAME, pos, vec![]);
+            assert_eq!(
+                Error::Syntax(
+                    SyntaxError::SubExpressionNotTerminated(info.into())),
+                e
+            );
+        }
+    }
+    Ok(())
+}

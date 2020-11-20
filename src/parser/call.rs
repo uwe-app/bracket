@@ -94,8 +94,9 @@ fn json_literal<'source>(
             value
         }
         _ => {
-            // FIXME: how to handle this?
-            panic!("Expecting JSON literal token.");
+            return Err(
+                SyntaxError::TokenJsonLiteral(
+                    ErrorInfo::from((source, state)).into()));
         }
     };
 
@@ -126,10 +127,6 @@ fn value<'source>(
         // Open a nested call
         Parameters::StartSubExpression => {
             let (call, token) = sub_expr(source, lexer, state, span)?;
-            if !call.is_closed() {
-                panic!("Sub expression was not terminated");
-            }
-
             return Ok((ParameterValue::SubExpr(call), token));
         }
         // Literal components
@@ -210,8 +207,6 @@ fn arguments<'source>(
     next: Option<Token>,
     context: CallContext,
 ) -> SyntaxResult<Option<Token>> {
-    //println!("Arguments {:?}", next);
-
     if let Some(token) = next {
         match token {
             Token::Parameters(lex, span) => {
@@ -296,7 +291,9 @@ fn arguments<'source>(
                         panic!("Unexpected parameters error token");
                     }
                     Parameters::End => {
-                        call.exit(span);
+                        if context != CallContext::SubExpr {
+                            call.exit(span);
+                        }
                         return Ok(None);
                     }
                 }
@@ -321,11 +318,6 @@ fn target<'source>(
 ) -> SyntaxResult<Option<Token>> {
     while let Some(token) = next {
 
-        //if token.is_newline() {
-            //*state.line_mut() += 1;
-            //continue;
-        //}
-
         match token {
             Token::Parameters(lex, span) => {
                 match &lex {
@@ -344,6 +336,7 @@ fn target<'source>(
                     | Parameters::LocalIdentifier
                     | Parameters::ParentRef
                     | Parameters::PathDelimiter => {
+
                         let (mut path, token) =
                             path::parse(source, lexer, state, (lex, span))?;
 
@@ -367,12 +360,13 @@ fn target<'source>(
                     }
                     Parameters::End => {
                         if !call.has_target() && !call.is_conditional() {
-                            //panic!("Got end of statement with no call target...");
                             return Err(SyntaxError::ExpectedIdentifier(
                                 ErrorInfo::from((source, state)).into(),
                             ));
                         }
-                        call.exit(span);
+                        if context != CallContext::SubExpr {
+                            call.exit(span);
+                        }
                         return Ok(None);
                     }
                     _ => {
@@ -441,7 +435,9 @@ pub(crate) fn sub_expr<'source>(
     let next =
         arguments(source, lexer, state, &mut call, next, CallContext::SubExpr)?;
     if !call.is_closed() {
-        panic!("Sub expression statement was not terminated");
+        return Err(
+            SyntaxError::SubExpressionNotTerminated(
+                ErrorInfo::from((source, state)).into()));
     }
 
     call.lines_end(state.line());
@@ -472,11 +468,13 @@ pub(crate) fn parse<'source>(
     let _next =
         arguments(source, lexer, state, &mut call, next, CallContext::Call)?;
 
+    /*
     // FIXME: we should return the next token here so it is consumed ???
     if !call.is_closed() {
         //println!("{:?}", call);
         panic!("Call statement was not terminated");
     }
+    */
 
     call.lines_end(state.line());
 

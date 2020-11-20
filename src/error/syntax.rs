@@ -46,6 +46,12 @@ pub enum SyntaxError {
     TagNameMismatch(String),
     #[error("Syntax error, got a closing tag but no block is open")]
     BlockNotOpen(String),
+
+    #[error("Syntax error, sub-expression was not terminated")]
+    SubExpressionNotTerminated(String),
+
+    #[error("Syntax error, expecting JSON literal token")]
+    TokenJsonLiteral(String),
 }
 
 impl fmt::Debug for SyntaxError {
@@ -68,6 +74,8 @@ impl fmt::Debug for SyntaxError {
             | Self::ExpectedPathDelimiter(ref source)
             | Self::OpenSubExpression(ref source)
             | Self::TagNameMismatch(ref source)
+            | Self::SubExpressionNotTerminated(ref source)
+            | Self::TokenJsonLiteral(ref source)
             | Self::BlockNotOpen(ref source) => write!(f, "{}", source)?,
         }
         Ok(())
