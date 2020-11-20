@@ -256,21 +256,14 @@ impl<'source> Parser<'source> {
                     )?;
 
                     let name = block.name().ok_or_else(|| {
-                        return SyntaxError::ExpectedIdentifier(
+                        *self.state.byte_mut() = block.call().target().open_span().start;
+                        return SyntaxError::BlockName(
                             ErrorInfo::from((self.source, &mut self.state)).into(),
                         );
                     })?;
 
                     match block.call().target() {
-                        CallTarget::Path(ref path) => {
-                            if !path.is_simple() {
-                                return Err(
-                                    SyntaxError::ExpectedSimpleIdentifier(
-                                        ErrorInfo::from((self.source, &mut self.state)).into(),
-                                    ),
-                                );
-                            }
-                        }
+                        CallTarget::Path(ref _path) => {}
                         CallTarget::SubExpr(_) => {
                             if !block.call().is_partial() {
                                 return Err(

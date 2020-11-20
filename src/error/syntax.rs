@@ -6,8 +6,8 @@ use thiserror::Error;
 pub enum SyntaxError {
     #[error("Syntax error, expecting identifier")]
     ExpectedIdentifier(String),
-    #[error("Syntax error, expecting identifier not a path or sub-expression")]
-    ExpectedSimpleIdentifier(String),
+    #[error("Syntax error, block name must be identifier")]
+    BlockName(String),
     #[error("Syntax error, partial requires an identifier")]
     PartialIdentifier(String),
     #[error("Syntax error, partial requires a simple identifier (not a path)")]
@@ -83,7 +83,7 @@ impl fmt::Debug for SyntaxError {
         write!(f, "{}\n", self.to_string())?;
         match *self {
             Self::ExpectedIdentifier(ref source)
-            | Self::ExpectedSimpleIdentifier(ref source)
+            | Self::BlockName(ref source)
             | Self::PartialIdentifier(ref source)
             | Self::PartialSimpleIdentifier(ref source)
             | Self::BlockIdentifier(ref source)

@@ -467,20 +467,27 @@ pub struct Path<'source> {
     parents: u8,
     explicit: bool,
     root: bool,
+    open: Range<usize>,
     line: Range<usize>,
 }
 
 impl<'source> Path<'source> {
     /// Create a new path.
-    pub fn new(source: &'source str, line: Range<usize>) -> Self {
+    pub fn new(source: &'source str, open: Range<usize>, line: Range<usize>) -> Self {
         Self {
             source,
             components: Vec::new(),
             parents: 0,
             explicit: false,
             root: false,
+            open,
             line,
         }
+    }
+
+    /// Get the open span for the path.
+    pub fn open_span(&self) -> &Range<usize> {
+        &self.open 
     }
 
     /// Add a component to this path.
@@ -642,6 +649,14 @@ impl<'source> CallTarget<'source> {
             Self::SubExpr(ref call) => call.is_empty(),
         }
     }
+
+    /// Get the open span for the call target.
+    pub fn open_span(&self) -> &Range<usize> {
+        match *self {
+            Self::Path(ref path) => path.open_span(),
+            Self::SubExpr(ref call) => call.open_span(),
+        }
+    }
 }
 
 impl<'source> Slice<'source> for CallTarget<'source> {
@@ -684,7 +699,7 @@ impl fmt::Display for CallTarget<'_> {
 
 impl Default for CallTarget<'_> {
     fn default() -> Self {
-        CallTarget::Path(Path::new("", 0..0))
+        CallTarget::Path(Path::new("", 0..0, 0..0))
     }
 }
 
@@ -721,7 +736,7 @@ impl<'source> Call<'source> {
             conditional: false,
             open,
             close: None,
-            target: CallTarget::Path(Path::new(source, 0..0)),
+            target: CallTarget::Path(Path::new(source, 0..0, 0..0)),
             arguments: Vec::new(),
             parameters: HashMap::new(),
             line,

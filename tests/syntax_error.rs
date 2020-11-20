@@ -10,7 +10,7 @@ fn syntax_err_empty_statement() -> Result<()> {
     let registry = Registry::new();
     let value = r"{{}}";
     match registry.parse(NAME, value) {
-        Ok(_) => panic!("Empty statement error expected"),
+        Ok(_) => panic!("Identifier error expected (empty statement)"),
         Err(e) => {
             println!("{:?}", e);
             let pos = SourcePos(0, 2);
@@ -29,13 +29,32 @@ fn syntax_err_identifier_expected() -> Result<()> {
     let registry = Registry::new();
     let value = r#"{{# }}"#;
     match registry.parse(NAME, value) {
-        Ok(_) => panic!("Identifier expected error expected"),
+        Ok(_) => panic!("Identifier error expected (empty block)"),
         Err(e) => {
             println!("{:?}", e);
             let pos = SourcePos(0, 4);
             let info = ErrorInfo::new(value, NAME, pos, vec![]);
             assert_eq!(
                 Error::Syntax(SyntaxError::ExpectedIdentifier(info.into())),
+                e
+            );
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn syntax_err_block_name() -> Result<()> {
+    let registry = Registry::new();
+    let value = r#"{{# foo.bar}}"#;
+    match registry.parse(NAME, value) {
+        Ok(_) => panic!("Block name error expected"),
+        Err(e) => {
+            println!("{:?}", e);
+            let pos = SourcePos(0, 4);
+            let info = ErrorInfo::new(value, NAME, pos, vec![]);
+            assert_eq!(
+                Error::Syntax(SyntaxError::BlockName(info.into())),
                 e
             );
         }

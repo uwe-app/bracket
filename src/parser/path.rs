@@ -228,7 +228,7 @@ pub(crate) fn parse<'source>(
     current: (Parameters, Range<usize>),
 ) -> SyntaxResult<(Option<Path<'source>>, Option<Token>)> {
     let (lex, span) = current;
-    let mut path = Path::new(source, state.line_range());
+    let mut path = Path::new(source, span.clone(), state.line_range());
 
     let mut next: Option<Token> = Some(Token::Parameters(lex, span));
     match &lex {
