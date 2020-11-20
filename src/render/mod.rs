@@ -39,8 +39,8 @@ pub use scope::Scope;
 static STACK_MAX: usize = 32;
 
 /// Call site keeps track of calls so we can
-/// detect cyclic calls and therefore prevent
-/// stack overflows panics by returning a render
+/// detect cyclic calls and therefore prevent a
+/// stack overflow panic by returning a render
 /// error when a cycle is detected.
 ///
 /// Note that we must distinguish between helper
@@ -600,7 +600,8 @@ impl<'render> Render<'render> {
                 } else if path.is_simple() {
                     return Ok(path.as_str().to_string());
                 } else {
-                    panic!("Partials must be simple identifiers");
+                    return Err(
+                        RenderError::PartialIdentifier(path.as_str().to_string()));
                 }
             }
             CallTarget::SubExpr(ref call) => {
@@ -771,13 +772,13 @@ impl<'render> Render<'render> {
                             );
                         }
                     } else {
-                        panic!(
-                            "Block helpers identifiers must be simple paths"
-                        );
+                        return Err(
+                            RenderError::BlockIdentifier(path.as_str().to_string()));
                     }
                 }
-                //CallTarget::SubExpr(ref sub) => self.call(sub),
-                _ => todo!("Handle block sub expression for call target"),
+                CallTarget::SubExpr(ref _call) => {
+                    return Err(RenderError::BlockTargetSubExpr) 
+                }
             }
         }
         Ok(())

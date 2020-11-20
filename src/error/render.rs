@@ -17,6 +17,12 @@ pub enum RenderError {
     PartialCycle(String),
     #[error("Cycle detected whilst processing helper '{0}'")]
     HelperCycle(String),
+    #[error("Partial names must be simple identifiers, got path '{0}'")]
+    PartialIdentifier(String),
+    #[error("Block names must be simple identifiers, got path '{0}'")]
+    BlockIdentifier(String),
+    #[error("Block target sub expressions are only supported for partials")]
+    BlockTargetSubExpr,
     #[error(transparent)]
     Helper(#[from] HelperError),
     #[error(transparent)]
