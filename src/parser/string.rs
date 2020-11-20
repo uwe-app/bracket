@@ -2,7 +2,7 @@ use std::ops::Range;
 use serde_json::Value;
 
 use crate::{
-    //error::{ErrorInfo, SourcePos, SyntaxError},
+    error::{ErrorInfo, SyntaxError},
     lexer::{
         Array, DoubleQuoteString, Lexer, Parameters, SingleQuoteString, Token,
     },
@@ -91,7 +91,11 @@ pub(crate) fn parse<'source>(
                         str_end = span.end;
                     }
                 },
-                _ => panic!("Expecting string literal token"),
+                _ => {
+                    return Err(
+                        SyntaxError::TokenDoubleQuoteLiteral(
+                            ErrorInfo::from((source, state)).into()));
+                }
             },
             RawLiteralType::Single => match token {
                 Token::SingleQuoteString(lex, span) => match &lex {
@@ -109,7 +113,11 @@ pub(crate) fn parse<'source>(
                         str_end = span.end;
                     }
                 },
-                _ => panic!("Expecting string literal token"),
+                _ => {
+                    return Err(
+                        SyntaxError::TokenSingleQuoteLiteral(
+                            ErrorInfo::from((source, state)).into()));
+                }
             },
             RawLiteralType::Array => match token {
                 Token::Array(lex, span) => match &lex {
@@ -124,12 +132,18 @@ pub(crate) fn parse<'source>(
                         str_end = span.end;
                     }
                 },
-                _ => panic!("Expecting string literal token"),
+                _ => {
+                    return Err(
+                        SyntaxError::TokenArrayLiteral(
+                            ErrorInfo::from((source, state)).into()));
+                }
             },
         }
     }
 
-    panic!("Failed to parse string literal");
+    return Err(
+        SyntaxError::TokenRawLiteral(
+            ErrorInfo::from((source, state)).into()));
 }
 
 /// Parse a quoted string literal and return a value.

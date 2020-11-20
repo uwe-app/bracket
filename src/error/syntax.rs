@@ -52,6 +52,18 @@ pub enum SyntaxError {
 
     #[error("Syntax error, expecting JSON literal token")]
     TokenJsonLiteral(String),
+
+    #[error("Syntax error, expecting raw literal token")]
+    TokenRawLiteral(String),
+
+    #[error("Syntax error, unexpected token parsing quoted literal (\"\")")]
+    TokenDoubleQuoteLiteral(String),
+
+    #[error("Syntax error, unexpected token parsing quoted literal ('')")]
+    TokenSingleQuoteLiteral(String),
+
+    #[error("Syntax error, unexpected token parsing quoted literal ([])")]
+    TokenArrayLiteral(String),
 }
 
 impl fmt::Debug for SyntaxError {
@@ -76,6 +88,10 @@ impl fmt::Debug for SyntaxError {
             | Self::TagNameMismatch(ref source)
             | Self::SubExpressionNotTerminated(ref source)
             | Self::TokenJsonLiteral(ref source)
+            | Self::TokenRawLiteral(ref source)
+            | Self::TokenDoubleQuoteLiteral(ref source)
+            | Self::TokenSingleQuoteLiteral(ref source)
+            | Self::TokenArrayLiteral(ref source)
             | Self::BlockNotOpen(ref source) => write!(f, "{}", source)?,
         }
         Ok(())
