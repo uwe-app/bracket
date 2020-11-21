@@ -121,13 +121,15 @@ fn value<'source>(
             let (mut path, token) =
                 path::parse(source, lexer, state, (lex, span))?;
             if let Some(path) = path.take() {
-                return Ok((ParameterValue::Path(path), token));
+                Ok((ParameterValue::Path(path), token))
+            } else {
+                Err(SyntaxError::ExpectedPath(ErrorInfo::from((source, state)).into()))
             }
         }
         // Open a nested call
         Parameters::StartSubExpression => {
             let (call, token) = sub_expr(source, lexer, state, span)?;
-            return Ok((ParameterValue::SubExpr(call), token));
+            Ok((ParameterValue::SubExpr(call), token))
         }
         // Literal components
         Parameters::DoubleQuoteString
@@ -140,13 +142,15 @@ fn value<'source>(
             let mut range = span.clone();
             let line_range = state.line_range();
             let value = json_literal(source, lexer, state, (lex, span), &mut range)?;
-            return Ok((ParameterValue::Json {
-                value, span: range, line: line_range}, lexer.next()));
+            Ok((ParameterValue::Json {
+                value, span: range, line: line_range}, lexer.next()))
         }
-        _ => panic!("Unexpected token while parsing value! {:?}", lex),
+        _ => {
+            return Err(
+                SyntaxError::TokenParameter(
+                    ErrorInfo::from((source, state)).into()));
+        }
     }
-
-    panic!("Expecting value!");
 }
 
 fn key_value<'source>(
@@ -168,7 +172,11 @@ fn key_value<'source>(
                 call.add_parameter(key, value);
                 next = token;
             }
-            _ => panic!("Expecting parameter token for key/value pair!"),
+            _ => {
+                return Err(
+                    SyntaxError::TokenParameter(
+                        ErrorInfo::from((source, state)).into()));
+            }
         }
     }
 
@@ -189,10 +197,16 @@ fn key_value<'source>(
                     return Ok(None);
                 }
                 _ => {
-                    panic!("Unexpected parameter token parsing hash parameters")
+                    return Err(
+                        SyntaxError::TokenHashKeyValue(
+                            ErrorInfo::from((source, state)).into()));
                 }
             },
-            _ => panic!("Unexpected token whilst parsing hash parameters"),
+            _ => {
+                return Err(
+                    SyntaxError::TokenParameter(
+                        ErrorInfo::from((source, state)).into()));
+            }
         }
         next = lexer.next();
     }
@@ -211,10 +225,6 @@ fn arguments<'source>(
         match token {
             Token::Parameters(lex, span) => {
 
-                //match &lex {
-                    //_ => *state.byte_mut() = span.end - 1,
-                //}
-
                 match &lex {
                     Parameters::WhiteSpace | Parameters::Newline => {
                         if lex == Parameters::Newline {
@@ -226,12 +236,11 @@ fn arguments<'source>(
                         );
                     }
                     Parameters::Partial => {
-                        panic!("Partial indicator (>) must be the first part of a call statement");
+                        return Err(
+                            SyntaxError::PartialPosition(
+                                ErrorInfo::from((source, state)).into()))
                     }
                     Parameters::ElseKeyword => {}
-                    //Parameters::StartArray => {
-                    //todo!("Parse argument as JSON literal array")
-                    //}
                     // Path components
                     Parameters::ExplicitThisKeyword
                     | Parameters::ExplicitThisDotSlash
@@ -282,18 +291,25 @@ fn arguments<'source>(
                         );
                     }
                     Parameters::PathDelimiter => {
-                        panic!("Unexpected path delimiter");
+                        return Err(
+                            SyntaxError::PathDelimiterNotAllowed(
+                                ErrorInfo::from((source, state)).into()))
                     }
                     Parameters::EndSubExpression => {
                         if context == CallContext::SubExpr {
                             call.exit(span);
                             return Ok(lexer.next());
                         } else {
-                            panic!("Unexpected end of sub expression");
+                            return Err(
+                                SyntaxError::SubExprNotOpen(
+                                    ErrorInfo::from((source, state)).into()))
                         }
                     }
                     Parameters::Error => {
-                        panic!("Unexpected parameters error token");
+                        return Err(
+                            SyntaxError::TokenError(
+                                String::from("parameters"),
+                                ErrorInfo::from((source, state)).into()))
                     }
                     Parameters::End => {
                         if context != CallContext::SubExpr {
@@ -304,7 +320,9 @@ fn arguments<'source>(
                 }
             }
             _ => {
-                panic!("Expecting parameter token");
+                return Err(
+                    SyntaxError::TokenParameter(
+                        ErrorInfo::from((source, state)).into()));
             }
         }
     }
@@ -326,10 +344,6 @@ fn target<'source>(
         match token {
             Token::Parameters(lex, span) => {
 
-                //match &lex {
-                    //_ => *state.byte_mut() = span.end - 1,
-                //}
-
                 match &lex {
                     Parameters::WhiteSpace | Parameters::Newline => {
                         if lex == Parameters::Newline {
@@ -337,7 +351,9 @@ fn target<'source>(
                         }
                     }
                     Parameters::ElseKeyword => {
-                        panic!("Got else keyword parsing call target");
+                        return Err(SyntaxError::ElseNotAllowed(
+                            ErrorInfo::from((source, state)).into(),
+                        ));
                     }
                     // Path components
                     Parameters::ExplicitThisKeyword
@@ -358,7 +374,9 @@ fn target<'source>(
                     }
                     Parameters::StartSubExpression => {
                         if context == CallContext::SubExpr {
-                            panic!("Sub expressions must use a path or identifier for the target");
+                            return Err(SyntaxError::SubExprTargetNotAllowed(
+                                ErrorInfo::from((source, state)).into(),
+                            ));
                         }
 
                         let (sub_call, token) =
@@ -380,15 +398,16 @@ fn target<'source>(
                         return Ok(None);
                     }
                     _ => {
-                        panic!(
-                            "Unexpected token parsing call target {:?}",
-                            lex
-                        );
+                        return Err(
+                            SyntaxError::TokenCallTarget(
+                                ErrorInfo::from((source, state)).into()));
                     }
                 }
             }
             _ => {
-                panic!("Expecting parameter token, got {:?}", token);
+                return Err(
+                    SyntaxError::TokenParameter(
+                        ErrorInfo::from((source, state)).into()));
             }
         }
 
@@ -480,14 +499,7 @@ pub(crate) fn parse<'source>(
     let _next =
         arguments(source, lexer, state, &mut call, next, CallContext::Call)?;
 
-    // FIXME: we should return the next token here so it is consumed ???
-
-    /*
-    if !call.is_closed() {
-        //println!("{:?}", call);
-        panic!("Call statement was not terminated");
-    }
-    */
+    // FIXME: should we return the next token here so it is consumed ???
 
     call.lines_end(state.line());
 

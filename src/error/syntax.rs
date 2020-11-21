@@ -6,12 +6,26 @@ use thiserror::Error;
 pub enum SyntaxError {
     #[error("Syntax error, expecting identifier")]
     ExpectedIdentifier(String),
+    #[error("Syntax error, expecting path")]
+    ExpectedPath(String),
     #[error("Syntax error, block name must be an identifier")]
     BlockName(String),
     #[error(
         "Syntax error, new lines in raw literals must be escaped (\\n)"
     )]
     LiteralNewline(String),
+    #[error("Syntax error, partial operator (>) must come first")]
+    PartialPosition(String),
+    #[error("Syntax error, got close sub-expression but no sub-expression is open")]
+    SubExprNotOpen(String),
+
+    #[error("Syntax error, sub-expression must use an identifier for the target")]
+    SubExprTargetNotAllowed(String),
+    #[error("Syntax error, path delimiter (.) not allowed here")]
+    PathDelimiterNotAllowed(String),
+    #[error("Syntax error, 'else' keyword is not allowed here")]
+    ElseNotAllowed(String),
+
     #[error(
         "Syntax error, explicit this reference must be at the start of a path"
     )]
@@ -63,8 +77,18 @@ pub enum SyntaxError {
     #[error("Syntax error, partials and conditionals may not be combined")]
     MixedPartialConditional(String),
 
+    #[error("Syntax error, unexpected error token for context '{0}'")]
+    TokenError(String, String),
+
+    #[error("Syntax error, expecting path or sub-expression for call target")]
+    TokenCallTarget(String),
+
     #[error("Syntax error, expecting JSON literal token")]
     TokenJsonLiteral(String),
+    #[error("Syntax error, expecting parameter token")]
+    TokenParameter(String),
+    #[error("Syntax error, expecting key/value token")]
+    TokenHashKeyValue(String),
     #[error("Syntax error, expecting raw literal token")]
     TokenRawLiteral(String),
     #[error("Syntax error, unexpected token parsing quoted literal (\"\")")]
@@ -86,8 +110,16 @@ impl fmt::Debug for SyntaxError {
         write!(f, "{}\n", self.to_string())?;
         match *self {
             Self::ExpectedIdentifier(ref source)
+            | Self::ExpectedPath(ref source)
             | Self::BlockName(ref source)
             | Self::LiteralNewline(ref source)
+            | Self::PartialPosition(ref source)
+            | Self::SubExprNotOpen(ref source)
+
+            | Self::SubExprTargetNotAllowed(ref source)
+            | Self::PathDelimiterNotAllowed(ref source)
+            | Self::ElseNotAllowed(ref source)
+
             | Self::UnexpectedPathExplicitThis(ref source)
             | Self::UnexpectedPathParent(ref source)
             | Self::UnexpectedPathLocal(ref source)
@@ -108,7 +140,11 @@ impl fmt::Debug for SyntaxError {
             | Self::ComponentType(ref source)
             | Self::MixedPartialConditional(ref source)
             | Self::RawBlockOpenNotTerminated(ref source)
+            | Self::TokenError(_, ref source)
+            | Self::TokenCallTarget(ref source)
             | Self::TokenJsonLiteral(ref source)
+            | Self::TokenParameter(ref source)
+            | Self::TokenHashKeyValue(ref source)
             | Self::TokenRawLiteral(ref source)
             | Self::TokenDoubleQuoteLiteral(ref source)
             | Self::TokenSingleQuoteLiteral(ref source)
