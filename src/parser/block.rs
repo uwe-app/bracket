@@ -146,9 +146,8 @@ pub(crate) fn raw<'source>(
 
         Ok(Node::Block(block))
     } else {
-        return Err(
-            SyntaxError::RawBlockNotTerminated(
-                ErrorInfo::from((source, state)).into()))
+        Err(SyntaxError::RawBlockNotTerminated(
+            ErrorInfo::from((source, state)).into()))
     }
 }
 
@@ -170,10 +169,10 @@ pub(crate) fn raw_comment<'source>(
     let wrap = |t: TextBlock<'source>| Node::RawComment(t);
     let maybe_node = text_until(source, lexer, state, span, &end, &wrap);
     if let Some((node, _)) = maybe_node {
-        return Ok(node);
+        Ok(node)
     } else {
-        // FIXME:
-        panic!("Raw comment was not terminated");
+        Err(SyntaxError::RawCommentNotTerminated(
+            ErrorInfo::from((source, state)).into()))
     }
 }
 
@@ -195,10 +194,10 @@ pub(crate) fn raw_statement<'source>(
     let wrap = |t: TextBlock<'source>| Node::RawStatement(t);
     let maybe_node = text_until(source, lexer, state, span, &end, &wrap);
     if let Some((node, _)) = maybe_node {
-        return Ok(node);
+        Ok(node)
     } else {
-        // FIXME:
-        panic!("Raw statement was not terminated");
+        Err(SyntaxError::RawStatementNotTerminated(
+            ErrorInfo::from((source, state)).into()))
     }
 }
 
@@ -220,10 +219,10 @@ pub(crate) fn comment<'source>(
     let wrap = |t: TextBlock<'source>| Node::Comment(t);
     let maybe_node = text_until(source, lexer, state, span, &end, &wrap);
     if let Some((node, _)) = maybe_node {
-        return Ok(node);
+        Ok(node)
     } else {
-        // FIXME:
-        panic!("Comment was not terminated");
+        Err(SyntaxError::CommentNotTerminated(
+            ErrorInfo::from((source, state)).into()))
     }
 }
 

@@ -45,6 +45,13 @@ pub enum SyntaxError {
     LinkNotTerminated(String),
     #[error("Syntax error, raw block was not terminated")]
     RawBlockNotTerminated(String),
+    #[error("Syntax error, raw comment was not terminated")]
+    RawCommentNotTerminated(String),
+    #[error("Syntax error, raw statement was not terminated")]
+    RawStatementNotTerminated(String),
+    #[error("Syntax error, comment was not terminated")]
+    CommentNotTerminated(String),
+
     #[error("Syntax error, block target sub expressions are only supported for partials")]
     BlockTargetSubExpr(String),
     #[error("Syntax error, path is empty")]
@@ -93,6 +100,9 @@ impl fmt::Debug for SyntaxError {
             | Self::SubExpressionNotTerminated(ref source)
             | Self::LinkNotTerminated(ref source)
             | Self::RawBlockNotTerminated(ref source)
+            | Self::RawCommentNotTerminated(ref source)
+            | Self::RawStatementNotTerminated(ref source)
+            | Self::CommentNotTerminated(ref source)
             | Self::BlockTargetSubExpr(ref source)
             | Self::EmptyPath(ref source)
             | Self::ComponentType(ref source)
