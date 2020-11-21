@@ -24,6 +24,7 @@ pub(crate) fn until<'source>(
             *state.line_mut() += 1;
         }
         if !end(&t) {
+            *state.byte_mut() = t.span().end - 1;
             span.end = t.span().end;
         } else {
             next_token = Some(t);

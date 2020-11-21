@@ -43,6 +43,8 @@ pub enum SyntaxError {
     SubExpressionNotTerminated(String),
     #[error("Syntax error, link was not terminated")]
     LinkNotTerminated(String),
+    #[error("Syntax error, raw block open tag was not terminated")]
+    RawBlockOpenNotTerminated(String),
     #[error("Syntax error, raw block was not terminated")]
     RawBlockNotTerminated(String),
     #[error("Syntax error, raw comment was not terminated")]
@@ -60,8 +62,6 @@ pub enum SyntaxError {
     ComponentType(String),
     #[error("Syntax error, partials and conditionals may not be combined")]
     MixedPartialConditional(String),
-    #[error("Syntax error, raw block open tag was not terminated")]
-    RawBlockOpenNotTerminated(String),
 
     #[error("Syntax error, expecting JSON literal token")]
     TokenJsonLiteral(String),

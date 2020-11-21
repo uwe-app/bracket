@@ -181,3 +181,43 @@ fn syntax_err_raw_block_open() -> Result<()> {
     }
     Ok(())
 }
+
+#[test]
+fn syntax_err_raw_block_close() -> Result<()> {
+    let registry = Registry::new();
+    let value = r#"{{{{raw}}}}foo{{{{/raw"#;
+    match registry.parse(NAME, value) {
+        Ok(_) => panic!("Raw block close error expected"),
+        Err(e) => {
+            println!("{:?}", e);
+            let pos = SourcePos(0, 19);
+            let info = ErrorInfo::new(value, NAME, pos, vec![]);
+            assert_eq!(
+                Error::Syntax(
+                    SyntaxError::RawBlockNotTerminated(info.into())),
+                e
+            );
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn syntax_err_raw_block_half_open() -> Result<()> {
+    let registry = Registry::new();
+    let value = r#"{{{{raw}}}}foo"#;
+    match registry.parse(NAME, value) {
+        Ok(_) => panic!("Raw block half open error expected"),
+        Err(e) => {
+            println!("{:?}", e);
+            let pos = SourcePos(0, 13);
+            let info = ErrorInfo::new(value, NAME, pos, vec![]);
+            assert_eq!(
+                Error::Syntax(
+                    SyntaxError::RawBlockNotTerminated(info.into())),
+                e
+            );
+        }
+    }
+    Ok(())
+}
