@@ -78,10 +78,10 @@ pub(crate) fn raw<'source>(
                 ErrorInfo::from((source, state)).into()))
     }
 
-    let start_name = call.target().as_str();
-
     // NOTE: must have an accurate end span before reading the Text chunk!
     let end_span = call.close_span().clone().unwrap();
+
+    let open_name = call.target().as_str();
 
     block.set_call(call);
 
@@ -97,16 +97,23 @@ pub(crate) fn raw<'source>(
 
     let maybe_node = text_until(source, lexer, state, end_span, &end, &wrap);
     if let Some((node, next_token)) = maybe_node {
+
         let span = if let Some(token) = next_token {
             match token {
                 Token::Block(lex, span) => match lex {
                     lexer::Block::EndRawBlock => span,
-                    _ => panic!("Expecting end raw block!"),
+                    _ => return Err(
+                        SyntaxError::TokenEndRawBlock(
+                            ErrorInfo::from((source, state)).into()))
                 },
-                _ => panic!("Expecting block token in end raw block!"),
+                _ => return Err(
+                    SyntaxError::RawBlockNotTerminated(
+                        ErrorInfo::from((source, state)).into()))
             }
         } else {
-            panic!("Unable to get end raw block span")
+            return Err(
+                SyntaxError::RawBlockNotTerminated(
+                    ErrorInfo::from((source, state)).into()))
         };
 
         block.push(node);
@@ -118,25 +125,30 @@ pub(crate) fn raw<'source>(
             let exit_span = end_tag.open_span().start..close_span.end;
             block.exit(exit_span);
         } else {
-            panic!("Raw block was not terminated correctly!");
+            return Err(
+                SyntaxError::RawBlockNotTerminated(
+                    ErrorInfo::from((source, state)).into()))
         }
 
         let end_name = end_tag.target().as_str();
 
-        if start_name != end_name {
-            // FIXME: return an error here!
-            panic!(
-                "Raw block start '{}' does not match end name '{}'",
-                start_name, end_name
-            );
+        if open_name != end_name {
+            let notes = vec![format!(
+                "opening name is '{}'",
+                open_name
+            )];
+            return Err(SyntaxError::TagNameMismatch(
+                ErrorInfo::from((source, state, notes)).into(),
+            ));
         }
 
         block.lines_end(state.line());
 
         Ok(Node::Block(block))
     } else {
-        // FIXME:
-        panic!("Raw block was not terminated");
+        return Err(
+            SyntaxError::RawBlockNotTerminated(
+                ErrorInfo::from((source, state)).into()))
     }
 }
 

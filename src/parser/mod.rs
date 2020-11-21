@@ -257,9 +257,9 @@ impl<'source> Parser<'source> {
 
                     let name = block.name().ok_or_else(|| {
                         *self.state.byte_mut() = block.call().target().open_span().start;
-                        return SyntaxError::BlockName(
+                        SyntaxError::BlockName(
                             ErrorInfo::from((self.source, &mut self.state)).into(),
-                        );
+                        )
                     })?;
 
                     match block.call().target() {

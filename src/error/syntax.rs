@@ -43,6 +43,8 @@ pub enum SyntaxError {
     SubExpressionNotTerminated(String),
     #[error("Syntax error, link was not terminated")]
     LinkNotTerminated(String),
+    #[error("Syntax error, raw block was not terminated")]
+    RawBlockNotTerminated(String),
     #[error("Syntax error, block target sub expressions are only supported for partials")]
     BlockTargetSubExpr(String),
     #[error("Syntax error, path is empty")]
@@ -68,6 +70,8 @@ pub enum SyntaxError {
     TokenLink(String),
     #[error("Syntax error, unexpected token parsing path")]
     TokenParameterPath(String),
+    #[error("Syntax error, unexpected token, expecting end of raw block")]
+    TokenEndRawBlock(String),
 }
 
 impl fmt::Debug for SyntaxError {
@@ -88,6 +92,7 @@ impl fmt::Debug for SyntaxError {
             | Self::TagNameMismatch(ref source)
             | Self::SubExpressionNotTerminated(ref source)
             | Self::LinkNotTerminated(ref source)
+            | Self::RawBlockNotTerminated(ref source)
             | Self::BlockTargetSubExpr(ref source)
             | Self::EmptyPath(ref source)
             | Self::ComponentType(ref source)
@@ -100,6 +105,7 @@ impl fmt::Debug for SyntaxError {
             | Self::TokenArrayLiteral(ref source)
             | Self::TokenLink(ref source)
             | Self::TokenParameterPath(ref source)
+            | Self::TokenEndRawBlock(ref source)
             | Self::BlockNotOpen(ref source) => write!(f, "{}", source)?,
         }
         Ok(())
