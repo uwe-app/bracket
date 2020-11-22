@@ -8,7 +8,7 @@ use crate::{
 
 use serde_json::{to_string, to_string_pretty, Value};
 
-/// Convert to a JSON string,
+/// Convert to a JSON string.
 ///
 /// Accepts a single argument which is converted to a JSON string and returned.
 ///

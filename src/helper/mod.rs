@@ -102,6 +102,21 @@ pub type HelperValue = HelperResult<Option<Value>>;
 
 /// Trait for helpers.
 pub trait Helper: Send + Sync {
+    /// Function that is called when this helper is resolved 
+    /// by the renderer for a statement or block.
+    ///
+    /// The `rc` argument is the render context that can be used 
+    /// to render inner templates and write to the destination output.
+    ///
+    /// The `ctx` argument provides access to the helper arguments and 
+    /// hash parameters. It also provides support for type assertions and 
+    /// some convenience functions for working with the [Value](serde_json::Value) type.
+    ///
+    /// The `template` argument holds the inner template when the helper 
+    /// is invoked as a block.
+    ///
+    /// For raw block helpers use the [text()](crate::render::Context#method.text)
+    /// function on `ctx` to access the underlying string slice.
     fn call<'render, 'call>(
         &self,
         rc: &mut Render<'render>,

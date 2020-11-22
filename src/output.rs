@@ -37,6 +37,7 @@ pub struct StringOutput {
 }
 
 impl StringOutput {
+    /// Create a new string output buffer.
     pub fn new() -> Self {
         Self {
             value: String::new(),

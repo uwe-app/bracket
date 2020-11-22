@@ -5,290 +5,392 @@ use logos::{Lexer as Lex, Logos, Span};
 #[derive(Clone, Default)]
 pub struct Extras;
 
+/// Tokens for the document and nested blocks.
 #[derive(Logos, Clone, Debug, Eq, PartialEq)]
 #[logos(extras = Extras)]
 #[logos(subpattern identifier = r#"[^\s"!#%&'()*+,./;<=>@\[/\]^`{|}~]"#)]
 pub enum Block {
+
+    /// Start a raw block.
     #[regex(r"\{\{\{\{~?[\t ]*")]
     StartRawBlock,
 
+    /// Start a raw comment.
     #[regex(r"\{\{!--")]
     StartRawComment,
 
+    /// Start a raw (escaped) statement.
     #[regex(r"\\\{\{\{?")]
     StartRawStatement,
 
+    /// Start a comment.
     #[regex(r"\{\{!")]
     StartComment,
 
+    /// Start a statement.
     #[regex(r"\{\{\{?~?[\t ]*")]
     StartStatement,
 
+    /// Start a block.
     #[regex(r"\{\{\~?[\t ]*#[\t ]*")]
     StartBlockScope,
 
+    /// Start a link.
     #[token("[[")]
     StartLink,
 
+    /// End a block.
     #[regex(r"\{\{\~?[\t ]*/")]
     EndBlockScope,
 
+    /// End a raw block.
     #[regex(r"\{\{\{\{~?[\t ]*/")]
     EndRawBlock,
 
+    /// Text token.
     #[regex(r".")]
     Text,
 
+    /// Newline token.
     #[token("\n")]
     Newline,
 
+    /// Error token.
     #[error]
     Error,
 }
 
+/// Tokens for raw comments.
+///
+/// Raw comments can contain statements and blocks which will 
+/// not be rendered. They begin with `{{!--` and are terminated 
+/// with `--}}`.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 pub enum RawComment {
+
+    /// Text token.
     #[regex(r".")]
     Text,
 
+    /// End of raw comment.
     #[regex(r"--\}\}")]
     End,
 
+    /// Newline token.
     #[token("\n")]
     Newline,
 
+    /// Error token.
     #[error]
     Error,
 }
 
+/// Tokens for raw statements.
+///
+/// Raw statements are single-line statements escaped with a 
+/// backslash, for example: `\{{title}}`.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 pub enum RawStatement {
+
+    /// Text token.
     #[regex(r".")]
     Text,
 
-    #[regex(r"\}?\}\}")]
+    /// End of raw statement.
+    #[regex(r"~?\}?\}\}")]
     End,
 
+    /// Newline token.
     #[token("\n")]
     Newline,
 
+    /// Error token.
     #[error]
     Error,
 }
 
+/// Tokens for comments.
+///
+/// Comments may **not** contain statements and blocks. 
+/// They begin with `{{!` and are terminated with `}}`.
+///
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 pub enum Comment {
+
+    /// Text token.
     #[regex(r".")]
     Text,
 
+    /// End of comment.
     #[regex(r"\}\}")]
     End,
 
+    /// Newline token.
     #[token("\n")]
     Newline,
 
+    /// Error token.
     #[error]
     Error,
 }
 
+/// Tokens for parameters.
+///
+/// Parameters are converted to a call statement by the parser and must 
+/// represent all the tokens in a statement (`{{...}}`) and the start 
+/// of a block (`{{# block}}...{{/block}}`).
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 #[logos(subpattern identifier = r#"[^\s"!#%&'()*+,./;<=>@\[/\]^`{|}~]"#)]
 pub enum Parameters {
+
+    /// Token for a partial instruction.
     #[token(r">")]
     Partial,
 
+    /// Token for the `else` conditional keyword.
     #[token(r"else")]
     ElseKeyword,
 
+    /// Token for the explicit `this` keyword.
     #[token(r"this")]
     ExplicitThisKeyword,
 
+    /// Token for explicit `this` notation using a dot and a slash.
     #[token("./")]
     ExplicitThisDotSlash,
 
+    /// Token for a reference to a parent scope.
     #[token("../")]
     ParentRef,
 
+    /// Token for a valid identifier.
     #[regex(r"(?&identifier)+", priority = 2)]
     Identifier,
 
+    /// Token for a local identifier (preceeded by an `@` symbol).
     #[regex(r"@(?&identifier)+")]
     LocalIdentifier,
 
+    /// Token for the delimiter between path components.
     #[regex(r"[./]")]
     PathDelimiter,
 
-    //#[regex(r"\[\d+\]+")]
-    #[token("[")]
-    StartArray,
-
-    #[token("(", priority = 3)]
-    StartSubExpression,
-
-    #[token(")")]
-    EndSubExpression,
-
-    #[regex(r"(?&identifier)+=")]
-    HashKey,
-
+    /// Token that starts a double-quoted string literal.
     #[token("\"")]
     DoubleQuoteString,
 
+    /// Token that starts a single-quoted string literal.
     #[token("'")]
     SingleQuoteString,
 
+    /// Token that starts a raw literal using square brackets.
+    #[token("[")]
+    StartArray,
+
+    /// Token that starts a sub-expression.
+    #[token("(", priority = 3)]
+    StartSubExpression,
+
+    /// Token that ends a sub-expression.
+    #[token(")")]
+    EndSubExpression,
+
+    /// Token for key/value pairs (hash parameters).
+    #[regex(r"(?&identifier)+=")]
+    HashKey,
+
+    /// Token for numeric values.
     // NOTE: Must have higher priority than identifier
     // NOTE: otherwise numbers become identifiers
     #[regex(r"-?([0-9]+\.)?[0-9]+((e|E)[+-]?[0-9]+)?", priority = 3)]
     Number,
 
+    /// Token for the `true` keyword.
     #[token("true")]
     True,
 
+    /// Token for the `false` keyword.
     #[token("false")]
     False,
 
+    /// Token for the `null` keyword.
     #[token("null")]
     Null,
 
-    #[regex(r" +")]
+    /// Token for whitespace delimiters.
+    #[regex(r"[ \t]+")]
     WhiteSpace,
 
+    /// Token for the end of a statement or block open tag.
     #[regex(r"~?\}?\}?\}\}")]
     End,
 
+    /// Newline token.
     #[token("\n")]
     Newline,
 
+    /// Error token.
     #[error]
     Error,
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
-#[logos(extras = Extras)]
-pub enum Statement {
-    #[regex(r"\}?\}\}")]
-    End,
-
-    #[token("\n")]
-    Newline,
-
-    #[error]
-    Error,
-}
-
+/// Tokens for double-quoted string literals.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 pub enum DoubleQuoteString {
+
+    /// Text token.
     #[regex(r#"[^\\"\n]+"#)]
     Text,
 
+    /// Escaped newline token.
     #[token("\\n")]
     EscapedNewline,
 
+    /// Escaped quote.
     #[token(r#"\""#)]
     Escaped,
 
+    /// End of the string literal.
     #[token("\"")]
     End,
 
+    /// Newline token.
     #[token("\n")]
     Newline,
 
+    /// Error token.
     #[error]
     Error,
 }
 
+/// Tokens for single-quoted string literals.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 pub enum SingleQuoteString {
+
+    /// Text token.
     #[regex(r#"[^\\'\n]+"#)]
     Text,
 
+    /// Escaped newline token.
     #[token("\\n")]
     EscapedNewline,
 
+    /// Escaped quote.
     #[token(r#"\'"#)]
     Escaped,
 
+    /// End of the string literal.
     #[token("'")]
     End,
 
+    /// Newline token.
     #[token("\n")]
     Newline,
 
+    /// Error token.
     #[error]
     Error,
 }
 
+/// Tokens for square bracket raw literals.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 pub enum Array {
+
+    /// Text token.
     #[regex(r#"[^\]\n]+"#)]
     Text,
 
     //#[token("\\n")]
     //EscapedNewline,
+
+    /// Escaped bracket.
     #[token(r#"\]"#)]
     Escaped,
 
+    /// End of the raw literal.
     #[token("]")]
     End,
 
+    /// Newline token.
     #[token("\n")]
     Newline,
 
+    /// Error token.
     #[error]
     Error,
 }
 
+/// Tokens for links.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 pub enum Link {
+
+    /// Text token.
     #[regex(r#"[^\\|\]]+"#)]
     Text,
 
+    /// Pipe delimiter token.
     #[token("|")]
     Pipe,
 
+    /// Escaped newline token.
     #[token("\\n")]
     EscapedNewline,
 
+    /// Escaped pipe token.
     #[token(r#"\|"#)]
     EscapedPipe,
 
+    /// Escaped bracket token.
     #[token(r#"\]"#)]
     Escaped,
 
+    /// End of square bracket literal.
     #[token(r"]]")]
     End,
 
+    /// Newline token.
     #[token("\n")]
     Newline,
 
+    /// Error token.
     #[error]
     Error,
 }
 
-/// Type emitted by the iterator.
+/// Enumeration of the token types.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Token {
+    /// Block token.
     Block(Block, Span),
+    /// Raw comment token.
     RawComment(RawComment, Span),
+    /// Raw statement token.
     RawStatement(RawStatement, Span),
+    /// Comment token.
     Comment(Comment, Span),
+    /// Token for call parameters.
     Parameters(Parameters, Span),
+    /// Token for a double-quoted string literal.
     DoubleQuoteString(DoubleQuoteString, Span),
+    /// Token for a single-quoted string literal.
     SingleQuoteString(SingleQuoteString, Span),
+    /// Token for a raw square bracket literal.
     Array(Array, Span),
+    /// Token for links.
     Link(Link, Span),
 }
 
 impl Token {
+
+    /// Get the span for a token.
     pub fn span(&self) -> &Span {
         match self {
             Token::Block(_, ref span) => span,
@@ -303,6 +405,7 @@ impl Token {
         }
     }
 
+    /// Determine if a token should be treated as text.
     pub fn is_text(&self) -> bool {
         match self {
             Token::Block(ref t, _) => t == &Block::Text || t == &Block::Newline,
@@ -323,6 +426,7 @@ impl Token {
         }
     }
 
+    /// Determine if a token is the newline token.
     pub fn is_newline(&self) -> bool {
         match *self {
             Token::RawComment(ref lex, _) => lex == &RawComment::Newline,
@@ -338,8 +442,6 @@ impl Token {
         }
     }
 }
-
-//pub struct Token(pub Box<dyn LexToken>, pub Span);
 
 enum Modes<'source> {
     Block(Lex<'source, Block>),

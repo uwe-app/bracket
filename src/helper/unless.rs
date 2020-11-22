@@ -5,6 +5,10 @@ use crate::{
     render::{Context, Render},
 };
 
+/// Render an inner block when the conditional is **not** truthy.
+///
+/// If any `else` or `else if` conditionals are present they will 
+/// be rendered when necessary.
 pub struct Unless;
 
 impl Helper for Unless {

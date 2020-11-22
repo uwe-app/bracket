@@ -8,7 +8,7 @@ use crate::{
 
 use log::*;
 
-/// Helper that prints a log message.
+/// Print a log message.
 ///
 /// Multiple arguments are accepted and concatenated using a
 /// space before being sent to the log output.

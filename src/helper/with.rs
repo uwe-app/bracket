@@ -5,6 +5,7 @@ use crate::{
     render::{Context, Render, Scope},
 };
 
+/// Set the scope for a block to the target argument.
 pub struct With;
 
 impl Helper for With {

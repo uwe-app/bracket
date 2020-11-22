@@ -16,12 +16,16 @@ pub use syntax::SyntaxError;
 /// returned when using the `Registry`.
 #[derive(Error, Eq, PartialEq)]
 pub enum Error {
+    /// Proxy syntax errors.
     #[error(transparent)]
     Syntax(#[from] SyntaxError),
+    /// Proxy render errors.
     #[error(transparent)]
     Render(#[from] RenderError),
+    /// Error when a named template does not exist.
     #[error("Template not found '{0}'")]
     TemplateNotFound(String),
+    /// Proxy IO errors.
     #[error(transparent)]
     Io(#[from] IoError),
 }
@@ -47,6 +51,7 @@ impl From<std::io::Error> for Error {
 /// facilitate easier testing using `assert_eq!()`.
 #[derive(thiserror::Error)]
 pub enum IoError {
+    /// Proxy IO errors.
     #[error(transparent)]
     Io(#[from] std::io::Error),
 }

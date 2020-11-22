@@ -208,6 +208,7 @@ pub struct Text<'source> {
 }
 
 impl<'source> Text<'source> {
+    /// Create a new text node.
     pub fn new(source: &'source str, span: Range<usize>, line: Range<usize>) -> Self {
         Self {source, span, line} 
     }
@@ -334,12 +335,19 @@ pub enum RawIdType {
 /// Indicates the kind of path component.
 #[derive(Debug, Eq, PartialEq)]
 pub enum ComponentType {
+    /// Parent reference type.
     Parent,
+    /// Explicit this keyword type.
     ThisKeyword,
+    /// Explicit this using dot slash notation.
     ThisDotSlash,
+    /// Identifier path component.
     Identifier,
+    /// Local identifier path component.
     LocalIdentifier,
+    /// Raw identifier path component.
     RawIdentifier(RawIdType),
+    /// Path delimiter.
     Delimiter,
 }
 
@@ -600,7 +608,14 @@ pub enum ParameterValue<'source> {
     /// A parameter that should resolve to a runtime variable.
     Path(Path<'source>),
     /// A literal JSON value.
-    Json { value: Value, span: Range<usize>, line: Range<usize> },
+    Json {
+        /// The literal JSON value.
+        value: Value,
+        /// The byte span for the value.
+        span: Range<usize>,
+        /// The line range for the value.
+        line: Range<usize>,
+    },
     /// A sub-expression to be invoked at runtime to determine the value.
     SubExpr(Call<'source>),
 }

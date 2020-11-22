@@ -1,4 +1,4 @@
-//#![deny(missing_docs)]
+#![deny(missing_docs)]
 //#![cfg_attr(test, deny(warnings))]
 
 //! Bracket is a fast and correct implementation of the [handlebars](https://handlebarsjs.com)
@@ -174,9 +174,8 @@
 //! for a helper named `link` and if present it will be invoked with the link 
 //! `href` and `label` as arguments to the helper.
 //!
-//! Such that a wiki-style link such as `[[https://example.com|Example Website]]`.
-//!
-//! Would call the `link` helper with the first argument as the website URL and 
+//! Such that a wiki-style link such as `[[https://example.com|Example Website]]` 
+//! would call the `link` helper with the first argument as the website URL and 
 //! the second argument as the label (*Example Website*).
 //!
 //! If this feature is disabled or no `link` helper is defined the link is 

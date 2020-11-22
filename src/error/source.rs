@@ -9,10 +9,12 @@ use crate::parser::ParseState;
 pub struct SourcePos(pub usize, pub usize);
 
 impl SourcePos {
+    /// The line number for this source position.
     pub fn line(&self) -> &usize {
         &self.0
     }
 
+    /// The byte offset for this source position.
     pub fn byte_offset(&self) -> &usize {
         &self.1
     }
@@ -24,7 +26,7 @@ impl From<(&usize, &usize)> for SourcePos {
     }
 }
 
-/// Encapsulates the information needed to generate a source code snippet.
+/// Information needed to generate a source code snippet.
 #[derive(Eq, PartialEq)]
 pub struct ErrorInfo<'source> {
     source: &'source str,
@@ -34,6 +36,7 @@ pub struct ErrorInfo<'source> {
 }
 
 impl<'source> ErrorInfo<'source> {
+    /// Create a new error info.
     pub fn new(
         source: &'source str,
         file_name: &str,

@@ -18,6 +18,7 @@ pub struct NodeEvent<'a> {
 }
 
 impl<'a> NodeEvent<'a> {
+    /// Create a new node event.
     pub fn new(
         node: &'a Node,
         trim: TrimState,
