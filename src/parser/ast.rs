@@ -1215,10 +1215,12 @@ pub struct Link<'source> {
     line: Range<usize>,
     href_span: Range<usize>,
     label_span: Range<usize>,
+    title_span: Range<usize>,
 
     // Owned value when escape sequences are detected
     href: Option<String>,
     label: Option<String>,
+    title: Option<String>,
 }
 
 impl<'source> Link<'source> {
@@ -1228,11 +1230,13 @@ impl<'source> Link<'source> {
             source,
             href_span: open.end..open.end,
             label_span: open.end..open.end,
+            title_span: open.end..open.end,
             open,
             line,
             close: None,
             href: None,
             label: None,
+            title: None,
         }
     }
 
@@ -1261,6 +1265,21 @@ impl<'source> Link<'source> {
         if lbl.is_empty() { self.href() } else { lbl }
     }
 
+    /// Get the link title.
+    ///
+    /// If the title is the empty string the label will be used instead.
+    ///
+    /// If an owned value has been set it is preferred.
+    pub fn title(&self) -> &str {
+        let title = if let Some(ref title) = self.title {
+            return title;
+        } else {
+            &self.source[self.title_span.start..self.title_span.end]
+        };
+
+        if title.is_empty() { self.label() } else { title }
+    }
+
     /// Get the span for the href.
     pub fn href_span(&self) -> &Range<usize> {
         &self.href_span
@@ -1269,6 +1288,11 @@ impl<'source> Link<'source> {
     /// Get the span for the label.
     pub fn label_span(&self) -> &Range<usize> {
         &self.label_span
+    }
+
+    /// Get the span for the title.
+    pub fn title_span(&self) -> &Range<usize> {
+        &self.title_span
     }
 
     /// Update the end of the href span.
@@ -1286,6 +1310,16 @@ impl<'source> Link<'source> {
         self.label_span.end = end;
     }
 
+    /// Update the start of the title span.
+    pub fn title_start(&mut self, start: usize) {
+        self.title_span.start = start;
+    }
+
+    /// Update the end of the title span.
+    pub fn title_end(&mut self, end: usize) {
+        self.title_span.end = end;
+    }
+
     /// Set an owned value for the href.
     ///
     /// Only available when the parser detects escape sequences 
@@ -1300,6 +1334,14 @@ impl<'source> Link<'source> {
     /// in the input.
     pub fn set_label(&mut self, value: String) {
         self.label = Some(value);    
+    }
+
+    /// Set an owned value for the title.
+    ///
+    /// Only available when the parser detects escape sequences 
+    /// in the input.
+    pub fn set_title(&mut self, value: String) {
+        self.title = Some(value);    
     }
 }
 

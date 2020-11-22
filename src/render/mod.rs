@@ -793,6 +793,7 @@ impl<'render> Render<'render> {
         let lines = link.lines();
         let href = Value::String(link.href().to_string());
         let label = Value::String(link.label().to_string());
+        let title = Value::String(link.title().to_string());
 
         // Build a call so that the helper invocation flows 
         // through the standard logic.
@@ -802,6 +803,9 @@ impl<'render> Render<'render> {
         );
         call.add_argument(ParameterValue::from(
             (label, link.label_span().clone(), lines.clone()))
+        );
+        call.add_argument(ParameterValue::from(
+            (title, link.title_span().clone(), lines.clone()))
         );
 
         self.invoke(HELPER_LINK, &call, None, None, None)?;

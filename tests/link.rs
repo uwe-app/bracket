@@ -16,11 +16,16 @@ impl Helper for LinkHelper {
         ctx: &Context<'call>,
         _template: Option<&'render Node<'render>>,
     ) -> HelperValue {
+
+        ctx.arity(3..3)?;
+
         let href = ctx.try_get(0, &[Type::String])?.as_str().unwrap();
         let label = ctx.try_get(1, &[Type::String])?.as_str().unwrap();
+        let title = ctx.try_get(2, &[Type::String])?.as_str().unwrap();
         let link = format!(
-            r#"<a href="{}">{}</a>"#,
+            r#"<a href="{}" title="{}">{}</a>"#,
             rc.escape(href),
+            rc.escape(title),
             rc.escape(label));
         rc.write(&link)?;
         Ok(None)
@@ -41,11 +46,11 @@ fn link_noop() -> Result<()> {
 fn link_href() -> Result<()> {
     let mut registry = Registry::new();
     registry.helpers_mut().insert("link", Box::new(LinkHelper {}));
-    let value = r"[[SomeTarget|Label & Info]]";
+    let value = r"[[SomeTarget|Label & Info|Title Label]]";
     let data = json!({});
     let result = registry.once(NAME, value, &data)?;
     println!("Result {}", result);
-    assert_eq!(r#"<a href="SomeTarget">Label &amp; Info</a>"#, &result);
+    assert_eq!(r#"<a href="SomeTarget" title="Title Label">Label &amp; Info</a>"#, &result);
     Ok(())
 }
 
@@ -56,7 +61,7 @@ fn link_escaped_pipe() -> Result<()> {
     let value = r"[[Some\|Target|Label & Info]]";
     let data = json!({});
     let result = registry.once(NAME, value, &data)?;
-    assert_eq!(r#"<a href="Some|Target">Label &amp; Info</a>"#, &result);
+    assert_eq!(r#"<a href="Some|Target" title="Label &amp; Info">Label &amp; Info</a>"#, &result);
     Ok(())
 }
 
@@ -67,7 +72,7 @@ fn link_escaped_pipe_label() -> Result<()> {
     let value = r"[[Some\|Target|Label\|Info]]";
     let data = json!({});
     let result = registry.once(NAME, value, &data)?;
-    assert_eq!(r#"<a href="Some|Target">Label|Info</a>"#, &result);
+    assert_eq!(r#"<a href="Some|Target" title="Label|Info">Label|Info</a>"#, &result);
     Ok(())
 }
 
@@ -78,7 +83,7 @@ fn link_escaped_bracket() -> Result<()> {
     let value = r"[[Some\]Target|Label & Info]]";
     let data = json!({});
     let result = registry.once(NAME, value, &data)?;
-    assert_eq!(r#"<a href="Some]Target">Label &amp; Info</a>"#, &result);
+    assert_eq!(r#"<a href="Some]Target" title="Label &amp; Info">Label &amp; Info</a>"#, &result);
     Ok(())
 }
 
@@ -89,7 +94,7 @@ fn link_escaped_bracket_label() -> Result<()> {
     let value = r"[[Some\]Target|Label\]Info]]";
     let data = json!({});
     let result = registry.once(NAME, value, &data)?;
-    assert_eq!(r#"<a href="Some]Target">Label]Info</a>"#, &result);
+    assert_eq!(r#"<a href="Some]Target" title="Label]Info">Label]Info</a>"#, &result);
     Ok(())
 }
 
@@ -101,7 +106,7 @@ fn link_escaped_newline() -> Result<()> {
     let data = json!({});
     let result = registry.once(NAME, value, &data)?;
     assert_eq!(r#"<a href="Some
-Target">Label &amp; Info</a>"#, &result);
+Target" title="Label &amp; Info">Label &amp; Info</a>"#, &result);
     Ok(())
 }
 
@@ -113,7 +118,8 @@ fn link_escaped_newline_label() -> Result<()> {
     let data = json!({});
     let result = registry.once(NAME, value, &data)?;
     assert_eq!(r#"<a href="Some
-Target">Label
+Target" title="Label
+Info">Label
 Info</a>"#, &result);
     Ok(())
 }

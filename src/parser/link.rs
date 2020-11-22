@@ -37,11 +37,45 @@ impl EscapeFlags {
     }
 }
 
-fn label<'source>(
+enum ValueType {
+    Label,
+    Title,
+}
+
+/// Assign an owned value to the link if escape sequences
+/// were detected.
+fn assign_if_escaped<'source>(
+    source: &'source str,
+    link: &mut Link<'source>,
+    flags: &EscapeFlags,
+    span: &Range<usize>,
+    value_type: &ValueType) {
+
+    if flags.has_escape_sequences() {
+        match value_type {
+            ValueType::Label => {
+                let value = flags
+                    .into_owned(
+                        &source[link.label_span().start..span.start]);
+                link.set_label(value);
+            }
+            ValueType::Title => {
+                let value = flags
+                    .into_owned(
+                        &source[link.title_span().start..span.start]);
+                link.set_title(value);
+            }
+        }
+    }
+}
+
+/// Parse the label and title components.
+fn value<'source>(
     source: &'source str,
     lexer: &mut Lexer<'source>,
     state: &mut ParseState,
     link: &mut Link<'source>,
+    value_type: ValueType,
 ) -> SyntaxResult<()> {
 
     let mut flags: EscapeFlags = Default::default();
@@ -59,13 +93,30 @@ fn label<'source>(
                         *state.line_mut() += 1;
                     }
                     lexer::Link::Text => {
-                        link.label_end(span.end);
+                        match value_type {
+                            ValueType::Label => {
+                                link.label_end(span.end);
+                            }
+                            ValueType::Title => {
+                                link.title_end(span.end);
+                            }
+                        }
                     }
                     lexer::Link::Pipe => {
-                        // NOTE: for now subsequent pipes just become 
-                        // NOTE: part of the label, later we may want to support
-                        // NOTE: a `title` using another pipe.
-                        link.label_end(span.end);
+                        match value_type {
+                            ValueType::Label => {
+                                link.label_end(span.start);
+                                assign_if_escaped(source, link, &flags, &span, &value_type);
+
+                                link.title_start(span.end);
+                                return value(source, lexer, state, link, ValueType::Title)
+                            }
+                            ValueType::Title => {
+                                // Consume any additional pipes until we get till the end.
+                                // TODO: make this an error?
+                                link.title_end(span.end);
+                            }
+                        }
                     }
                     lexer::Link::EscapedNewline => {
                         flags.newline = true;
@@ -77,11 +128,7 @@ fn label<'source>(
                         flags.bracket = true;
                     }
                     lexer::Link::End => {
-                        if flags.has_escape_sequences() {
-                            let value = flags
-                                .into_owned(&source[link.label_span().start..span.start]);
-                            link.set_label(value);
-                        }
+                        assign_if_escaped(source, link, &flags, &span, &value_type);
                         link.exit(span);
                         return Ok(());
                     }
@@ -133,7 +180,7 @@ fn href<'source>(
                             link.set_href(value);
                         }
                         link.label_start(span.end);
-                        return label(source, lexer, state, link);
+                        return value(source, lexer, state, link, ValueType::Label);
                     }
                     lexer::Link::EscapedNewline => {
                         flags.newline = true;

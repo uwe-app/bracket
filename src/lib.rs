@@ -172,11 +172,15 @@
 //! The `links` feature which is enabled by default parses wiki-style links 
 //! into a [Link](parser::ast::Link) node. When this feature is enabled the renderer will look 
 //! for a helper named `link` and if present it will be invoked with the link 
-//! `href` and `label` as arguments to the helper.
+//! `href`, label` and `title`` as arguments to the helper.
 //!
-//! Such that a wiki-style link such as `[[https://example.com|Example Website]]` 
+//! Such that a wiki-style link like this one `[[https://example.com|Example Website]]` 
 //! would call the `link` helper with the first argument as the website URL and 
 //! the second argument as the label (*Example Website*).
+//!
+//! After the label an optional title can be specified using another pipe delimiter: 
+//! `[[/path/to/page|Link Label|Alternative Title]]` this is passed as the third 
+//! argument to the link helper.
 //!
 //! If this feature is disabled or no `link` helper is defined the link is 
 //! rendered to the output as text.
