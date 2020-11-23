@@ -192,7 +192,7 @@ impl<'render> Render<'render> {
     }
 
     /// Reference to the root data for the render.
-    pub fn root(&self) -> &Value {
+    pub fn data(&self) -> &Value {
         &self.root
     }
 
