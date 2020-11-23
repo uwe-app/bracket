@@ -148,7 +148,7 @@ impl<'render> Render<'render> {
     }
 
     /// Get a named template.
-    pub fn get_template(&self, name: &str) -> Option<&Template<'_>> {
+    pub fn get_template(&self, name: &str) -> Option<&'render Template<'render>> {
         self.templates.get(name) 
     }
 
