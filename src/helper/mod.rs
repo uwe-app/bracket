@@ -148,6 +148,8 @@ pub trait LocalHelper: Helper + DynClone {}
 
 dyn_clone::clone_trait_object!(LocalHelper);
 
+pub mod prelude;
+
 #[cfg(feature = "comparison-helper")]
 pub mod comparison;
 #[cfg(feature = "each-helper")]
