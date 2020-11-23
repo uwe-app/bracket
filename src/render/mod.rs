@@ -29,10 +29,12 @@ static HELPER_LINK: &str = "link";
 
 type HelperValue = Option<Value>;
 
+pub mod assert;
 pub mod context;
 pub mod scope;
 
-pub use context::{Context, Property, Type};
+pub use assert::{Type, assert};
+pub use context::{Context, Property};
 pub use scope::Scope;
 
 /// Maximum stack size for helper calls
@@ -658,7 +660,7 @@ impl<'render> Render<'render> {
     fn block_helper_missing(
         &mut self,
         node: &'render Node<'render>,
-        block: &'render Block<'render>,
+        _block: &'render Block<'render>,
         call: &'render Call<'render>,
         text: Option<&str>,
         raw: bool,

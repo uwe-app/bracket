@@ -1,57 +1,15 @@
 //! Context information for the call to a helper.
-use std::fmt;
 use std::ops::Range;
 
 use serde_json::{Map, Value};
 
 use crate::{
-    error::HelperError, helper::HelperResult, json, parser::ast::Call,
+    error::HelperError,
+    helper::HelperResult,
+    json,
+    parser::ast::Call,
+    render::assert::{assert, Type},
 };
-
-/// JSON types used for type assertions.
-#[derive(Copy, Clone, Eq, PartialEq)]
-pub enum Type {
-    /// The `null` JSON type.
-    Null,
-    /// The `boolean` JSON type.
-    Bool,
-    /// The `number` JSON type.
-    Number,
-    /// The `string` JSON type.
-    String,
-    /// The `object` JSON type.
-    Object,
-    /// The `array` JSON type.
-    Array,
-}
-
-impl fmt::Display for Type {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", {
-            match *self {
-                Self::Null => "null",
-                Self::Bool => "boolean",
-                Self::Number => "number",
-                Self::String => "string",
-                Self::Object => "object",
-                Self::Array => "array",
-            }
-        })
-    }
-}
-
-impl From<&Value> for Type {
-    fn from(value: &Value) -> Self {
-        match value {
-            Value::Null => Self::Null,
-            Value::Bool(_) => Self::Bool,
-            Value::Number(_) => Self::Number,
-            Value::String(_) => Self::String,
-            Value::Object(_) => Self::Object,
-            Value::Array(_) => Self::Array,
-        }
-    }
-}
 
 /// Property represents a key/value pair.
 ///
@@ -198,28 +156,15 @@ impl<'call> Context<'call> {
 
     /// Assert on the type of a value.
     pub fn assert(&self, value: &Value, kinds: &[Type]) -> HelperResult<()> {
-        for kind in kinds {
-            if !self.assert_type(value, kind) {
-                return Err(HelperError::TypeAssert(
-                    self.name().to_string(),
-                    kind.to_string(),
-                    Type::from(value).to_string(),
-                ));
-            }
+        let (result, kind) = assert(value, kinds);
+        if !result {
+            return Err(HelperError::TypeAssert(
+                self.name().to_string(),
+                kind.unwrap(),
+                Type::from(value).to_string(),
+            ));
         }
-
         Ok(())
-    }
-
-    fn assert_type(&self, value: &Value, kind: &Type) -> bool {
-        match value {
-            Value::Null => kind == &Type::Null,
-            Value::Bool(_) => kind == &Type::Bool,
-            Value::String(_) => kind == &Type::String,
-            Value::Number(_) => kind == &Type::Number,
-            Value::Object(_) => kind == &Type::Object,
-            Value::Array(_) => kind == &Type::Array,
-        }
     }
 
     /// Lookup a field of a value.
