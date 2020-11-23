@@ -332,22 +332,22 @@ impl<'render> Render<'render> {
 
     /// Evaluate a path and perform a type assertion on the value.
     ///
-    /// If the path does not resolve to a value no type assertion is 
-    /// performed and this will return `None`.
+    /// If no value exists for the given path the value is
+    /// treated as null and type assertion is performed on the
+    /// null value.
     pub fn try_evaluate<'a>(
         &'a self,
         value: &str,
         kinds: &[Type],
     ) -> HelperResult<Option<&'a Value>> {
-        if let Some(val) = self.evaluate(value)? {
-            let (result, kind) = assert(val, kinds);
-            if !result {
-                return Err(HelperError::TypeAssert(
-                    value.to_string(),
-                    kind.unwrap(),
-                    Type::from(val).to_string(),
-                ));
-            }
+        let val = self.evaluate(value)?.or(Some(&Value::Null)).unwrap();
+        let (result, kind) = assert(val, kinds);
+        if !result {
+            return Err(HelperError::TypeAssert(
+                value.to_string(),
+                kind.unwrap(),
+                Type::from(val).to_string(),
+            ));
         }
         Ok(None)
     }
