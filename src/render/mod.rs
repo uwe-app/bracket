@@ -345,7 +345,7 @@ impl<'render> Render<'render> {
         &'a self,
         value: &str,
         kinds: &[Type],
-    ) -> HelperResult<Option<&'a Value>> {
+    ) -> HelperResult<&'a Value> {
         let val = self.evaluate(value)?.or(Some(&Value::Null)).unwrap();
         let (result, kind) = assert(val, kinds);
         if !result {
@@ -355,7 +355,7 @@ impl<'render> Render<'render> {
                 Type::from(val).to_string(),
             ));
         }
-        Ok(None)
+        Ok(val)
     }
 
     /// Infallible variable lookup by path.
