@@ -330,6 +330,28 @@ impl<'render> Render<'render> {
         Ok(None)
     }
 
+    /// Evaluate a path and perform a type assertion on the value.
+    ///
+    /// If the path does not resolve to a value no type assertion is 
+    /// performed and this will return `None`.
+    pub fn try_evaluate<'a>(
+        &'a self,
+        value: &str,
+        kinds: &[Type],
+    ) -> HelperResult<Option<&'a Value>> {
+        if let Some(val) = self.evaluate(value)? {
+            let (result, kind) = assert(val, kinds);
+            if !result {
+                return Err(HelperError::TypeAssert(
+                    value.to_string(),
+                    kind.unwrap(),
+                    Type::from(val).to_string(),
+                ));
+            }
+        }
+        Ok(None)
+    }
+
     /// Infallible variable lookup by path.
     fn lookup<'a>(&'a self, path: &Path<'_>) -> Option<&'a Value> {
         //println!("Lookup path {:?}", path.as_str());
