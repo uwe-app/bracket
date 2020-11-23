@@ -20,7 +20,7 @@ use crate::{
         },
         path,
     },
-    template::Templates,
+    template::{Template, Templates},
     trim::{TrimHint, TrimState},
     RenderResult,
 };
@@ -145,6 +145,11 @@ impl<'render> Render<'render> {
             self.render_node(event.node, event.trim)?;
         }
         Ok(())
+    }
+
+    /// Get a named template.
+    pub fn get_template(&self, name: &str) -> Option<&Template<'_>> {
+        self.templates.get(name) 
     }
 
     /// Get a mutable reference to the output destination.
