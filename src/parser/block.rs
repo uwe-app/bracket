@@ -4,7 +4,7 @@ use crate::{
     error::{ErrorInfo, SyntaxError},
     lexer::{self, Lexer, Token},
     parser::{
-        ast::{Block, Element, Node, Slice, Text, TextBlock, Lines},
+        ast::{Block, Element, Lines, Node, Slice, Text, TextBlock},
         call::{self, CallParseContext},
         ParseState,
     },
@@ -50,12 +50,7 @@ pub(crate) fn text_until<'source>(
     if let Some(ref close) = next_token {
         let mut text = Text::new(source, span, line_range);
         text.lines_end(state.line());
-        let block = TextBlock::new(
-            source,
-            text,
-            open,
-            close.span().clone(),
-        );
+        let block = TextBlock::new(source, text, open, close.span().clone());
         return Some((wrap(block), next_token));
     }
     None
@@ -74,9 +69,9 @@ pub(crate) fn raw<'source>(
         call::parse(source, lexer, state, span.clone(), CallParseContext::Raw)?;
 
     if !call.is_closed() {
-        return Err(
-            SyntaxError::RawBlockOpenNotTerminated(
-                ErrorInfo::from((source, state)).into()))
+        return Err(SyntaxError::RawBlockOpenNotTerminated(
+            ErrorInfo::from((source, state)).into(),
+        ));
     }
 
     // NOTE: must have an accurate end span before reading the Text chunk!
@@ -98,23 +93,26 @@ pub(crate) fn raw<'source>(
 
     let maybe_node = text_until(source, lexer, state, end_span, &end, &wrap);
     if let Some((node, next_token)) = maybe_node {
-
         let span = if let Some(token) = next_token {
             match token {
                 Token::Block(lex, span) => match lex {
                     lexer::Block::EndRawBlock => span,
-                    _ => return Err(
-                        SyntaxError::TokenEndRawBlock(
-                            ErrorInfo::from((source, state)).into()))
+                    _ => {
+                        return Err(SyntaxError::TokenEndRawBlock(
+                            ErrorInfo::from((source, state)).into(),
+                        ))
+                    }
                 },
-                _ => return Err(
-                    SyntaxError::RawBlockNotTerminated(
-                        ErrorInfo::from((source, state)).into()))
+                _ => {
+                    return Err(SyntaxError::RawBlockNotTerminated(
+                        ErrorInfo::from((source, state)).into(),
+                    ))
+                }
             }
         } else {
-            return Err(
-                SyntaxError::RawBlockNotTerminated(
-                    ErrorInfo::from((source, state)).into()))
+            return Err(SyntaxError::RawBlockNotTerminated(
+                ErrorInfo::from((source, state)).into(),
+            ));
         };
 
         block.push(node);
@@ -126,18 +124,15 @@ pub(crate) fn raw<'source>(
             let exit_span = end_tag.open_span().start..close_span.end;
             block.exit(exit_span);
         } else {
-            return Err(
-                SyntaxError::RawBlockNotTerminated(
-                    ErrorInfo::from((source, state)).into()))
+            return Err(SyntaxError::RawBlockNotTerminated(
+                ErrorInfo::from((source, state)).into(),
+            ));
         }
 
         let end_name = end_tag.target().as_str();
 
         if open_name != end_name {
-            let notes = vec![format!(
-                "opening name is '{}'",
-                open_name
-            )];
+            let notes = vec![format!("opening name is '{}'", open_name)];
             return Err(SyntaxError::TagNameMismatch(
                 ErrorInfo::from((source, state, notes)).into(),
             ));
@@ -148,7 +143,8 @@ pub(crate) fn raw<'source>(
         Ok(Node::Block(block))
     } else {
         Err(SyntaxError::RawBlockNotTerminated(
-            ErrorInfo::from((source, state)).into()))
+            ErrorInfo::from((source, state)).into(),
+        ))
     }
 }
 
@@ -173,7 +169,8 @@ pub(crate) fn raw_comment<'source>(
         Ok(node)
     } else {
         Err(SyntaxError::RawCommentNotTerminated(
-            ErrorInfo::from((source, state)).into()))
+            ErrorInfo::from((source, state)).into(),
+        ))
     }
 }
 
@@ -198,7 +195,8 @@ pub(crate) fn raw_statement<'source>(
         Ok(node)
     } else {
         Err(SyntaxError::RawStatementNotTerminated(
-            ErrorInfo::from((source, state)).into()))
+            ErrorInfo::from((source, state)).into(),
+        ))
     }
 }
 
@@ -223,7 +221,8 @@ pub(crate) fn comment<'source>(
         Ok(node)
     } else {
         Err(SyntaxError::CommentNotTerminated(
-            ErrorInfo::from((source, state)).into()))
+            ErrorInfo::from((source, state)).into(),
+        ))
     }
 }
 

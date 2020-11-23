@@ -33,16 +33,16 @@
 //!
 //! ## Type Assertions
 //!
-//! Type assertions let us verify the type of helper arguments and hash parameters before we 
+//! Type assertions let us verify the type of helper arguments and hash parameters before we
 //! use them.
 //!
 //! The [arity()](crate::render::context::Context#method.arity) method is used to
 //! assert on argument length.
 //!
-//! Use [try_get()](crate::render::context::Context#method.try_get) to get an argument and verify 
+//! Use [try_get()](crate::render::context::Context#method.try_get) to get an argument and verify
 //! it is an expected type.
 //!
-//! Use [try_param()](crate::render::context::Context#method.try_param) to get a hash parameter 
+//! Use [try_param()](crate::render::context::Context#method.try_param) to get a hash parameter
 //! and verify it is an expected type.
 //!
 //! ## Return Values
@@ -65,13 +65,13 @@
 //!
 //! ## Render
 //!
-//! To render an inner template when a helper is called as a block use 
+//! To render an inner template when a helper is called as a block use
 //! [template()](crate::render::Render#method.template) which will respect the current whitespace
 //! trim hints:
 //!
 //! ```ignore
 //! if let Some(node) = template {
-//!    rc.template(node)?; 
+//!    rc.template(node)?;
 //! }
 //! ```
 //!
@@ -102,17 +102,17 @@ pub type HelperValue = HelperResult<Option<Value>>;
 
 /// Trait for helpers.
 pub trait Helper: Send + Sync {
-    /// Function that is called when this helper is resolved 
+    /// Function that is called when this helper is resolved
     /// by the renderer for a statement or block.
     ///
-    /// The `rc` argument is the render context that can be used 
+    /// The `rc` argument is the render context that can be used
     /// to render inner templates and write to the destination output.
     ///
-    /// The `ctx` argument provides access to the helper arguments and 
-    /// hash parameters. It also provides support for type assertions and 
+    /// The `ctx` argument provides access to the helper arguments and
+    /// hash parameters. It also provides support for type assertions and
     /// some convenience functions for working with the [Value](serde_json::Value) type.
     ///
-    /// The `template` argument holds the inner template when the helper 
+    /// The `template` argument holds the inner template when the helper
     /// is invoked as a block.
     ///
     /// For raw block helpers use the [text()](crate::render::Context#method.text)
@@ -127,13 +127,13 @@ pub trait Helper: Send + Sync {
 
 /// Trait for local helpers which must implement `Clone`.
 ///
-/// To create a local helper implement `Helper`, derive `Clone` and 
+/// To create a local helper implement `Helper`, derive `Clone` and
 /// add `LocalHelper` as a marker trait.
 ///
 /// ```ignore
 /// #[derive(Clone)]
 /// pub struct LocalExample;
-/// 
+///
 /// impl Helper for LocalExample {
 ///     fn call<'render, 'call>(
 ///         &self,

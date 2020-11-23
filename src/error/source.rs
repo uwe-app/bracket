@@ -83,24 +83,20 @@ impl<'source> From<(&'source str, &mut ParseState)> for ErrorInfo<'source> {
         ErrorInfo::new(
             source.0,
             source.1.file_name(),
-            SourcePos::from((
-                source.1.line(),
-                source.1.byte(),
-            )),
+            SourcePos::from((source.1.line(), source.1.byte())),
             vec![],
         )
     }
 }
 
-impl<'source> From<(&'source str, &mut ParseState, Vec<String>)> for ErrorInfo<'source> {
+impl<'source> From<(&'source str, &mut ParseState, Vec<String>)>
+    for ErrorInfo<'source>
+{
     fn from(source: (&'source str, &mut ParseState, Vec<String>)) -> Self {
         ErrorInfo::new(
             source.0,
             source.1.file_name(),
-            SourcePos::from((
-                source.1.line(),
-                source.1.byte(),
-            )),
+            SourcePos::from((source.1.line(), source.1.byte())),
             source.2,
         )
     }

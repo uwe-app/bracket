@@ -7,7 +7,7 @@ use crate::{
     error::HelperError,
     helper::HelperResult,
     json,
-    parser::ast::Call,
+    parser::ast::{Call, Node},
     render::assert::{assert, Type},
 };
 
@@ -105,7 +105,11 @@ impl<'call> Context<'call> {
     /// If no parameter exists for the given name the value is
     /// treated as null and type assertion is performed on the
     /// null value.
-    pub fn try_param(&self, name: &str, kinds: &[Type]) -> HelperResult<&Value> {
+    pub fn try_param(
+        &self,
+        name: &str,
+        kinds: &[Type],
+    ) -> HelperResult<&Value> {
         let value = self.parameters.get(name).or(Some(&Value::Null)).unwrap();
         // TODO: print ErrorInfo code snippet
         self.assert(value, kinds)?;
@@ -165,6 +169,20 @@ impl<'call> Context<'call> {
             ));
         }
         Ok(())
+    }
+
+    /// Map an optional template to a result.
+    ///
+    /// If the template is `None` this will yield an error; use this 
+    /// to assert when an inner block template is required.
+    pub fn assert_block<'a>(
+        &self,
+        template: Option<&'a Node<'a>>,
+    ) -> HelperResult<&'a Node<'a>> {
+        if let Some(node) = template {
+            return Ok(node);
+        }
+        Err(HelperError::BlockTemplate(self.name().to_string()))
     }
 
     /// Lookup a field of a value.

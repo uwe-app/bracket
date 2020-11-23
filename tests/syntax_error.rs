@@ -53,10 +53,7 @@ fn syntax_err_block_name() -> Result<()> {
             println!("{:?}", e);
             let pos = SourcePos(0, 4);
             let info = ErrorInfo::new(value, NAME, pos, vec![]);
-            assert_eq!(
-                Error::Syntax(SyntaxError::BlockName(info.into())),
-                e
-            );
+            assert_eq!(Error::Syntax(SyntaxError::BlockName(info.into())), e);
         }
     }
     Ok(())
@@ -133,8 +130,9 @@ fn syntax_err_sub_expr() -> Result<()> {
             let pos = SourcePos(0, 9);
             let info = ErrorInfo::new(value, NAME, pos, vec![]);
             assert_eq!(
-                Error::Syntax(
-                    SyntaxError::SubExpressionNotTerminated(info.into())),
+                Error::Syntax(SyntaxError::SubExpressionNotTerminated(
+                    info.into()
+                )),
                 e
             );
         }
@@ -153,8 +151,7 @@ fn syntax_err_link() -> Result<()> {
             let pos = SourcePos(0, 14);
             let info = ErrorInfo::new(value, NAME, pos, vec![]);
             assert_eq!(
-                Error::Syntax(
-                    SyntaxError::LinkNotTerminated(info.into())),
+                Error::Syntax(SyntaxError::LinkNotTerminated(info.into())),
                 e
             );
         }
@@ -173,8 +170,9 @@ fn syntax_err_raw_block_open() -> Result<()> {
             let pos = SourcePos(0, 4);
             let info = ErrorInfo::new(value, NAME, pos, vec![]);
             assert_eq!(
-                Error::Syntax(
-                    SyntaxError::RawBlockOpenNotTerminated(info.into())),
+                Error::Syntax(SyntaxError::RawBlockOpenNotTerminated(
+                    info.into()
+                )),
                 e
             );
         }
@@ -193,8 +191,7 @@ fn syntax_err_raw_block_close() -> Result<()> {
             let pos = SourcePos(0, 19);
             let info = ErrorInfo::new(value, NAME, pos, vec![]);
             assert_eq!(
-                Error::Syntax(
-                    SyntaxError::RawBlockNotTerminated(info.into())),
+                Error::Syntax(SyntaxError::RawBlockNotTerminated(info.into())),
                 e
             );
         }
@@ -213,8 +210,7 @@ fn syntax_err_raw_block_half_open() -> Result<()> {
             let pos = SourcePos(0, 13);
             let info = ErrorInfo::new(value, NAME, pos, vec![]);
             assert_eq!(
-                Error::Syntax(
-                    SyntaxError::RawBlockNotTerminated(info.into())),
+                Error::Syntax(SyntaxError::RawBlockNotTerminated(info.into())),
                 e
             );
         }

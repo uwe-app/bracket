@@ -74,13 +74,11 @@ impl<'source> Iterator for BranchIter<'source> {
                 Some(self.children.get_or_insert(node.nodes().iter()))
             }
             Node::Text(_)
-                | Node::Link(_)
-                | Node::Statement(_)
-                | Node::RawStatement(_)
-                | Node::RawComment(_)
-                | Node::Comment(_) => {
-                None
-            }
+            | Node::Link(_)
+            | Node::Statement(_)
+            | Node::RawStatement(_)
+            | Node::RawComment(_)
+            | Node::Comment(_) => None,
         };
 
         if let Some(it) = iter {

@@ -1,4 +1,7 @@
-use bracket::{parser::ast::{Node, Lines, CallTarget}, Registry, Result};
+use bracket::{
+    parser::ast::{CallTarget, Lines, Node},
+    Registry, Result,
+};
 
 static NAME: &str = "lines.rs";
 

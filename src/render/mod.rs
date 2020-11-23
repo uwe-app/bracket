@@ -14,7 +14,10 @@ use crate::{
     json,
     output::{Output, StringOutput},
     parser::{
-        ast::{Block, Call, CallTarget, Node, ParameterValue, Path, Slice, Link, Lines},
+        ast::{
+            Block, Call, CallTarget, Lines, Link, Node, ParameterValue, Path,
+            Slice,
+        },
         path,
     },
     template::Templates,
@@ -33,7 +36,7 @@ pub mod assert;
 pub mod context;
 pub mod scope;
 
-pub use assert::{Type, assert};
+pub use assert::{assert, Type};
 pub use context::{Context, Property};
 pub use scope::Scope;
 
@@ -281,8 +284,10 @@ impl<'render> Render<'render> {
     /// The call stack and scopes are inherited from this renderer.
     ///
     /// The supplied node should be a document or block node.
-    pub fn buffer(&self, node: &'render Node<'render>) -> Result<String, HelperError> {
-
+    pub fn buffer(
+        &self,
+        node: &'render Node<'render>,
+    ) -> Result<String, HelperError> {
         let mut writer = StringOutput::new();
         let mut rc = Render::new(
             self.strict,
@@ -292,7 +297,8 @@ impl<'render> Render<'render> {
             self.name,
             &self.root,
             Box::new(&mut writer),
-        ).map_err(Box::new)?;
+        )
+        .map_err(Box::new)?;
 
         // Inherit the stack and scope from this renderer
         rc.stack = self.stack.clone();
@@ -443,7 +449,11 @@ impl<'render> Render<'render> {
         let mut out: Vec<Value> = Vec::new();
         for p in call.arguments() {
             let arg = match p {
-                ParameterValue::Json {ref value, span: _, line: _} => value.clone(),
+                ParameterValue::Json {
+                    ref value,
+                    span: _,
+                    line: _,
+                } => value.clone(),
                 ParameterValue::Path(ref path) => {
                     self.lookup(path).cloned().unwrap_or(Value::Null)
                 }
@@ -461,7 +471,11 @@ impl<'render> Render<'render> {
         let mut out = Map::new();
         for (k, p) in call.parameters() {
             let (key, value) = match p {
-                ParameterValue::Json {ref value, span: _, line: _} => (k.to_string(), value.clone()),
+                ParameterValue::Json {
+                    ref value,
+                    span: _,
+                    line: _,
+                } => (k.to_string(), value.clone()),
                 ParameterValue::Path(ref path) => {
                     let val = self.lookup(path).cloned().unwrap_or(Value::Null);
                     (k.to_string(), val)
@@ -624,8 +638,9 @@ impl<'render> Render<'render> {
                 } else if path.is_simple() {
                     return Ok(path.as_str().to_string());
                 } else {
-                    return Err(
-                        RenderError::PartialIdentifier(path.as_str().to_string()));
+                    return Err(RenderError::PartialIdentifier(
+                        path.as_str().to_string(),
+                    ));
                 }
             }
             CallTarget::SubExpr(ref call) => {
@@ -796,12 +811,13 @@ impl<'render> Render<'render> {
                             );
                         }
                     } else {
-                        return Err(
-                            RenderError::BlockIdentifier(path.as_str().to_string()));
+                        return Err(RenderError::BlockIdentifier(
+                            path.as_str().to_string(),
+                        ));
                     }
                 }
                 CallTarget::SubExpr(ref _call) => {
-                    return Err(RenderError::BlockTargetSubExpr) 
+                    return Err(RenderError::BlockTargetSubExpr)
                 }
             }
         }
@@ -809,28 +825,30 @@ impl<'render> Render<'render> {
     }
 
     // Try to call a link helper.
-    fn link(
-        &mut self,
-        link: &'render Link<'render>,
-    ) -> RenderResult<()> {
-
+    fn link(&mut self, link: &'render Link<'render>) -> RenderResult<()> {
         let lines = link.lines();
         let href = Value::String(link.href().to_string());
         let label = Value::String(link.label().to_string());
         let title = Value::String(link.title().to_string());
 
-        // Build a call so that the helper invocation flows 
+        // Build a call so that the helper invocation flows
         // through the standard logic.
         let mut call = Call::new(link.source(), 0..0, 0..0);
-        call.add_argument(ParameterValue::from(
-            (href, link.href_span().clone(), lines.clone()))
-        );
-        call.add_argument(ParameterValue::from(
-            (label, link.label_span().clone(), lines.clone()))
-        );
-        call.add_argument(ParameterValue::from(
-            (title, link.title_span().clone(), lines.clone()))
-        );
+        call.add_argument(ParameterValue::from((
+            href,
+            link.href_span().clone(),
+            lines.clone(),
+        )));
+        call.add_argument(ParameterValue::from((
+            label,
+            link.label_span().clone(),
+            lines.clone(),
+        )));
+        call.add_argument(ParameterValue::from((
+            title,
+            link.title_span().clone(),
+            lines.clone(),
+        )));
 
         self.invoke(HELPER_LINK, &call, None, None, None)?;
 
@@ -862,7 +880,7 @@ impl<'render> Render<'render> {
             Node::Link(ref n) => {
                 if cfg!(feature = "links") {
                     if self.has_helper(HELPER_LINK) {
-                        self.link(n)?;        
+                        self.link(n)?;
                     } else {
                         self.write_str(n.as_str(), false)?;
                     }

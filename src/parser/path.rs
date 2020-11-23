@@ -59,9 +59,11 @@ fn to_component<'source>(
         Parameters::StartArray => {
             ComponentType::RawIdentifier(RawIdType::Array)
         }
-        _ => return Err(
-            SyntaxError::ComponentType(
-                ErrorInfo::from((source, state)).into()))
+        _ => {
+            return Err(SyntaxError::ComponentType(
+                ErrorInfo::from((source, state)).into(),
+            ))
+        }
     };
 
     Ok(Component::new(source, kind, span, value))
@@ -95,11 +97,10 @@ pub(crate) fn components<'source>(
     mut wants_delimiter: bool,
 ) -> SyntaxResult<Option<Token>> {
     while let Some(token) = lexer.next() {
-
         if token.is_newline() {
             *state.line_mut() += 1;
             // Paths are terminated if we hit a newline!
-            return Ok(lexer.next())
+            return Ok(lexer.next());
         }
 
         match token {
@@ -246,13 +247,13 @@ pub(crate) fn parse<'source>(
     }
 
     while let Some(token) = next {
-
         match token {
             Token::Parameters(lex, span) => {
                 *state.byte_mut() = span.start;
 
                 if is_path_component(&lex) {
-                    let component = to_component(source, state, &lex, span, None)?;
+                    let component =
+                        to_component(source, state, &lex, span, None)?;
                     // Flag as a path that should be resolved from the root object
                     if path.is_empty() && component.is_root() {
                         path.set_root(true);
@@ -290,17 +291,19 @@ pub(crate) fn parse<'source>(
                     )?;
 
                     if path.is_empty() {
-                        return Err(
-                            SyntaxError::EmptyPath(
-                                ErrorInfo::from((source, state)).into()))
+                        return Err(SyntaxError::EmptyPath(
+                            ErrorInfo::from((source, state)).into(),
+                        ));
                     }
 
                     return Ok((Some(path), next));
                 }
             }
-            _ => return Err(
-                SyntaxError::TokenParameterPath(
-                    ErrorInfo::from((source, state)).into()))
+            _ => {
+                return Err(SyntaxError::TokenParameterPath(
+                    ErrorInfo::from((source, state)).into(),
+                ))
+            }
         }
 
         next = lexer.next();
@@ -324,9 +327,11 @@ pub(crate) fn from_str<'source>(
                     parse(source, &mut lexer, &mut state, (lex, span))?;
                 return Ok(path);
             }
-            _ => return Err(
-                SyntaxError::TokenParameterPath(
-                    ErrorInfo::from((source, &mut state)).into()))
+            _ => {
+                return Err(SyntaxError::TokenParameterPath(
+                    ErrorInfo::from((source, &mut state)).into(),
+                ))
+            }
         }
     }
 

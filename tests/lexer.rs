@@ -1,6 +1,6 @@
 use bracket::lexer::{
-    collect as lex, Array, Block, Comment, DoubleQuoteString, Parameters,
-    RawComment, RawStatement, SingleQuoteString, Token, Link,
+    collect as lex, Array, Block, Comment, DoubleQuoteString, Link, Parameters,
+    RawComment, RawStatement, SingleQuoteString, Token,
 };
 
 #[test]
@@ -349,4 +349,3 @@ fn lex_link() {
     ];
     assert_eq!(expect, tokens);
 }
-

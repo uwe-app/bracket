@@ -1,6 +1,6 @@
 //! Utility functions for type assertions.
-use std::fmt;
 use serde_json::Value;
+use std::fmt;
 
 /// JSON types used for type assertions.
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -51,12 +51,12 @@ impl From<&Value> for Type {
 ///
 /// The type of the value must be one of the given types.
 ///
-/// If the type assertion fails the returned value contains a string 
+/// If the type assertion fails the returned value contains a string
 /// of the current type that caused the failure.
 pub fn assert(value: &Value, kinds: &[Type]) -> (bool, Option<String>) {
     for kind in kinds {
         if !assert_type(value, kind) {
-            return (false, Some(kind.to_string()))
+            return (false, Some(kind.to_string()));
         }
     }
     (true, None)

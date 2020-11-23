@@ -4,7 +4,7 @@ use crate::{
     error::{ErrorInfo, SyntaxError},
     lexer::{self, Lexer, Token},
     parser::{
-        ast::{Link, Lines, Element},
+        ast::{Element, Lines, Link},
         ParseState,
     },
     SyntaxResult,
@@ -49,20 +49,18 @@ fn assign_if_escaped<'source>(
     link: &mut Link<'source>,
     flags: &EscapeFlags,
     span: &Range<usize>,
-    value_type: &ValueType) {
-
+    value_type: &ValueType,
+) {
     if flags.has_escape_sequences() {
         match value_type {
             ValueType::Label => {
                 let value = flags
-                    .into_owned(
-                        &source[link.label_span().start..span.start]);
+                    .into_owned(&source[link.label_span().start..span.start]);
                 link.set_label(value);
             }
             ValueType::Title => {
                 let value = flags
-                    .into_owned(
-                        &source[link.title_span().start..span.start]);
+                    .into_owned(&source[link.title_span().start..span.start]);
                 link.set_title(value);
             }
         }
@@ -77,13 +75,11 @@ fn value<'source>(
     link: &mut Link<'source>,
     value_type: ValueType,
 ) -> SyntaxResult<()> {
-
     let mut flags: EscapeFlags = Default::default();
 
     while let Some(token) = lexer.next() {
         match token {
             Token::Link(lex, span) => {
-
                 match &lex {
                     _ => *state.byte_mut() = span.end - 1,
                 }
@@ -92,24 +88,34 @@ fn value<'source>(
                     lexer::Link::Newline => {
                         *state.line_mut() += 1;
                     }
-                    lexer::Link::Text => {
-                        match value_type {
-                            ValueType::Label => {
-                                link.label_end(span.end);
-                            }
-                            ValueType::Title => {
-                                link.title_end(span.end);
-                            }
+                    lexer::Link::Text => match value_type {
+                        ValueType::Label => {
+                            link.label_end(span.end);
                         }
-                    }
+                        ValueType::Title => {
+                            link.title_end(span.end);
+                        }
+                    },
                     lexer::Link::Pipe => {
                         match value_type {
                             ValueType::Label => {
                                 link.label_end(span.start);
-                                assign_if_escaped(source, link, &flags, &span, &value_type);
+                                assign_if_escaped(
+                                    source,
+                                    link,
+                                    &flags,
+                                    &span,
+                                    &value_type,
+                                );
 
                                 link.title_start(span.end);
-                                return value(source, lexer, state, link, ValueType::Title)
+                                return value(
+                                    source,
+                                    lexer,
+                                    state,
+                                    link,
+                                    ValueType::Title,
+                                );
                             }
                             ValueType::Title => {
                                 // Consume any additional pipes until we get till the end.
@@ -128,16 +134,28 @@ fn value<'source>(
                         flags.bracket = true;
                     }
                     lexer::Link::End => {
-                        assign_if_escaped(source, link, &flags, &span, &value_type);
+                        assign_if_escaped(
+                            source,
+                            link,
+                            &flags,
+                            &span,
+                            &value_type,
+                        );
                         link.exit(span);
                         return Ok(());
                     }
-                    _ => return Err(
-                        SyntaxError::TokenLink(ErrorInfo::from((source, state)).into()))
-                } 
+                    _ => {
+                        return Err(SyntaxError::TokenLink(
+                            ErrorInfo::from((source, state)).into(),
+                        ))
+                    }
+                }
             }
-            _ => return Err(
-                SyntaxError::TokenLink(ErrorInfo::from((source, state)).into()))
+            _ => {
+                return Err(SyntaxError::TokenLink(
+                    ErrorInfo::from((source, state)).into(),
+                ))
+            }
         }
     }
 
@@ -150,13 +168,11 @@ fn href<'source>(
     state: &mut ParseState,
     link: &mut Link<'source>,
 ) -> SyntaxResult<()> {
-
     let mut flags: EscapeFlags = Default::default();
 
     while let Some(token) = lexer.next() {
         match token {
             Token::Link(lex, span) => {
-
                 match &lex {
                     _ => *state.byte_mut() = span.end - 1,
                 }
@@ -165,22 +181,29 @@ fn href<'source>(
                     lexer::Link::Newline => {
                         *state.line_mut() += 1;
                         // NOTE: newlines are not allowed in links
-                        // NOTE: by returning early the link will 
+                        // NOTE: by returning early the link will
                         // NOTE: never be closed and we should generate
                         // NOTE: an unclosed link error.
-                        return Ok(())
+                        return Ok(());
                     }
                     lexer::Link::Text => {
                         link.href_end(span.end);
                     }
                     lexer::Link::Pipe => {
                         if flags.has_escape_sequences() {
-                            let value = flags
-                                .into_owned(&source[link.open_span().end..span.start]);
+                            let value = flags.into_owned(
+                                &source[link.open_span().end..span.start],
+                            );
                             link.set_href(value);
                         }
                         link.label_start(span.end);
-                        return value(source, lexer, state, link, ValueType::Label);
+                        return value(
+                            source,
+                            lexer,
+                            state,
+                            link,
+                            ValueType::Label,
+                        );
                     }
                     lexer::Link::EscapedNewline => {
                         flags.newline = true;
@@ -193,19 +216,26 @@ fn href<'source>(
                     }
                     lexer::Link::End => {
                         if flags.has_escape_sequences() {
-                            let value = flags
-                                .into_owned(&source[link.open_span().end..span.start]);
+                            let value = flags.into_owned(
+                                &source[link.open_span().end..span.start],
+                            );
                             link.set_href(value);
                         }
                         link.exit(span);
                         return Ok(());
                     }
-                    _ => return Err(
-                        SyntaxError::TokenLink(ErrorInfo::from((source, state)).into()))
-                } 
+                    _ => {
+                        return Err(SyntaxError::TokenLink(
+                            ErrorInfo::from((source, state)).into(),
+                        ))
+                    }
+                }
             }
-            _ => return Err(
-                SyntaxError::TokenLink(ErrorInfo::from((source, state)).into()))
+            _ => {
+                return Err(SyntaxError::TokenLink(
+                    ErrorInfo::from((source, state)).into(),
+                ))
+            }
         }
     }
 
@@ -225,10 +255,10 @@ pub(crate) fn parse<'source>(
 
     if !link.is_closed() {
         Err(SyntaxError::LinkNotTerminated(
-            ErrorInfo::from((source, state)).into()))
+            ErrorInfo::from((source, state)).into(),
+        ))
     } else {
         link.lines_end(state.line());
         Ok(link)
     }
 }
-

@@ -10,7 +10,6 @@ pub struct Extras;
 #[logos(extras = Extras)]
 #[logos(subpattern identifier = r#"[^\s"!#%&'()*+,./;<=>@\[/\]^`{|}~]"#)]
 pub enum Block {
-
     /// Start a raw block.
     #[regex(r"\{\{\{\{~?[\t ]*")]
     StartRawBlock,
@@ -62,13 +61,12 @@ pub enum Block {
 
 /// Tokens for raw comments.
 ///
-/// Raw comments can contain statements and blocks which will 
-/// not be rendered. They begin with `{{!--` and are terminated 
+/// Raw comments can contain statements and blocks which will
+/// not be rendered. They begin with `{{!--` and are terminated
 /// with `--}}`.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 pub enum RawComment {
-
     /// Text token.
     #[regex(r".")]
     Text,
@@ -88,12 +86,11 @@ pub enum RawComment {
 
 /// Tokens for raw statements.
 ///
-/// Raw statements are single-line statements escaped with a 
+/// Raw statements are single-line statements escaped with a
 /// backslash, for example: `\{{title}}`.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 pub enum RawStatement {
-
     /// Text token.
     #[regex(r".")]
     Text,
@@ -113,13 +110,12 @@ pub enum RawStatement {
 
 /// Tokens for comments.
 ///
-/// Comments may **not** contain statements and blocks. 
+/// Comments may **not** contain statements and blocks.
 /// They begin with `{{!` and are terminated with `}}`.
 ///
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 pub enum Comment {
-
     /// Text token.
     #[regex(r".")]
     Text,
@@ -139,14 +135,13 @@ pub enum Comment {
 
 /// Tokens for parameters.
 ///
-/// Parameters are converted to a call statement by the parser and must 
-/// represent all the tokens in a statement (`{{...}}`) and the start 
+/// Parameters are converted to a call statement by the parser and must
+/// represent all the tokens in a statement (`{{...}}`) and the start
 /// of a block (`{{# block}}...{{/block}}`).
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 #[logos(subpattern identifier = r#"[^\s"!#%&'()*+,./;<=>@\[/\]^`{|}~]"#)]
 pub enum Parameters {
-
     /// Token for a partial instruction.
     #[token(r">")]
     Partial,
@@ -242,7 +237,6 @@ pub enum Parameters {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 pub enum DoubleQuoteString {
-
     /// Text token.
     #[regex(r#"[^\\"\n]+"#)]
     Text,
@@ -272,7 +266,6 @@ pub enum DoubleQuoteString {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 pub enum SingleQuoteString {
-
     /// Text token.
     #[regex(r#"[^\\'\n]+"#)]
     Text,
@@ -302,14 +295,12 @@ pub enum SingleQuoteString {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 pub enum Array {
-
     /// Text token.
     #[regex(r#"[^\]\n]+"#)]
     Text,
 
     //#[token("\\n")]
     //EscapedNewline,
-
     /// Escaped bracket.
     #[token(r#"\]"#)]
     Escaped,
@@ -331,7 +322,6 @@ pub enum Array {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Logos)]
 #[logos(extras = Extras)]
 pub enum Link {
-
     /// Text token.
     #[regex(r#"[^\\|\]]+"#)]
     Text,
@@ -389,7 +379,6 @@ pub enum Token {
 }
 
 impl Token {
-
     /// Get the span for a token.
     pub fn span(&self) -> &Span {
         match self {
@@ -435,8 +424,12 @@ impl Token {
             //Token::RawBlock(ref lex, _) => lex == &Block::Newline,
             Token::Block(ref lex, _) => lex == &Block::Newline,
             Token::Parameters(ref lex, _) => lex == &Parameters::Newline,
-            Token::DoubleQuoteString(ref lex, _) => lex == &DoubleQuoteString::Newline,
-            Token::SingleQuoteString(ref lex, _) => lex == &SingleQuoteString::Newline,
+            Token::DoubleQuoteString(ref lex, _) => {
+                lex == &DoubleQuoteString::Newline
+            }
+            Token::SingleQuoteString(ref lex, _) => {
+                lex == &SingleQuoteString::Newline
+            }
             Token::Array(ref lex, _) => lex == &Array::Newline,
             Token::Link(ref lex, _) => lex == &Link::Newline,
         }

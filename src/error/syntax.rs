@@ -18,9 +18,7 @@ pub enum SyntaxError {
     BlockName(String),
 
     /// Error when a newline is enccountered in a raw literal.
-    #[error(
-        "Syntax error, new lines in raw literals must be escaped (\\n)"
-    )]
+    #[error("Syntax error, new lines in raw literals must be escaped (\\n)")]
     LiteralNewline(String),
 
     /// Error when the partial operator is not the first token in a call statement.
@@ -28,14 +26,18 @@ pub enum SyntaxError {
     PartialPosition(String),
 
     /// Error when a sub-expression is closed by no sub-expression is open.
-    #[error("Syntax error, got close sub-expression but no sub-expression is open")]
+    #[error(
+        "Syntax error, got close sub-expression but no sub-expression is open"
+    )]
     SubExprNotOpen(String),
 
     /// Error when a sub-expression attempts to use a sub-expression for it's target.
     ///
-    /// Currently sub-expressions for the target are only supported when evaluating 
+    /// Currently sub-expressions for the target are only supported when evaluating
     /// partials.
-    #[error("Syntax error, sub-expression must use an identifier for the target")]
+    #[error(
+        "Syntax error, sub-expression must use an identifier for the target"
+    )]
     SubExprTargetNotAllowed(String),
 
     /// Error when a path delimiter is encountered in an invalid position.
@@ -177,11 +179,9 @@ impl fmt::Debug for SyntaxError {
             | Self::LiteralNewline(ref source)
             | Self::PartialPosition(ref source)
             | Self::SubExprNotOpen(ref source)
-
             | Self::SubExprTargetNotAllowed(ref source)
             | Self::PathDelimiterNotAllowed(ref source)
             | Self::ElseNotAllowed(ref source)
-
             | Self::UnexpectedPathExplicitThis(ref source)
             | Self::UnexpectedPathParent(ref source)
             | Self::UnexpectedPathLocal(ref source)

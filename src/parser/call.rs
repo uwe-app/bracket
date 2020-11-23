@@ -1,11 +1,11 @@
-use std::ops::Range;
 use serde_json::{Number, Value};
+use std::ops::Range;
 
 use crate::{
     error::{ErrorInfo, SyntaxError},
     lexer::{Lexer, Parameters, Token},
     parser::{
-        ast::{Call, CallTarget, Element, ParameterValue, Lines},
+        ast::{Call, CallTarget, Element, Lines, ParameterValue},
         path, string, ParseState,
     },
     SyntaxResult,
@@ -56,9 +56,9 @@ fn json_literal<'source>(
             let num: Number = source[span].parse().unwrap();
             Value::Number(num)
         }
-        // NOTE: For string literal values we need to add one 
-        // NOTE: to the end value as the returned span is the 
-        // NOTE: inner span and we require the outer span 
+        // NOTE: For string literal values we need to add one
+        // NOTE: to the end value as the returned span is the
+        // NOTE: inner span and we require the outer span
         // NOTE: (including quotes) for the AST data.
         Parameters::DoubleQuoteString => {
             let (value, span) = string::literal(
@@ -94,9 +94,9 @@ fn json_literal<'source>(
             value
         }
         _ => {
-            return Err(
-                SyntaxError::TokenJsonLiteral(
-                    ErrorInfo::from((source, state)).into()));
+            return Err(SyntaxError::TokenJsonLiteral(
+                ErrorInfo::from((source, state)).into(),
+            ));
         }
     };
 
@@ -123,7 +123,9 @@ fn value<'source>(
             if let Some(path) = path.take() {
                 Ok((ParameterValue::Path(path), token))
             } else {
-                Err(SyntaxError::ExpectedPath(ErrorInfo::from((source, state)).into()))
+                Err(SyntaxError::ExpectedPath(
+                    ErrorInfo::from((source, state)).into(),
+                ))
             }
         }
         // Open a nested call
@@ -141,14 +143,21 @@ fn value<'source>(
         | Parameters::Null => {
             let mut range = span.clone();
             let line_range = state.line_range();
-            let value = json_literal(source, lexer, state, (lex, span), &mut range)?;
-            Ok((ParameterValue::Json {
-                value, span: range, line: line_range}, lexer.next()))
+            let value =
+                json_literal(source, lexer, state, (lex, span), &mut range)?;
+            Ok((
+                ParameterValue::Json {
+                    value,
+                    span: range,
+                    line: line_range,
+                },
+                lexer.next(),
+            ))
         }
         _ => {
-            return Err(
-                SyntaxError::TokenParameter(
-                    ErrorInfo::from((source, state)).into()));
+            return Err(SyntaxError::TokenParameter(
+                ErrorInfo::from((source, state)).into(),
+            ));
         }
     }
 }
@@ -173,9 +182,9 @@ fn key_value<'source>(
                 next = token;
             }
             _ => {
-                return Err(
-                    SyntaxError::TokenParameter(
-                        ErrorInfo::from((source, state)).into()));
+                return Err(SyntaxError::TokenParameter(
+                    ErrorInfo::from((source, state)).into(),
+                ));
             }
         }
     }
@@ -197,15 +206,15 @@ fn key_value<'source>(
                     return Ok(None);
                 }
                 _ => {
-                    return Err(
-                        SyntaxError::TokenHashKeyValue(
-                            ErrorInfo::from((source, state)).into()));
+                    return Err(SyntaxError::TokenHashKeyValue(
+                        ErrorInfo::from((source, state)).into(),
+                    ));
                 }
             },
             _ => {
-                return Err(
-                    SyntaxError::TokenParameter(
-                        ErrorInfo::from((source, state)).into()));
+                return Err(SyntaxError::TokenParameter(
+                    ErrorInfo::from((source, state)).into(),
+                ));
             }
         }
         next = lexer.next();
@@ -224,7 +233,6 @@ fn arguments<'source>(
     if let Some(token) = next {
         match token {
             Token::Parameters(lex, span) => {
-
                 match &lex {
                     Parameters::WhiteSpace | Parameters::Newline => {
                         if lex == Parameters::Newline {
@@ -236,9 +244,9 @@ fn arguments<'source>(
                         );
                     }
                     Parameters::Partial => {
-                        return Err(
-                            SyntaxError::PartialPosition(
-                                ErrorInfo::from((source, state)).into()))
+                        return Err(SyntaxError::PartialPosition(
+                            ErrorInfo::from((source, state)).into(),
+                        ))
                     }
                     Parameters::ElseKeyword => {}
                     // Path components
@@ -291,25 +299,25 @@ fn arguments<'source>(
                         );
                     }
                     Parameters::PathDelimiter => {
-                        return Err(
-                            SyntaxError::PathDelimiterNotAllowed(
-                                ErrorInfo::from((source, state)).into()))
+                        return Err(SyntaxError::PathDelimiterNotAllowed(
+                            ErrorInfo::from((source, state)).into(),
+                        ))
                     }
                     Parameters::EndSubExpression => {
                         if context == CallContext::SubExpr {
                             call.exit(span);
                             return Ok(lexer.next());
                         } else {
-                            return Err(
-                                SyntaxError::SubExprNotOpen(
-                                    ErrorInfo::from((source, state)).into()))
+                            return Err(SyntaxError::SubExprNotOpen(
+                                ErrorInfo::from((source, state)).into(),
+                            ));
                         }
                     }
                     Parameters::Error => {
-                        return Err(
-                            SyntaxError::TokenError(
-                                String::from("parameters"),
-                                ErrorInfo::from((source, state)).into()))
+                        return Err(SyntaxError::TokenError(
+                            String::from("parameters"),
+                            ErrorInfo::from((source, state)).into(),
+                        ))
                     }
                     Parameters::End => {
                         if context != CallContext::SubExpr {
@@ -320,9 +328,9 @@ fn arguments<'source>(
                 }
             }
             _ => {
-                return Err(
-                    SyntaxError::TokenParameter(
-                        ErrorInfo::from((source, state)).into()));
+                return Err(SyntaxError::TokenParameter(
+                    ErrorInfo::from((source, state)).into(),
+                ));
             }
         }
     }
@@ -340,10 +348,8 @@ fn target<'source>(
     context: CallContext,
 ) -> SyntaxResult<Option<Token>> {
     while let Some(token) = next {
-
         match token {
             Token::Parameters(lex, span) => {
-
                 match &lex {
                     Parameters::WhiteSpace | Parameters::Newline => {
                         if lex == Parameters::Newline {
@@ -362,7 +368,6 @@ fn target<'source>(
                     | Parameters::LocalIdentifier
                     | Parameters::ParentRef
                     | Parameters::PathDelimiter => {
-
                         let (mut path, token) =
                             path::parse(source, lexer, state, (lex, span))?;
 
@@ -398,16 +403,16 @@ fn target<'source>(
                         return Ok(None);
                     }
                     _ => {
-                        return Err(
-                            SyntaxError::TokenCallTarget(
-                                ErrorInfo::from((source, state)).into()));
+                        return Err(SyntaxError::TokenCallTarget(
+                            ErrorInfo::from((source, state)).into(),
+                        ));
                     }
                 }
             }
             _ => {
-                return Err(
-                    SyntaxError::TokenParameter(
-                        ErrorInfo::from((source, state)).into()));
+                return Err(SyntaxError::TokenParameter(
+                    ErrorInfo::from((source, state)).into(),
+                ));
             }
         }
 
@@ -464,9 +469,9 @@ pub(crate) fn sub_expr<'source>(
     let next =
         arguments(source, lexer, state, &mut call, next, CallContext::SubExpr)?;
     if !call.is_closed() {
-        return Err(
-            SyntaxError::SubExpressionNotTerminated(
-                ErrorInfo::from((source, state)).into()));
+        return Err(SyntaxError::SubExpressionNotTerminated(
+            ErrorInfo::from((source, state)).into(),
+        ));
     }
 
     call.lines_end(state.line());
@@ -489,9 +494,9 @@ pub(crate) fn parse<'source>(
     let next = flags(source, lexer, state, &mut call, next)?;
 
     if call.is_partial() && call.is_conditional() {
-        return Err(
-            SyntaxError::MixedPartialConditional(
-                ErrorInfo::from((source, state)).into()));
+        return Err(SyntaxError::MixedPartialConditional(
+            ErrorInfo::from((source, state)).into(),
+        ));
     }
 
     let next =

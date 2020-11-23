@@ -34,7 +34,7 @@ pub trait Lines {
     /// Set the end of the lines range.
     fn lines_end(&mut self, line: &usize) {
         self.lines_mut().end = line.clone() + 1;
-    } 
+    }
 }
 
 /// Trait for elements that expect to be closed.
@@ -209,8 +209,12 @@ pub struct Text<'source> {
 
 impl<'source> Text<'source> {
     /// Create a new text node.
-    pub fn new(source: &'source str, span: Range<usize>, line: Range<usize>) -> Self {
-        Self {source, span, line} 
+    pub fn new(
+        source: &'source str,
+        span: Range<usize>,
+        line: Range<usize>,
+    ) -> Self {
+        Self { source, span, line }
     }
 }
 
@@ -481,7 +485,11 @@ pub struct Path<'source> {
 
 impl<'source> Path<'source> {
     /// Create a new path.
-    pub fn new(source: &'source str, open: Range<usize>, line: Range<usize>) -> Self {
+    pub fn new(
+        source: &'source str,
+        open: Range<usize>,
+        line: Range<usize>,
+    ) -> Self {
         Self {
             source,
             components: Vec::new(),
@@ -495,7 +503,7 @@ impl<'source> Path<'source> {
 
     /// Get the open span for the path.
     pub fn open_span(&self) -> &Range<usize> {
-        &self.open 
+        &self.open
     }
 
     /// Add a component to this path.
@@ -620,10 +628,15 @@ pub enum ParameterValue<'source> {
     SubExpr(Call<'source>),
 }
 
-impl<'source> From<(Value, Range<usize>, Range<usize>)> for ParameterValue<'source> {
+impl<'source> From<(Value, Range<usize>, Range<usize>)>
+    for ParameterValue<'source>
+{
     fn from(value: (Value, Range<usize>, Range<usize>)) -> Self {
         ParameterValue::Json {
-            value: value.0, span: value.1, line: value.2} 
+            value: value.0,
+            span: value.1,
+            line: value.2,
+        }
     }
 }
 
@@ -631,7 +644,11 @@ impl<'source> Lines for ParameterValue<'source> {
     fn lines(&self) -> &Range<usize> {
         match *self {
             ParameterValue::Path(ref path) => path.lines(),
-            ParameterValue::Json{value: _, span: _, ref line} => line,
+            ParameterValue::Json {
+                value: _,
+                span: _,
+                ref line,
+            } => line,
             ParameterValue::SubExpr(ref call) => call.lines(),
         }
     }
@@ -639,7 +656,11 @@ impl<'source> Lines for ParameterValue<'source> {
     fn lines_mut(&mut self) -> &mut Range<usize> {
         match *self {
             ParameterValue::Path(ref mut path) => path.lines_mut(),
-            ParameterValue::Json{value: _, span: _, ref mut line} => line,
+            ParameterValue::Json {
+                value: _,
+                span: _,
+                ref mut line,
+            } => line,
             ParameterValue::SubExpr(ref mut call) => call.lines_mut(),
         }
     }
@@ -744,7 +765,11 @@ impl<'source> Call<'source> {
     ///
     /// If it is correctly terminated the parser will call `exit()` to terminate
     /// the call statement.
-    pub fn new(source: &'source str, open: Range<usize>, line: Range<usize>) -> Self {
+    pub fn new(
+        source: &'source str,
+        open: Range<usize>,
+        line: Range<usize>,
+    ) -> Self {
         Self {
             source,
             partial: false,
@@ -798,7 +823,9 @@ impl<'source> Call<'source> {
     }
 
     /// Get the map of hash parameters.
-    pub fn parameters(&self) -> &HashMap<&'source str, ParameterValue<'source>> {
+    pub fn parameters(
+        &self,
+    ) -> &HashMap<&'source str, ParameterValue<'source>> {
         &self.parameters
     }
 
@@ -974,7 +1001,12 @@ pub struct Block<'source> {
 
 impl<'source> Block<'source> {
     /// Create a new block.
-    pub fn new(source: &'source str, open: Range<usize>, raw: bool, line: Range<usize>) -> Self {
+    pub fn new(
+        source: &'source str,
+        open: Range<usize>,
+        raw: bool,
+        line: Range<usize>,
+    ) -> Self {
         Self {
             source,
             nodes: Vec::new(),
@@ -1225,7 +1257,11 @@ pub struct Link<'source> {
 
 impl<'source> Link<'source> {
     /// Create a new link.
-    pub fn new(source: &'source str, open: Range<usize>, line: Range<usize>) -> Self {
+    pub fn new(
+        source: &'source str,
+        open: Range<usize>,
+        line: Range<usize>,
+    ) -> Self {
         Self {
             source,
             href_span: open.end..open.end,
@@ -1262,7 +1298,11 @@ impl<'source> Link<'source> {
             &self.source[self.label_span.start..self.label_span.end]
         };
 
-        if lbl.is_empty() { self.href() } else { lbl }
+        if lbl.is_empty() {
+            self.href()
+        } else {
+            lbl
+        }
     }
 
     /// Get the link title.
@@ -1277,7 +1317,11 @@ impl<'source> Link<'source> {
             &self.source[self.title_span.start..self.title_span.end]
         };
 
-        if title.is_empty() { self.label() } else { title }
+        if title.is_empty() {
+            self.label()
+        } else {
+            title
+        }
     }
 
     /// Get the span for the href.
@@ -1322,26 +1366,26 @@ impl<'source> Link<'source> {
 
     /// Set an owned value for the href.
     ///
-    /// Only available when the parser detects escape sequences 
+    /// Only available when the parser detects escape sequences
     /// in the input.
     pub fn set_href(&mut self, value: String) {
-        self.href = Some(value);    
+        self.href = Some(value);
     }
 
     /// Set an owned value for the label.
     ///
-    /// Only available when the parser detects escape sequences 
+    /// Only available when the parser detects escape sequences
     /// in the input.
     pub fn set_label(&mut self, value: String) {
-        self.label = Some(value);    
+        self.label = Some(value);
     }
 
     /// Set an owned value for the title.
     ///
-    /// Only available when the parser detects escape sequences 
+    /// Only available when the parser detects escape sequences
     /// in the input.
     pub fn set_title(&mut self, value: String) {
-        self.title = Some(value);    
+        self.title = Some(value);
     }
 }
 

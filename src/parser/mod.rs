@@ -1,14 +1,14 @@
 //! Convert the lexer token stream to AST nodes.
-use std::ops::Range;
 use crate::{
     error::{Error, ErrorInfo, SyntaxError},
     lexer::{self, lex, Lexer, Token},
     parser::{
-        ast::{Block, CallTarget, Document, Element, Node, Text, Lines},
+        ast::{Block, CallTarget, Document, Element, Lines, Node, Text},
         call::CallParseContext,
     },
     SyntaxResult,
 };
+use std::ops::Range;
 
 /// Default file name.
 static UNKNOWN: &str = "unknown";
@@ -100,7 +100,7 @@ impl ParseState {
 
     /// Get an initial line range for this parse state.
     pub fn line_range(&self) -> Range<usize> {
-        self.line.clone()..self.line.clone() + 1 
+        self.line.clone()..self.line.clone() + 1
     }
 }
 
@@ -204,7 +204,11 @@ impl<'source> Parser<'source> {
             );
             self.next_token = next;
             line_range.end = self.state.line() + 1;
-            return Ok(Some(Node::Text(Text::new(self.source, span, line_range))));
+            return Ok(Some(Node::Text(Text::new(
+                self.source,
+                span,
+                line_range,
+            ))));
         }
 
         //println!("Advance token {:?}", &next);
@@ -256,9 +260,11 @@ impl<'source> Parser<'source> {
                     )?;
 
                     let name = block.name().ok_or_else(|| {
-                        *self.state.byte_mut() = block.call().target().open_span().start;
+                        *self.state.byte_mut() =
+                            block.call().target().open_span().start;
                         SyntaxError::BlockName(
-                            ErrorInfo::from((self.source, &mut self.state)).into(),
+                            ErrorInfo::from((self.source, &mut self.state))
+                                .into(),
                         )
                     })?;
 
@@ -266,11 +272,13 @@ impl<'source> Parser<'source> {
                         CallTarget::Path(ref _path) => {}
                         CallTarget::SubExpr(_) => {
                             if !block.call().is_partial() {
-                                return Err(
-                                    SyntaxError::BlockTargetSubExpr(
-                                        ErrorInfo::from((self.source, &mut self.state)).into(),
-                                    ),
-                                );
+                                return Err(SyntaxError::BlockTargetSubExpr(
+                                    ErrorInfo::from((
+                                        self.source,
+                                        &mut self.state,
+                                    ))
+                                    .into(),
+                                ));
                             }
                         }
                     }
@@ -299,7 +307,8 @@ impl<'source> Parser<'source> {
                                                             call.open_span()
                                                                 .clone(),
                                                             false,
-                                                            self.state.line_range(),
+                                                            self.state
+                                                                .line_range(),
                                                         );
                                                     condition.set_call(call);
                                                     current.add_condition(
@@ -342,7 +351,12 @@ impl<'source> Parser<'source> {
                         *self.state.byte_mut() = span.start;
 
                         return Err(SyntaxError::BlockNotOpen(
-                            ErrorInfo::from((self.source, &mut self.state, notes)).into(),
+                            ErrorInfo::from((
+                                self.source,
+                                &mut self.state,
+                                notes,
+                            ))
+                            .into(),
                         ));
                     }
 
@@ -355,7 +369,12 @@ impl<'source> Parser<'source> {
                                 open_name
                             )];
                             return Err(SyntaxError::TagNameMismatch(
-                                ErrorInfo::from((self.source, &mut self.state, notes)).into(),
+                                ErrorInfo::from((
+                                    self.source,
+                                    &mut self.state,
+                                    notes,
+                                ))
+                                .into(),
                             ));
                         }
 
@@ -371,7 +390,8 @@ impl<'source> Parser<'source> {
                         return Ok(Some(Node::Block(block)));
                     } else {
                         return Err(SyntaxError::ExpectedIdentifier(
-                            ErrorInfo::from((self.source, &mut self.state)).into(),
+                            ErrorInfo::from((self.source, &mut self.state))
+                                .into(),
                         ));
                     }
                 }

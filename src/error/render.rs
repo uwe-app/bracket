@@ -17,11 +17,11 @@ pub enum RenderError {
     /// Error when a helper could not be found.
     #[error("Helper '{0}' not found, check the name")]
     HelperNotFound(String),
-    
+
     /// Error when evaluating a path and a syntax error occurs.
     ///
     /// Paths can be dynamically evaluated when the
-    /// [evaluate()](crate::render::Render#method.evaluate) function is called 
+    /// [evaluate()](crate::render::Render#method.evaluate) function is called
     /// inside a helper.
     #[error("Syntax error while evaluating path '{0}'")]
     EvaluatePath(String),

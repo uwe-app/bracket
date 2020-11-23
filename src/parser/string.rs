@@ -1,5 +1,5 @@
-use std::ops::Range;
 use serde_json::Value;
+use std::ops::Range;
 
 use crate::{
     error::{ErrorInfo, SyntaxError},
@@ -78,9 +78,9 @@ pub(crate) fn parse<'source>(
             RawLiteralType::Double => match token {
                 Token::DoubleQuoteString(lex, span) => match &lex {
                     DoubleQuoteString::Newline => {
-                        return Err(
-                            SyntaxError::LiteralNewline(
-                                ErrorInfo::from((source, state)).into())) 
+                        return Err(SyntaxError::LiteralNewline(
+                            ErrorInfo::from((source, state)).into(),
+                        ))
                     }
                     DoubleQuoteString::EscapedNewline => {
                         flags.newline = true;
@@ -97,17 +97,17 @@ pub(crate) fn parse<'source>(
                     }
                 },
                 _ => {
-                    return Err(
-                        SyntaxError::TokenDoubleQuoteLiteral(
-                            ErrorInfo::from((source, state)).into()));
+                    return Err(SyntaxError::TokenDoubleQuoteLiteral(
+                        ErrorInfo::from((source, state)).into(),
+                    ));
                 }
             },
             RawLiteralType::Single => match token {
                 Token::SingleQuoteString(lex, span) => match &lex {
                     SingleQuoteString::Newline => {
-                        return Err(
-                            SyntaxError::LiteralNewline(
-                                ErrorInfo::from((source, state)).into())) 
+                        return Err(SyntaxError::LiteralNewline(
+                            ErrorInfo::from((source, state)).into(),
+                        ))
                     }
                     SingleQuoteString::EscapedNewline => {
                         flags.newline = true;
@@ -124,18 +124,17 @@ pub(crate) fn parse<'source>(
                     }
                 },
                 _ => {
-                    return Err(
-                        SyntaxError::TokenSingleQuoteLiteral(
-                            ErrorInfo::from((source, state)).into()));
+                    return Err(SyntaxError::TokenSingleQuoteLiteral(
+                        ErrorInfo::from((source, state)).into(),
+                    ));
                 }
             },
             RawLiteralType::Array => match token {
-
                 Token::Array(lex, span) => match &lex {
                     Array::Newline => {
-                        return Err(
-                            SyntaxError::LiteralNewline(
-                                ErrorInfo::from((source, state)).into())) 
+                        return Err(SyntaxError::LiteralNewline(
+                            ErrorInfo::from((source, state)).into(),
+                        ))
                     }
                     Array::Escaped => {
                         flags.delimiter = true;
@@ -149,17 +148,17 @@ pub(crate) fn parse<'source>(
                     }
                 },
                 _ => {
-                    return Err(
-                        SyntaxError::TokenArrayLiteral(
-                            ErrorInfo::from((source, state)).into()));
+                    return Err(SyntaxError::TokenArrayLiteral(
+                        ErrorInfo::from((source, state)).into(),
+                    ));
                 }
             },
         }
     }
 
-    return Err(
-        SyntaxError::TokenRawLiteral(
-            ErrorInfo::from((source, state)).into()));
+    return Err(SyntaxError::TokenRawLiteral(
+        ErrorInfo::from((source, state)).into(),
+    ));
 }
 
 /// Parse a quoted string literal and return a value.

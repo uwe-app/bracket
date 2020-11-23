@@ -11,6 +11,9 @@ pub enum HelperError {
     /// Generic error message for helpers.
     #[error("{0}")]
     Message(String),
+    /// Error when asserting that a helper expects an inner template.
+    #[error("Helper '{0}' expects a block template")]
+    BlockTemplate(String),
     /// Error when supplied arguments do not match an exact arity.
     #[error("Helper '{0}' got invalid arity expects {1} arguments(s)")]
     ArityExact(String, usize),
@@ -62,7 +65,7 @@ pub enum HelperError {
 impl HelperError {
     /// Create a new helper error with the given message.
     pub fn new<S: AsRef<str>>(msg: S) -> Self {
-        HelperError::Message(msg.as_ref().to_string()) 
+        HelperError::Message(msg.as_ref().to_string())
     }
 }
 
