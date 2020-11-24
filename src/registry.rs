@@ -82,7 +82,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     ///
     /// Requires the `fs` feature.
     #[cfg(feature = "fs")]
-    pub fn add<N, P>(&mut self, name: String, file: P) -> std::io::Result<()>
+    pub fn add<P>(&mut self, name: String, file: P) -> std::io::Result<()>
     where
         P: AsRef<Path>,
     {
