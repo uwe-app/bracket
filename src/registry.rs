@@ -75,7 +75,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     }
 
     /// Set the templates collection.
-    pub fn set_template(&mut self, templates: Templates<'source>) {
+    pub fn set_templates(&mut self, templates: Templates<'source>) {
         self.templates = templates;
     }
 
