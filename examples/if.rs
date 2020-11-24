@@ -1,7 +1,6 @@
 extern crate log;
 extern crate pretty_env_logger;
 
-use std::convert::TryFrom;
 use std::path::PathBuf;
 
 use bracket::{
@@ -18,11 +17,10 @@ fn render() -> Result<String> {
         "title": "If Example",
     });
 
-    let mut loader = Loader::new();
-    loader.load(PathBuf::from(name))?;
+    let mut registry = Registry::new();
+    registry.load(PathBuf::from(name))?;
+    registry.build()?;
 
-    let templates = Templates::try_from(&loader)?;
-    let registry = Registry::from(templates);
     registry.render(name, &data)
 }
 

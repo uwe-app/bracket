@@ -1,5 +1,12 @@
 //! Primary entry point for compiling and rendering templates.
 use serde::Serialize;
+use std::cell::RefCell;
+use std::collections::HashMap;
+
+#[cfg(feature = "fs")]
+use std::ffi::OsStr;
+#[cfg(feature = "fs")]
+use std::path::Path;
 
 use crate::{
     escape::{self, EscapeFn},
@@ -14,9 +21,11 @@ use crate::{
 ///
 /// A template name is always required for error messages.
 pub struct Registry<'reg, 'source> {
-    loader: Loader,
+    loader: RefCell<Loader>,
+
+    sources: HashMap<String, String>,
     helpers: HelperRegistry<'reg>,
-    templates: Templates<'source>,
+    templates: RefCell<Templates<'source>>,
     escape: EscapeFn,
     strict: bool,
 }
@@ -25,9 +34,11 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     /// Create an empty registry.
     pub fn new() -> Self {
         Self {
-            loader: Default::default(),
+            loader: RefCell::new(Default::default()),
+
+            sources: HashMap::new(),
             helpers: HelperRegistry::new(),
-            templates: Default::default(),
+            templates: RefCell::new(Default::default()),
             escape: Box::new(escape::html),
             strict: false,
         }
@@ -63,34 +74,84 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         &mut self.helpers
     }
 
-    /// Template registry.
+    /// Add a named template from a file.
     ///
-    /// For partials to be located they must exist in this
-    /// templates collection.
-    pub fn templates(&self) -> &Templates<'source> {
-        &self.templates
+    /// Requires the `fs` feature.
+    #[cfg(feature = "fs")]
+    pub fn add<N, P>(&mut self, name: String, file: P) -> std::io::Result<()>
+    where
+        P: AsRef<Path>,
+    {
+        let (_, content) = self.read(file)?;
+        self.sources.insert(name, content);
+        Ok(())
     }
 
-    /// Mutable reference to the templates registry.
-    pub fn templates_mut(&mut self) -> &mut Templates<'source> {
-        &mut self.templates
-    }
-
-    /// Set the registry templates collection.
-    pub fn set_templates(&mut self, templates: Templates<'source>) {
-        self.templates = templates;
-    }
-
-    /// Set a loader for this registry.
+    /// Load a file and use the file path as the template name.
     ///
-    /// All sources in the loader are compiled as templates and assigned 
-    /// to the templates collection of this registry.
-    //pub fn set_loader(&mut self, loader: Loader) -> Result<()> {
-        //self.loader = loader;
-        //let templates = Templates::try_from(&loader)?;
-        //self.templates = templates;
-        //Ok(())
-    //}
+    /// Requires the `fs` feature.
+    #[cfg(feature = "fs")]
+    pub fn load<P: AsRef<Path>>(&mut self, file: P) -> Result<String> {
+        let (name, content) = self.read(file)?;
+        self.sources.insert(name.clone(), content);
+        Ok(name)
+    }
+
+    /// Load all the files in a target directory that match the
+    /// given extension.
+    ///
+    /// The generated name is the file stem; ie, the name of the file
+    /// once the extension has been removed.
+    ///
+    /// Requires the `fs` feature.
+    #[cfg(feature = "fs")]
+    pub fn read_dir<P: AsRef<Path>>(
+        &mut self,
+        file: P,
+        extension: &str,
+    ) -> std::io::Result<()> {
+        let ext = OsStr::new(extension);
+        for entry in std::fs::read_dir(file.as_ref())? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_file() {
+                if let Some(extension) = path.extension() {
+                    if extension == ext {
+                        let name = path
+                            .file_stem()
+                            .unwrap()
+                            .to_string_lossy()
+                            .to_owned()
+                            .to_string();
+                        let (_, content) = self.read(path)?;
+                        self.sources.insert(name, content);
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[cfg(feature = "fs")]
+    fn read<P: AsRef<Path>>(
+        &self,
+        file: P,
+    ) -> std::io::Result<(String, String)> {
+        let path = file.as_ref();
+        let name = path.to_string_lossy().to_owned().to_string();
+        let content = std::fs::read_to_string(path)?;
+        Ok((name, content))
+    }
+
+    /// Compile all the loaded sources into templates.
+    pub fn build(&'source self) -> Result<()> {
+        let mut templates = self.templates.borrow_mut();
+        for (k, v) in &self.sources {
+            let template = Template::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
+            templates.insert(k, template);
+        }
+        Ok(()) 
+    }
 
     /// Compile a string to a template.
     pub fn compile(
@@ -128,7 +189,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     /// the result as a string.
     ///
     /// This function buffers the template nodes before rendering.
-    pub fn once<T>(&self, name: &str, source: &str, data: &T) -> Result<String>
+    pub fn once<T>(&self, name: &str, source: &'source str, data: &T) -> Result<String>
     where
         T: Serialize,
     {
@@ -139,7 +200,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
             self.strict(),
             self.escape(),
             self.helpers(),
-            self.templates(),
+            &self.templates.borrow(),
             name,
             data,
             &mut writer,
@@ -246,7 +307,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
             self.escape(),
             self.helpers(),
             //&mut local_helpers,
-            self.templates(),
+            &self.templates.borrow(),
             name,
             data,
             &mut writer,
@@ -266,15 +327,15 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     where
         T: Serialize,
     {
-        let tpl = self
-            .templates
+        let templates = self.templates.borrow();
+        let tpl = templates
             .get(name)
             .ok_or_else(|| Error::TemplateNotFound(name.to_string()))?;
         tpl.render(
             self.strict(),
             self.escape(),
             self.helpers(),
-            self.templates(),
+            &self.templates.borrow(),
             name,
             data,
             writer,
@@ -287,7 +348,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
 impl<'reg, 'source> From<Templates<'source>> for Registry<'reg, 'source> {
     fn from(templates: Templates<'source>) -> Self {
         let mut reg = Registry::new();
-        reg.templates = templates;
+        reg.templates = RefCell::new(templates);
         reg
     }
 }

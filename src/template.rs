@@ -40,13 +40,12 @@ impl Loader {
     }
 
     /// Insert a named string template.
-    pub fn insert<N, S>(&mut self, name: N, content: S)
+    pub fn insert<N>(&mut self, name: N, content: String)
     where
         N: AsRef<str>,
-        S: AsRef<str>,
     {
         self.sources
-            .insert(name.as_ref().to_owned(), content.as_ref().to_owned());
+            .insert(name.as_ref().to_owned(), content);
     }
 
     /// Add a named template from a file.
@@ -59,7 +58,7 @@ impl Loader {
         P: AsRef<Path>,
     {
         let (_, content) = self.read(file)?;
-        self.insert(name, &content);
+        self.insert(name, content);
         Ok(())
     }
 
@@ -67,10 +66,10 @@ impl Loader {
     ///
     /// Requires the `fs` feature.
     #[cfg(feature = "fs")]
-    pub fn load<P: AsRef<Path>>(&mut self, file: P) -> std::io::Result<()> {
+    pub fn load<P: AsRef<Path>>(&mut self, file: P) -> std::io::Result<String> {
         let (name, content) = self.read(file)?;
-        self.insert(name, &content);
-        Ok(())
+        self.insert(name.clone(), content);
+        Ok(name)
     }
 
     /// Load all the files in a target directory that match the
@@ -100,7 +99,7 @@ impl Loader {
                             .to_owned()
                             .to_string();
                         let (_, content) = self.read(path)?;
-                        self.insert(name, &content);
+                        self.insert(name, content);
                     }
                 }
             }
@@ -126,7 +125,7 @@ impl Loader {
 /// that is used during a render.
 #[derive(Default)]
 pub struct Templates<'source> {
-    templates: HashMap<&'source str, Template<'source>>,
+    templates: HashMap<String, Template<'source>>,
 }
 
 impl<'source> Templates<'source> {
@@ -141,8 +140,8 @@ impl<'source> Templates<'source> {
     ///
     /// If a template already exists with the given name
     /// it is overwritten.
-    pub fn insert(&mut self, name: &'source str, template: Template<'source>) {
-        self.templates.insert(name, template);
+    pub fn insert(&mut self, name: &str, template: Template<'source>) {
+        self.templates.insert(name.to_owned(), template);
     }
 
     /// Remove a named template.
