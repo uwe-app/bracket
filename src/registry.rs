@@ -158,7 +158,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         for (k, v) in &self.sources {
             let template =
                 Template::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
-            templates.insert(k, template);
+            templates.insert(k.to_string(), template);
         }
         Ok(())
     }

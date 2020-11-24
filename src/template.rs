@@ -35,8 +35,8 @@ impl<'source> Templates<'source> {
     ///
     /// If a template already exists with the given name
     /// it is overwritten.
-    pub fn insert(&mut self, name: &str, template: Template<'source>) {
-        self.templates.insert(name.to_owned(), template);
+    pub fn insert(&mut self, name: String, template: Template<'source>) {
+        self.templates.insert(name, template);
     }
 
     /// Remove a named template.
