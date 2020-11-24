@@ -153,7 +153,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     }
 
     /// Compile all the loaded sources into templates.
-    pub fn build(&'source self) -> Result<()> {
+    pub fn build<'a: 'source>(&'a self) -> Result<()> {
         let mut templates = self.templates.write().unwrap();
         for (k, v) in &self.sources {
             let template = Template::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
