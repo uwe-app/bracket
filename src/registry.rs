@@ -1,12 +1,13 @@
 //! Primary entry point for compiling and rendering templates.
 use serde::Serialize;
+use std::convert::TryFrom;
 
 use crate::{
     escape::{self, EscapeFn},
     helper::HelperRegistry,
     output::{Output, StringOutput},
     parser::{Parser, ParserOptions},
-    template::{Template, Templates},
+    template::{Template, Templates, Loader},
     Error, Result,
 };
 
@@ -14,6 +15,7 @@ use crate::{
 ///
 /// A template name is always required for error messages.
 pub struct Registry<'reg, 'source> {
+    //loader: Loader,
     helpers: HelperRegistry<'reg>,
     templates: Templates<'source>,
     escape: EscapeFn,
@@ -24,6 +26,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     /// Create an empty registry.
     pub fn new() -> Self {
         Self {
+            //loader: Default::default(),
             helpers: HelperRegistry::new(),
             templates: Default::default(),
             escape: Box::new(escape::html),
@@ -274,12 +277,16 @@ impl<'reg, 'source> From<Templates<'source>> for Registry<'reg, 'source> {
     }
 }
 
-/// Create a registry using a helper registry and collection of templates.
-impl<'reg, 'source> From<(HelperRegistry<'reg>, Templates<'source>)> for Registry<'reg, 'source> {
-    fn from(value: (HelperRegistry<'reg>, Templates<'source>)) -> Self {
-        let mut reg = Registry::new();
-        reg.helpers = value.0;
-        reg.templates = value.1;
-        reg
+impl<'reg, 'source> TryFrom<(&'source Loader, HelperRegistry<'reg>)> for Registry<'reg, 'source> {
+    type Error = crate::error::Error;
+    fn try_from(
+        value: (&'source Loader, HelperRegistry<'reg>),
+    ) -> std::result::Result<Self, Self::Error> {
+        Ok(Registry{
+            templates: Templates::try_from(value.0)?,
+            helpers: value.1,
+            escape: Box::new(escape::html),
+            strict: false,
+        })
     }
 }
