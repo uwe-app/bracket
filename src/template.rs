@@ -126,6 +126,7 @@ impl Loader {
 /// that is used during a render.
 #[derive(Default)]
 pub struct Templates<'source> {
+    loader: Loader,
     templates: HashMap<&'source str, Template<'source>>,
 }
 
@@ -133,6 +134,7 @@ impl<'source> Templates<'source> {
     /// Create an empty templates collection.
     pub fn new() -> Self {
         Self {
+            loader: Default::default(),
             templates: HashMap::new(),
         }
     }

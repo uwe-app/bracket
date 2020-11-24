@@ -1,13 +1,13 @@
 //! Primary entry point for compiling and rendering templates.
 use serde::Serialize;
-//use std::convert::TryFrom;
+use std::convert::TryFrom;
 
 use crate::{
     escape::{self, EscapeFn},
     helper::HelperRegistry,
     output::{Output, StringOutput},
     parser::{Parser, ParserOptions},
-    template::{Template, Templates},
+    template::{Template, Templates, Loader},
     Error, Result,
 };
 
@@ -15,6 +15,7 @@ use crate::{
 ///
 /// A template name is always required for error messages.
 pub struct Registry<'reg, 'source> {
+    loader: Loader,
     helpers: HelperRegistry<'reg>,
     templates: Templates<'source>,
     escape: EscapeFn,
@@ -25,6 +26,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     /// Create an empty registry.
     pub fn new() -> Self {
         Self {
+            loader: Default::default(),
             helpers: HelperRegistry::new(),
             templates: Default::default(),
             escape: Box::new(escape::html),
@@ -78,6 +80,17 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     /// Set the registry templates collection.
     pub fn set_templates(&mut self, templates: Templates<'source>) {
         self.templates = templates;
+    }
+
+    /// Set a loader for this registry.
+    ///
+    /// All sources in the loader are compiled as templates and assigned 
+    /// to the templates collection of this registry.
+    pub fn set_loader(&'source mut self, loader: Loader) -> Result<()> {
+        self.loader = loader;
+        let templates = Templates::try_from(&self.loader)?;
+        self.templates = templates;
+        Ok(())
     }
 
     /// Compile a string to a template.
