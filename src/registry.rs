@@ -152,10 +152,15 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         Ok((name, content))
     }
 
+    /// Owned template sources.
+    pub fn sources(&self) -> &HashMap<String, String> {
+        &self.sources
+    }
+
     /// Compile all the loaded sources into templates.
-    pub fn build(&'source self) -> Result<()> {
+    pub fn build(&self, sources: &'source HashMap<String, String>) -> Result<()> {
         let mut templates = self.templates.write().unwrap();
-        for (k, v) in &self.sources {
+        for (k, v) in sources {
             let template =
                 Template::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
             templates.insert(k.to_string(), template);

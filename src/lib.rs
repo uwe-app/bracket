@@ -69,7 +69,7 @@
 //! // Template name is the file path
 //! registry.load(PathBuf::from("documents/page.md"))?;
 //! // Compile all the templates
-//! registry.build()?;
+//! registry.build(registry.sources())?;
 //! ```
 //!
 //! ## Render

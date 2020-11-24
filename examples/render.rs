@@ -29,7 +29,7 @@ fn render() -> Result<String> {
 
     let mut registry = Registry::new();
     registry.load(PathBuf::from(name))?;
-    registry.build()?;
+    registry.build(registry.sources())?;
     registry.render(name, &data)
 }
 
