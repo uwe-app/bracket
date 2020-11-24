@@ -1,13 +1,13 @@
 //! Primary entry point for compiling and rendering templates.
 use serde::Serialize;
-use std::convert::TryFrom;
+//use std::convert::TryFrom;
 
 use crate::{
     escape::{self, EscapeFn},
     helper::HelperRegistry,
     output::{Output, StringOutput},
     parser::{Parser, ParserOptions},
-    template::{Template, Templates, Loader},
+    template::{Template, Templates},
     Error, Result,
 };
 
@@ -15,7 +15,6 @@ use crate::{
 ///
 /// A template name is always required for error messages.
 pub struct Registry<'reg, 'source> {
-    //loader: Loader,
     helpers: HelperRegistry<'reg>,
     templates: Templates<'source>,
     escape: EscapeFn,
@@ -26,7 +25,6 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     /// Create an empty registry.
     pub fn new() -> Self {
         Self {
-            //loader: Default::default(),
             helpers: HelperRegistry::new(),
             templates: Default::default(),
             escape: Box::new(escape::html),
@@ -75,6 +73,11 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     /// Mutable reference to the templates registry.
     pub fn templates_mut(&mut self) -> &mut Templates<'source> {
         &mut self.templates
+    }
+
+    /// Set the registry templates collection.
+    pub fn set_templates(&mut self, templates: Templates<'source>) {
+        self.templates = templates;
     }
 
     /// Compile a string to a template.
@@ -277,6 +280,16 @@ impl<'reg, 'source> From<Templates<'source>> for Registry<'reg, 'source> {
     }
 }
 
+/// Create a registry using a collection of helpers.
+impl<'reg, 'source> From<HelperRegistry<'reg>> for Registry<'reg, 'source> {
+    fn from(helpers: HelperRegistry<'reg>) -> Self {
+        let mut reg = Registry::new();
+        reg.helpers = helpers;
+        reg
+    }
+}
+
+/*
 impl<'reg, 'source> TryFrom<(&'source Loader, HelperRegistry<'reg>)> for Registry<'reg, 'source> {
     type Error = crate::error::Error;
     fn try_from(
@@ -290,3 +303,4 @@ impl<'reg, 'source> TryFrom<(&'source Loader, HelperRegistry<'reg>)> for Registr
         })
     }
 }
+*/
