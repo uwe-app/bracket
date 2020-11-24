@@ -86,12 +86,12 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     ///
     /// All sources in the loader are compiled as templates and assigned 
     /// to the templates collection of this registry.
-    pub fn set_loader(&'source mut self, loader: Loader) -> Result<()> {
-        self.loader = loader;
-        let templates = Templates::try_from(&self.loader)?;
-        self.templates = templates;
-        Ok(())
-    }
+    //pub fn set_loader(&mut self, loader: Loader) -> Result<()> {
+        //self.loader = loader;
+        //let templates = Templates::try_from(&loader)?;
+        //self.templates = templates;
+        //Ok(())
+    //}
 
     /// Compile a string to a template.
     pub fn compile(

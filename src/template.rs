@@ -126,7 +126,6 @@ impl Loader {
 /// that is used during a render.
 #[derive(Default)]
 pub struct Templates<'source> {
-    loader: Loader,
     templates: HashMap<&'source str, Template<'source>>,
 }
 
@@ -134,7 +133,6 @@ impl<'source> Templates<'source> {
     /// Create an empty templates collection.
     pub fn new() -> Self {
         Self {
-            loader: Default::default(),
             templates: HashMap::new(),
         }
     }
@@ -161,6 +159,16 @@ impl<'source> Templates<'source> {
     pub fn compile(s: &str, options: ParserOptions) -> Result<Template<'_>> {
         Ok(Template::compile(s, options).map_err(Error::from)?)
     }
+
+    /// Import all the templates from a loader.
+    pub fn import(&mut self, loader: &'source Loader) -> Result<()> {
+        for (k, v) in loader.sources() {
+            let template =
+                Templates::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
+            self.insert(k.as_str(), template);
+        }
+        Ok(())
+    }
 }
 
 impl<'source> TryFrom<&'source Loader> for Templates<'source> {
@@ -169,12 +177,13 @@ impl<'source> TryFrom<&'source Loader> for Templates<'source> {
         loader: &'source Loader,
     ) -> std::result::Result<Self, Self::Error> {
         let mut tpl = Templates::new();
+        tpl.import(loader)?;
 
-        for (k, v) in loader.sources() {
-            let template =
-                Templates::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
-            tpl.insert(k.as_str(), template);
-        }
+        //for (k, v) in loader.sources() {
+            //let template =
+                //Templates::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
+            //tpl.insert(k.as_str(), template);
+        //}
 
         Ok(tpl)
     }
