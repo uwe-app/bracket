@@ -3,10 +3,7 @@ extern crate pretty_env_logger;
 
 use std::path::PathBuf;
 
-use bracket::{
-    registry::Registry,
-    Result,
-};
+use bracket::{registry::Registry, Result};
 
 use serde_json::json;
 

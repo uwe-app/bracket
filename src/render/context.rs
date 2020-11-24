@@ -173,7 +173,7 @@ impl<'call> Context<'call> {
 
     /// Map an optional template to a result.
     ///
-    /// If the template is `None` this will yield an error; use this 
+    /// If the template is `None` this will yield an error; use this
     /// to assert when an inner block template is required.
     pub fn assert_block<'a>(
         &self,

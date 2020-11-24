@@ -156,10 +156,11 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     pub fn build(&'source self) -> Result<()> {
         let mut templates = self.templates.write().unwrap();
         for (k, v) in &self.sources {
-            let template = Template::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
+            let template =
+                Template::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
             templates.insert(k, template);
         }
-        Ok(()) 
+        Ok(())
     }
 
     /// Compile a string to a template.
@@ -198,7 +199,12 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     /// the result as a string.
     ///
     /// This function buffers the template nodes before rendering.
-    pub fn once<T>(&self, name: &str, source: &'source str, data: &T) -> Result<String>
+    pub fn once<T>(
+        &self,
+        name: &str,
+        source: &'source str,
+        data: &T,
+    ) -> Result<String>
     where
         T: Serialize,
     {
@@ -337,7 +343,6 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     where
         T: Serialize,
     {
-
         let templates = self.templates().read().unwrap();
         let tpl = templates
             .get(name)
@@ -351,7 +356,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
             data,
             writer,
         )?;
-        
+
         Ok(())
     }
 }

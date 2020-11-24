@@ -1,7 +1,4 @@
-use bracket::{
-    helper::prelude::*,
-    Registry, Result,
-};
+use bracket::{helper::prelude::*, Registry, Result};
 use serde_json::{json, Value};
 
 static NAME: &str = "helper.rs";

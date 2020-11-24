@@ -148,8 +148,11 @@ impl<'render> Render<'render> {
     }
 
     /// Get a named template.
-    pub fn get_template(&self, name: &str) -> Option<&'render Template<'render>> {
-        self.templates.get(name) 
+    pub fn get_template(
+        &self,
+        name: &str,
+    ) -> Option<&'render Template<'render>> {
+        self.templates.get(name)
     }
 
     /// Get a mutable reference to the output destination.

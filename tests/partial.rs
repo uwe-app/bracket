@@ -1,6 +1,4 @@
-use bracket::{
-    Registry, Result,
-};
+use bracket::{Registry, Result};
 use serde_json::json;
 
 static NAME: &str = "partial.rs";
