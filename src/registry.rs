@@ -1,7 +1,7 @@
 //! Primary entry point for compiling and rendering templates.
 use serde::Serialize;
-use std::cell::RefCell;
 use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 
 #[cfg(feature = "fs")]
 use std::ffi::OsStr;
@@ -23,7 +23,7 @@ use crate::{
 pub struct Registry<'reg, 'source> {
     sources: HashMap<String, String>,
     helpers: HelperRegistry<'reg>,
-    templates: RefCell<Templates<'source>>,
+    templates: Arc<RwLock<Templates<'source>>>,
     escape: EscapeFn,
     strict: bool,
 }
@@ -34,7 +34,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         Self {
             sources: HashMap::new(),
             helpers: HelperRegistry::new(),
-            templates: RefCell::new(Default::default()),
+            templates: Arc::new(RwLock::new(Default::default())),
             escape: Box::new(escape::html),
             strict: false,
         }
@@ -68,6 +68,11 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     /// Mutable reference to the helper registry.
     pub fn helpers_mut(&mut self) -> &mut HelperRegistry<'reg> {
         &mut self.helpers
+    }
+
+    /// Templates collection.
+    fn templates(&self) -> &Arc<RwLock<Templates<'source>>> {
+        &self.templates
     }
 
     /// Insert a named string template.
@@ -149,7 +154,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
 
     /// Compile all the loaded sources into templates.
     pub fn build(&'source self) -> Result<()> {
-        let mut templates = self.templates.borrow_mut();
+        let mut templates = self.templates.write().unwrap();
         for (k, v) in &self.sources {
             let template = Template::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
             templates.insert(k, template);
@@ -197,6 +202,8 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     where
         T: Serialize,
     {
+        let templates = self.templates().read().unwrap();
+
         let mut writer = StringOutput::new();
         let template =
             self.compile(source, ParserOptions::new(name.to_string(), 0, 0))?;
@@ -204,7 +211,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
             self.strict(),
             self.escape(),
             self.helpers(),
-            &self.templates.borrow(),
+            &*templates,
             name,
             data,
             &mut writer,
@@ -304,14 +311,13 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     where
         T: Serialize,
     {
-        //let mut local_helpers = HelperRegistry::new();
+        let templates = self.templates().read().unwrap();
         let mut writer = StringOutput::new();
         template.render(
             self.strict(),
             self.escape(),
             self.helpers(),
-            //&mut local_helpers,
-            &self.templates.borrow(),
+            &*templates,
             name,
             data,
             &mut writer,
@@ -331,7 +337,8 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     where
         T: Serialize,
     {
-        let templates = self.templates.borrow();
+
+        let templates = self.templates().read().unwrap();
         let tpl = templates
             .get(name)
             .ok_or_else(|| Error::TemplateNotFound(name.to_string()))?;
@@ -339,29 +346,12 @@ impl<'reg, 'source> Registry<'reg, 'source> {
             self.strict(),
             self.escape(),
             self.helpers(),
-            &self.templates.borrow(),
+            &*templates,
             name,
             data,
             writer,
         )?;
+        
         Ok(())
-    }
-}
-
-/// Create a registry using a collection of templates.
-impl<'reg, 'source> From<Templates<'source>> for Registry<'reg, 'source> {
-    fn from(templates: Templates<'source>) -> Self {
-        let mut reg = Registry::new();
-        reg.templates = RefCell::new(templates);
-        reg
-    }
-}
-
-/// Create a registry using a collection of helpers.
-impl<'reg, 'source> From<HelperRegistry<'reg>> for Registry<'reg, 'source> {
-    fn from(helpers: HelperRegistry<'reg>) -> Self {
-        let mut reg = Registry::new();
-        reg.helpers = helpers;
-        reg
     }
 }
