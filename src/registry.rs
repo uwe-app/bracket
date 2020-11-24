@@ -13,7 +13,7 @@ use crate::{
     helper::HelperRegistry,
     output::{Output, StringOutput},
     parser::{Parser, ParserOptions},
-    template::{Template, Templates, Loader},
+    template::{Template, Templates},
     Error, Result,
 };
 
@@ -21,8 +21,6 @@ use crate::{
 ///
 /// A template name is always required for error messages.
 pub struct Registry<'reg, 'source> {
-    loader: RefCell<Loader>,
-
     sources: HashMap<String, String>,
     helpers: HelperRegistry<'reg>,
     templates: RefCell<Templates<'source>>,
@@ -34,8 +32,6 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     /// Create an empty registry.
     pub fn new() -> Self {
         Self {
-            loader: RefCell::new(Default::default()),
-
             sources: HashMap::new(),
             helpers: HelperRegistry::new(),
             templates: RefCell::new(Default::default()),
@@ -72,6 +68,14 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     /// Mutable reference to the helper registry.
     pub fn helpers_mut(&mut self) -> &mut HelperRegistry<'reg> {
         &mut self.helpers
+    }
+
+    /// Insert a named string template.
+    pub fn insert<N>(&mut self, name: N, content: String)
+    where
+        N: AsRef<str>,
+    {
+        self.sources.insert(name.as_ref().to_owned(), content);
     }
 
     /// Add a named template from a file.

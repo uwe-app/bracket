@@ -58,19 +58,18 @@
 //! ```
 //!
 //! To load files from disc requires the `fs` feature which is enabled by default;
-//! first load some files and assign them to a templates collection which is used
-//! to create the registry:
+//! first load some files then compile them to templates:
 //!
 //! ```ignore
-//! let mut loader = Loader::new();
+//! let mut registry = Registry::new();
 //! // Template name is derived from the file stem
-//! loader.read_dir(PathBuf::from("partials/"), "hbs")?;
+//! registry.read_dir(PathBuf::from("partials/"), "hbs")?;
 //! // Explicit template name
-//! loader.add("info", PathBuf::from("documents/info.md"))?;
+//! registry.add("info", PathBuf::from("documents/info.md"))?;
 //! // Template name is the file path
-//! loader.load(PathBuf::from("documents/page.md"))?;
-//! let templates = Templates::try_from(&loader)?;
-//! let registry = Registry::from(templates);
+//! registry.load(PathBuf::from("documents/page.md"))?;
+//! // Compile all the templates
+//! registry.build()?;
 //! ```
 //!
 //! ## Render
