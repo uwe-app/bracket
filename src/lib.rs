@@ -1,4 +1,4 @@
-//#![deny(missing_docs)]
+#![deny(missing_docs)]
 //#![cfg_attr(test, deny(warnings))]
 
 //! Bracket is a fast and correct implementation of the [handlebars](https://handlebarsjs.com)

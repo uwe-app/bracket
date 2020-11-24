@@ -5,7 +5,6 @@ use std::path::PathBuf;
 
 use bracket::{
     registry::Registry,
-    template::{Loader, Templates},
     Result,
 };
 

@@ -1,12 +1,10 @@
 extern crate log;
 extern crate pretty_env_logger;
 
-use std::convert::TryFrom;
 use std::path::PathBuf;
 
 use bracket::{
     registry::Registry,
-    template::{Loader, Templates},
     Result,
 };
 
@@ -19,11 +17,9 @@ fn render() -> Result<String> {
         "list": [1, 2, 3]
     });
 
-    let mut loader = Loader::new();
-    loader.load(PathBuf::from(name))?;
-
-    let templates = Templates::try_from(&loader)?;
-    let registry = Registry::from(templates);
+    let mut registry = Registry::new();
+    registry.load(PathBuf::from(name))?;
+    registry.build()?;
     registry.render(name, &data)
 }
 

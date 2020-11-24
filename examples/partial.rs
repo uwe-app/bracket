@@ -1,12 +1,10 @@
 extern crate log;
 extern crate pretty_env_logger;
 
-use std::convert::TryFrom;
 use std::path::PathBuf;
 
 use bracket::{
     registry::Registry,
-    template::{Loader, Templates},
     Result,
 };
 
@@ -19,12 +17,11 @@ fn render() -> Result<String> {
         "partial-name": "partial-dynamic"
     });
 
-    let mut loader = Loader::new();
-    loader.read_dir(PathBuf::from("examples/files/partials/"), "hbs")?;
-    loader.load(PathBuf::from(name))?;
+    let mut registry = Registry::new();
+    registry.read_dir(PathBuf::from("examples/files/partials/"), "hbs")?;
+    registry.load(PathBuf::from(name))?;
+    registry.build()?;
 
-    let templates = Templates::try_from(&loader)?;
-    let registry = Registry::from(templates);
     registry.render(name, &data)
 }
 
