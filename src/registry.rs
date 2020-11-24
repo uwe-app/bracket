@@ -1,6 +1,5 @@
 //! Primary entry point for compiling and rendering templates.
 use serde::Serialize;
-use std::convert::TryFrom;
 
 use crate::{
     escape::{self, EscapeFn},
@@ -301,19 +300,3 @@ impl<'reg, 'source> From<HelperRegistry<'reg>> for Registry<'reg, 'source> {
         reg
     }
 }
-
-/*
-impl<'reg, 'source> TryFrom<(&'source Loader, HelperRegistry<'reg>)> for Registry<'reg, 'source> {
-    type Error = crate::error::Error;
-    fn try_from(
-        value: (&'source Loader, HelperRegistry<'reg>),
-    ) -> std::result::Result<Self, Self::Error> {
-        Ok(Registry{
-            templates: Templates::try_from(value.0)?,
-            helpers: value.1,
-            escape: Box::new(escape::html),
-            strict: false,
-        })
-    }
-}
-*/

@@ -178,13 +178,6 @@ impl<'source> TryFrom<&'source Loader> for Templates<'source> {
     ) -> std::result::Result<Self, Self::Error> {
         let mut tpl = Templates::new();
         tpl.import(loader)?;
-
-        //for (k, v) in loader.sources() {
-            //let template =
-                //Templates::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
-            //tpl.insert(k.as_str(), template);
-        //}
-
         Ok(tpl)
     }
 }
