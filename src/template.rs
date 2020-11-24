@@ -79,7 +79,7 @@ impl fmt::Display for Template<'_> {
     }
 }
 
-impl<'reg, 'source> Template<'source> {
+impl<'source> Template<'source> {
     /// Compile a block.
     pub fn compile(
         source: &'source str,
@@ -95,8 +95,8 @@ impl<'reg, 'source> Template<'source> {
         &self,
         strict: bool,
         escape: &EscapeFn,
-        helpers: &'reg HelperRegistry<'reg>,
-        templates: &'source Templates<'source>,
+        helpers: &'a HelperRegistry<'a>,
+        templates: &'a Templates<'a>,
         name: &str,
         data: &T,
         writer: &'a mut impl Output,
