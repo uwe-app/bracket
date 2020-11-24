@@ -74,11 +74,6 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         &mut self.templates
     }
 
-    /// Set the templates collection.
-    pub fn set_templates(&mut self, templates: Templates<'source>) {
-        self.templates = templates;
-    }
-
     /// Compile a string to a template.
     pub fn compile(
         &self,
@@ -275,6 +270,16 @@ impl<'reg, 'source> From<Templates<'source>> for Registry<'reg, 'source> {
     fn from(templates: Templates<'source>) -> Self {
         let mut reg = Registry::new();
         reg.templates = templates;
+        reg
+    }
+}
+
+/// Create a registry using a helper registry and collection of templates.
+impl<'reg, 'source> From<(HelperRegistry<'reg>, Templates<'source>)> for Registry<'reg, 'source> {
+    fn from(value: (HelperRegistry<'reg>, Templates<'source>)) -> Self {
+        let mut reg = Registry::new();
+        reg.helpers = value.0;
+        reg.templates = value.1;
         reg
     }
 }
