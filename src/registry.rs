@@ -313,10 +313,10 @@ impl<'reg, 'source> Registry<'reg, 'source> {
 
     /// Render a compiled template without registering it and
     /// buffer the result to a string.
-    pub fn render_template<T>(
+    pub fn render_template<'a, T>(
         &self,
         name: &str,
-        template: &Template<'source>,
+        template: &Template<'a>,
         data: &T,
     ) -> Result<String>
     where
