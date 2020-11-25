@@ -5,55 +5,16 @@ use serde::Serialize;
 use std::fmt;
 
 use crate::{
-    error::Error,
     escape::EscapeFn,
     helper::HelperRegistry,
     output::Output,
     parser::{ast::Node, Parser, ParserOptions},
     render::Render,
-    RenderResult, Result, SyntaxResult,
+    RenderResult, SyntaxResult,
 };
 
 /// Collection of named templates.
-///
-/// For partials to be resolved they must exist in a collection
-/// that is used during a render.
-#[derive(Default)]
-pub struct Templates<'source> {
-    templates: HashMap<String, Template<'source>>,
-}
-
-impl<'source> Templates<'source> {
-    /// Create an empty templates collection.
-    pub fn new() -> Self {
-        Self {
-            templates: HashMap::new(),
-        }
-    }
-
-    /// Add a named template.
-    ///
-    /// If a template already exists with the given name
-    /// it is overwritten.
-    pub fn insert(&mut self, name: String, template: Template<'source>) {
-        self.templates.insert(name, template);
-    }
-
-    /// Remove a named template.
-    pub fn remove(&mut self, name: &'source str) -> Option<Template<'source>> {
-        self.templates.remove(name)
-    }
-
-    /// Get a named template from this collection.
-    pub fn get(&self, name: &str) -> Option<&Template<'source>> {
-        self.templates.get(name)
-    }
-
-    /// Compile a string to a template.
-    pub fn compile(s: &str, options: ParserOptions) -> Result<Template<'_>> {
-        Ok(Template::compile(s, options).map_err(Error::from)?)
-    }
-}
+pub type Templates<'a> = HashMap<String, Template<'a>>;
 
 /// Type that adds rendering capability to a document node.
 #[derive(Debug)]

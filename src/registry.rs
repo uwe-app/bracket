@@ -174,7 +174,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         template: &'source str,
         options: ParserOptions,
     ) -> Result<Template<'source>> {
-        Templates::compile(template, options)
+        Ok(Template::compile(template, options)?)
     }
 
     /// Compile a string to a template using the given name.
