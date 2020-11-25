@@ -156,8 +156,9 @@ impl<'reg> Registry<'reg> {
     pub fn build(&mut self) -> Result<()> {
         let mut templates = self.templates.write().unwrap();
         for (k, v) in self.sources.drain() {
+            println!("Compiling template {}", &k);
             let template = Template::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
-            templates.insert(k.to_string(), template);
+            templates.insert(k, template);
         }
         Ok(())
     }

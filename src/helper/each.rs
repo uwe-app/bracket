@@ -85,10 +85,10 @@ impl Helper for Each {
                     }
                 }
                 _ => {
-                    return Err(HelperError::IterableExpected(
-                        name.to_string(),
-                        0,
-                    ))
+                    //return Err(HelperError::IterableExpected(
+                        //name.to_string(),
+                        //0,
+                    //))
                 }
             }
             rc.pop_scope();

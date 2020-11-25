@@ -48,6 +48,10 @@ pub enum RenderError {
     #[error(transparent)]
     Helper(#[from] HelperError),
 
+    /// Wrap a syntax error.
+    //#[error(transparent)]
+    //Syntax(#[from] Box<SyntaxError>),
+
     /// Proxy for IO errors.
     #[error(transparent)]
     Io(#[from] IoError),

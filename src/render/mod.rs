@@ -14,6 +14,7 @@ use crate::{
     json,
     output::{Output, StringOutput},
     parser::{
+        ParserOptions,
         ast::{
             Block, Call, CallTarget, Lines, Link, Node, ParameterValue, Path,
             Slice,
@@ -146,6 +147,32 @@ impl<'render> Render<'render> {
         }
         Ok(())
     }
+
+    /*
+    /// Render a dynamic template.
+    pub fn dynamic<'a: 'render>(&'a mut self, content: String) -> RenderResult<()> {
+        // FIXME: convert from SyntaxError
+        let template = Template::compile(content, Default::default()).unwrap();
+        let node = template.node();
+        for event in node.into_iter().event(Default::default()) {
+            self.render_node(event.node, event.trim)?;
+        }
+        Ok(())
+    }
+    */
+
+    /// Register a named partial.
+    /*
+    pub fn register_partial<S>(
+        &mut self,
+        name: S,
+        content: String,
+        options: ParserOptions
+    ) where S: AsRef<str>{
+        //let template = Template::compile(content, Default::default()).unwrap();
+        //self.partials.entry(name.as_ref().to_owned()).or_insert(template.node());
+    }
+    */
 
     /// Get a named template.
     pub fn get_template(
@@ -297,6 +324,7 @@ impl<'render> Render<'render> {
         &self,
         node: &'render Node<'render>,
     ) -> Result<String, HelperError> {
+
         let mut writer = StringOutput::new();
         let mut rc = Render::new(
             self.strict,
@@ -666,6 +694,8 @@ impl<'render> Render<'render> {
     ) -> RenderResult<()> {
         let name = self.get_partial_name(call)?;
 
+        println!("Trying to render partial with name {:?}", name);
+
         let site = CallSite::Partial(name.to_string());
         if self.stack.contains(&site) {
             return Err(RenderError::PartialCycle(site.into()));
@@ -679,6 +709,8 @@ impl<'render> Render<'render> {
         let node = if let Some(local_partial) = self.partials.get(&name) {
             local_partial
         } else {
+            println!("Looking for template with name {:?} {}", name, self.templates.len());
+
             let template = self
                 .templates
                 .get(&name)
