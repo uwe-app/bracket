@@ -151,7 +151,7 @@ impl<'render> Render<'render> {
     pub fn get_template(
         &self,
         name: &str,
-    ) -> Option<&Template> {
+    ) -> Option<&'render Template> {
         self.templates.get(name)
         
     }
