@@ -1,6 +1,6 @@
 //! Block helper that iterates arrays and objects.
 use crate::{
-    error::HelperError,
+    //error::HelperError,
     helper::{Helper, HelperValue},
     parser::ast::Node,
     render::{Context, Render, Scope},
@@ -41,7 +41,7 @@ impl Helper for Each {
         ctx.arity(1..1)?;
 
         if let Some(template) = template {
-            let name = ctx.name();
+            //let name = ctx.name();
             let args = ctx.arguments();
             let target = args.get(0).unwrap();
 

@@ -23,9 +23,12 @@ pub enum HelperError {
     /// Error when a helper expects a string argument.
     #[error("Helper '{0}' got invalid argument at index {1}, string expected")]
     ArgumentTypeString(String, usize),
+
+    /*
     /// Error when a helper expects an iterable (object or array).
     #[error("Helper '{0}' got invalid argument at index {1}, expected array or object")]
     IterableExpected(String, usize),
+    */
 
     /// Error when a field could not be resolved.
     #[error("Helper '{0}' failed to resolve field '{1}'")]
