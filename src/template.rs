@@ -4,8 +4,6 @@ use std::collections::HashMap;
 use serde::Serialize;
 use std::fmt;
 
-use std::borrow::Cow;
-
 use crate::{
     escape::EscapeFn,
     helper::HelperRegistry,
@@ -21,23 +19,25 @@ rental! {
     mod rentals {
         use super::*;
         #[rental(covariant, debug)]
-        pub struct TemplateResource {
+        pub struct Template {
             source: String,
             node: Node<'source>,
         }
     }
 }
 
+// SEE: https://github.com/projectfluent/fluent-rs/blob/master/fluent-bundle/src/resource.rs#L5-L14
+
 /// Template resource is a template that owns the underlying string.
 #[derive(Debug)]
-pub struct TemplateResource(rentals::TemplateResource);
+pub struct Template(rentals::Template);
 
-impl TemplateResource {
+impl Template {
 
     /// Compile a new template resource.
     pub fn compile(source: String, options: ParserOptions) -> SyntaxResult<Self> {
         let mut errors = None;
-        let res = rentals::TemplateResource::new(source, |s| match Parser::new(s, options).parse() {
+        let res = rentals::Template::new(source, |s| match Parser::new(s, options).parse() {
             Ok(ast) => ast,
             Err(err) => {
                 errors = Some(err);
@@ -85,14 +85,16 @@ impl TemplateResource {
     }
 }
 
-impl fmt::Display for TemplateResource {
+impl fmt::Display for Template {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.node().fmt(f)
     }
 }
 
 /// Collection of named templates.
-pub type Templates<'a> = HashMap<String, Template<'a>>;
+pub type Templates<'a> = HashMap<String, Template>;
+
+/*
 
 /// Type that adds rendering capability to a document node.
 #[derive(Debug, Default)]
@@ -155,3 +157,4 @@ impl fmt::Display for Template<'_> {
     }
 }
 
+*/

@@ -3,14 +3,10 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
-use std::borrow::Cow;
-
 #[cfg(feature = "fs")]
 use std::ffi::OsStr;
 #[cfg(feature = "fs")]
 use std::path::Path;
-
-use owning_ref::StringRef;
 
 use crate::{
     escape::{self, EscapeFn},
@@ -160,52 +156,39 @@ impl<'reg> Registry<'reg> {
     pub fn build(&mut self) -> Result<()> {
         let mut templates = self.templates.write().unwrap();
         for (k, v) in self.sources.drain() {
-            //let val: Cow<'reg, str> = Cow::Owned(v);
-            let val = StringRef::new(v);
-            //templates.insert(k.to_string(), (val, Default::default()));
-
-            //let mut item = templates.get_mut(&k).unwrap();
-
-            let template =
-                Template::compile(val.as_owner(), ParserOptions::new(k.to_string(), 0, 0))?;
-
-            //template.foo();
-
-            //template.foo();
-
-            //templates.insert(k.to_string(), (val, template));
-            //item.1 = template;
+            let template = Template::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
+            templates.insert(k.to_string(), template);
         }
         Ok(())
     }
 
     /// Compile a string to a template.
-    pub fn compile<'a>(
+    pub fn compile<'a, S>(
         &self,
-        template: &'a str,
+        template: S,
         options: ParserOptions,
-    ) -> Result<Template<'a>> {
-        Ok(Template::compile(template, options)?)
+    ) -> Result<Template> where S: AsRef<str> {
+        Ok(Template::compile(template.as_ref().to_owned(), options)?)
     }
 
     /// Compile a string to a template using the given name.
-    pub fn parse<'a>(
+    pub fn parse<'a, S>(
         &self,
         name: &str,
-        template: &'a str,
-    ) -> Result<Template<'a>> {
+        template: S,
+    ) -> Result<Template> where S: AsRef<str> {
         self.compile(template, ParserOptions::new(name.to_string(), 0, 0))
     }
 
     /// Lint a template.
-    pub fn lint(
+    pub fn lint<S>(
         &self,
         name: &str,
-        template: &str,
-    ) -> Result<Vec<Error>> {
+        template: S,
+    ) -> Result<Vec<Error>> where S: AsRef<str> {
         let mut errors: Vec<Error> = Vec::new();
         let mut parser =
-            Parser::new(template, ParserOptions::new(name.to_string(), 0, 0));
+            Parser::new(template.as_ref(), ParserOptions::new(name.to_string(), 0, 0));
         parser.set_errors(&mut errors);
         for _ in parser {}
         Ok(errors)
@@ -215,20 +198,21 @@ impl<'reg> Registry<'reg> {
     /// the result as a string.
     ///
     /// This function buffers the template nodes before rendering.
-    pub fn once<T>(
+    pub fn once<T, S>(
         &self,
         name: &str,
-        source: &str,
+        source: S,
         data: &T,
     ) -> Result<String>
     where
         T: Serialize,
+        S: AsRef<str>
     {
         let templates = self.templates().read().unwrap();
 
         let mut writer = StringOutput::new();
         let template =
-            self.compile(source, ParserOptions::new(name.to_string(), 0, 0))?;
+            self.compile(source.as_ref(), ParserOptions::new(name.to_string(), 0, 0))?;
         template.render(
             self.strict(),
             self.escape(),
@@ -327,7 +311,7 @@ impl<'reg> Registry<'reg> {
     pub fn render_template<'a, T>(
         &self,
         name: &str,
-        template: &Template<'a>,
+        template: &Template,
         data: &T,
     ) -> Result<String>
     where

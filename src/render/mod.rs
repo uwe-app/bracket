@@ -3,12 +3,9 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
 use std::rc::Rc;
-use std::borrow::Cow;
 
 use serde::Serialize;
 use serde_json::{Map, Value};
-
-use owning_ref::StringRef;
 
 use crate::{
     error::{HelperError, RenderError},
@@ -154,7 +151,7 @@ impl<'render> Render<'render> {
     pub fn get_template(
         &self,
         name: &str,
-    ) -> Option<&Template<'render>> {
+    ) -> Option<&Template> {
         self.templates.get(name)
         
     }
