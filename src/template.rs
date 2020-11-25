@@ -6,8 +6,6 @@ use std::fmt;
 
 use crate::{
     Registry,
-    escape::EscapeFn,
-    helper::HelperRegistry,
     output::Output,
     parser::{ast::Node, Parser, ParserOptions},
     render::Render,
@@ -65,9 +63,7 @@ impl Template {
     pub(crate) fn render<'a, T>(
         &self,
         registry: &'a Registry<'a>,
-        escape: &EscapeFn,
-        helpers: &'a HelperRegistry<'a>,
-        templates: &'a Templates<'a>,
+        //helpers: &'a HelperRegistry<'a>,
         name: &str,
         data: &T,
         writer: &'a mut impl Output,
@@ -77,9 +73,7 @@ impl Template {
     {
         let mut rc = Render::new(
             registry,
-            escape,
-            helpers,
-            templates,
+            //helpers,
             name,
             data,
             Box::new(writer),

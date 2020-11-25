@@ -1,7 +1,6 @@
 //! Primary entry point for compiling and rendering templates.
 use serde::Serialize;
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
 
 #[cfg(feature = "fs")]
 use std::ffi::OsStr;
@@ -23,7 +22,7 @@ use crate::{
 pub struct Registry<'reg> {
     sources: HashMap<String, String>,
     helpers: HelperRegistry<'reg>,
-    templates: Arc<RwLock<Templates<'reg>>>,
+    templates: Templates<'reg>,
     escape: EscapeFn,
     strict: bool,
 }
@@ -34,7 +33,7 @@ impl<'reg> Registry<'reg> {
         Self {
             sources: HashMap::new(),
             helpers: HelperRegistry::new(),
-            templates: Arc::new(RwLock::new(Default::default())),
+            templates: Default::default(),
             escape: Box::new(escape::html),
             strict: false,
         }
@@ -71,8 +70,13 @@ impl<'reg> Registry<'reg> {
     }
 
     /// Templates collection.
-    fn templates(&self) -> &Arc<RwLock<Templates<'reg>>> {
+    pub fn templates(&self) -> &Templates<'reg> {
         &self.templates
+    }
+
+    /// Get a named template.
+    pub fn get_template(&self, name: &str) -> Option<&Template> {
+        self.templates.get(name)
     }
 
     /// Insert a named string template.
@@ -154,11 +158,9 @@ impl<'reg> Registry<'reg> {
 
     /// Compile all the loaded sources into templates.
     pub fn build(&mut self) -> Result<()> {
-        let mut templates = self.templates.write().unwrap();
         for (k, v) in self.sources.drain() {
-            println!("Compiling template {}", &k);
             let template = Template::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
-            templates.insert(k, template);
+            self.templates.insert(k, template);
         }
         Ok(())
     }
@@ -209,16 +211,12 @@ impl<'reg> Registry<'reg> {
         T: Serialize,
         S: AsRef<str>
     {
-        let templates = self.templates().read().unwrap();
-
         let mut writer = StringOutput::new();
         let template =
             self.compile(source.as_ref(), ParserOptions::new(name.to_string(), 0, 0))?;
         template.render(
             self,
-            self.escape(),
-            self.helpers(),
-            &*templates,
+            //self.helpers(),
             name,
             data,
             &mut writer,
@@ -318,13 +316,10 @@ impl<'reg> Registry<'reg> {
     where
         T: Serialize,
     {
-        let templates = self.templates().read().unwrap();
         let mut writer = StringOutput::new();
         template.render(
             self,
-            self.escape(),
-            self.helpers(),
-            &*templates,
+            //self.helpers(),
             name,
             data,
             &mut writer,
@@ -344,15 +339,12 @@ impl<'reg> Registry<'reg> {
     where
         T: Serialize,
     {
-        let templates = self.templates().read().unwrap();
-        let tpl = templates
+        let tpl = self.templates
             .get(name)
             .ok_or_else(|| Error::TemplateNotFound(name.to_string()))?;
         tpl.render(
             self,
-            self.escape(),
-            self.helpers(),
-            &*templates,
+            //self.helpers(),
             name,
             data,
             writer,

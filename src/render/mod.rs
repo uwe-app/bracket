@@ -9,19 +9,17 @@ use serde_json::{Map, Value};
 
 use crate::{
     error::{HelperError, RenderError},
-    escape::EscapeFn,
-    helper::{HelperRegistry, HelperResult, LocalHelper},
+    helper::{HelperResult, LocalHelper},
     json,
     output::{Output, StringOutput},
     parser::{
-        ParserOptions,
         ast::{
             Block, Call, CallTarget, Lines, Link, Node, ParameterValue, Path,
             Slice,
         },
         path,
     },
-    template::{Template, Templates},
+    template::Template,
     trim::{TrimHint, TrimState},
     Registry,
     RenderResult,
@@ -86,11 +84,7 @@ impl Into<String> for CallSite {
 /// Render a template.
 pub struct Render<'render> {
     registry: &'render Registry<'render>,
-    //strict: bool,
-    escape: &'render EscapeFn,
-    helpers: &'render HelperRegistry<'render>,
     local_helpers: Rc<RefCell<HashMap<String, Box<dyn LocalHelper + 'render>>>>,
-    templates: &'render Templates<'render>,
     partials: HashMap<String, &'render Node<'render>>,
     name: &'render str,
     root: Value,
@@ -109,9 +103,6 @@ impl<'render> Render<'render> {
     /// use the functions provided by the `Registry`.
     pub fn new<T>(
         registry: &'render Registry<'render>,
-        escape: &'render EscapeFn,
-        helpers: &'render HelperRegistry<'render>,
-        templates: &'render Templates<'render>,
         name: &'render str,
         data: &T,
         writer: Box<&'render mut dyn Output>,
@@ -124,11 +115,7 @@ impl<'render> Render<'render> {
 
         Ok(Self {
             registry,
-            //strict,
-            escape,
-            helpers,
             local_helpers: Rc::new(RefCell::new(HashMap::new())),
-            templates,
             partials: HashMap::new(),
             name,
             root,
@@ -151,39 +138,12 @@ impl<'render> Render<'render> {
         Ok(())
     }
 
-    /*
-    /// Render a dynamic template.
-    pub fn dynamic<'a: 'render>(&'a mut self, content: String) -> RenderResult<()> {
-        // FIXME: convert from SyntaxError
-        let template = Template::compile(content, Default::default()).unwrap();
-        let node = template.node();
-        for event in node.into_iter().event(Default::default()) {
-            self.render_node(event.node, event.trim)?;
-        }
-        Ok(())
-    }
-    */
-
-    /// Register a named partial.
-    /*
-    pub fn register_partial<S>(
-        &mut self,
-        name: S,
-        content: String,
-        options: ParserOptions
-    ) where S: AsRef<str>{
-        //let template = Template::compile(content, Default::default()).unwrap();
-        //self.partials.entry(name.as_ref().to_owned()).or_insert(template.node());
-    }
-    */
-
     /// Get a named template.
     pub fn get_template(
         &self,
         name: &str,
     ) -> Option<&'render Template> {
-        self.templates.get(name)
-        
+        self.registry.get_template(name)
     }
 
     /// Get a mutable reference to the output destination.
@@ -197,7 +157,7 @@ impl<'render> Render<'render> {
 
     /// Escape a value using the current escape function.
     pub fn escape(&self, val: &str) -> String {
-        (self.escape)(val)
+        (self.registry.escape())(val)
     }
 
     /// Write a string to the output destination.
@@ -331,9 +291,6 @@ impl<'render> Render<'render> {
         let mut writer = StringOutput::new();
         let mut rc = Render::new(
             self.registry,
-            self.escape,
-            self.helpers,
-            self.templates,
             self.name,
             &self.root,
             Box::new(&mut writer),
@@ -582,7 +539,7 @@ impl<'render> Render<'render> {
         let value: Option<Value> =
             if let Some(helper) = local_helpers.borrow().get(name) {
                 helper.call(self, &mut context, content)?
-            } else if let Some(helper) = self.helpers.get(name) {
+            } else if let Some(helper) = self.registry.helpers().get(name) {
                 helper.call(self, &mut context, content)?
             } else {
                 None
@@ -597,7 +554,7 @@ impl<'render> Render<'render> {
 
     fn has_helper(&mut self, name: &str) -> bool {
         self.local_helpers.borrow().get(name).is_some()
-            || self.helpers.get(name).is_some()
+            || self.registry.helpers().get(name).is_some()
     }
 
     // Fallible version of path lookup.
@@ -712,11 +669,8 @@ impl<'render> Render<'render> {
         let node = if let Some(local_partial) = self.partials.get(&name) {
             local_partial
         } else {
-            println!("Looking for template with name {:?} {}", name, self.templates.len());
-
             let template = self
-                .templates
-                .get(&name)
+                .get_template(&name)
                 .ok_or_else(|| RenderError::PartialNotFound(name))?;
 
             template.node()
@@ -957,7 +911,7 @@ impl<'render> Render<'render> {
         }
 
         if escape {
-            let escaped = (self.escape)(val);
+            let escaped = (self.registry.escape())(val);
             Ok(self.writer.write_str(&escaped).map_err(RenderError::from)?)
         } else {
             Ok(self.writer.write_str(val).map_err(RenderError::from)?)
