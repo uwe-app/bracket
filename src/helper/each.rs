@@ -87,7 +87,7 @@ impl Helper for Each {
                 _ => {
                     return Err(HelperError::IterableExpected(
                         name.to_string(),
-                        1,
+                        0,
                     ))
                 }
             }
