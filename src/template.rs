@@ -5,6 +5,7 @@ use serde::Serialize;
 use std::fmt;
 
 use crate::{
+    Registry,
     escape::EscapeFn,
     helper::HelperRegistry,
     output::Output,
@@ -63,7 +64,7 @@ impl Template {
     /// Render this template to the given writer.
     pub(crate) fn render<'a, T>(
         &self,
-        strict: bool,
+        registry: &'a Registry<'a>,
         escape: &EscapeFn,
         helpers: &'a HelperRegistry<'a>,
         templates: &'a Templates<'a>,
@@ -75,7 +76,7 @@ impl Template {
         T: Serialize,
     {
         let mut rc = Render::new(
-            strict,
+            registry,
             escape,
             helpers,
             templates,

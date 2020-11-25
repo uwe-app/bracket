@@ -23,6 +23,7 @@ use crate::{
     },
     template::{Template, Templates},
     trim::{TrimHint, TrimState},
+    Registry,
     RenderResult,
 };
 
@@ -84,7 +85,8 @@ impl Into<String> for CallSite {
 
 /// Render a template.
 pub struct Render<'render> {
-    strict: bool,
+    registry: &'render Registry<'render>,
+    //strict: bool,
     escape: &'render EscapeFn,
     helpers: &'render HelperRegistry<'render>,
     local_helpers: Rc<RefCell<HashMap<String, Box<dyn LocalHelper + 'render>>>>,
@@ -106,7 +108,7 @@ impl<'render> Render<'render> {
     /// You should not need to create a renderer directly, instead
     /// use the functions provided by the `Registry`.
     pub fn new<T>(
-        strict: bool,
+        registry: &'render Registry<'render>,
         escape: &'render EscapeFn,
         helpers: &'render HelperRegistry<'render>,
         templates: &'render Templates<'render>,
@@ -121,7 +123,8 @@ impl<'render> Render<'render> {
         let scopes: Vec<Scope> = Vec::new();
 
         Ok(Self {
-            strict,
+            registry,
+            //strict,
             escape,
             helpers,
             local_helpers: Rc::new(RefCell::new(HashMap::new())),
@@ -327,7 +330,7 @@ impl<'render> Render<'render> {
 
         let mut writer = StringOutput::new();
         let mut rc = Render::new(
-            self.strict,
+            self.registry,
             self.escape,
             self.helpers,
             self.templates,
@@ -602,7 +605,7 @@ impl<'render> Render<'render> {
         if let Some(value) = self.lookup(path).cloned().take() {
             Ok(Some(value))
         } else {
-            if self.strict {
+            if self.registry.strict() {
                 Err(RenderError::VariableNotFound(path.as_str().to_string()))
             } else {
                 // TODO: call a missing_variable handler?
@@ -638,7 +641,7 @@ impl<'render> Render<'render> {
                                 );
                             } else {
                                 // TODO: also error if Call has arguments or parameters
-                                if self.strict {
+                                if self.registry.strict() {
                                     return Err(RenderError::VariableNotFound(
                                         path.as_str().to_string(),
                                     ));
@@ -772,7 +775,7 @@ impl<'render> Render<'render> {
                     } else if self.has_helper(HELPER_MISSING) {
                         self.invoke(HELPER_MISSING, call, None, None, None)?;
                     } else {
-                        if self.strict {
+                        if self.registry.strict() {
                             return Err(RenderError::HelperNotFound(
                                 path.as_str().to_string(),
                             ));

@@ -215,7 +215,7 @@ impl<'reg> Registry<'reg> {
         let template =
             self.compile(source.as_ref(), ParserOptions::new(name.to_string(), 0, 0))?;
         template.render(
-            self.strict(),
+            self,
             self.escape(),
             self.helpers(),
             &*templates,
@@ -321,7 +321,7 @@ impl<'reg> Registry<'reg> {
         let templates = self.templates().read().unwrap();
         let mut writer = StringOutput::new();
         template.render(
-            self.strict(),
+            self,
             self.escape(),
             self.helpers(),
             &*templates,
@@ -349,7 +349,7 @@ impl<'reg> Registry<'reg> {
             .get(name)
             .ok_or_else(|| Error::TemplateNotFound(name.to_string()))?;
         tpl.render(
-            self.strict(),
+            self,
             self.escape(),
             self.helpers(),
             &*templates,
