@@ -71,20 +71,12 @@ impl<'source> Template<'source> {
     pub fn node(&self) -> &'source Node {
         &self.node
     }
-}
 
-impl fmt::Display for Template<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.node.fmt(f)
-    }
-}
-
-impl<'source> Template<'source> {
     /// Compile a block.
     pub fn compile(
         source: &'source str,
         options: ParserOptions,
-    ) -> SyntaxResult<Template> {
+    ) -> SyntaxResult<Template<'source>> {
         let mut parser = Parser::new(source, options);
         let node = parser.parse()?;
         Ok(Template::new(node))
@@ -117,3 +109,10 @@ impl<'source> Template<'source> {
         rc.render(&self.node)
     }
 }
+
+impl fmt::Display for Template<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.node.fmt(f)
+    }
+}
+
