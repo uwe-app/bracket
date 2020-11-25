@@ -169,20 +169,20 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     }
 
     /// Compile a string to a template.
-    pub fn compile(
+    pub fn compile<'a>(
         &self,
-        template: &'source str,
+        template: &'a str,
         options: ParserOptions,
-    ) -> Result<Template<'source>> {
+    ) -> Result<Template<'a>> {
         Ok(Template::compile(template, options)?)
     }
 
     /// Compile a string to a template using the given name.
-    pub fn parse(
+    pub fn parse<'a>(
         &self,
         name: &str,
-        template: &'source str,
-    ) -> Result<Template<'source>> {
+        template: &'a str,
+    ) -> Result<Template<'a>> {
         self.compile(template, ParserOptions::new(name.to_string(), 0, 0))
     }
 
@@ -190,7 +190,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     pub fn lint(
         &self,
         name: &str,
-        template: &'source str,
+        template: &str,
     ) -> Result<Vec<Error>> {
         let mut errors: Vec<Error> = Vec::new();
         let mut parser =
@@ -207,7 +207,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     pub fn once<T>(
         &self,
         name: &str,
-        source: &'source str,
+        source: &str,
         data: &T,
     ) -> Result<String>
     where
