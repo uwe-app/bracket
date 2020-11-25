@@ -128,6 +128,11 @@ impl<'render> Render<'render> {
         })
     }
 
+    /// Get a reference to the registry.
+    pub fn registry(&self) -> &Registry<'_> {
+        self.registry
+    }
+
     /// Render a node by iterating it's children.
     ///
     /// The supplied node should be a document or block node.
@@ -654,8 +659,6 @@ impl<'render> Render<'render> {
     ) -> RenderResult<()> {
         let name = self.get_partial_name(call)?;
 
-        println!("Trying to render partial with name {:?}", name);
-
         let site = CallSite::Partial(name.to_string());
         if self.stack.contains(&site) {
             return Err(RenderError::PartialCycle(site.into()));
@@ -848,7 +851,9 @@ impl<'render> Render<'render> {
             lines.clone(),
         )));
 
-        self.invoke(HELPER_LINK, &call, None, None, None)?;
+        // FIXME: we need a specific handler set on the registry for this!
+
+        //self.invoke(HELPER_LINK, &call, None, None, None)?;
 
         Ok(())
     }
