@@ -10,6 +10,8 @@ use std::ffi::OsStr;
 #[cfg(feature = "fs")]
 use std::path::Path;
 
+use owning_ref::StringRef;
+
 use crate::{
     escape::{self, EscapeFn},
     helper::HelperRegistry,
@@ -158,13 +160,16 @@ impl<'reg> Registry<'reg> {
     pub fn build(&mut self) -> Result<()> {
         let mut templates = self.templates.write().unwrap();
         for (k, v) in self.sources.drain() {
-            let val: Cow<'reg, str> = Cow::Owned(v);
+            //let val: Cow<'reg, str> = Cow::Owned(v);
+            let val = StringRef::new(v);
             //templates.insert(k.to_string(), (val, Default::default()));
 
             //let mut item = templates.get_mut(&k).unwrap();
 
             let template =
-                Template::compile(&val, ParserOptions::new(k.to_string(), 0, 0))?;
+                Template::compile(val.as_owner(), ParserOptions::new(k.to_string(), 0, 0))?;
+
+            //template.foo();
 
             //template.foo();
 
@@ -355,7 +360,7 @@ impl<'reg> Registry<'reg> {
         T: Serialize,
     {
         let templates = self.templates().read().unwrap();
-        let (_, tpl) = templates
+        let tpl = templates
             .get(name)
             .ok_or_else(|| Error::TemplateNotFound(name.to_string()))?;
         tpl.render(

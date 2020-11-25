@@ -188,6 +188,9 @@
 //! it must be preceeded by a backslash, eg: `\n`, `\|` or `\]`.
 //!
 
+#[macro_use]
+extern crate rental; 
+
 pub mod error;
 pub mod escape;
 pub mod helper;

@@ -8,6 +8,8 @@ use std::borrow::Cow;
 use serde::Serialize;
 use serde_json::{Map, Value};
 
+use owning_ref::StringRef;
+
 use crate::{
     error::{HelperError, RenderError},
     escape::EscapeFn,
@@ -152,7 +154,7 @@ impl<'render> Render<'render> {
     pub fn get_template(
         &self,
         name: &str,
-    ) -> Option<&(Cow<str>, Template<'render>)> {
+    ) -> Option<&Template<'render>> {
         self.templates.get(name)
         
     }
@@ -680,7 +682,7 @@ impl<'render> Render<'render> {
         let node = if let Some(local_partial) = self.partials.get(&name) {
             local_partial
         } else {
-            let (_, template) = self
+            let template = self
                 .templates
                 .get(&name)
                 .ok_or_else(|| RenderError::PartialNotFound(name))?;
