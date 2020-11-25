@@ -100,6 +100,12 @@ pub enum Node<'source> {
     Link(Link<'source>),
 }
 
+impl Default for Node<'_> {
+    fn default() -> Self {
+        Node::Document(Document("", vec![]))
+    }
+}
+
 impl<'source> Node<'source> {
     /// Get the trim hint for this node.
     pub fn trim(&self) -> TrimHint {

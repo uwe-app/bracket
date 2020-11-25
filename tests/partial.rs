@@ -7,7 +7,7 @@ static NAME: &str = "partial.rs";
 fn partial_statement() -> Result<()> {
     let mut registry = Registry::new();
     registry.insert("foo", "{{bar}}".to_string());
-    registry.build(registry.sources())?;
+    registry.build()?;
 
     let value = r"{{ > foo }}";
     let data = json!({"bar": "qux"});
@@ -20,7 +20,7 @@ fn partial_statement() -> Result<()> {
 fn partial_sub_expr() -> Result<()> {
     let mut registry = Registry::new();
     registry.insert("bar", "{{baz}}".to_string());
-    registry.build(registry.sources())?;
+    registry.build()?;
 
     let value = r"{{ > (foo) }}";
     let data = json!({"foo": "bar", "baz": "qux"});
@@ -33,7 +33,7 @@ fn partial_sub_expr() -> Result<()> {
 fn partial_block() -> Result<()> {
     let mut registry = Registry::new();
     registry.insert("foo", "{{> @partial-block}}".to_string());
-    registry.build(registry.sources())?;
+    registry.build()?;
 
     let value = r"{{#>foo}}{{bar}}{{/foo}}";
     let data = json!({"bar": "qux"});

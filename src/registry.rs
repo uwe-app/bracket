@@ -3,6 +3,8 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
+use std::borrow::Cow;
+
 #[cfg(feature = "fs")]
 use std::ffi::OsStr;
 #[cfg(feature = "fs")]
@@ -20,15 +22,15 @@ use crate::{
 /// Registry is the entry point for compiling and rendering templates.
 ///
 /// A template name is always required for error messages.
-pub struct Registry<'reg, 'source> {
+pub struct Registry<'reg> {
     sources: HashMap<String, String>,
     helpers: HelperRegistry<'reg>,
-    templates: Arc<RwLock<Templates<'source>>>,
+    templates: Arc<RwLock<Templates<'reg>>>,
     escape: EscapeFn,
     strict: bool,
 }
 
-impl<'reg, 'source> Registry<'reg, 'source> {
+impl<'reg> Registry<'reg> {
     /// Create an empty registry.
     pub fn new() -> Self {
         Self {
@@ -71,7 +73,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
     }
 
     /// Templates collection.
-    fn templates(&self) -> &Arc<RwLock<Templates<'source>>> {
+    fn templates(&self) -> &Arc<RwLock<Templates<'reg>>> {
         &self.templates
     }
 
@@ -152,18 +154,22 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         Ok((name, content))
     }
 
-    /// Owned template sources.
-    pub fn sources(&self) -> &HashMap<String, String> {
-        &self.sources
-    }
-
     /// Compile all the loaded sources into templates.
-    pub fn build(&self, sources: &'source HashMap<String, String>) -> Result<()> {
+    pub fn build(&mut self) -> Result<()> {
         let mut templates = self.templates.write().unwrap();
-        for (k, v) in sources {
+        for (k, v) in self.sources.drain() {
+            let val: Cow<'reg, str> = Cow::Owned(v);
+            //templates.insert(k.to_string(), (val, Default::default()));
+
+            //let mut item = templates.get_mut(&k).unwrap();
+
             let template =
-                Template::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
-            templates.insert(k.to_string(), template);
+                Template::compile(&val, ParserOptions::new(k.to_string(), 0, 0))?;
+
+            //template.foo();
+
+            //templates.insert(k.to_string(), (val, template));
+            //item.1 = template;
         }
         Ok(())
     }
@@ -349,7 +355,7 @@ impl<'reg, 'source> Registry<'reg, 'source> {
         T: Serialize,
     {
         let templates = self.templates().read().unwrap();
-        let tpl = templates
+        let (_, tpl) = templates
             .get(name)
             .ok_or_else(|| Error::TemplateNotFound(name.to_string()))?;
         tpl.render(

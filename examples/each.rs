@@ -21,7 +21,7 @@ fn render() -> Result<String> {
 
     let mut registry = Registry::new();
     registry.load(PathBuf::from(name))?;
-    registry.build(registry.sources())?;
+    registry.build()?;
 
     registry.render(name, &data)
 }

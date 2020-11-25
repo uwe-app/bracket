@@ -3,6 +3,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
 use std::rc::Rc;
+use std::borrow::Cow;
 
 use serde::Serialize;
 use serde_json::{Map, Value};
@@ -151,8 +152,9 @@ impl<'render> Render<'render> {
     pub fn get_template(
         &self,
         name: &str,
-    ) -> Option<&'render Template<'render>> {
+    ) -> Option<&(Cow<str>, Template<'render>)> {
         self.templates.get(name)
+        
     }
 
     /// Get a mutable reference to the output destination.
@@ -678,7 +680,7 @@ impl<'render> Render<'render> {
         let node = if let Some(local_partial) = self.partials.get(&name) {
             local_partial
         } else {
-            let template = self
+            let (_, template) = self
                 .templates
                 .get(&name)
                 .ok_or_else(|| RenderError::PartialNotFound(name))?;

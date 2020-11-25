@@ -4,6 +4,8 @@ use std::collections::HashMap;
 use serde::Serialize;
 use std::fmt;
 
+use std::borrow::Cow;
+
 use crate::{
     escape::EscapeFn,
     helper::HelperRegistry,
@@ -14,10 +16,10 @@ use crate::{
 };
 
 /// Collection of named templates.
-pub type Templates<'a> = HashMap<String, Template<'a>>;
+pub type Templates<'a> = HashMap<String, (Cow<'a, str>, Template<'a>)>;
 
 /// Type that adds rendering capability to a document node.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Template<'source> {
     node: Node<'source>,
 }
@@ -34,10 +36,10 @@ impl<'source> Template<'source> {
     }
 
     /// Compile a block.
-    pub fn compile(
-        source: &'source str,
+    pub fn compile<'a>(
+        source: &'a str,
         options: ParserOptions,
-    ) -> SyntaxResult<Template<'source>> {
+    ) -> SyntaxResult<Template<'a>> {
         let mut parser = Parser::new(source, options);
         let node = parser.parse()?;
         Ok(Template::new(node))
