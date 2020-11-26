@@ -10,4 +10,4 @@ To debug our templates we can use the `log` helper: `\{{log "Message to print"}}
 
 Use sub expressions to combine logging with JSON evaluation `\{{log (json this)}}`.
 
-{{log (json this)~}}
+{{log (json this pretty=true)~}}
