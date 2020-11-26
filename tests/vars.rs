@@ -172,3 +172,13 @@ fn vars_scope() -> Result<()> {
     assert_eq!("bar", &result);
     Ok(())
 }
+
+#[test]
+fn vars_scope_parent() -> Result<()> {
+    let registry = Registry::new();
+    let value = r"{{#with item}}{{#each list}}{{title}}{{/each}}{{/with}}";
+    let data = json!({"title": "foo", "item": {"title": "bar"}, "list": [1]});
+    let result = registry.once(NAME, value, &data)?;
+    assert_eq!("bar", &result);
+    Ok(())
+}

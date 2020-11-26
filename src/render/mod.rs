@@ -427,6 +427,28 @@ impl<'render> Render<'render> {
             }
         } else {
 
+            let mut values: Vec<&Value> = self
+                .scopes
+                .iter()
+                .filter(|v| v.base_value().is_some())
+                .map(|v| v.base_value().as_ref().unwrap())
+                .rev()
+                .collect();
+
+            values.push(&self.root);
+
+            for v in values {
+                if let Some(res) = json::find_parts(
+                    path.components().iter().map(|c| c.as_value()),
+                    v,
+                ) {
+                    return Some(res)
+                }
+            }
+
+            None
+
+            /*
             // Lookup in the current scope
             if let Some(scope) = self.scopes.last() {
 
@@ -452,6 +474,7 @@ impl<'render> Render<'render> {
                     &self.root,
                 )
             }
+            */
         }
     }
 
