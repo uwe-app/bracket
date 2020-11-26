@@ -235,12 +235,7 @@ impl<'reg> Registry<'reg> {
             source.as_ref(),
             ParserOptions::new(name.to_string(), 0, 0),
         )?;
-        template.render(
-            self,
-            name,
-            data,
-            &mut writer,
-        )?;
+        template.render(self, name, data, &mut writer)?;
         Ok(writer.into())
     }
 
@@ -337,12 +332,7 @@ impl<'reg> Registry<'reg> {
         T: Serialize,
     {
         let mut writer = StringOutput::new();
-        template.render(
-            self,
-            name,
-            data,
-            &mut writer,
-        )?;
+        template.render(self, name, data, &mut writer)?;
         Ok(writer.into())
     }
 

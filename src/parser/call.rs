@@ -169,6 +169,7 @@ fn key_value<'source>(
     state: &mut ParseState,
     call: &mut Call<'source>,
     current: (Parameters, Range<usize>),
+    context: CallContext,
 ) -> SyntaxResult<Option<Token>> {
     let (_lex, span) = current;
     let key = &source[span.start..span.end - 1];
@@ -200,11 +201,28 @@ fn key_value<'source>(
                     }
                 }
                 Parameters::HashKey => {
-                    return key_value(source, lexer, state, call, (lex, span));
+                    return key_value(
+                        source,
+                        lexer,
+                        state,
+                        call,
+                        (lex, span),
+                        context,
+                    );
                 }
                 Parameters::End => {
                     call.exit(span);
                     return Ok(None);
+                }
+                Parameters::EndSubExpression => {
+                    if context == CallContext::SubExpr {
+                        call.exit(span);
+                        return Ok(lexer.next());
+                    } else {
+                        return Err(SyntaxError::SubExprNotOpen(
+                            ErrorInfo::from((source, state)).into(),
+                        ));
+                    }
                 }
                 _ => {
                     return Err(SyntaxError::TokenHashKeyValue(
@@ -273,6 +291,7 @@ fn arguments<'source>(
                             state,
                             call,
                             (lex, span),
+                            context,
                         );
                     }
                     // Open a nested call
