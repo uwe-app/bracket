@@ -89,13 +89,14 @@ impl<'reg> Registry<'reg> {
     }
 
     /// Insert a named string template.
-    pub fn insert<N>(&mut self, name: N, content: String) -> Result<()>
+    pub fn insert<N, C>(&mut self, name: N, content: C) -> Result<()>
     where
         N: AsRef<str>,
+        C: AsRef<str>,
     {
         let name = name.as_ref().to_owned();
         let template =
-            self.compile(content, ParserOptions::new(name.clone(), 0, 0))?;
+            self.compile(content.as_ref().to_owned(), ParserOptions::new(name.clone(), 0, 0))?;
         self.templates.insert(name, template);
         Ok(())
     }
