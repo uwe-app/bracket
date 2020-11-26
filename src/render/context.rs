@@ -30,8 +30,7 @@ pub struct Property {
 /// arity and type.
 pub struct Context<'call> {
     // TODO: use call to generate context specific errors!
-    /// Blah.
-    pub call: &'call Call<'call>,
+    call: &'call Call<'call>,
     name: String,
     arguments: Vec<Value>,
     parameters: Map<String, Value>,

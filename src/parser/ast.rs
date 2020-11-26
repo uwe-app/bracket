@@ -14,10 +14,10 @@ static ROOT: &str = "@root";
 /// Trait for nodes that reference a slice of the
 /// source template.
 pub trait Slice<'source>: fmt::Display + fmt::Debug {
-    /// Get a string slice of the full span for this node.
+    /// String slice of the full span for this node.
     fn as_str(&self) -> &'source str;
 
-    /// Get the underlying template source.
+    /// The underlying template source.
     fn source(&self) -> &'source str;
 }
 
@@ -623,6 +623,8 @@ pub enum ParameterValue<'source> {
     Path(Path<'source>),
     /// A literal JSON value.
     Json {
+        /// The underlying template source.
+        source: &'source str,
         /// The literal JSON value.
         value: Value,
         /// The byte span for the value.
@@ -634,14 +636,33 @@ pub enum ParameterValue<'source> {
     SubExpr(Call<'source>),
 }
 
-impl<'source> From<(Value, Range<usize>, Range<usize>)>
+impl<'source> From<(&'source str, Value, Range<usize>, Range<usize>)>
     for ParameterValue<'source>
 {
-    fn from(value: (Value, Range<usize>, Range<usize>)) -> Self {
+    fn from(value: (&'source str, Value, Range<usize>, Range<usize>)) -> Self {
         ParameterValue::Json {
-            value: value.0,
-            span: value.1,
-            line: value.2,
+            source: value.0,
+            value: value.1,
+            span: value.2,
+            line: value.3,
+        }
+    }
+}
+
+impl<'source> Slice<'source> for ParameterValue<'source> {
+    fn as_str(&self) -> &'source str {
+        match *self {
+            Self::Path(ref path) => path.as_str(),
+            Self::Json {source, ref span, ..} => &source[span.start..span.end],
+            Self::SubExpr(ref call) => call.as_str(),
+        }
+    }
+
+    fn source(&self) -> &'source str {
+        match *self {
+            Self::Path(ref path) => path.source(),
+            Self::Json {source, ..} => source,
+            Self::SubExpr(ref call) => call.source(),
         }
     }
 }
@@ -651,9 +672,8 @@ impl<'source> Lines for ParameterValue<'source> {
         match *self {
             ParameterValue::Path(ref path) => path.lines(),
             ParameterValue::Json {
-                value: _,
-                span: _,
                 ref line,
+                ..
             } => line,
             ParameterValue::SubExpr(ref call) => call.lines(),
         }
@@ -662,13 +682,15 @@ impl<'source> Lines for ParameterValue<'source> {
     fn lines_mut(&mut self) -> &mut Range<usize> {
         match *self {
             ParameterValue::Path(ref mut path) => path.lines_mut(),
-            ParameterValue::Json {
-                value: _,
-                span: _,
-                ref mut line,
-            } => line,
+            ParameterValue::Json {ref mut line, ..} => line,
             ParameterValue::SubExpr(ref mut call) => call.lines_mut(),
         }
+    }
+}
+
+impl fmt::Display for ParameterValue<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
     }
 }
 

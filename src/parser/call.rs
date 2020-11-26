@@ -147,6 +147,7 @@ fn value<'source>(
                 json_literal(source, lexer, state, (lex, span), &mut range)?;
             Ok((
                 ParameterValue::Json {
+                    source,
                     value,
                     span: range,
                     line: line_range,

@@ -232,6 +232,7 @@ fn parse_arg_string() -> Result<()> {
                     assert_eq!(1, args.len());
                     assert_eq!(
                         &ParameterValue::from((
+                            value,
                             Value::String(String::from("bar\nbaz")),
                             6..16,
                             0..1
@@ -264,6 +265,7 @@ fn parse_hash_string() -> Result<()> {
                     assert_eq!(1, hash.len());
                     assert_eq!(
                         &ParameterValue::from((
+                            value,
                             Value::String(String::from(r"baz")),
                             10..15,
                             0..1
@@ -295,7 +297,7 @@ fn parse_arg_bool_true() -> Result<()> {
                     let args = call.arguments();
                     assert_eq!(1, args.len());
                     assert_eq!(
-                        &ParameterValue::from((Value::Bool(true), 6..10, 0..1)),
+                        &ParameterValue::from((value, Value::Bool(true), 6..10, 0..1)),
                         args.first().unwrap()
                     );
                 }
@@ -324,6 +326,7 @@ fn parse_arg_bool_false() -> Result<()> {
                     assert_eq!(1, args.len());
                     assert_eq!(
                         &ParameterValue::from((
+                            value,
                             Value::Bool(false),
                             6..11,
                             0..1
@@ -355,7 +358,7 @@ fn parse_arg_null() -> Result<()> {
                     let args = call.arguments();
                     assert_eq!(1, args.len());
                     assert_eq!(
-                        &ParameterValue::from((Value::Null, 6..10, 0..1)),
+                        &ParameterValue::from((value, Value::Null, 6..10, 0..1)),
                         args.first().unwrap()
                     );
                 }
@@ -385,6 +388,7 @@ fn parse_arg_num_int() -> Result<()> {
                     assert_eq!(1, args.len());
                     assert_eq!(
                         &ParameterValue::from((
+                            value,
                             Value::Number(expected),
                             6..8,
                             0..1
@@ -418,6 +422,7 @@ fn parse_arg_num_int_signed() -> Result<()> {
                     assert_eq!(1, args.len());
                     assert_eq!(
                         &ParameterValue::from((
+                            value,
                             Value::Number(expected),
                             6..9,
                             0..1
@@ -451,6 +456,7 @@ fn parse_arg_num_int_signed_exponent() -> Result<()> {
                     assert_eq!(1, args.len());
                     assert_eq!(
                         &ParameterValue::from((
+                            value,
                             Value::Number(expected),
                             6..11,
                             0..1
@@ -484,6 +490,7 @@ fn parse_arg_num_float() -> Result<()> {
                     assert_eq!(1, args.len());
                     assert_eq!(
                         &ParameterValue::from((
+                            value,
                             Value::Number(expected),
                             6..10,
                             0..1
@@ -517,6 +524,7 @@ fn parse_arg_num_float_signed() -> Result<()> {
                     assert_eq!(1, args.len());
                     assert_eq!(
                         &ParameterValue::from((
+                            value,
                             Value::Number(expected),
                             6..10,
                             0..1
@@ -549,6 +557,7 @@ fn parse_arg_num_float_signed_exponent() -> Result<()> {
                     assert_eq!(1, args.len());
                     assert_eq!(
                         &ParameterValue::from((
+                            value,
                             Value::Number(expected),
                             6..13,
                             0..1
