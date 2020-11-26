@@ -4,7 +4,6 @@ use crate::{
     helper::{Helper, HelperValue},
     parser::ast::Node,
     render::{Context, Render, Type},
-    parser::ast::Slice,
 };
 
 /// Lookup a field of an array of object.
