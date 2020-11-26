@@ -162,3 +162,13 @@ fn vars_array_access() -> Result<()> {
     assert_eq!("bar", &result);
     Ok(())
 }
+
+#[test]
+fn vars_scope() -> Result<()> {
+    let registry = Registry::new();
+    let value = r"{{#each list}}{{title}}{{/each}}";
+    let data = json!({"title": "foo", "list": [{"title": "bar"}]});
+    let result = registry.once(NAME, value, &data)?;
+    assert_eq!("bar", &result);
+    Ok(())
+}

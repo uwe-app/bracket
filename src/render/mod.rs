@@ -426,11 +426,20 @@ impl<'render> Render<'render> {
                 None
             }
         } else {
+
             // Lookup in the current scope
             if let Some(scope) = self.scopes.last() {
+
+                // TODO: should we look up in the base value AND the locals?
+                let scope_value = if let Some(base) = scope.base_value() {
+                    base
+                } else {
+                    scope.locals()
+                };
+
                 json::find_parts(
                     path.components().iter().map(|c| c.as_value()),
-                    scope.locals(),
+                    scope_value,
                 )
                 .or(json::find_parts(
                     path.components().iter().map(|c| c.as_value()),
