@@ -249,7 +249,7 @@ impl<'reg> HelperRegistry<'reg> {
 
 /// Collection of helpers that are not for general purpose use.
 ///
-/// That is they cannot be invoked directly from a template but are 
+/// That is they cannot be invoked directly from a template but are
 /// called by the renderer when certain events occur.
 #[derive(Default)]
 pub struct HandlerRegistry<'reg> {

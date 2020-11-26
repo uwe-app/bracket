@@ -7,7 +7,7 @@ use crate::{
     error::HelperError,
     helper::HelperResult,
     json,
-    parser::ast::{Call, Node},
+    parser::ast::{Call, Node, Slice},
     render::assert::{assert, Type},
 };
 
@@ -80,6 +80,21 @@ impl<'call> Context<'call> {
     /// Get a hash parameter for the name.
     pub fn param(&self, name: &str) -> Option<&Value> {
         self.parameters.get(name)
+    }
+
+    /// Get the call syntax tree element.
+    pub fn call(&self) -> &'call Call<'call> {
+        self.call
+    }
+
+    /// Get the raw string value for an argument at an index.
+    pub fn raw_get(&self, index: usize) -> Option<&str> {
+        self.call.arguments().get(index).map(|v| v.as_str())
+    }
+
+    /// Get the raw string value for a hash parameter with the given name.
+    pub fn raw_param(&self, name: &str) -> Option<&str> {
+        self.call.parameters().get(name).map(|v| v.as_str())
     }
 
     /// Get an argument at an index and assert that the value

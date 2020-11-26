@@ -441,7 +441,7 @@ impl<'render> Render<'render> {
                     path.components().iter().map(|c| c.as_value()),
                     v,
                 ) {
-                    return Some(res)
+                    return Some(res);
                 }
             }
             None
@@ -453,7 +453,7 @@ impl<'render> Render<'render> {
         let mut out: Vec<Value> = Vec::new();
         for p in call.arguments() {
             let arg = match p {
-                ParameterValue::Json {ref value, ..} => value.clone(),
+                ParameterValue::Json { ref value, .. } => value.clone(),
                 ParameterValue::Path(ref path) => {
                     self.lookup(path).cloned().unwrap_or(Value::Null)
                 }
@@ -471,7 +471,9 @@ impl<'render> Render<'render> {
         let mut out = Map::new();
         for (k, p) in call.parameters() {
             let (key, value) = match p {
-                ParameterValue::Json {ref value, ..} => (k.to_string(), value.clone()),
+                ParameterValue::Json { ref value, .. } => {
+                    (k.to_string(), value.clone())
+                }
                 ParameterValue::Path(ref path) => {
                     let val = self.lookup(path).cloned().unwrap_or(Value::Null);
                     (k.to_string(), val)
@@ -591,7 +593,14 @@ impl<'render> Render<'render> {
                 // Simple paths may be helpers
                 } else if path.is_simple() {
                     if self.has_helper(path.as_str()) {
-                        self.invoke(path.as_str(), HelperTarget::Name(path.as_str()), call, None, None, None)
+                        self.invoke(
+                            path.as_str(),
+                            HelperTarget::Name(path.as_str()),
+                            call,
+                            None,
+                            None,
+                            None,
+                        )
                     } else {
                         let value = self.lookup(path).cloned();
                         if let None = value {
@@ -734,7 +743,14 @@ impl<'render> Render<'render> {
                             self.template(node)?;
                         }
                     } else if self.has_helper(HELPER_MISSING) {
-                        self.invoke(HELPER_MISSING, HelperTarget::Name(HELPER_MISSING), call, None, None, None)?;
+                        self.invoke(
+                            HELPER_MISSING,
+                            HelperTarget::Name(HELPER_MISSING),
+                            call,
+                            None,
+                            None,
+                            None,
+                        )?;
                     } else {
                         if self.registry.strict() {
                             return Err(RenderError::HelperNotFound(
@@ -831,7 +847,11 @@ impl<'render> Render<'render> {
     }
 
     // Try to call a link helper.
-    fn link(&mut self, helper: &Box<dyn Helper + 'render>, link: &'render Link<'render>) -> RenderResult<()> {
+    fn link(
+        &mut self,
+        helper: &Box<dyn Helper + 'render>,
+        link: &'render Link<'render>,
+    ) -> RenderResult<()> {
         let lines = link.lines();
         let href = Value::String(link.href().to_string());
         let label = Value::String(link.label().to_string());
@@ -859,7 +879,14 @@ impl<'render> Render<'render> {
             lines.clone(),
         )));
 
-        self.invoke(HELPER_LINK, HelperTarget::Helper(helper), &call, None, None, None)?;
+        self.invoke(
+            HELPER_LINK,
+            HelperTarget::Helper(helper),
+            &call,
+            None,
+            None,
+            None,
+        )?;
 
         Ok(())
     }

@@ -297,7 +297,12 @@ fn parse_arg_bool_true() -> Result<()> {
                     let args = call.arguments();
                     assert_eq!(1, args.len());
                     assert_eq!(
-                        &ParameterValue::from((value, Value::Bool(true), 6..10, 0..1)),
+                        &ParameterValue::from((
+                            value,
+                            Value::Bool(true),
+                            6..10,
+                            0..1
+                        )),
                         args.first().unwrap()
                     );
                 }
@@ -358,7 +363,12 @@ fn parse_arg_null() -> Result<()> {
                     let args = call.arguments();
                     assert_eq!(1, args.len());
                     assert_eq!(
-                        &ParameterValue::from((value, Value::Null, 6..10, 0..1)),
+                        &ParameterValue::from((
+                            value,
+                            Value::Null,
+                            6..10,
+                            0..1
+                        )),
                         args.first().unwrap()
                     );
                 }

@@ -8,7 +8,7 @@ use std::path::Path;
 
 use crate::{
     escape::{self, EscapeFn},
-    helper::{HelperRegistry, HandlerRegistry},
+    helper::{HandlerRegistry, HelperRegistry},
     output::{Output, StringOutput},
     parser::{Parser, ParserOptions},
     template::{Template, Templates},
@@ -95,8 +95,10 @@ impl<'reg> Registry<'reg> {
         C: AsRef<str>,
     {
         let name = name.as_ref().to_owned();
-        let template =
-            self.compile(content.as_ref().to_owned(), ParserOptions::new(name.clone(), 0, 0))?;
+        let template = self.compile(
+            content.as_ref().to_owned(),
+            ParserOptions::new(name.clone(), 0, 0),
+        )?;
         self.templates.insert(name, template);
         Ok(())
     }
@@ -180,7 +182,7 @@ impl<'reg> Registry<'reg> {
 
     /// Compile a string to a template.
     ///
-    /// To compile a template and add it to this registry use [insert()](Registry#method.insert), 
+    /// To compile a template and add it to this registry use [insert()](Registry#method.insert),
     /// [add()](Registry#method.add), [load()](Registry#method.load) or [read_dir()](Registry#method.read_dir).
     pub fn compile<'a, S>(
         &self,
@@ -195,7 +197,7 @@ impl<'reg> Registry<'reg> {
 
     /// Compile a string to a template using the given name.
     ///
-    /// This is a convenience function for calling [compile()](Registry#method.compile) 
+    /// This is a convenience function for calling [compile()](Registry#method.compile)
     /// using parser options with the given name.
     pub fn parse<'a, S>(&self, name: &str, template: S) -> Result<Template>
     where
@@ -235,7 +237,6 @@ impl<'reg> Registry<'reg> {
         )?;
         template.render(
             self,
-            //self.helpers(),
             name,
             data,
             &mut writer,
@@ -338,7 +339,6 @@ impl<'reg> Registry<'reg> {
         let mut writer = StringOutput::new();
         template.render(
             self,
-            //self.helpers(),
             name,
             data,
             &mut writer,
@@ -362,10 +362,7 @@ impl<'reg> Registry<'reg> {
             .templates
             .get(name)
             .ok_or_else(|| Error::TemplateNotFound(name.to_string()))?;
-        tpl.render(
-            self, //self.helpers(),
-            name, data, writer,
-        )?;
+        tpl.render(self, name, data, writer)?;
 
         Ok(())
     }

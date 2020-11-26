@@ -653,7 +653,9 @@ impl<'source> Slice<'source> for ParameterValue<'source> {
     fn as_str(&self) -> &'source str {
         match *self {
             Self::Path(ref path) => path.as_str(),
-            Self::Json {source, ref span, ..} => &source[span.start..span.end],
+            Self::Json {
+                source, ref span, ..
+            } => &source[span.start..span.end],
             Self::SubExpr(ref call) => call.as_str(),
         }
     }
@@ -661,7 +663,7 @@ impl<'source> Slice<'source> for ParameterValue<'source> {
     fn source(&self) -> &'source str {
         match *self {
             Self::Path(ref path) => path.source(),
-            Self::Json {source, ..} => source,
+            Self::Json { source, .. } => source,
             Self::SubExpr(ref call) => call.source(),
         }
     }
@@ -671,10 +673,7 @@ impl<'source> Lines for ParameterValue<'source> {
     fn lines(&self) -> &Range<usize> {
         match *self {
             ParameterValue::Path(ref path) => path.lines(),
-            ParameterValue::Json {
-                ref line,
-                ..
-            } => line,
+            ParameterValue::Json { ref line, .. } => line,
             ParameterValue::SubExpr(ref call) => call.lines(),
         }
     }
@@ -682,7 +681,7 @@ impl<'source> Lines for ParameterValue<'source> {
     fn lines_mut(&mut self) -> &mut Range<usize> {
         match *self {
             ParameterValue::Path(ref mut path) => path.lines_mut(),
-            ParameterValue::Json {ref mut line, ..} => line,
+            ParameterValue::Json { ref mut line, .. } => line,
             ParameterValue::SubExpr(ref mut call) => call.lines_mut(),
         }
     }

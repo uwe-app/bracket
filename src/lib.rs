@@ -57,7 +57,7 @@
 //! let template = registry.compile("{{foo}}", options)?;
 //! ```
 //!
-//! Use [insert()](Registry#method.insert) to compile and add a template 
+//! Use [insert()](Registry#method.insert) to compile and add a template
 //! to the registry:
 //!
 //! ```ignore
@@ -177,7 +177,7 @@
 //! into a [Link](parser::ast::Link) node. When this feature is enabled the renderer will look
 //! for a link handler and it will be invoked with the link `href`, `label` and `title` as arguments.
 //!
-//! Note that a link helper is a standard helper implementation but is registered 
+//! Note that a link helper is a standard helper implementation but is registered
 //! using an event handler as it should not be invoked directly via a template:
 //!
 //! ```ignore

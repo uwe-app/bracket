@@ -17,10 +17,11 @@ use rental::rental;
 pub type Templates = HashMap<String, Template>;
 
 rental! {
-    mod rentals {
+    /// Host for the underlying source template with the parser AST node.
+    mod source {
         use super::*;
         #[rental(covariant, debug)]
-        pub struct Template {
+        pub struct Ast {
             source: String,
             node: Node<'source>,
         }
@@ -31,27 +32,27 @@ rental! {
 
 /// Template that owns the underlying string and a corresponding document node.
 #[derive(Debug)]
-pub struct Template(rentals::Template);
+pub struct Template(source::Ast);
 
 impl Template {
-    /// Compile a new template resource.
+    /// Compile a new template.
     pub fn compile(
         source: String,
         options: ParserOptions,
     ) -> SyntaxResult<Self> {
-        let mut errors = None;
-        let res = rentals::Template::new(source, |s| {
+        let mut err = None;
+        let res = source::Ast::new(source, |s| {
             match Parser::new(s, options).parse() {
                 Ok(ast) => ast,
-                Err(err) => {
-                    errors = Some(err);
+                Err(e) => {
+                    err = Some(e);
                     Default::default()
                 }
             }
         });
 
-        if let Some(errors) = errors {
-            Err(errors)
+        if let Some(e) = err {
+            Err(e)
         } else {
             Ok(Self(res))
         }
@@ -63,10 +64,9 @@ impl Template {
     }
 
     /// Render this template to the given writer.
-    pub(crate) fn render<'a, T>(
+    pub fn render<'a, T>(
         &self,
         registry: &'a Registry<'a>,
-        //helpers: &'a HelperRegistry<'a>,
         name: &str,
         data: &T,
         writer: &'a mut impl Output,
@@ -74,14 +74,7 @@ impl Template {
     where
         T: Serialize,
     {
-        let mut rc = Render::new(
-            registry,
-            //helpers,
-            name,
-            data,
-            Box::new(writer),
-        )?;
-
+        let mut rc = Render::new(registry, name, data, Box::new(writer))?;
         rc.render(self.node())
     }
 }
