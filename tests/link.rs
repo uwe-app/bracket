@@ -45,9 +45,8 @@ fn link_noop() -> Result<()> {
 #[test]
 fn link_href() -> Result<()> {
     let mut registry = Registry::new();
-    registry
-        .helpers_mut()
-        .insert("link", Box::new(LinkHelper {}));
+    registry.handlers_mut().link = Some(Box::new(LinkHelper {}));
+
     let value = r"[[SomeTarget|Label & Info|Title Label]]";
     let data = json!({});
     let result = registry.once(NAME, value, &data)?;
@@ -62,9 +61,7 @@ fn link_href() -> Result<()> {
 #[test]
 fn link_escaped_pipe() -> Result<()> {
     let mut registry = Registry::new();
-    registry
-        .helpers_mut()
-        .insert("link", Box::new(LinkHelper {}));
+    registry.handlers_mut().link = Some(Box::new(LinkHelper {}));
     let value = r"[[Some\|Target|Label & Info]]";
     let data = json!({});
     let result = registry.once(NAME, value, &data)?;
@@ -78,9 +75,7 @@ fn link_escaped_pipe() -> Result<()> {
 #[test]
 fn link_escaped_pipe_label() -> Result<()> {
     let mut registry = Registry::new();
-    registry
-        .helpers_mut()
-        .insert("link", Box::new(LinkHelper {}));
+    registry.handlers_mut().link = Some(Box::new(LinkHelper {}));
     let value = r"[[Some\|Target|Label\|Info]]";
     let data = json!({});
     let result = registry.once(NAME, value, &data)?;
@@ -94,9 +89,7 @@ fn link_escaped_pipe_label() -> Result<()> {
 #[test]
 fn link_escaped_bracket() -> Result<()> {
     let mut registry = Registry::new();
-    registry
-        .helpers_mut()
-        .insert("link", Box::new(LinkHelper {}));
+    registry.handlers_mut().link = Some(Box::new(LinkHelper {}));
     let value = r"[[Some\]Target|Label & Info]]";
     let data = json!({});
     let result = registry.once(NAME, value, &data)?;
@@ -110,9 +103,7 @@ fn link_escaped_bracket() -> Result<()> {
 #[test]
 fn link_escaped_bracket_label() -> Result<()> {
     let mut registry = Registry::new();
-    registry
-        .helpers_mut()
-        .insert("link", Box::new(LinkHelper {}));
+    registry.handlers_mut().link = Some(Box::new(LinkHelper {}));
     let value = r"[[Some\]Target|Label\]Info]]";
     let data = json!({});
     let result = registry.once(NAME, value, &data)?;
@@ -126,9 +117,7 @@ fn link_escaped_bracket_label() -> Result<()> {
 #[test]
 fn link_escaped_newline() -> Result<()> {
     let mut registry = Registry::new();
-    registry
-        .helpers_mut()
-        .insert("link", Box::new(LinkHelper {}));
+    registry.handlers_mut().link = Some(Box::new(LinkHelper {}));
     let value = r"[[Some\nTarget|Label & Info]]";
     let data = json!({});
     let result = registry.once(NAME, value, &data)?;
@@ -143,9 +132,7 @@ Target" title="Label &amp; Info">Label &amp; Info</a>"#,
 #[test]
 fn link_escaped_newline_label() -> Result<()> {
     let mut registry = Registry::new();
-    registry
-        .helpers_mut()
-        .insert("link", Box::new(LinkHelper {}));
+    registry.handlers_mut().link = Some(Box::new(LinkHelper {}));
     let value = r"[[Some\nTarget|Label\nInfo]]";
     let data = json!({});
     let result = registry.once(NAME, value, &data)?;

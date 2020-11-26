@@ -246,3 +246,13 @@ impl<'reg> HelperRegistry<'reg> {
         self.helpers.get(name)
     }
 }
+
+/// Collection of helpers that are not for general purpose use.
+///
+/// That is they cannot be invoked directly from a template but are 
+/// called by the renderer when certain events occur.
+#[derive(Default)]
+pub struct HandlerRegistry<'reg> {
+    /// Helper invoked when a link node is encountered by the renderer.
+    pub link: Option<Box<dyn Helper + 'reg>>,
+}

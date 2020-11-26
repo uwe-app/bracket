@@ -8,7 +8,7 @@ use std::path::Path;
 
 use crate::{
     escape::{self, EscapeFn},
-    helper::HelperRegistry,
+    helper::{HelperRegistry, HandlerRegistry},
     output::{Output, StringOutput},
     parser::{Parser, ParserOptions},
     template::{Template, Templates},
@@ -20,6 +20,7 @@ use crate::{
 /// A template name is always required for error messages.
 pub struct Registry<'reg> {
     helpers: HelperRegistry<'reg>,
+    handlers: HandlerRegistry<'reg>,
     templates: Templates,
     escape: EscapeFn,
     strict: bool,
@@ -30,6 +31,7 @@ impl<'reg> Registry<'reg> {
     pub fn new() -> Self {
         Self {
             helpers: HelperRegistry::new(),
+            handlers: Default::default(),
             templates: Default::default(),
             escape: Box::new(escape::html),
             strict: false,
@@ -64,6 +66,16 @@ impl<'reg> Registry<'reg> {
     /// Mutable reference to the helper registry.
     pub fn helpers_mut(&mut self) -> &mut HelperRegistry<'reg> {
         &mut self.helpers
+    }
+
+    /// Event handler registry.
+    pub fn handlers(&self) -> &HandlerRegistry<'reg> {
+        &self.handlers
+    }
+
+    /// Mutable reference to the event handler registry.
+    pub fn handlers_mut(&mut self) -> &mut HandlerRegistry<'reg> {
+        &mut self.handlers
     }
 
     /// Templates collection.

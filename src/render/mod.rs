@@ -9,7 +9,7 @@ use serde_json::{Map, Value};
 
 use crate::{
     error::{HelperError, RenderError},
-    helper::{HelperResult, LocalHelper},
+    helper::{Helper, HelperResult, LocalHelper},
     json,
     output::{Output, StringOutput},
     parser::{
@@ -41,6 +41,11 @@ pub use scope::Scope;
 
 /// Maximum stack size for helper calls
 static STACK_MAX: usize = 32;
+
+enum HelperTarget<'a> {
+    Name(&'a str),
+    Helper(&'a Box<dyn Helper + 'a>),
+}
 
 /// Call site keeps track of calls so we can
 /// detect cyclic calls and therefore prevent a
@@ -821,7 +826,7 @@ impl<'render> Render<'render> {
     }
 
     // Try to call a link helper.
-    fn link(&mut self, link: &'render Link<'render>) -> RenderResult<()> {
+    fn link(&mut self, helper: &Box<dyn Helper + 'render>, link: &'render Link<'render>) -> RenderResult<()> {
         let lines = link.lines();
         let href = Value::String(link.href().to_string());
         let label = Value::String(link.label().to_string());
@@ -846,9 +851,11 @@ impl<'render> Render<'render> {
             lines.clone(),
         )));
 
+        let target = HelperTarget::Helper(helper);
+
         // FIXME: we need a specific handler set on the registry for this!
 
-        self.invoke(HELPER_LINK, &call, None, None, None)?;
+        //self.invoke(HELPER_LINK, &call, None, None, None)?;
 
         Ok(())
     }
@@ -877,8 +884,8 @@ impl<'render> Render<'render> {
             }
             Node::Link(ref n) => {
                 if cfg!(feature = "links") {
-                    if self.has_helper(HELPER_LINK) {
-                        self.link(n)?;
+                    if let Some(helper) = &self.registry.handlers().link {
+                        self.link(helper, n)?;
                     } else {
                         self.write_str(n.as_str(), false)?;
                     }
