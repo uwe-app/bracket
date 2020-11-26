@@ -36,7 +36,7 @@ pub mod context;
 pub mod scope;
 
 pub use assert::{assert, Type};
-pub use context::{Context, Property};
+pub use context::{Context, MissingValue, Property};
 pub use scope::Scope;
 
 /// Maximum stack size for helper calls
@@ -449,16 +449,32 @@ impl<'render> Render<'render> {
     }
 
     /// Create the context arguments list.
-    fn arguments(&mut self, call: &Call<'_>) -> RenderResult<Vec<Value>> {
+    fn arguments(
+        &mut self,
+        call: &Call<'_>,
+        missing: &mut Vec<MissingValue>,
+    ) -> RenderResult<Vec<Value>> {
         let mut out: Vec<Value> = Vec::new();
-        for p in call.arguments() {
+        for (i, p) in call.arguments().iter().enumerate() {
             let arg = match p {
                 ParameterValue::Json { ref value, .. } => value.clone(),
                 ParameterValue::Path(ref path) => {
-                    self.lookup(path).cloned().unwrap_or(Value::Null)
+                    self.lookup(path).cloned().unwrap_or_else(|| {
+                        missing.push(MissingValue::Argument(
+                            i,
+                            Value::String(path.as_str().to_string()),
+                        ));
+                        Value::Null
+                    })
                 }
                 ParameterValue::SubExpr(ref call) => {
-                    self.statement(call)?.unwrap_or(Value::Null)
+                    self.statement(call)?.unwrap_or_else(|| {
+                        missing.push(MissingValue::Argument(
+                            i,
+                            Value::String(call.as_str().to_string()),
+                        ));
+                        Value::Null
+                    })
                 }
             };
             out.push(arg);
@@ -467,7 +483,11 @@ impl<'render> Render<'render> {
     }
 
     /// Create the context hash parameters.
-    fn hash(&mut self, call: &Call<'_>) -> RenderResult<Map<String, Value>> {
+    fn hash(
+        &mut self,
+        call: &Call<'_>,
+        missing: &mut Vec<MissingValue>,
+    ) -> RenderResult<Map<String, Value>> {
         let mut out = Map::new();
         for (k, p) in call.parameters() {
             let (key, value) = match p {
@@ -475,12 +495,24 @@ impl<'render> Render<'render> {
                     (k.to_string(), value.clone())
                 }
                 ParameterValue::Path(ref path) => {
-                    let val = self.lookup(path).cloned().unwrap_or(Value::Null);
+                    let val = self.lookup(path).cloned().unwrap_or_else(|| {
+                        missing.push(MissingValue::Parameter(
+                            k.to_string(),
+                            Value::String(path.as_str().to_string()),
+                        ));
+                        Value::Null
+                    });
                     (k.to_string(), val)
                 }
                 ParameterValue::SubExpr(ref call) => (
                     k.to_string(),
-                    self.statement(call)?.unwrap_or(Value::Null),
+                    self.statement(call)?.unwrap_or_else(|| {
+                        missing.push(MissingValue::Parameter(
+                            k.to_string(),
+                            Value::String(call.as_str().to_string()),
+                        ));
+                        Value::Null
+                    }),
                 ),
             };
             out.insert(key, value);
@@ -531,10 +563,18 @@ impl<'render> Render<'render> {
         }
         self.stack.push(site);
 
-        let args = self.arguments(call)?;
-        let hash = self.hash(call)?;
-        let mut context =
-            Context::new(call, name.to_owned(), args, hash, text, property);
+        let mut missing: Vec<MissingValue> = Vec::new();
+        let args = self.arguments(call, &mut missing)?;
+        let hash = self.hash(call, &mut missing)?;
+        let mut context = Context::new(
+            call,
+            name.to_owned(),
+            args,
+            hash,
+            text,
+            property,
+            missing,
+        );
 
         let local_helpers = Rc::clone(&self.local_helpers);
 
@@ -691,7 +731,8 @@ impl<'render> Render<'render> {
             template.node()
         };
 
-        let hash = self.hash(call)?;
+        let mut missing: Vec<MissingValue> = Vec::new();
+        let hash = self.hash(call, &mut missing)?;
         let scope = Scope::from(hash);
         self.scopes.push(scope);
         // WARN: We must iterate the document child nodes

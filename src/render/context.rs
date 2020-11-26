@@ -11,6 +11,18 @@ use crate::{
     render::assert::{assert, Type},
 };
 
+/// Represents a value to use when a variable lookup fails.
+///
+/// The underlying value is guaranteed to be `Value::String` and
+/// encapsulates the raw value which can be either a path or sub-expression.
+#[derive(Debug, Eq, PartialEq)]
+pub enum MissingValue {
+    /// Stores the raw value for a missing argument.
+    Argument(usize, Value),
+    /// Stores the raw value for a missing parameter.
+    Parameter(String, Value),
+}
+
 /// Property represents a key/value pair.
 ///
 /// This is used so that `blockHelperMissing` handlers have access
@@ -36,6 +48,7 @@ pub struct Context<'call> {
     parameters: Map<String, Value>,
     text: Option<&'call str>,
     property: Option<Property>,
+    missing: Vec<MissingValue>,
 }
 
 impl<'call> Context<'call> {
@@ -46,6 +59,7 @@ impl<'call> Context<'call> {
         parameters: Map<String, Value>,
         text: Option<&'call str>,
         property: Option<Property>,
+        missing: Vec<MissingValue>,
     ) -> Self {
         Self {
             call,
@@ -54,6 +68,7 @@ impl<'call> Context<'call> {
             parameters,
             text,
             property,
+            missing,
         }
     }
 
@@ -82,13 +97,72 @@ impl<'call> Context<'call> {
         self.parameters.get(name)
     }
 
+    /// Determine if the value for an argument is missing.
+    ///
+    /// When the value for an argument is missing it is coerced to
+    /// `Value::Null`; this function allows a helper to distinguish
+    /// between a literal null value and a null resulting from a missing
+    /// value.
+    pub fn is_missing(&self, index: usize) -> bool {
+        let items: Vec<Option<&usize>> = self
+            .missing
+            .iter()
+            .filter(|item| {
+                if let MissingValue::Argument(_, _) = item {
+                    true
+                } else {
+                    false
+                }
+            })
+            .map(|item| {
+                if let MissingValue::Argument(index, _) = item {
+                    Some(index)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        items.contains(&Some(&index))
+    }
+
+    /// Determine if the value for a parameter is missing.
+    ///
+    /// When the value for a parameter is missing it is coerced to
+    /// `Value::Null`; this function allows a helper to distinguish
+    /// between a literal null value and a null resulting from a missing
+    /// value.
+    pub fn is_missing_param<S>(&self, name: S) -> bool
+    where
+        S: AsRef<String>,
+    {
+        let items: Vec<Option<&String>> = self
+            .missing
+            .iter()
+            .filter(|item| {
+                if let MissingValue::Parameter(_, _) = item {
+                    true
+                } else {
+                    false
+                }
+            })
+            .map(|item| {
+                if let MissingValue::Parameter(ref name, _) = item {
+                    Some(name)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        items.contains(&Some(name.as_ref()))
+    }
+
     /// Get the call syntax tree element.
     pub fn call(&self) -> &'call Call<'call> {
         self.call
     }
 
     /// Get the raw string value for an argument at an index.
-    pub fn raw_get(&self, index: usize) -> Option<&str> {
+    pub fn raw(&self, index: usize) -> Option<&str> {
         self.call.arguments().get(index).map(|v| v.as_str())
     }
 
