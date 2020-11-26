@@ -29,7 +29,6 @@ pub enum HelperError {
     #[error("Helper '{0}' got invalid argument at index {1}, expected array or object")]
     IterableExpected(String, usize),
     */
-
     /// Error when a field could not be resolved.
     #[error("Helper '{0}' failed to resolve field '{1}'")]
     LookupField(String, String),

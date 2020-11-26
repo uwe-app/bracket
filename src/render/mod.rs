@@ -21,8 +21,7 @@ use crate::{
     },
     template::Template,
     trim::{TrimHint, TrimState},
-    Registry,
-    RenderResult,
+    Registry, RenderResult,
 };
 
 static PARTIAL_BLOCK: &str = "@partial-block";
@@ -144,10 +143,7 @@ impl<'render> Render<'render> {
     }
 
     /// Get a named template.
-    pub fn get_template(
-        &self,
-        name: &str,
-    ) -> Option<&'render Template> {
+    pub fn get_template(&self, name: &str) -> Option<&'render Template> {
         self.registry.get_template(name)
     }
 
@@ -292,7 +288,6 @@ impl<'render> Render<'render> {
         &self,
         node: &'render Node<'render>,
     ) -> Result<String, HelperError> {
-
         let mut writer = StringOutput::new();
         let mut rc = Render::new(
             self.registry,
@@ -853,7 +848,7 @@ impl<'render> Render<'render> {
 
         // FIXME: we need a specific handler set on the registry for this!
 
-        //self.invoke(HELPER_LINK, &call, None, None, None)?;
+        self.invoke(HELPER_LINK, &call, None, None, None)?;
 
         Ok(())
     }

@@ -5,11 +5,10 @@ use serde::Serialize;
 use std::fmt;
 
 use crate::{
-    Registry,
     output::Output,
     parser::{ast::Node, Parser, ParserOptions},
     render::Render,
-    RenderResult, SyntaxResult,
+    Registry, RenderResult, SyntaxResult,
 };
 
 use rental::rental;
@@ -35,15 +34,19 @@ rental! {
 pub struct Template(rentals::Template);
 
 impl Template {
-
     /// Compile a new template resource.
-    pub fn compile(source: String, options: ParserOptions) -> SyntaxResult<Self> {
+    pub fn compile(
+        source: String,
+        options: ParserOptions,
+    ) -> SyntaxResult<Self> {
         let mut errors = None;
-        let res = rentals::Template::new(source, |s| match Parser::new(s, options).parse() {
-            Ok(ast) => ast,
-            Err(err) => {
-                errors = Some(err);
-                Default::default()
+        let res = rentals::Template::new(source, |s| {
+            match Parser::new(s, options).parse() {
+                Ok(ast) => ast,
+                Err(err) => {
+                    errors = Some(err);
+                    Default::default()
+                }
             }
         });
 
@@ -88,4 +91,3 @@ impl fmt::Display for Template {
         self.node().fmt(f)
     }
 }
-

@@ -80,23 +80,30 @@ impl<'reg> Registry<'reg> {
     }
 
     /// Insert a named string template.
-    pub fn insert<N>(&mut self, name: N, content: String)
+    pub fn insert<N>(&mut self, name: N, content: String) -> Result<()>
     where
         N: AsRef<str>,
     {
-        self.sources.insert(name.as_ref().to_owned(), content);
+        let name = name.as_ref().to_owned();
+        let template =
+            self.compile(content, ParserOptions::new(name.clone(), 0, 0))?;
+        self.templates.insert(name, template);
+        //self.sources.insert(name.as_ref().to_owned(), content);
+        Ok(())
     }
 
     /// Add a named template from a file.
     ///
     /// Requires the `fs` feature.
     #[cfg(feature = "fs")]
-    pub fn add<P>(&mut self, name: String, file: P) -> std::io::Result<()>
+    pub fn add<P>(&mut self, name: String, file: P) -> Result<()>
     where
         P: AsRef<Path>,
     {
         let (_, content) = self.read(file)?;
-        self.sources.insert(name, content);
+        let template =
+            self.compile(content, ParserOptions::new(name.clone(), 0, 0))?;
+        self.templates.insert(name, template);
         Ok(())
     }
 
@@ -104,10 +111,12 @@ impl<'reg> Registry<'reg> {
     ///
     /// Requires the `fs` feature.
     #[cfg(feature = "fs")]
-    pub fn load<P: AsRef<Path>>(&mut self, file: P) -> Result<String> {
+    pub fn load<P: AsRef<Path>>(&mut self, file: P) -> Result<()> {
         let (name, content) = self.read(file)?;
-        self.sources.insert(name.clone(), content);
-        Ok(name)
+        let template =
+            self.compile(content, ParserOptions::new(name.clone(), 0, 0))?;
+        self.templates.insert(name, template);
+        Ok(())
     }
 
     /// Load all the files in a target directory that match the
@@ -122,7 +131,7 @@ impl<'reg> Registry<'reg> {
         &mut self,
         file: P,
         extension: &str,
-    ) -> std::io::Result<()> {
+    ) -> Result<()> {
         let ext = OsStr::new(extension);
         for entry in std::fs::read_dir(file.as_ref())? {
             let entry = entry?;
@@ -137,7 +146,11 @@ impl<'reg> Registry<'reg> {
                             .to_owned()
                             .to_string();
                         let (_, content) = self.read(path)?;
-                        self.sources.insert(name, content);
+                        let template = self.compile(
+                            content,
+                            ParserOptions::new(name.clone(), 0, 0),
+                        )?;
+                        self.templates.insert(name, template);
                     }
                 }
             }
@@ -156,42 +169,36 @@ impl<'reg> Registry<'reg> {
         Ok((name, content))
     }
 
-    /// Compile all the loaded sources into templates.
-    pub fn build(&mut self) -> Result<()> {
-        for (k, v) in self.sources.drain() {
-            let template = Template::compile(v, ParserOptions::new(k.to_string(), 0, 0))?;
-            self.templates.insert(k, template);
-        }
-        Ok(())
-    }
-
     /// Compile a string to a template.
     pub fn compile<'a, S>(
         &self,
         template: S,
         options: ParserOptions,
-    ) -> Result<Template> where S: AsRef<str> {
+    ) -> Result<Template>
+    where
+        S: AsRef<str>,
+    {
         Ok(Template::compile(template.as_ref().to_owned(), options)?)
     }
 
     /// Compile a string to a template using the given name.
-    pub fn parse<'a, S>(
-        &self,
-        name: &str,
-        template: S,
-    ) -> Result<Template> where S: AsRef<str> {
+    pub fn parse<'a, S>(&self, name: &str, template: S) -> Result<Template>
+    where
+        S: AsRef<str>,
+    {
         self.compile(template, ParserOptions::new(name.to_string(), 0, 0))
     }
 
     /// Lint a template.
-    pub fn lint<S>(
-        &self,
-        name: &str,
-        template: S,
-    ) -> Result<Vec<Error>> where S: AsRef<str> {
+    pub fn lint<S>(&self, name: &str, template: S) -> Result<Vec<Error>>
+    where
+        S: AsRef<str>,
+    {
         let mut errors: Vec<Error> = Vec::new();
-        let mut parser =
-            Parser::new(template.as_ref(), ParserOptions::new(name.to_string(), 0, 0));
+        let mut parser = Parser::new(
+            template.as_ref(),
+            ParserOptions::new(name.to_string(), 0, 0),
+        );
         parser.set_errors(&mut errors);
         for _ in parser {}
         Ok(errors)
@@ -201,19 +208,16 @@ impl<'reg> Registry<'reg> {
     /// the result as a string.
     ///
     /// This function buffers the template nodes before rendering.
-    pub fn once<T, S>(
-        &self,
-        name: &str,
-        source: S,
-        data: &T,
-    ) -> Result<String>
+    pub fn once<T, S>(&self, name: &str, source: S, data: &T) -> Result<String>
     where
         T: Serialize,
-        S: AsRef<str>
+        S: AsRef<str>,
     {
         let mut writer = StringOutput::new();
-        let template =
-            self.compile(source.as_ref(), ParserOptions::new(name.to_string(), 0, 0))?;
+        let template = self.compile(
+            source.as_ref(),
+            ParserOptions::new(name.to_string(), 0, 0),
+        )?;
         template.render(
             self,
             //self.helpers(),
@@ -339,15 +343,13 @@ impl<'reg> Registry<'reg> {
     where
         T: Serialize,
     {
-        let tpl = self.templates
+        let tpl = self
+            .templates
             .get(name)
             .ok_or_else(|| Error::TemplateNotFound(name.to_string()))?;
         tpl.render(
-            self,
-            //self.helpers(),
-            name,
-            data,
-            writer,
+            self, //self.helpers(),
+            name, data, writer,
         )?;
 
         Ok(())

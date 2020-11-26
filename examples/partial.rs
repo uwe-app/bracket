@@ -17,8 +17,6 @@ fn render() -> Result<String> {
     let mut registry = Registry::new();
     registry.read_dir(PathBuf::from("examples/files/partials/"), "hbs")?;
     registry.load(PathBuf::from(name))?;
-    registry.build()?;
-
     registry.render(name, &data)
 }
 

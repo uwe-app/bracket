@@ -189,7 +189,7 @@
 //!
 
 #[macro_use]
-extern crate rental; 
+extern crate rental;
 
 pub mod error;
 pub mod escape;
