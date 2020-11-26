@@ -514,9 +514,10 @@ impl<'render> Render<'render> {
         registry.borrow_mut().remove(name);
     }
 
-    fn invoke(
+    fn invoke<'a>(
         &mut self,
         name: &str,
+        target: HelperTarget<'a>,
         call: &Call<'_>,
         content: Option<&'render Node<'render>>,
         text: Option<&'render str>,
@@ -541,14 +542,21 @@ impl<'render> Render<'render> {
 
         let local_helpers = Rc::clone(&self.local_helpers);
 
-        let value: Option<Value> =
-            if let Some(helper) = local_helpers.borrow().get(name) {
+        let value: Option<Value> = match target {
+            HelperTarget::Name(name) => {
+                if let Some(helper) = local_helpers.borrow().get(name) {
+                    helper.call(self, &mut context, content)?
+                } else if let Some(helper) = self.registry.helpers().get(name) {
+                    helper.call(self, &mut context, content)?
+                } else {
+                    None
+                }
+            }
+            // NOTE: evnet handlers will pass a reference to the helper.
+            HelperTarget::Helper(helper) => {
                 helper.call(self, &mut context, content)?
-            } else if let Some(helper) = self.registry.helpers().get(name) {
-                helper.call(self, &mut context, content)?
-            } else {
-                None
-            };
+            }
+        };
 
         drop(local_helpers);
 
@@ -589,13 +597,14 @@ impl<'render> Render<'render> {
                 // Simple paths may be helpers
                 } else if path.is_simple() {
                     if self.has_helper(path.as_str()) {
-                        self.invoke(path.as_str(), call, None, None, None)
+                        self.invoke(path.as_str(), HelperTarget::Name(path.as_str()), call, None, None, None)
                     } else {
                         let value = self.lookup(path).cloned();
                         if let None = value {
                             if self.has_helper(HELPER_MISSING) {
                                 return self.invoke(
                                     HELPER_MISSING,
+                                    HelperTarget::Name(HELPER_MISSING),
                                     call,
                                     None,
                                     None,
@@ -720,6 +729,7 @@ impl<'render> Render<'render> {
                             };
                             self.invoke(
                                 BLOCK_HELPER_MISSING,
+                                HelperTarget::Name(BLOCK_HELPER_MISSING),
                                 call,
                                 Some(node),
                                 None,
@@ -730,7 +740,7 @@ impl<'render> Render<'render> {
                             self.template(node)?;
                         }
                     } else if self.has_helper(HELPER_MISSING) {
-                        self.invoke(HELPER_MISSING, call, None, None, None)?;
+                        self.invoke(HELPER_MISSING, HelperTarget::Name(HELPER_MISSING), call, None, None, None)?;
                     } else {
                         if self.registry.strict() {
                             return Err(RenderError::HelperNotFound(
@@ -801,6 +811,7 @@ impl<'render> Render<'render> {
                         if self.has_helper(path.as_str()) {
                             self.invoke(
                                 path.as_str(),
+                                HelperTarget::Name(path.as_str()),
                                 call,
                                 Some(node),
                                 text,
@@ -855,7 +866,7 @@ impl<'render> Render<'render> {
 
         // FIXME: we need a specific handler set on the registry for this!
 
-        //self.invoke(HELPER_LINK, &call, None, None, None)?;
+        self.invoke(HELPER_LINK, HelperTarget::Helper(helper), &call, None, None, None)?;
 
         Ok(())
     }
