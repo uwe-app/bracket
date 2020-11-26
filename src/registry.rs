@@ -20,7 +20,7 @@ use crate::{
 /// A template name is always required for error messages.
 pub struct Registry<'reg> {
     helpers: HelperRegistry<'reg>,
-    templates: Templates<'reg>,
+    templates: Templates,
     escape: EscapeFn,
     strict: bool,
 }
@@ -67,7 +67,7 @@ impl<'reg> Registry<'reg> {
     }
 
     /// Templates collection.
-    pub fn templates(&self) -> &Templates<'reg> {
+    pub fn templates(&self) -> &Templates {
         &self.templates
     }
 

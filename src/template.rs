@@ -14,7 +14,7 @@ use crate::{
 use rental::rental;
 
 /// Collection of named templates.
-pub type Templates<'a> = HashMap<String, Template>;
+pub type Templates = HashMap<String, Template>;
 
 rental! {
     mod rentals {
