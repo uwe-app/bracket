@@ -408,6 +408,7 @@ impl<'render> Render<'render> {
             // Combine so that the root object is
             // treated as a scope
             let mut all = vec![&self.root];
+            // FIXME: use base_value() here!
             let mut values: Vec<&'a Value> =
                 self.scopes.iter().map(|s| s.locals()).collect();
             all.append(&mut values);
@@ -426,7 +427,6 @@ impl<'render> Render<'render> {
                 None
             }
         } else {
-
             let mut values: Vec<&Value> = self
                 .scopes
                 .iter()
@@ -434,7 +434,6 @@ impl<'render> Render<'render> {
                 .map(|v| v.base_value().as_ref().unwrap())
                 .rev()
                 .collect();
-
             values.push(&self.root);
 
             for v in values {
@@ -445,36 +444,7 @@ impl<'render> Render<'render> {
                     return Some(res)
                 }
             }
-
             None
-
-            /*
-            // Lookup in the current scope
-            if let Some(scope) = self.scopes.last() {
-
-                // TODO: should we look up in the base value AND the locals?
-                let scope_value = if let Some(base) = scope.base_value() {
-                    base
-                } else {
-                    scope.locals()
-                };
-
-                json::find_parts(
-                    path.components().iter().map(|c| c.as_value()),
-                    scope_value,
-                )
-                .or(json::find_parts(
-                    path.components().iter().map(|c| c.as_value()),
-                    &self.root,
-                ))
-            // Lookup in the root scope
-            } else {
-                json::find_parts(
-                    path.components().iter().map(|c| c.as_value()),
-                    &self.root,
-                )
-            }
-            */
         }
     }
 

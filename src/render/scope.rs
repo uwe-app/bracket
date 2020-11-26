@@ -64,7 +64,7 @@ impl Scope {
 impl From<Map<String, Value>> for Scope {
     fn from(map: Map<String, Value>) -> Self {
         let mut scope = Scope::new();
-        scope.locals = Value::Object(map);
+        scope.value = Some(Value::Object(map));
         scope
     }
 }
