@@ -97,63 +97,62 @@ impl<'call> Context<'call> {
         self.parameters.get(name)
     }
 
-    /// Determine if the value for an argument is missing.
+    /// Get an argument at an index and use a fallback string
+    /// value when the argument is missing.
+    pub fn get_fallback(&self, index: usize) -> Option<&Value> {
+        let value = self.arguments.get(index);
+        if let Some(&Value::Null) = value {
+            if let Some(value) = self.missing(index) {
+                return Some(value);
+            }
+        }
+        value
+    }
+
+    /// Get a hash parameter for the name and use a fallback string
+    /// value when the parameter is missing.
+    pub fn param_fallback(&self, name: &str) -> Option<&Value> {
+        let value = self.parameters.get(name);
+        if let Some(&Value::Null) = value {
+            if let Some(value) = self.missing_param(name) {
+                return Some(value);
+            }
+        }
+        value
+    }
+
+    /// Get the value for a missing argument.
     ///
     /// When the value for an argument is missing it is coerced to
     /// `Value::Null`; this function allows a helper to distinguish
     /// between a literal null value and a null resulting from a missing
     /// value.
-    pub fn is_missing(&self, index: usize) -> bool {
-        let items: Vec<Option<&usize>> = self
-            .missing
-            .iter()
-            .filter(|item| {
-                if let MissingValue::Argument(_, _) = item {
-                    true
-                } else {
-                    false
+    pub fn missing(&self, index: usize) -> Option<&Value> {
+        for m in self.missing.iter() {
+            if let MissingValue::Argument(ref i, ref value) = m {
+                if i == &index {
+                    return Some(value);
                 }
-            })
-            .map(|item| {
-                if let MissingValue::Argument(index, _) = item {
-                    Some(index)
-                } else {
-                    None
-                }
-            })
-            .collect();
-        items.contains(&Some(&index))
+            }
+        }
+        None
     }
 
-    /// Determine if the value for a parameter is missing.
+    /// Get the value for a missing parameter.
     ///
     /// When the value for a parameter is missing it is coerced to
     /// `Value::Null`; this function allows a helper to distinguish
     /// between a literal null value and a null resulting from a missing
     /// value.
-    pub fn is_missing_param<S>(&self, name: S) -> bool
-    where
-        S: AsRef<String>,
-    {
-        let items: Vec<Option<&String>> = self
-            .missing
-            .iter()
-            .filter(|item| {
-                if let MissingValue::Parameter(_, _) = item {
-                    true
-                } else {
-                    false
+    pub fn missing_param(&self, name: &str) -> Option<&Value> {
+        for m in self.missing.iter() {
+            if let MissingValue::Parameter(ref key, ref value) = m {
+                if key == name {
+                    return Some(value);
                 }
-            })
-            .map(|item| {
-                if let MissingValue::Parameter(ref name, _) = item {
-                    Some(name)
-                } else {
-                    None
-                }
-            })
-            .collect();
-        items.contains(&Some(name.as_ref()))
+            }
+        }
+        None
     }
 
     /// Get the call syntax tree element.
