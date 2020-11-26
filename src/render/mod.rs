@@ -862,10 +862,6 @@ impl<'render> Render<'render> {
             lines.clone(),
         )));
 
-        let target = HelperTarget::Helper(helper);
-
-        // FIXME: we need a specific handler set on the registry for this!
-
         self.invoke(HELPER_LINK, HelperTarget::Helper(helper), &call, None, None, None)?;
 
         Ok(())

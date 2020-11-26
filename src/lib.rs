@@ -57,8 +57,15 @@
 //! let template = registry.compile("{{foo}}", options)?;
 //! ```
 //!
+//! Use [insert()](Registry#method.insert) to compile and add a template 
+//! to the registry:
+//!
+//! ```ignore
+//! registry.insert("dynamic", "{{title}}")?;
+//! ```
+//!
 //! To load files from disc requires the `fs` feature which is enabled by default;
-//! first load some files then compile them to templates:
+//! once the file contents are loaded they are compiled and added to the registry:
 //!
 //! ```ignore
 //! let mut registry = Registry::new();
@@ -68,8 +75,6 @@
 //! registry.add("info", PathBuf::from("documents/info.md"))?;
 //! // Template name is the file path
 //! registry.load(PathBuf::from("documents/page.md"))?;
-//! // Compile all the templates
-//! registry.build()?;
 //! ```
 //!
 //! ## Render
@@ -170,8 +175,14 @@
 //!
 //! The `links` feature which is enabled by default parses wiki-style links
 //! into a [Link](parser::ast::Link) node. When this feature is enabled the renderer will look
-//! for a helper named `link` and if present it will be invoked with the link
-//! `href`, label` and `title`` as arguments to the helper.
+//! for a link handler and it will be invoked with the link `href`, `label` and `title` as arguments.
+//!
+//! Note that a link helper is a standard helper implementation but is registered 
+//! using an event handler as it should not be invoked directly via a template:
+//!
+//! ```ignore
+//! registry.handlers_mut().link = Some(Box::new(LinkHelper {}));
+//! ```
 //!
 //! Such that a wiki-style link like this one `[[https://example.com|Example Website]]`
 //! would call the `link` helper with the first argument as the website URL and
@@ -181,7 +192,7 @@
 //! `[[/path/to/page|Link Label|Alternative Title]]` this is passed as the third
 //! argument to the link helper.
 //!
-//! If this feature is disabled or no `link` helper is defined the link is
+//! If this feature is disabled or no handler is defined the link is
 //! rendered to the output as text.
 //!
 //! Links do not accept new lines; to include a new line, vertical pipe or right square bracket
