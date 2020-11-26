@@ -1,6 +1,5 @@
 //! Primary entry point for compiling and rendering templates.
 use serde::Serialize;
-use std::collections::HashMap;
 
 #[cfg(feature = "fs")]
 use std::ffi::OsStr;
@@ -20,7 +19,6 @@ use crate::{
 ///
 /// A template name is always required for error messages.
 pub struct Registry<'reg> {
-    sources: HashMap<String, String>,
     helpers: HelperRegistry<'reg>,
     templates: Templates<'reg>,
     escape: EscapeFn,
@@ -31,7 +29,6 @@ impl<'reg> Registry<'reg> {
     /// Create an empty registry.
     pub fn new() -> Self {
         Self {
-            sources: HashMap::new(),
             helpers: HelperRegistry::new(),
             templates: Default::default(),
             escape: Box::new(escape::html),
@@ -88,7 +85,6 @@ impl<'reg> Registry<'reg> {
         let template =
             self.compile(content, ParserOptions::new(name.clone(), 0, 0))?;
         self.templates.insert(name, template);
-        //self.sources.insert(name.as_ref().to_owned(), content);
         Ok(())
     }
 
@@ -170,6 +166,9 @@ impl<'reg> Registry<'reg> {
     }
 
     /// Compile a string to a template.
+    ///
+    /// To compile a template and add it to this registry use [insert()](Registry#method.insert), 
+    /// [add()](Registry#method.add), [load()](Registry#method.load) or [read_dir()](Registry#method.read_dir).
     pub fn compile<'a, S>(
         &self,
         template: S,
@@ -182,6 +181,9 @@ impl<'reg> Registry<'reg> {
     }
 
     /// Compile a string to a template using the given name.
+    ///
+    /// This is a convenience function for calling [compile()](Registry#method.compile) 
+    /// using parser options with the given name.
     pub fn parse<'a, S>(&self, name: &str, template: S) -> Result<Template>
     where
         S: AsRef<str>,
