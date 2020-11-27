@@ -58,6 +58,40 @@ fn parse_statement_sub_expr() -> Result<()> {
 }
 
 #[test]
+fn parse_statement_sub_expr_params() -> Result<()> {
+    let value = "{{log (json this pretty=true)}}";
+    let mut parser = Parser::new(value, Default::default());
+    let node = parser.parse()?;
+
+    match node {
+        Node::Document(doc) => {
+            assert_eq!(1, doc.nodes().len());
+            let node = doc.nodes().first().unwrap();
+
+            match node {
+                Node::Statement(ref call) => {
+                    assert_eq!("log", call.target().as_str());
+                    assert_eq!(1, call.arguments().len());
+                    let param = call.arguments().first().unwrap();
+                    match param {
+                        ParameterValue::SubExpr(ref call) => {
+                            assert_eq!("json", call.target().as_str());
+                            assert_eq!(1, call.arguments().len());
+                            assert_eq!(1, call.parameters().len());
+                        }
+                        _ => panic!("Expecting sub expression call"),
+                    }
+                }
+                _ => panic!("Expecting call statement"),
+            }
+        }
+        _ => panic!("Bad root node type for parser()."),
+    }
+
+    Ok(())
+}
+
+#[test]
 fn parse_statement_path_root() -> Result<()> {
     let value = "{{@root.foo}}";
     let mut parser = Parser::new(value, Default::default());
