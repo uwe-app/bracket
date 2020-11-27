@@ -255,4 +255,8 @@ impl<'reg> HelperRegistry<'reg> {
 pub struct HandlerRegistry<'reg> {
     /// Helper invoked when a link node is encountered by the renderer.
     pub link: Option<Box<dyn Helper + 'reg>>,
+    /// Helper invoked when a helper is missing.
+    pub helper_missing: Option<Box<dyn Helper + 'reg>>,
+    /// Helper invoked when a block helper is missing.
+    pub block_helper_missing: Option<Box<dyn Helper + 'reg>>,
 }

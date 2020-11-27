@@ -119,9 +119,8 @@ fn helper_block() -> Result<()> {
 #[test]
 fn helper_missing() -> Result<()> {
     let mut registry = Registry::new();
-    registry
-        .helpers_mut()
-        .insert("helperMissing", Box::new(HelperMissing {}));
+    registry.handlers_mut().helper_missing = Some(Box::new(HelperMissing {}));
+
     let value = r"{{baz}}";
     let data = json!({});
     let result = registry.once(NAME, value, &data)?;
@@ -132,9 +131,7 @@ fn helper_missing() -> Result<()> {
 #[test]
 fn helper_block_missing() -> Result<()> {
     let mut registry = Registry::new();
-    registry
-        .helpers_mut()
-        .insert("blockHelperMissing", Box::new(BlockHelperMissing {}));
+    registry.handlers_mut().block_helper_missing = Some(Box::new(BlockHelperMissing {}));
     let value = r"{{#block}}{{foo}}{{/block}}";
     // NOTE: the variable must exist for `blockHelperMissing` to fire
     let data = json!({"block": "bar"});

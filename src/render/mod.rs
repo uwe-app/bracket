@@ -644,10 +644,10 @@ impl<'render> Render<'render> {
                     } else {
                         let value = self.lookup(path).cloned();
                         if let None = value {
-                            if self.has_helper(HELPER_MISSING) {
+                            if let Some(ref helper) = self.registry.handlers().helper_missing {
                                 return self.invoke(
                                     HELPER_MISSING,
-                                    HelperTarget::Name(HELPER_MISSING),
+                                    HelperTarget::Helper(helper),
                                     call,
                                     None,
                                     None,
@@ -766,14 +766,14 @@ impl<'render> Render<'render> {
             match call.target() {
                 CallTarget::Path(ref path) => {
                     if let Some(value) = self.lookup(path).cloned() {
-                        if self.has_helper(BLOCK_HELPER_MISSING) {
+                        if let Some(ref helper) = self.registry.handlers().block_helper_missing {
                             let prop = Property {
                                 name: path.as_str().to_string(),
                                 value,
                             };
                             self.invoke(
                                 BLOCK_HELPER_MISSING,
-                                HelperTarget::Name(BLOCK_HELPER_MISSING),
+                                HelperTarget::Helper(helper),
                                 call,
                                 Some(node),
                                 None,
@@ -783,10 +783,10 @@ impl<'render> Render<'render> {
                             // Default behavior is to just render the block
                             self.template(node)?;
                         }
-                    } else if self.has_helper(HELPER_MISSING) {
+                    } else if let Some(ref helper) = self.registry.handlers().helper_missing {
                         self.invoke(
                             HELPER_MISSING,
-                            HelperTarget::Name(HELPER_MISSING),
+                            HelperTarget::Helper(helper),
                             call,
                             None,
                             None,

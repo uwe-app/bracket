@@ -1,6 +1,6 @@
 #![deny(missing_docs)]
 
-//! Bracket is a fast and correct implementation of the [handlebars](https://handlebarsjs.com)
+//! Bracket is a fast and correct implementation of the [Handlebars][]
 //! general purpose template engine.
 //!
 //! It is designed to keep allocations to a minimum by using pointers
@@ -85,7 +85,7 @@
 //! println!("{}", result);
 //! ```
 //!
-//! For dynamic templates use the `once()` function to render a string template directly:
+//! For dynamic templates use the [once()](Registry#method.once) function to render a string template directly:
 //!
 //! ```ignore
 //! let result = registry.once(
@@ -127,7 +127,7 @@
 //!
 //! ## Helpers
 //!
-//! Helper functions are what make handlebars a versatile template engine; all
+//! Helper functions make handlebars a versatile template engine; all
 //! helpers are enabled by default but can be disabled via feature flags if
 //! you need to.
 //!
@@ -196,6 +196,24 @@
 //!
 //! Links do not accept new lines; to include a new line, vertical pipe or right square bracket
 //! it must be preceeded by a backslash, eg: `\n`, `\|` or `\]`.
+//!
+//! ## Handlers
+//!
+//! Support for `helperMissing` and `blockHelperMissing` handlers can be enabled using the registry 
+//! handlers. The handlers should be regular helper implementations:
+//!
+//! ```ignore
+//! registry.handlers_mut().helper_missing = Some(Box::new(HelperMissing {}));
+//! registry.handlers_mut().block_helper_missing = Some(Box::new(BlockHelperMissing {}));
+//! ```
+//! When a block helper missing handler is invoked it also has access to the underlying 
+//! [property()](render::Context#method.property).
+//!
+//! The rules for when these handlers are invoked are described in 
+//! the [Handlebars Hooks][] documentation.
+//!
+//! [Handlebars]: https://handlebarsjs.com
+//! [Handlebars Hooks]: https://handlebarsjs.com/guide/hooks.html
 //!
 
 #[macro_use]
