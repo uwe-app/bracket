@@ -430,7 +430,6 @@ impl<'render> Render<'render> {
             let mut values: Vec<(&Value, Option<&Value>)> = self
                 .scopes
                 .iter()
-                //.filter(|v| v.base_value().is_some())
                 .map(|v| (v.locals(), v.base_value().as_ref()))
                 .rev()
                 .collect();
@@ -651,7 +650,9 @@ impl<'render> Render<'render> {
                     } else {
                         let value = self.lookup(path).cloned();
                         if let None = value {
-                            if let Some(ref helper) = self.registry.handlers().helper_missing {
+                            if let Some(ref helper) =
+                                self.registry.handlers().helper_missing
+                            {
                                 return self.invoke(
                                     HELPER_MISSING,
                                     HelperTarget::Helper(helper),
@@ -743,8 +744,10 @@ impl<'render> Render<'render> {
         let scope = if !call.arguments().is_empty() {
             let arguments = self.arguments(call, &mut missing)?;
             if let Some(context) = arguments.get(0) {
-                Scope::from((context.clone(), hash)) 
-            } else { Scope::from(hash) }
+                Scope::from((context.clone(), hash))
+            } else {
+                Scope::from(hash)
+            }
         } else {
             Scope::from(hash)
         };
@@ -781,7 +784,9 @@ impl<'render> Render<'render> {
             match call.target() {
                 CallTarget::Path(ref path) => {
                     if let Some(value) = self.lookup(path).cloned() {
-                        if let Some(ref helper) = self.registry.handlers().block_helper_missing {
+                        if let Some(ref helper) =
+                            self.registry.handlers().block_helper_missing
+                        {
                             let prop = Property {
                                 name: path.as_str().to_string(),
                                 value,
@@ -798,7 +803,9 @@ impl<'render> Render<'render> {
                             // Default behavior is to just render the block
                             self.template(node)?;
                         }
-                    } else if let Some(ref helper) = self.registry.handlers().helper_missing {
+                    } else if let Some(ref helper) =
+                        self.registry.handlers().helper_missing
+                    {
                         self.invoke(
                             HELPER_MISSING,
                             HelperTarget::Helper(helper),

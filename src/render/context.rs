@@ -232,7 +232,7 @@ impl<'call> Context<'call> {
     ///
     /// If the range start and end are equal than an exact number
     /// of arguments are expected and a more concise error message
-    /// is used. Range ends are inclusive so 0..1 indicates zero or 
+    /// is used. Range ends are inclusive so 0..1 indicates zero or
     /// one arguments are allowed.
     pub fn arity(&self, range: Range<usize>) -> HelperResult<()> {
         if range.start == range.end {
@@ -299,5 +299,4 @@ impl<'call> Context<'call> {
     pub fn is_truthy(&self, value: &Value) -> bool {
         json::is_truthy(value)
     }
-
 }

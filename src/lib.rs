@@ -199,17 +199,17 @@
 //!
 //! ## Handlers
 //!
-//! Support for `helperMissing` and `blockHelperMissing` handlers can be enabled using the registry 
+//! Support for `helperMissing` and `blockHelperMissing` handlers can be enabled using the registry
 //! handlers. The handlers should be regular helper implementations:
 //!
 //! ```ignore
 //! registry.handlers_mut().helper_missing = Some(Box::new(HelperMissing {}));
 //! registry.handlers_mut().block_helper_missing = Some(Box::new(BlockHelperMissing {}));
 //! ```
-//! When a block helper missing handler is invoked it also has access to the underlying 
+//! When a block helper missing handler is invoked it also has access to the underlying
 //! [property()](render::Context#method.property).
 //!
-//! The rules for when these handlers are invoked are described in 
+//! The rules for when these handlers are invoked are described in
 //! the [Handlebars Hooks][] documentation.
 //!
 //! [Handlebars]: https://handlebarsjs.com
