@@ -573,13 +573,7 @@ impl<'source> Path<'source> {
 
 impl<'source> Slice<'source> for Path<'source> {
     fn as_str(&self) -> &'source str {
-        if !self.components.is_empty() {
-            let first = self.components.first().unwrap();
-            let last = self.components.last().unwrap();
-            &self.source[first.span().start..last.span().end]
-        } else {
-            ""
-        }
+        &self.source[self.open.start..self.open.end]
     }
 
     fn source(&self) -> &'source str {
