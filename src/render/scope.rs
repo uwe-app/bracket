@@ -60,11 +60,21 @@ impl Scope {
     }
 }
 
-/// Create a Scope from a locals map.
+/// Create a scope from hash parameters.
 impl From<Map<String, Value>> for Scope {
     fn from(map: Map<String, Value>) -> Self {
         let mut scope = Scope::new();
         scope.value = Some(Value::Object(map));
+        scope
+    }
+}
+
+/// Create a scope from a context and hash parameters.
+impl From<(Value, Map<String, Value>)> for Scope {
+    fn from(value: (Value, Map<String, Value>)) -> Self {
+        let mut scope = Scope::new();
+        scope.value = Some(value.0);
+        scope.locals = Value::Object(value.1);
         scope
     }
 }

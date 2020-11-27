@@ -427,21 +427,28 @@ impl<'render> Render<'render> {
                 None
             }
         } else {
-            let mut values: Vec<&Value> = self
+            let mut values: Vec<(&Value, Option<&Value>)> = self
                 .scopes
                 .iter()
-                .filter(|v| v.base_value().is_some())
-                .map(|v| v.base_value().as_ref().unwrap())
+                //.filter(|v| v.base_value().is_some())
+                .map(|v| (v.locals(), v.base_value().as_ref()))
                 .rev()
                 .collect();
-            values.push(&self.root);
+            values.push((&self.root, None));
 
-            for v in values {
+            for (locals, value) in values {
                 if let Some(res) = json::find_parts(
                     path.components().iter().map(|c| c.as_value()),
-                    v,
+                    locals,
                 ) {
                     return Some(res);
+                } else if let Some(value) = value {
+                    if let Some(res) = json::find_parts(
+                        path.components().iter().map(|c| c.as_value()),
+                        value,
+                    ) {
+                        return Some(res);
+                    }
                 }
             }
             None
@@ -733,7 +740,15 @@ impl<'render> Render<'render> {
 
         let mut missing: Vec<MissingValue> = Vec::new();
         let hash = self.hash(call, &mut missing)?;
-        let scope = Scope::from(hash);
+        let scope = if !call.arguments().is_empty() {
+            let arguments = self.arguments(call, &mut missing)?;
+            if let Some(context) = arguments.get(0) {
+                Scope::from((context.clone(), hash)) 
+            } else { Scope::from(hash) }
+        } else {
+            Scope::from(hash)
+        };
+
         self.scopes.push(scope);
         // WARN: We must iterate the document child nodes
         // WARN: when rendering partials otherwise the
