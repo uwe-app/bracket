@@ -114,6 +114,8 @@ pub(crate) fn components<'source>(
                 }
 
                 if is_path_component(&lex) {
+                    path.span_mut().end = span.end;
+
                     match &lex {
                         Parameters::ExplicitThisKeyword
                         | Parameters::ExplicitThisDotSlash => {
@@ -252,6 +254,8 @@ pub(crate) fn parse<'source>(
                 *state.byte_mut() = span.start;
 
                 if is_path_component(&lex) {
+                    path.span_mut().end = span.end;
+
                     let component =
                         to_component(source, state, &lex, span, None)?;
                     // Flag as a path that should be resolved from the root object

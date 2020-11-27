@@ -485,7 +485,7 @@ pub struct Path<'source> {
     parents: u8,
     explicit: bool,
     root: bool,
-    open: Range<usize>,
+    span: Range<usize>,
     line: Range<usize>,
 }
 
@@ -493,7 +493,7 @@ impl<'source> Path<'source> {
     /// Create a new path.
     pub fn new(
         source: &'source str,
-        open: Range<usize>,
+        span: Range<usize>,
         line: Range<usize>,
     ) -> Self {
         Self {
@@ -502,14 +502,19 @@ impl<'source> Path<'source> {
             parents: 0,
             explicit: false,
             root: false,
-            open,
+            span,
             line,
         }
     }
 
-    /// Get the open span for the path.
-    pub fn open_span(&self) -> &Range<usize> {
-        &self.open
+    /// Get the span for the path.
+    pub fn span(&self) -> &Range<usize> {
+        &self.span
+    }
+
+    /// Mutable span for the path.
+    pub fn span_mut(&mut self) -> &mut Range<usize> {
+        &mut self.span
     }
 
     /// Add a component to this path.
@@ -573,7 +578,7 @@ impl<'source> Path<'source> {
 
 impl<'source> Slice<'source> for Path<'source> {
     fn as_str(&self) -> &'source str {
-        &self.source[self.open.start..self.open.end]
+        &self.source[self.span.start..self.span.end]
     }
 
     fn source(&self) -> &'source str {
@@ -707,10 +712,13 @@ impl<'source> CallTarget<'source> {
         }
     }
 
-    /// Get the open span for the call target.
-    pub fn open_span(&self) -> &Range<usize> {
+    /// Get the span for the call target.
+    ///
+    /// For paths this is the entire span for sub expressions 
+    /// it is the open span.
+    pub fn span(&self) -> &Range<usize> {
         match *self {
-            Self::Path(ref path) => path.open_span(),
+            Self::Path(ref path) => path.span(),
             Self::SubExpr(ref call) => call.open_span(),
         }
     }
@@ -887,10 +895,6 @@ impl<'source> Call<'source> {
 
 impl<'source> Slice<'source> for Call<'source> {
     fn as_str(&self) -> &'source str {
-        //if let Some(ref close) = self.close {
-        //return &self.source[self.open.end..close.start];
-        //}
-
         if let Some(ref close) = self.close {
             return &self.source[self.open.start..close.end];
         }
