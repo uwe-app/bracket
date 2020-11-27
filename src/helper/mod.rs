@@ -83,6 +83,51 @@
 //! }
 //! ```
 //!
+//! ## Raw Paths
+//!
+//! Most of the time helpers operate on the [Value](serde_json::Value) type but sometimes it is
+//! useful to access the underlying raw string so that helpers can access paths directly.
+//!
+//! To allow either a quoted string or a raw path and access it as `Value::String` 
+//! regardless use [get_fallback()][] and [param_fallback()][].
+//!
+//! For example an `include` helper might want to accept raw paths or string values:
+//!
+//! ```ignore
+//! ctx.arity(1..1)?;
+//! if let Some(include_file) = ctx.get_fallback(0) {
+//!     let include_file = ctx.try_value(include_file, &[Type::String])?
+//!         .as_str()
+//!         .unwrap();
+//!     // Do something with the include file path 
+//! }
+//! ```
+//!
+//! Alternatively to branch and treat paths differently to string values we can use the
+//! [missing()][] and [missing_param()] functions to check whether a value was missing and use
+//! the raw path when it is missing. 
+//!
+//! For example a `markdown` helper may want to accept inline markdown when the argument is a 
+//! string literal otherwise load content from a raw path when the value is missing:
+//!
+//! ```ignore
+//! if let Some(arg) = ctx.get(0) {
+//!     if let Some(value) = ctx.missing(0) {
+//!         // Missing values are always coerced to `Value::String`!
+//!         if let Value::String(value) = value {
+//!             // Do something with the raw path value
+//!         }
+//!     } else {
+//!         let param = ctx.try_value(arg, &[Type::String])?.as_str().unwrap();
+//!         // Do something with the string literal value
+//!     }
+//! }
+//! ```
+//! 
+//! [get_fallback()]: crate::render::Context#method.get_fallback
+//! [param_fallback()]: crate::render::Context#method.param_fallback
+//! [missing()]: crate::render::Context#method.missing
+//! [missing_param()]: crate::render::Context#method.missing_param
 
 use dyn_clone::DynClone;
 use serde_json::Value;
