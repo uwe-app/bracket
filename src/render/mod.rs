@@ -405,21 +405,33 @@ impl<'render> Render<'render> {
                 None
             }
         } else if path.parents() > 0 {
+            let mut all: Vec<(&Value, Option<&Value>)> =
+                self.scopes
+                .iter()
+                .map(|s| (s.locals(), s.base_value().as_ref()))
+                .collect();
+
             // Combine so that the root object is
             // treated as a scope
-            let mut all = vec![&self.root];
-            // FIXME: use base_value() here!
-            let mut values: Vec<&'a Value> =
-                self.scopes.iter().map(|s| s.locals()).collect();
-            all.append(&mut values);
+            all.insert(0, (&self.root, None));
 
             if all.len() > path.parents() as usize {
                 let index: usize = all.len() - (path.parents() as usize + 1);
-                if let Some(value) = all.get(index) {
-                    json::find_parts(
+                if let Some((locals, value)) = all.get(index) {
+                    if let Some(res) = json::find_parts(
                         path.components().iter().map(|c| c.as_value()),
-                        value,
-                    )
+                        locals,
+                    ) {
+                        return Some(res);
+                    } else if let Some(value) = value {
+                        if let Some(res) = json::find_parts(
+                            path.components().iter().map(|c| c.as_value()),
+                            value,
+                        ) {
+                            return Some(res);
+                        }
+                    }
+                    None
                 } else {
                     None
                 }
