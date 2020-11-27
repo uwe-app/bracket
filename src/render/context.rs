@@ -204,6 +204,16 @@ impl<'call> Context<'call> {
         Ok(value)
     }
 
+    /// Assert that a value is one of the given kinds.
+    pub fn try_value<'a>(
+        &self,
+        value: &'a Value,
+        kinds: &[Type],
+    ) -> HelperResult<&'a Value> {
+        self.assert(value, kinds)?;
+        Ok(value)
+    }
+
     /// Get the text for this context.
     ///
     /// Only available when invoked as a raw block.
