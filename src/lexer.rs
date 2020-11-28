@@ -35,7 +35,7 @@ pub enum Block {
     StartBlockScope,
 
     /// Start a link.
-    #[token("[[")]
+    #[regex(r"\\?\[\[")]
     StartLink,
 
     /// End a block.

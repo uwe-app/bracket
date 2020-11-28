@@ -46,6 +46,16 @@ impl Helper for LinkHelper {
 }
 
 #[test]
+fn link_escaped_statement() -> Result<()> {
+    let registry = Registry::new();
+    let value = r"\[[/some/target]]";
+    let data = json!({});
+    let result = registry.once(NAME, value, &data)?;
+    assert_eq!("[[/some/target]]", &result);
+    Ok(())
+}
+
+#[test]
 fn link_noop() -> Result<()> {
     let registry = Registry::new();
     let value = r"[[/some/target]]";

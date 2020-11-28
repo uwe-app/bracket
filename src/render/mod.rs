@@ -989,14 +989,18 @@ impl<'render> Render<'render> {
                 self.write_str(raw, false)?;
             }
             Node::Link(ref n) => {
-                if cfg!(feature = "links") {
-                    if let Some(helper) = &self.registry.handlers().link {
-                        self.link(helper, n)?;
+                if n.is_escaped() {
+                    self.write_str(n.after_escape(), false)?;
+                } else {
+                    if cfg!(feature = "links") {
+                        if let Some(helper) = &self.registry.handlers().link {
+                            self.link(helper, n)?;
+                        } else {
+                            self.write_str(n.as_str(), false)?;
+                        }
                     } else {
                         self.write_str(n.as_str(), false)?;
                     }
-                } else {
-                    self.write_str(n.as_str(), false)?;
                 }
             }
             Node::RawComment(_) => {}

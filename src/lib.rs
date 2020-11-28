@@ -197,6 +197,9 @@
 //! Links do not accept new lines; to include a new line, vertical pipe or right square bracket
 //! it must be preceeded by a backslash, eg: `\n`, `\|` or `\]`.
 //!
+//! To ignore a wiki-style link from processing prefix it with a backslash `\[[Plain Text]]` and 
+//! it will be rendered as text without the backslash.
+//!
 //! ## Handlers
 //!
 //! Support for `helperMissing` and `blockHelperMissing` handlers can be enabled using the registry

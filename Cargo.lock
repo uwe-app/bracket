@@ -28,7 +28,7 @@ checksum = "474a626a67200bd107d44179bb3d4fc61891172d11696609264589be6a0e6a43"
 
 [[package]]
 name = "bracket"
-version = "0.9.18"
+version = "0.9.19"
 dependencies = [
  "dyn-clone",
  "log",

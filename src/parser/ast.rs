@@ -1400,6 +1400,17 @@ impl<'source> Link<'source> {
     pub fn set_title(&mut self, value: String) {
         self.title = Some(value);
     }
+
+    /// Determine if this link has been escaped using a leading backslash.
+    pub fn is_escaped(&self) -> bool {
+        self.open().starts_with("\\")
+    }
+
+    /// The value after a backslash escape.
+    pub(crate) fn after_escape(&self) -> &'source str {
+        let close = self.close.clone().unwrap_or(0..self.open.len());
+        &self.source[self.open.start + 1..close.end]
+    }
 }
 
 impl<'source> Slice<'source> for Link<'source> {

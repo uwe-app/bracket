@@ -1,6 +1,6 @@
 [package]
 name = "bracket"
-version = "0.9.18"
+version = "0.9.19"
 description = "Fast and correct handlebars-compatible template engine"
 authors = ["muji <muji@tmpfs.org>"]
 edition = "2018"
