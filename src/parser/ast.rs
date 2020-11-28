@@ -1313,8 +1313,6 @@ impl<'source> Link<'source> {
 
     /// Get the link label.
     ///
-    /// If the label is the empty string the href will be used instead.
-    ///
     /// If an owned value has been set it is preferred.
     pub fn label(&self) -> &str {
         let lbl = if let Some(ref label) = self.label {
@@ -1323,16 +1321,10 @@ impl<'source> Link<'source> {
             &self.source[self.label_span.start..self.label_span.end]
         };
 
-        if lbl.is_empty() {
-            self.href()
-        } else {
-            lbl
-        }
+        lbl
     }
 
     /// Get the link title.
-    ///
-    /// If the title is the empty string the label will be used instead.
     ///
     /// If an owned value has been set it is preferred.
     pub fn title(&self) -> &str {
@@ -1342,11 +1334,7 @@ impl<'source> Link<'source> {
             &self.source[self.title_span.start..self.title_span.end]
         };
 
-        if title.is_empty() {
-            self.label()
-        } else {
-            title
-        }
+        title
     }
 
     /// Get the span for the href.
