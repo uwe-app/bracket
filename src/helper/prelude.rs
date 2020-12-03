@@ -4,4 +4,5 @@ pub use crate::{
     helper::{Helper, HelperValue, LocalHelper, HelperResult},
     parser::ast::Node,
     render::{Context, Render, Scope, Type},
+    template::Template,
 };
