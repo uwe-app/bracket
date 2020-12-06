@@ -57,9 +57,12 @@ enum HelperTarget<'a> {
 /// as expected as it returns values and handles
 /// block templates.
 #[derive(Eq, PartialEq, Hash, Debug, Clone)]
-enum CallSite {
+pub enum CallSite {
+    /// Call site for a partial render.
     Partial(String),
+    /// Call site for a helper.
     Helper(String),
+    /// Call site for a block helper.
     BlockHelper(String),
 }
 
@@ -110,6 +113,7 @@ impl<'render> Render<'render> {
         name: &'render str,
         data: &T,
         writer: Box<&'render mut dyn Output>,
+        stack: Vec<CallSite>,
     ) -> RenderResult<Self>
     where
         T: Serialize,
@@ -128,8 +132,25 @@ impl<'render> Render<'render> {
             trim: Default::default(),
             hint: None,
             end_tag_hint: None,
-            stack: Vec::new(),
+            stack,
         })
+    }
+
+    /// Render template string content and return the buffered result.
+    pub fn once<T>(
+        &self,
+        file_name: &str,
+        content: &str,
+        data: &T,
+    ) -> HelperResult<String>
+    where
+        T: Serialize,
+    {
+        let result = self
+            .registry()
+            .once_stack(file_name, &content, data, self.stack.clone())
+            .map_err(|e| HelperError::new(e.to_string()))?;
+        Ok(result)
     }
 
     /// Get a reference to the registry.
@@ -299,6 +320,7 @@ impl<'render> Render<'render> {
             self.name,
             &self.root,
             Box::new(&mut writer),
+            self.stack.clone(),
         )
         .map_err(Box::new)?;
 
@@ -405,8 +427,8 @@ impl<'render> Render<'render> {
                 None
             }
         } else if path.parents() > 0 {
-            let mut all: Vec<(&Value, Option<&Value>)> =
-                self.scopes
+            let mut all: Vec<(&Value, Option<&Value>)> = self
+                .scopes
                 .iter()
                 .map(|s| (s.locals(), s.base_value().as_ref()))
                 .collect();

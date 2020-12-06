@@ -7,7 +7,7 @@ use std::fmt;
 use crate::{
     output::Output,
     parser::{ast::Node, Parser, ParserOptions},
-    render::Render,
+    render::{CallSite, Render},
     Registry, RenderResult, SyntaxResult,
 };
 
@@ -70,11 +70,13 @@ impl Template {
         name: &str,
         data: &T,
         writer: &'a mut impl Output,
+        stack: Vec<CallSite>,
     ) -> RenderResult<()>
     where
         T: Serialize,
     {
-        let mut rc = Render::new(registry, name, data, Box::new(writer))?;
+        let mut rc =
+            Render::new(registry, name, data, Box::new(writer), stack)?;
         rc.render(self.node())
     }
 }

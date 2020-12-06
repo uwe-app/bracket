@@ -714,7 +714,7 @@ impl<'source> CallTarget<'source> {
 
     /// Get the span for the call target.
     ///
-    /// For paths this is the entire span for sub expressions 
+    /// For paths this is the entire span for sub expressions
     /// it is the open span.
     pub fn span(&self) -> &Range<usize> {
         match *self {

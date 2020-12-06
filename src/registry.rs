@@ -11,6 +11,7 @@ use crate::{
     helper::{HandlerRegistry, HelperRegistry},
     output::{Output, StringOutput},
     parser::{Parser, ParserOptions},
+    render::CallSite,
     template::{Template, Templates},
     Error, Result,
 };
@@ -235,7 +236,45 @@ impl<'reg> Registry<'reg> {
             source.as_ref(),
             ParserOptions::new(name.to_string(), 0, 0),
         )?;
-        template.render(self, name, data, &mut writer)?;
+        template.render(self, name, data, &mut writer, Default::default())?;
+        Ok(writer.into())
+    }
+
+    /// Render a template without registering it and return
+    /// the result as a string using an existing call stack.
+    ///
+    /// This function buffers the template nodes before rendering.
+    ///
+    /// Use this function if you need to render a string inside a
+    /// helper definition but want to respect the call stack
+    /// of the existing render, for example:
+    ///
+    /// ```ignore
+    /// let result = rc
+    ///     .registry()
+    ///     .once_stack(template_path, &content, rc.data(), rc.stack().clone())
+    ///     .map_err(|e| {
+    ///         HelperError::new(e.to_string())
+    ///     })?;
+    /// rc.write(&result)?;
+    /// ```
+    pub(crate) fn once_stack<T, S>(
+        &self,
+        name: &str,
+        source: S,
+        data: &T,
+        stack: Vec<CallSite>,
+    ) -> Result<String>
+    where
+        T: Serialize,
+        S: AsRef<str>,
+    {
+        let mut writer = StringOutput::new();
+        let template = self.compile(
+            source.as_ref(),
+            ParserOptions::new(name.to_string(), 0, 0),
+        )?;
+        template.render(self, name, data, &mut writer, stack)?;
         Ok(writer.into())
     }
 
@@ -332,7 +371,7 @@ impl<'reg> Registry<'reg> {
         T: Serialize,
     {
         let mut writer = StringOutput::new();
-        template.render(self, name, data, &mut writer)?;
+        template.render(self, name, data, &mut writer, Default::default())?;
         Ok(writer.into())
     }
 
@@ -352,7 +391,7 @@ impl<'reg> Registry<'reg> {
             .templates
             .get(name)
             .ok_or_else(|| Error::TemplateNotFound(name.to_string()))?;
-        tpl.render(self, name, data, writer)?;
+        tpl.render(self, name, data, writer, Default::default())?;
 
         Ok(())
     }

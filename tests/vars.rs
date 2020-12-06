@@ -199,7 +199,7 @@ fn vars_scope_explicit_this_no_inherit() -> Result<()> {
     let value = r"{{#with item}}{{this.title}}{{/with}}";
     let data = json!({"title": "foo", "item": {}});
     let result = registry.once(NAME, value, &data)?;
-    // NOTE: due to the use of explicit `this` it should not 
+    // NOTE: due to the use of explicit `this` it should not
     // NOTE: resolve in the parent scopes
     assert_eq!("", &result);
     Ok(())

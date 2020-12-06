@@ -19,15 +19,16 @@ impl Helper for LinkHelper {
         ctx.arity(3..3)?;
 
         let href = ctx.try_get(0, &[Type::String])?.as_str().unwrap();
-        let mut label = 
-            ctx.try_get(1, &[Type::String])?
+        let mut label = ctx
+            .try_get(1, &[Type::String])?
             .as_str()
             .unwrap()
             .to_string();
         if label.is_empty() {
             label = href.to_string();
         }
-        let mut title = ctx.try_get(2, &[Type::String])?
+        let mut title = ctx
+            .try_get(2, &[Type::String])?
             .as_str()
             .unwrap()
             .to_string();
