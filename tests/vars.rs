@@ -182,3 +182,25 @@ fn vars_scope_parent() -> Result<()> {
     assert_eq!("bar", &result);
     Ok(())
 }
+
+#[test]
+fn vars_scope_explicit_this() -> Result<()> {
+    let registry = Registry::new();
+    let value = r"{{#with item}}{{this.title}}{{/with}}";
+    let data = json!({"title": "foo", "item": {"title": "bar"}});
+    let result = registry.once(NAME, value, &data)?;
+    assert_eq!("bar", &result);
+    Ok(())
+}
+
+#[test]
+fn vars_scope_explicit_this_no_inherit() -> Result<()> {
+    let registry = Registry::new();
+    let value = r"{{#with item}}{{this.title}}{{/with}}";
+    let data = json!({"title": "foo", "item": {}});
+    let result = registry.once(NAME, value, &data)?;
+    // NOTE: due to the use of explicit `this` it should not 
+    // NOTE: resolve in the parent scopes
+    assert_eq!("", &result);
+    Ok(())
+}
