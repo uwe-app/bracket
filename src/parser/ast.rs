@@ -511,9 +511,8 @@ impl<'source> Path<'source> {
 
     /// Determine if this path is absolute.
     ///
-    /// A path is determined to be absolute when it begins 
-    /// with a slash (/); paths that start with a period (.) 
-    /// delimiter are illegal.
+    /// A path is absolute when it begins with a slash (/); 
+    /// paths that start with a period (.) delimiter are illegal.
     pub fn absolute(&self) -> bool {
         self.absolute 
     }
