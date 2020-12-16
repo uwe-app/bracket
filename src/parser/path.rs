@@ -233,13 +233,20 @@ pub(crate) fn parse<'source>(
     let (lex, span) = current;
     let mut path = Path::new(source, span.clone(), state.line_range());
 
+    let initial = &source[span.start..span.end];
     let mut next: Option<Token> = Some(Token::Parameters(lex, span));
+
     match &lex {
         // Cannot start with a path delimiter
         Parameters::PathDelimiter => {
-            return Err(SyntaxError::UnexpectedPathDelimiter(
-                ErrorInfo::from((source, state)).into(),
-            ));
+            if initial == "/" {
+                path.set_absolute(true);
+                next = lexer.next();
+            } else {
+                return Err(SyntaxError::UnexpectedPathDelimiter(
+                    ErrorInfo::from((source, state)).into(),
+                ));
+            }
         }
         // Count parent references
         Parameters::ParentRef => {

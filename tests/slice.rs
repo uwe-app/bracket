@@ -1,5 +1,5 @@
 use bracket::{
-    parser::ast::{CallTarget, Node, Slice},
+    parser::ast::{CallTarget, Node, Slice, ParameterValue},
     Registry, Result,
 };
 
@@ -153,6 +153,32 @@ fn slice_path_parents() -> Result<()> {
     if let Node::Statement(ref call) = node {
         if let CallTarget::Path(ref path) = call.target() {
             assert_eq!("../../../foo/bar.txt", path.as_str());
+        } else {
+            panic!("Expecting path call target!");
+        }
+    } else {
+        panic!("Expecting statement node!");
+    }
+    Ok(())
+}
+
+#[test]
+fn slice_path_absolute() -> Result<()> {
+    let registry = Registry::new();
+    let value = r"{{include /foo/bar.txt}}";
+    let template = registry.parse(NAME, value)?;
+    let node = template.node().into_iter().next().unwrap();
+    if let Node::Statement(ref call) = node {
+        if let CallTarget::Path(ref path) = call.target() {
+            assert_eq!("include", path.as_str());
+            assert_eq!(1, call.arguments().len());
+            let arg = call.arguments().first().unwrap();
+            if let ParameterValue::Path(ref path) = arg {
+                assert_eq!(true, path.absolute());
+            } else {
+                panic!("Expecting path for argument parameter value!");
+            }
+
         } else {
             panic!("Expecting path call target!");
         }

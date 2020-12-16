@@ -487,6 +487,7 @@ pub struct Path<'source> {
     root: bool,
     span: Range<usize>,
     line: Range<usize>,
+    absolute: bool,
 }
 
 impl<'source> Path<'source> {
@@ -504,7 +505,22 @@ impl<'source> Path<'source> {
             root: false,
             span,
             line,
+            absolute: false,
         }
+    }
+
+    /// Determine if this path is absolute.
+    ///
+    /// A path is determined to be absolute when it begins 
+    /// with a slash (/); paths that start with a period (.) 
+    /// delimiter are illegal.
+    pub fn absolute(&self) -> bool {
+        self.absolute 
+    }
+
+    /// Set the absolute flag for this path.
+    pub fn set_absolute(&mut self, value: bool) {
+        self.absolute = value;
     }
 
     /// Get the span for the path.

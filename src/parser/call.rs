@@ -114,6 +114,7 @@ fn value<'source>(
     match &lex {
         // Path components
         Parameters::ExplicitThisKeyword
+        | Parameters::PathDelimiter
         | Parameters::ExplicitThisDotSlash
         | Parameters::Identifier
         | Parameters::LocalIdentifier
@@ -156,6 +157,7 @@ fn value<'source>(
             ))
         }
         _ => {
+            println!("Value for unknown token {:?}", &lex);
             return Err(SyntaxError::TokenParameter(
                 ErrorInfo::from((source, state)).into(),
             ));
@@ -174,6 +176,8 @@ fn key_value<'source>(
     let (_lex, span) = current;
     let key = &source[span.start..span.end - 1];
     let mut next: Option<Token> = None;
+
+    // FIXME: support absolute path values (paths with leading slash) for hash parameters
 
     // Consume the first value
     if let Some(token) = lexer.next() {
@@ -270,6 +274,7 @@ fn arguments<'source>(
                     Parameters::ElseKeyword => {}
                     // Path components
                     Parameters::ExplicitThisKeyword
+                    | Parameters::PathDelimiter
                     | Parameters::ExplicitThisDotSlash
                     | Parameters::Identifier
                     | Parameters::LocalIdentifier
@@ -318,11 +323,24 @@ fn arguments<'source>(
                             source, lexer, state, call, token, context,
                         );
                     }
+                    /*
                     Parameters::PathDelimiter => {
-                        return Err(SyntaxError::PathDelimiterNotAllowed(
-                            ErrorInfo::from((source, state)).into(),
-                        ))
+                        let leading_delimiter = &source[span.start..span.end];
+                        if leading_delimiter == "/" {
+                            // Consume as an absolute path
+                            let (value, token) =
+                                value(source, lexer, state, (lex, span), true)?;
+                            call.add_argument(value);
+                            return arguments(
+                                source, lexer, state, call, token, context,
+                            );
+                        } else {
+                            return Err(SyntaxError::PathDelimiterNotAllowed(
+                                ErrorInfo::from((source, state)).into(),
+                            ))
+                        }
                     }
+                    */
                     Parameters::EndSubExpression => {
                         if context == CallContext::SubExpr {
                             call.exit(span);
