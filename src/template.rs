@@ -32,7 +32,10 @@ rental! {
 
 /// Template that owns the underlying string and a corresponding document node.
 #[derive(Debug)]
-pub struct Template(source::Ast);
+pub struct Template {
+    file_name: Option<String>,
+    ast: source::Ast,
+}
 
 impl Template {
     /// Compile a new template.
@@ -41,7 +44,12 @@ impl Template {
         options: ParserOptions,
     ) -> SyntaxResult<Self> {
         let mut err = None;
-        let res = source::Ast::new(source, |s| {
+
+        let file_name = if options.file_name != crate::parser::UNKNOWN {
+            Some(options.file_name.clone()) 
+        } else { None };
+
+        let ast = source::Ast::new(source, |s| {
             match Parser::new(s, options).parse() {
                 Ok(ast) => ast,
                 Err(e) => {
@@ -54,13 +62,13 @@ impl Template {
         if let Some(e) = err {
             Err(e)
         } else {
-            Ok(Self(res))
+            Ok(Self{file_name, ast})
         }
     }
 
     /// The document node for the template.
     pub fn node(&self) -> &Node<'_> {
-        self.0.all().node
+        self.ast.all().node
     }
 
     /// Render this template to the given writer.
