@@ -71,6 +71,11 @@ impl Template {
         self.ast.all().node
     }
 
+    /// Get the file name given when this template was compiled.
+    pub fn file_name(&self) -> Option<&str> {
+        self.file_name.as_ref().map(|s| s.as_str())
+    }
+
     /// Render this template to the given writer.
     pub fn render<'a, T>(
         &self,

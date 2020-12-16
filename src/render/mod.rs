@@ -101,6 +101,7 @@ pub struct Render<'render> {
     hint: Option<TrimHint>,
     end_tag_hint: Option<TrimHint>,
     stack: Vec<CallSite>,
+    current_partial_name: Option<&'render str>,
 }
 
 impl<'render> Render<'render> {
@@ -133,15 +134,43 @@ impl<'render> Render<'render> {
             hint: None,
             end_tag_hint: None,
             stack,
+            current_partial_name: None,
         })
     }
 
     /// Get the name of the template being rendered.
+    ///
+    /// This will equal the name given when the renderer is started 
+    /// and does not account for partials; to get the name of a template 
+    /// including the current partial use [current_name()](#method.current_name).
     pub fn template_name(&self) -> &str {
         self.name 
     }
 
+    /// Get the current name for the template being rendered.
+    ///
+    /// When a partial is being rendered this will return the name 
+    /// for the current partial otherwise it falls back to the name 
+    /// given when the renderer was started.
+    ///
+    /// When partials have been loaded from the file system 
+    /// the name will be the file path and should be safe to 
+    /// pass to `PathBuf::from` to get a reference to the original file.
+    ///
+    /// It is the caller's responsiblity to account for relative paths 
+    /// when converting template names to paths.
+    pub fn current_name(&self) -> &str {
+        self.current_partial_name.unwrap_or(self.name) 
+    }
+
     /// Render template string content and return the buffered result.
+    ///
+    /// The current call site stack is cloned and used in a new render 
+    /// pass so that cyclic calls can be detected before the stack overflows.
+    ///
+    /// Use this function when a helper wants to render a 
+    /// dynamic template but needs to prevent a stack overflow when a 
+    /// cyclic call is detected.
     pub fn once<T>(
         &self,
         file_name: &str,
@@ -774,6 +803,8 @@ impl<'render> Render<'render> {
             let template = self
                 .get_template(&name)
                 .ok_or_else(|| RenderError::PartialNotFound(name))?;
+
+            self.current_partial_name = template.file_name();
 
             template.node()
         };

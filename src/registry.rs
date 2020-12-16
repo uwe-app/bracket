@@ -112,9 +112,15 @@ impl<'reg> Registry<'reg> {
     where
         P: AsRef<Path>,
     {
+        let file_name = file
+            .as_ref()
+            .to_string_lossy()
+            .into_owned()
+            .to_string();
+
         let (_, content) = self.read(file)?;
         let template =
-            self.compile(content, ParserOptions::new(name.clone(), 0, 0))?;
+            self.compile(content, ParserOptions::new(file_name, 0, 0))?;
         self.templates.insert(name, template);
         Ok(())
     }
@@ -124,9 +130,15 @@ impl<'reg> Registry<'reg> {
     /// Requires the `fs` feature.
     #[cfg(feature = "fs")]
     pub fn load<P: AsRef<Path>>(&mut self, file: P) -> Result<()> {
+        let file_name = file
+            .as_ref()
+            .to_string_lossy()
+            .into_owned()
+            .to_string();
+
         let (name, content) = self.read(file)?;
         let template =
-            self.compile(content, ParserOptions::new(name.clone(), 0, 0))?;
+            self.compile(content, ParserOptions::new(file_name, 0, 0))?;
         self.templates.insert(name, template);
         Ok(())
     }
@@ -151,6 +163,11 @@ impl<'reg> Registry<'reg> {
             if path.is_file() {
                 if let Some(extension) = path.extension() {
                     if extension == ext {
+                        let file_name = path
+                            .to_string_lossy()
+                            .into_owned()
+                            .to_string();
+
                         let name = path
                             .file_stem()
                             .unwrap()
@@ -160,7 +177,7 @@ impl<'reg> Registry<'reg> {
                         let (_, content) = self.read(path)?;
                         let template = self.compile(
                             content,
-                            ParserOptions::new(name.clone(), 0, 0),
+                            ParserOptions::new(file_name, 0, 0),
                         )?;
                         self.templates.insert(name, template);
                     }
