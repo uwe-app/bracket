@@ -806,9 +806,7 @@ impl<'render> Render<'render> {
                 .get_template(&name)
                 .ok_or_else(|| RenderError::PartialNotFound(name))?;
 
-            if partial_block.is_none() {
-                self.current_partial_name.push(template.file_name());
-            }
+            self.current_partial_name.push(template.file_name());
 
             template.node()
         };
@@ -835,10 +833,7 @@ impl<'render> Render<'render> {
         }
         self.scopes.pop();
 
-        if partial_block.is_none() {
-            self.current_partial_name.pop();
-        }
-
+        self.current_partial_name.pop();
         self.stack.pop();
 
         Ok(())
