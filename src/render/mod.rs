@@ -804,7 +804,9 @@ impl<'render> Render<'render> {
                 .get_template(&name)
                 .ok_or_else(|| RenderError::PartialNotFound(name))?;
 
-            self.current_partial_name = template.file_name();
+            if partial_block.is_none() {
+                self.current_partial_name = template.file_name();
+            }
 
             template.node()
         };
