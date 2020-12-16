@@ -101,7 +101,7 @@ pub struct Render<'render> {
     hint: Option<TrimHint>,
     end_tag_hint: Option<TrimHint>,
     stack: Vec<CallSite>,
-    current_partial_name: Option<&'render str>,
+    current_partial_name: Vec<Option<&'render str>>,
 }
 
 impl<'render> Render<'render> {
@@ -134,7 +134,7 @@ impl<'render> Render<'render> {
             hint: None,
             end_tag_hint: None,
             stack,
-            current_partial_name: None,
+            current_partial_name: Vec::new(),
         })
     }
 
@@ -160,7 +160,9 @@ impl<'render> Render<'render> {
     /// It is the caller's responsiblity to account for relative paths 
     /// when converting template names to paths.
     pub fn current_name(&self) -> &str {
-        self.current_partial_name.unwrap_or(self.name) 
+        if !self.current_partial_name.is_empty() {
+            self.current_partial_name.last().unwrap().unwrap_or(self.name)
+        } else { self.name }
     }
 
     /// Render template string content and return the buffered result.
@@ -805,7 +807,7 @@ impl<'render> Render<'render> {
                 .ok_or_else(|| RenderError::PartialNotFound(name))?;
 
             if partial_block.is_none() {
-                self.current_partial_name = template.file_name();
+                self.current_partial_name.push(template.file_name());
             }
 
             template.node()
@@ -832,6 +834,10 @@ impl<'render> Render<'render> {
             self.render_node(event.node, event.trim)?;
         }
         self.scopes.pop();
+
+        if partial_block.is_none() {
+            self.current_partial_name.pop();
+        }
 
         self.stack.pop();
 
