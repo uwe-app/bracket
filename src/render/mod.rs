@@ -136,6 +136,11 @@ impl<'render> Render<'render> {
         })
     }
 
+    /// Get the name of the template being rendered.
+    pub fn template_name(&self) -> &str {
+        self.name 
+    }
+
     /// Render template string content and return the buffered result.
     pub fn once<T>(
         &self,
