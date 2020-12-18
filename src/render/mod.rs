@@ -423,6 +423,14 @@ impl<'render> Render<'render> {
         //println!("Lookup path {:?}", path.as_str());
         //println!("Lookup path {:?}", path);
 
+
+        // Absolute paths should never be resolved to variables
+        // the correct syntax is to use `@root` to resolve a 
+        // variable from the root of the template data.
+        if path.absolute() {
+            return None; 
+        }
+
         // Handle explicit `@root` reference
         if path.is_root() {
             json::find_parts(
