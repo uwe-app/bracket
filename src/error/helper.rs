@@ -14,6 +14,9 @@ pub enum HelperError {
     /// Error when asserting that a helper expects an inner template.
     #[error("Helper '{0}' expects a block template")]
     BlockTemplate(String),
+    /// Error when asserting that a helper does not allow an inner template.
+    #[error("Helper '{0}' does not allow a block template")]
+    BlockTemplateNotAllowed(String),
     /// Error when supplied arguments do not match an exact arity.
     #[error("Helper '{0}' got invalid arity expects {1} arguments(s)")]
     ArityExact(String, usize),

@@ -283,6 +283,19 @@ impl<'call> Context<'call> {
         Err(HelperError::BlockTemplate(self.name().to_string()))
     }
 
+    /// Assert that a block template is empty.
+    ///
+    /// Helpers that do not accept inner block templates can call this 
+    /// to ensure that they are not invoked with the block syntax.
+    pub fn assert_statement<'a>(
+        &self,
+        template: Option<&'a Node<'a>>) -> HelperResult<()> {
+        if template.is_some() {
+            return Err(HelperError::BlockTemplateNotAllowed(self.name().to_string()))
+        }
+        Ok(())
+    }
+
     /// Lookup a field of a value.
     ///
     /// If the target value is not an object or array then this
