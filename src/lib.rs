@@ -218,10 +218,6 @@
 //! [Handlebars]: https://handlebarsjs.com
 //! [Handlebars Hooks]: https://handlebarsjs.com/guide/hooks.html
 //!
-
-#[macro_use]
-extern crate rental;
-
 pub mod error;
 pub mod escape;
 pub mod helper;
