@@ -84,9 +84,25 @@ impl<'reg> Registry<'reg> {
         &self.templates
     }
 
+    /// Mutable reference to the templates.
+    pub fn templates_mut(&mut self) -> &mut Templates {
+        &mut self.templates
+    }
+
     /// Get a named template.
+    #[deprecated(since = "0.9.29", note = "Use get() instead.")]
     pub fn get_template(&self, name: &str) -> Option<&Template> {
         self.templates.get(name)
+    }
+
+    /// Get a named template.
+    pub fn get<S>(&self, name: S) -> Option<&Template> where S: AsRef<str> {
+        self.templates.get(name.as_ref())
+    }
+
+    /// Remove a named template.
+    pub fn remove<S>(&mut self, name: S) -> Option<Template> where S: AsRef<str> {
+        self.templates.remove(name.as_ref())
     }
 
     /// Insert a named string template.
