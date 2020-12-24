@@ -696,7 +696,10 @@ impl<'render> Render<'render> {
             Ok(Some(value))
         } else {
             if self.registry.strict() {
-                Err(RenderError::VariableNotFound(path.as_str().to_string()))
+                Err(RenderError::VariableNotFound(
+                    path.as_str().to_string(),
+                    self.name.to_string(),
+                ))
             } else {
                 // TODO: call a missing_variable handler?
                 Ok(None)
@@ -744,6 +747,7 @@ impl<'render> Render<'render> {
                                 if self.registry.strict() {
                                     return Err(RenderError::VariableNotFound(
                                         path.as_str().to_string(),
+                                        self.name.to_string(),
                                     ));
                                 }
                             }

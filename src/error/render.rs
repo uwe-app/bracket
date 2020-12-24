@@ -11,8 +11,8 @@ pub enum RenderError {
     PartialNotFound(String),
 
     /// Error when a variable could not be resolved.
-    #[error("Variable '{0}' not found, check the variable path and verify the template data")]
-    VariableNotFound(String),
+    #[error("Variable '{0}' not found in {1}, check the variable path and verify the template data")]
+    VariableNotFound(String, String),
 
     /// Error when a helper could not be found.
     #[error("Helper '{0}' not found, check the name")]
