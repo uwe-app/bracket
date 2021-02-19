@@ -6,7 +6,7 @@ use bracket::{
 };
 use serde_json::json;
 
-static NAME: &str = "evaluate.rs";
+const NAME: &str = "evaluate.rs";
 
 #[derive(Clone)]
 pub struct EvalHelper;

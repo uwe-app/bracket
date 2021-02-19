@@ -3,7 +3,7 @@ use bracket::{
     Registry, Result,
 };
 
-static NAME: &str = "lines.rs";
+const NAME: &str = "lines.rs";
 
 #[test]
 fn lines_text() -> Result<()> {

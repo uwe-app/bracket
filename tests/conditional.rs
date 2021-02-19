@@ -1,7 +1,7 @@
 use bracket::{Registry, Result};
 use serde_json::json;
 
-static NAME: &str = "conditional.rs";
+const NAME: &str = "conditional.rs";
 
 #[test]
 fn if_block() -> Result<()> {

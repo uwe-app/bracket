@@ -7,9 +7,9 @@ use serde_json::Value;
 
 use crate::{parser::iter::BranchIter, trim::TrimHint};
 
-static WHITESPACE: &str = "~";
-static ROOT: &str = "@root";
-//pub static LEVEL: &str = "@level";
+const WHITESPACE: &str = "~";
+const ROOT: &str = "@root";
+//pub const LEVEL: &str = "@level";
 
 /// Trait for nodes that reference a slice of the
 /// source template.

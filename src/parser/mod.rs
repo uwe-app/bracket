@@ -11,7 +11,7 @@ use crate::{
 use std::ops::Range;
 
 /// Default file name.
-pub(crate) static UNKNOWN: &str = "unknown";
+pub(crate) const UNKNOWN: &str = "unknown";
 
 pub mod ast;
 mod block;

@@ -1,7 +1,7 @@
 use bracket::{Registry, Result};
 use serde_json::json;
 
-static NAME: &str = "partial.rs";
+const NAME: &str = "partial.rs";
 
 #[test]
 fn partial_statement() -> Result<()> {

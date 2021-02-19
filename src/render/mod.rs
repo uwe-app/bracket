@@ -24,10 +24,10 @@ use crate::{
     Registry, RenderResult,
 };
 
-static PARTIAL_BLOCK: &str = "@partial-block";
-static HELPER_MISSING: &str = "helperMissing";
-static BLOCK_HELPER_MISSING: &str = "blockHelperMissing";
-static HELPER_LINK: &str = "link";
+const PARTIAL_BLOCK: &str = "@partial-block";
+const HELPER_MISSING: &str = "helperMissing";
+const BLOCK_HELPER_MISSING: &str = "blockHelperMissing";
+const HELPER_LINK: &str = "link";
 
 type HelperValue = Option<Value>;
 
@@ -40,7 +40,7 @@ pub use context::{Context, MissingValue, Property};
 pub use scope::Scope;
 
 /// Maximum stack size for helper calls
-static STACK_MAX: usize = 32;
+const STACK_MAX: usize = 32;
 
 enum HelperTarget<'a> {
     Name(&'a str),

@@ -3,7 +3,7 @@ use bracket::{
     Registry, Result,
 };
 
-static NAME: &str = "syntax_error.rs";
+const NAME: &str = "syntax_error.rs";
 
 #[test]
 fn syntax_err_empty_statement() -> Result<()> {

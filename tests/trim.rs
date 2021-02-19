@@ -1,7 +1,7 @@
 use bracket::{Registry, Result};
 use serde_json::json;
 
-static NAME: &str = "trim.rs";
+const NAME: &str = "trim.rs";
 
 #[test]
 fn trim_statement() -> Result<()> {

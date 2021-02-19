@@ -1,7 +1,7 @@
 use bracket::{helper::prelude::*, Registry, Result};
 use serde_json::{json, Value};
 
-static NAME: &str = "helper.rs";
+const NAME: &str = "helper.rs";
 
 #[derive(Clone)]
 pub struct FooHelper;

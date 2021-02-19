@@ -6,7 +6,7 @@ use bracket::{
 };
 use serde_json::json;
 
-static NAME: &str = "raw_block.rs";
+const NAME: &str = "raw_block.rs";
 
 #[derive(Clone)]
 pub struct RawBlockHelper;

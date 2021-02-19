@@ -1,7 +1,7 @@
 use bracket::{Registry, Result};
 use serde_json::json;
 
-static NAME: &str = "lookup.rs";
+const NAME: &str = "lookup.rs";
 
 #[test]
 fn lookup_map() -> Result<()> {

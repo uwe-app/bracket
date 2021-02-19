@@ -1,7 +1,7 @@
 use bracket::{Registry, Result};
 use serde_json::json;
 
-static NAME: &str = "each.rs";
+const NAME: &str = "each.rs";
 
 #[test]
 fn each_array() -> Result<()> {

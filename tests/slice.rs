@@ -3,7 +3,7 @@ use bracket::{
     Registry, Result,
 };
 
-static NAME: &str = "slice.rs";
+const NAME: &str = "slice.rs";
 
 #[test]
 fn slice_call() -> Result<()> {

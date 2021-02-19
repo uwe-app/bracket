@@ -1,7 +1,7 @@
 use bracket::{Registry, Result};
 use serde_json::json;
 
-static NAME: &str = "vars.rs";
+const NAME: &str = "vars.rs";
 
 #[test]
 fn vars_simple() -> Result<()> {

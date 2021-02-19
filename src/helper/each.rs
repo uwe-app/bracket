@@ -8,10 +8,10 @@ use crate::{
 
 use serde_json::{Number, Value};
 
-static FIRST: &str = "first";
-static LAST: &str = "last";
-static KEY: &str = "key";
-static INDEX: &str = "index";
+const FIRST: &str = "first";
+const LAST: &str = "last";
+const KEY: &str = "key";
+const INDEX: &str = "index";
 
 /// Iterate an array or object.
 ///

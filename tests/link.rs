@@ -6,7 +6,7 @@ use bracket::{
 };
 use serde_json::json;
 
-static NAME: &str = "link.rs";
+const NAME: &str = "link.rs";
 
 pub struct LinkHelper;
 impl Helper for LinkHelper {

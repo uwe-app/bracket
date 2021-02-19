@@ -1,7 +1,7 @@
 use bracket::{Registry, Result};
 use serde_json::json;
 
-static NAME: &str = "comparison.rs";
+const NAME: &str = "comparison.rs";
 
 #[test]
 fn cmp_eq() -> Result<()> {

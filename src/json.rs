@@ -1,8 +1,8 @@
 //! Helper functions for working with JSON values.
 use serde_json::Value;
 
-static OBJECT: &str = "Object";
-static ARRAY: &str = "Array";
+const OBJECT: &str = "Object";
+const ARRAY: &str = "Array";
 
 pub(crate) fn stringify(value: &Value) -> String {
     match value {
