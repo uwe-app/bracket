@@ -11,18 +11,22 @@ use crate::{
     Registry, RenderResult, SyntaxResult,
 };
 
-use ouroboros::self_referencing;
+use self_cell::self_cell;
 
 /// Collection of named templates.
 pub type Templates = HashMap<String, Template>;
 
-#[self_referencing]
-#[derive(Debug)]
-struct Ast {
-    source: String,
-    #[borrows(source)]
-    node: Node<'this>,
-}
+self_cell!(
+    struct Ast {
+        #[from_fn]
+        owner: String,
+
+        #[covariant]
+        dependent: Node,
+    }
+
+    impl {Debug}
+);
 
 // SEE: https://github.com/projectfluent/fluent-rs/blob/master/fluent-bundle/src/resource.rs#L5-L14
 
@@ -42,31 +46,31 @@ impl Template {
         let mut err = None;
 
         let file_name = if options.file_name != crate::parser::UNKNOWN {
-            Some(options.file_name.clone()) 
-        } else { None };
+            Some(options.file_name.clone())
+        } else {
+            None
+        };
 
-        let ast = AstBuilder {
-            source: source,
-            node_builder: |s: &str| match Parser::new(s, options).parse() {
+        let ast = Ast::from_fn(source, |s: &String| {
+            match Parser::new(s, options).parse() {
                 Ok(ast) => ast,
                 Err(e) => {
                     err = Some(e);
                     Default::default()
                 }
-            },
-        }
-        .build();
+            }
+        });
 
         if let Some(e) = err {
             Err(e)
         } else {
-            Ok(Self{file_name, ast})
+            Ok(Self { file_name, ast })
         }
     }
 
     /// The document node for the template.
     pub fn node(&self) -> &Node<'_> {
-        self.ast.borrow_node()
+        self.ast.borrow_dependent()
     }
 
     /// Get the file name given when this template was compiled.
