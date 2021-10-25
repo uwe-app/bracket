@@ -209,9 +209,9 @@ checksum = "71d301d4193d031abdd79ff7e3dd721168a9572ef3fe51a1517aba235bd8f86e"
 
 [[package]]
 name = "self_cell"
-version = "0.7.1"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21ec62a5f46d5d25d0e0da6a57d8ef944a08ed25c770852ce664d5055ce813ab"
+checksum = "55267dd945ff7d9388dd56c5a6a97477bdb6f2584be5ba45fdde7207b7cac3a6"
 
 [[package]]
 name = "serde"
