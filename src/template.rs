@@ -18,7 +18,6 @@ pub type Templates = HashMap<String, Template>;
 
 self_cell!(
     struct Ast {
-        #[from_fn]
         owner: String,
 
         #[covariant]
@@ -51,7 +50,7 @@ impl Template {
             None
         };
 
-        let ast = Ast::from_fn(source, |s: &String| {
+        let ast = Ast::new(source, |s: &String| {
             match Parser::new(s, options).parse() {
                 Ok(ast) => ast,
                 Err(e) => {
